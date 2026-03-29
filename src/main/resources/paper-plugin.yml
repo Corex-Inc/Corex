@@ -1,0 +1,15 @@
+name: Corex
+version: '${version}'
+main: dev.corexmc.corex.Corex
+description: Modern, Paper-exclusive scripting engine.
+authors:
+  - tizis0
+  - Nybik_YT
+  - is_insest
+  - Corex Team
+api-version: '1.21'
+
+commands:
+  ex:
+    description: Execute Corex script command
+    usage: /ex <command>
