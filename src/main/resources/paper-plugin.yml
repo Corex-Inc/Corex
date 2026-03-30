@@ -5,11 +5,7 @@ description: Modern, Paper-exclusive scripting engine.
 authors:
   - tizis0
   - Nybik_YT
-  - is_insest
-  - Corex Team
+  - isnsest
+  - Corex Inc
 api-version: '1.21'
-
-commands:
-  ex:
-    description: Execute Corex script command
-    usage: /ex <command>
+folia-supported: true
