@@ -3,8 +3,9 @@ package dev.corexmc.corex.engine.queue;
 import dev.corexmc.corex.Corex;
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.api.tags.AbstractTag;
+import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.utils.CorexLogger;
-import dev.corexmc.corex.environment.tags.PlayerTag; // Не забудь импортировать!
+import dev.corexmc.corex.environment.tags.PlayerTag;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
@@ -14,19 +15,24 @@ import java.util.concurrent.TimeUnit;
 
 public class ScriptQueue {
     private final String id;
-    private final List<CommandEntry> entries;
-    private int currentIndex = 0;
+
+    private final Instruction[] bytecode;
+    private int pointer = 0;
 
     private boolean isPaused = false;
     private boolean isAsync;
 
     private PlayerTag linkedPlayer;
 
+    public boolean isAcync() {
+        return isAcync();
+    }
+
     private final ConcurrentHashMap<String, AbstractTag> definitions = new ConcurrentHashMap<>();
 
-    public ScriptQueue(String id, List<CommandEntry> entryList, boolean isAsync, PlayerTag linkedPlayer) {
+    public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
         this.id = id;
-        this.entries = entryList;
+        this.bytecode = bytecode;
         this.isAsync = isAsync;
         this.linkedPlayer = linkedPlayer;
     }
@@ -36,21 +42,15 @@ public class ScriptQueue {
     }
 
     public void executeNext() {
-        while (!isPaused && currentIndex < entries.size()) {
-            CommandEntry entry = entries.get(currentIndex);
-            currentIndex++;
+        while (!isPaused && pointer < bytecode.length) {
+            Instruction inst = bytecode[pointer];
+            pointer++;
 
-            AbstractCommand command = Corex.getInstance().getRegistry().getScriptCommands().getCommand(entry.getCommandName());
-
-            if (command != null) {
-                try {
-                    command.run(this, entry);
-                } catch (Exception e) {
-                    CorexLogger.error("Ошибка при выполнении команды " + entry.getCommandName() + ": " + e.getMessage());
-                    e.printStackTrace();
-                }
-            } else {
-                CorexLogger.warn("Неизвестная скриптовая команда: " + entry.getCommandName());
+            try {
+                inst.command.run(this, inst);
+            } catch (Exception e) {
+                CorexLogger.error("ERROR while executing script command in " + id + ": " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }

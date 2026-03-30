@@ -1,22 +1,23 @@
-package dev.corexmc.corex.environment.commands;
+package dev.corexmc.corex.environment.commands.player;
 
 import dev.corexmc.corex.api.commands.AbstractCommand;
-import dev.corexmc.corex.engine.queue.CommandEntry;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
+import dev.corexmc.corex.engine.compiler.Instruction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 
 public class NarrateCommand implements AbstractCommand {
 
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return "narrate";
     }
 
     @Override
-    public void run(ScriptQueue queue, CommandEntry entry) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
         String text = entry.getLinear(0, queue);
         if (text == null) return;
 
@@ -39,9 +40,9 @@ public class NarrateCommand implements AbstractCommand {
     }
 
     @Override
-    public void setSyntax(String syntax) {}
+    public void setSyntax(@NonNull String syntax) {}
     @Override
-    public String getSyntax() { return "- narrate [<text>] (targets:<player>|...)"; }
+    public @NonNull String getSyntax() { return "- narrate [<text>] (targets:<player>|...)"; }
     @Override
     public int getMinArgs() { return 1; }
     @Override

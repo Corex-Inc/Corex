@@ -14,6 +14,7 @@ repositories {
 dependencies {
 //    compileOnly("dev.pulsemc.pulse:pulse-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("dev.folia:folia-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("org.jetbrains:annotations:24.1.0")
 }
 
 java {

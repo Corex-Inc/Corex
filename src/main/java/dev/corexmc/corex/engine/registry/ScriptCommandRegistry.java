@@ -7,23 +7,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ScriptCommandRegistry {
-    private final Map<String, AbstractCommand> commands = new HashMap<>();
+
+    private static final Map<String, CommandMetadata> commands = new HashMap<>();
 
     public void register(AbstractCommand command) {
-        String name = command.getName().toLowerCase();
+        CommandMetadata meta = new CommandMetadata(command);
 
-        if (commands.containsKey(name)) {
-            CorexLogger.warn("Script command '<aqua>" + name + "<white>' is already registered! Override...");
+        commands.put(command.getName().toLowerCase(), meta);
+
+        for (String alias : command.getAlias()) {
+            commands.put(alias.toLowerCase(), meta);
         }
-
-        commands.put(name, command);
     }
 
-    public AbstractCommand getCommand(String name) {
+    public CommandMetadata getMetadata(String name) {
         return commands.get(name.toLowerCase());
     }
 
-    public Map<String, AbstractCommand> getAllCommands() {
+    public AbstractCommand getCommand(String name) {
+        CommandMetadata meta = getMetadata(name);
+        return meta != null ? meta.command : null;
+    }
+
+    public static Map<String, CommandMetadata> getCommands() {
         return commands;
     }
 }
