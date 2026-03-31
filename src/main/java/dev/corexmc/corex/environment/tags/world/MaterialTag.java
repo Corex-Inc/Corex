@@ -1,10 +1,11 @@
-package dev.corexmc.corex.environment.tags;
+package dev.corexmc.corex.environment.tags.world;
 
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.tags.TagManager;
+import dev.corexmc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -83,5 +84,15 @@ public class MaterialTag implements AbstractTag {
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
         return PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public TagProcessor<MaterialTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return "m@stone";
     }
 }

@@ -10,5 +10,5 @@ public interface AbstractFormatter {
         return List.of(getName());
     }
 
-    String getValue();
+    AbstractTag getObject();
 }

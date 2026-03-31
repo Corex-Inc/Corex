@@ -13,6 +13,12 @@ import dev.corexmc.corex.environment.commands.player.TeleportCommand;
 import dev.corexmc.corex.environment.formatters.NewLineFormatter;
 import dev.corexmc.corex.environment.formatters.SpaceFormatter;
 import dev.corexmc.corex.environment.tags.*;
+import dev.corexmc.corex.environment.tags.core.ElementTag;
+import dev.corexmc.corex.environment.tags.core.EnvTag;
+import dev.corexmc.corex.environment.tags.core.ListTag;
+import dev.corexmc.corex.environment.tags.core.MapTag;
+import dev.corexmc.corex.environment.tags.world.LocationTag;
+import dev.corexmc.corex.environment.tags.world.MaterialTag;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
@@ -46,6 +52,7 @@ public class EnvironmentLoader {
                 MapTag.class,
                 MaterialTag.class,
                 LocationTag.class,
+                EnvTag.class,
 
                 // Formatters
                 NewLineFormatter.class,

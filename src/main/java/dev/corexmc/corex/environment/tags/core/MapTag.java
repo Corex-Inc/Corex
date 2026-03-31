@@ -1,4 +1,4 @@
-package dev.corexmc.corex.environment.tags;
+package dev.corexmc.corex.environment.tags.core;
 
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
@@ -31,7 +31,7 @@ public class MapTag implements AbstractTag {
             if (!attr.hasParam()) return null;
             String val = obj.map.get(attr.getParam());
             return val != null ? ObjectFetcher.pickObject(val) : null;
-        });
+        }).test("a");
 
     }
 
@@ -64,4 +64,14 @@ public class MapTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
+
+    @Override
+    public TagProcessor<MapTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return "map@[a=1;b=2]";
+    }
 }

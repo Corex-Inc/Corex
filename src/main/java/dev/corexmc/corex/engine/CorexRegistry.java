@@ -8,9 +8,14 @@ import dev.corexmc.corex.engine.registry.ScriptCommandRegistry;
 import dev.corexmc.corex.engine.utils.CorexLogger;
 import dev.corexmc.corex.engine.utils.debugging.Debugger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CorexRegistry {
     private final ScriptCommandRegistry scriptCommandRegistry;
     private final FormatRegistry formatRegistry;
+    private final java.util.List<Class<? extends AbstractTag>> registeredTagClasses = new java.util.ArrayList<>();
+    private final List<Class<? extends AbstractFormatter>> registeredFormatterClasses = new ArrayList<>();
 
     public CorexRegistry() {
         this.scriptCommandRegistry = new ScriptCommandRegistry();
@@ -30,6 +35,7 @@ public class CorexRegistry {
                 else if (AbstractTag.class.isAssignableFrom(clazz)) {
                     java.lang.reflect.Method method = clazz.getDeclaredMethod("register");
                     method.invoke(null);
+                    registeredTagClasses.add(clazz.asSubclass(AbstractTag.class));
                     CorexLogger.info("Tag registered: <yellow>" + clazz.getSimpleName() + "</yellow>");
                 }
 
@@ -38,7 +44,8 @@ public class CorexRegistry {
                             (AbstractFormatter) clazz.getDeclaredConstructor().newInstance();
 
                     formatRegistry.register(formatter);
-                    CorexLogger.info("Format-Tag registered: <yellow><" + formatter.getName() + "></yellow>");
+                    registeredFormatterClasses.add(clazz.asSubclass(dev.corexmc.corex.api.tags.AbstractFormatter.class));
+                    CorexLogger.info("FormatTag registered: <yellow><" + formatter.getName() + "></yellow>");
                 }
 
                 else {
@@ -62,4 +69,11 @@ public class CorexRegistry {
         return formatRegistry;
     }
 
+    public java.util.List<Class<? extends AbstractTag>> getRegisteredTagClasses() {
+        return registeredTagClasses;
+    }
+
+    public List<Class<? extends dev.corexmc.corex.api.tags.AbstractFormatter>> getRegisteredFormatterClasses() {
+        return registeredFormatterClasses;
+    }
 }

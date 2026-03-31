@@ -3,7 +3,7 @@ package dev.corexmc.corex.environment.commands.player;
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
-import dev.corexmc.corex.environment.tags.ListTag;
+import dev.corexmc.corex.environment.tags.core.ListTag;
 import dev.corexmc.corex.environment.tags.PlayerTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;

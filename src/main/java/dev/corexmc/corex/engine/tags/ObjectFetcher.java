@@ -1,7 +1,7 @@
 package dev.corexmc.corex.engine.tags;
 
 import dev.corexmc.corex.api.tags.AbstractTag;
-import dev.corexmc.corex.environment.tags.ElementTag;
+import dev.corexmc.corex.environment.tags.core.ElementTag;
 
 import java.util.ArrayList;
 import java.util.HashMap;

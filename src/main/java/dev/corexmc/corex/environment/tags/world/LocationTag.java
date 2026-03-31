@@ -1,10 +1,11 @@
-package dev.corexmc.corex.environment.tags;
+package dev.corexmc.corex.environment.tags.world;
 
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.tags.TagManager;
+import dev.corexmc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -39,14 +40,14 @@ public class LocationTag implements AbstractTag {
             Location loc = obj.location.clone();
             loc.add(other.location.getX(), other.location.getY(), other.location.getZ());
             return new LocationTag(loc);
-        });
+        }).test("l@1,2,3");
 
         PROCESSOR.registerTag(LocationTag.class, "withWorld", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             Location loc = obj.location.clone();
             loc.setWorld(Bukkit.getWorld(attr.getParam()));
             return new LocationTag(loc);
-        });
+        }).test("world");
 
         PROCESSOR.registerTag(LocationTag.class, "block", (attr, obj) -> {
             return new LocationTag(new Location(
@@ -140,5 +141,15 @@ public class LocationTag implements AbstractTag {
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
         return PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public TagProcessor<LocationTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return "l@1,1,1,world";
     }
 }

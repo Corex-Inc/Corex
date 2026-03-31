@@ -3,7 +3,7 @@ package dev.corexmc.corex.environment.commands.core;
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
-import dev.corexmc.corex.environment.tags.ElementTag;
+import dev.corexmc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
