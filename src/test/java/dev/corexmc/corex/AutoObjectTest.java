@@ -36,12 +36,6 @@ public class AutoObjectTest {
         server.addPlayer(mockPlayer);
         mockPlayer.setLocation(new org.bukkit.Location(server.getWorld("world"), 10.5, 64.0, 10.5, 90f, 0f));
 
-        java.util.UUID testUUID = java.util.UUID.fromString("465876c1-2a15-4fc0-9f0b-97de13aa46f1");
-        org.mockbukkit.mockbukkit.entity.PlayerMock mockPlayer = new org.mockbukkit.mockbukkit.entity.PlayerMock(server, "TestPlayer", testUUID);
-        server.addPlayer(mockPlayer);
-        mockPlayer.setLocation(new org.bukkit.Location(server.getWorld("world"), 10.5, 64.0, 10.5, 90f, 0f));
-        // ------------ SETUP YOU TEST SERVER ENVIRONMENT HERE ------------ //
-
 
         Corex plugin = MockBukkit.load(Corex.class);
         registry = plugin.getRegistry();
