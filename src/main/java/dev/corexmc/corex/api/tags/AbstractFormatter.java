@@ -10,5 +10,9 @@ public interface AbstractFormatter {
         return List.of(getName());
     }
 
-    AbstractTag getObject();
+    AbstractTag parse(Attribute attribute);
+
+    default String getTestParam() {
+        return null;
+    }
 }

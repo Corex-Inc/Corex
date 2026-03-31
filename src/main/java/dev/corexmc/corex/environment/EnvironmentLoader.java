@@ -10,6 +10,7 @@ import dev.corexmc.corex.environment.commands.core.DoCommand;
 import dev.corexmc.corex.environment.commands.player.KickCommand;
 import dev.corexmc.corex.environment.commands.player.NarrateCommand;
 import dev.corexmc.corex.environment.commands.player.TeleportCommand;
+import dev.corexmc.corex.environment.formatters.CharFormatter;
 import dev.corexmc.corex.environment.formatters.NewLineFormatter;
 import dev.corexmc.corex.environment.formatters.SpaceFormatter;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
@@ -56,7 +57,8 @@ public class EnvironmentLoader {
 
                 // Formatters
                 NewLineFormatter.class,
-                SpaceFormatter.class
+                SpaceFormatter.class,
+                CharFormatter.class
         );
     }
 }
