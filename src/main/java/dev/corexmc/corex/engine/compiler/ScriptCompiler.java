@@ -1,6 +1,7 @@
 package dev.corexmc.corex.engine.compiler;
 
 import dev.corexmc.corex.Corex;
+import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.utils.CorexLogger;
 
 import java.util.ArrayList;
@@ -49,30 +50,67 @@ public class ScriptCompiler {
         return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]));
     }
 
-    private static CompiledArgument parseArg(String text) {
-        if (!text.contains("<")) {
-            return new CompiledArgument.Static(text);
-        }
+    public static CompiledArgument parseArg(String text) {
+        if (!text.contains("<")) return new CompiledArgument.Static(text);
 
-        if (text.startsWith("<") && text.endsWith(">") && text.indexOf('<', 1) == -1) {
-            String rawTag = text.substring(1, text.length() - 1);
+        java.util.List<CompiledArgument> parts = new java.util.ArrayList<>();
+        StringBuilder buffer = new StringBuilder();
+        int tagDepth = 0;
+        boolean escaped = false;
 
-            dev.corexmc.corex.engine.registry.FormatRegistry formats =
-                    dev.corexmc.corex.Corex.getInstance().getRegistry().getFormats();
-
-            if (formats.isFormat(rawTag)) {
-                String formatValue = formats.get(rawTag).identify();
-                return new CompiledArgument.Static(formatValue);
+        for (char c : text.toCharArray()) {
+            if (escaped) {
+                if (tagDepth > 0) buffer.append('\\');
+                buffer.append(c);
+                escaped = false;
+                continue;
             }
+            if (c == '\\') { escaped = true; continue; }
 
-            TagNode[] nodes = parseTagNodes(rawTag);
-            return new CompiledArgument.PreSlicedDynamic(nodes);
+            if (c == '<') {
+                if (tagDepth == 0) {
+                    if (!buffer.isEmpty()) {
+                        parts.add(new CompiledArgument.Static(buffer.toString()));
+                        buffer.setLength(0);
+                    }
+                } else buffer.append(c);
+                tagDepth++;
+            } else if (c == '>') {
+                tagDepth--;
+                if (tagDepth == 0) {
+                    parts.add(compileSingleTag(buffer.toString()));
+                    buffer.setLength(0);
+                } else buffer.append(c);
+            } else buffer.append(c);
         }
-        return new CompiledArgument.Dynamic(text);
+        if (!buffer.isEmpty()) parts.add(new CompiledArgument.Static(buffer.toString()));
+
+        if (parts.size() == 1) return parts.get(0);
+
+        return new CompiledArgument.Mixed(parts.toArray(new CompiledArgument[0]));
+    }
+
+    private static CompiledArgument compileSingleTag(String rawTag) {
+        TagNode[] nodes = parseTagNodes(rawTag);
+
+        if (nodes.length == 1) {
+            dev.corexmc.corex.engine.registry.FormatRegistry formats =
+                    Corex.getInstance().getRegistry().getFormats();
+
+            if (formats.isFormat(nodes[0].name)) {
+                if (nodes[0].param == null || nodes[0].param instanceof CompiledArgument.Static) {
+                    dev.corexmc.corex.api.tags.Attribute mockAttr = new dev.corexmc.corex.api.tags.Attribute(nodes, null);
+                    AbstractTag result = formats.get(nodes[0].name).parse(mockAttr);
+                    if (result != null) return new CompiledArgument.Static(result.identify());
+                }
+            }
+        }
+
+        return new CompiledArgument.PreSlicedDynamic(nodes);
     }
 
     public static TagNode[] parseTagNodes(String rawTag) {
-        List<TagNode> nodes = new ArrayList<>();
+        java.util.List<TagNode> nodes = new java.util.ArrayList<>();
         StringBuilder name = new StringBuilder();
         StringBuilder param = new StringBuilder();
         int bracketDepth = 0;
@@ -91,14 +129,10 @@ public class ScriptCompiler {
                 continue;
             }
 
-            if (bracketDepth > 0) {
-                param.append(c);
-            } else {
-                name.append(c);
-            }
+            if (bracketDepth > 0) param.append(c);
+            else name.append(c);
         }
         nodes.add(new TagNode(name.toString(), param.isEmpty() ? null : parseArg(param.toString())));
-
         return nodes.toArray(new TagNode[0]);
     }
 

@@ -1,10 +1,10 @@
 package dev.corexmc.corex.engine.compiler;
 
+import dev.corexmc.corex.Corex;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
 import dev.corexmc.corex.engine.tags.TagManager;
-import dev.corexmc.corex.engine.tags.TagParser;
 
 public interface CompiledArgument {
     String evaluate(ScriptQueue queue);
@@ -15,18 +15,22 @@ public interface CompiledArgument {
         @Override public String evaluate(ScriptQueue queue) { return text; }
     }
 
-    class Dynamic implements CompiledArgument {
-        private final TagParser parser;
-        public Dynamic(String text) { this.parser = TagParser.parse(text); }
-        @Override public String evaluate(ScriptQueue queue) { return parser.evaluate(queue); }
+    class Mixed implements CompiledArgument {
+        private final CompiledArgument[] parts;
+        public Mixed(CompiledArgument[] parts) { this.parts = parts; }
+
+        @Override
+        public String evaluate(ScriptQueue queue) {
+            StringBuilder sb = new StringBuilder();
+            for (CompiledArgument part : parts) sb.append(part.evaluate(queue));
+            return sb.toString();
+        }
     }
 
     class PreSlicedDynamic implements CompiledArgument {
         private final TagNode[] nodes;
 
-        public PreSlicedDynamic(TagNode[] nodes) {
-            this.nodes = nodes;
-        }
+        public PreSlicedDynamic(TagNode[] nodes) { this.nodes = nodes; }
 
         @Override
         public String evaluate(ScriptQueue queue) {
@@ -34,38 +38,22 @@ public interface CompiledArgument {
             AbstractTag currentObj = null;
 
             dev.corexmc.corex.engine.registry.FormatRegistry formats =
-                    dev.corexmc.corex.Corex.getInstance().getRegistry().getFormats();
+                    Corex.getInstance().getRegistry().getFormats();
 
             if (formats.isFormat(attr.getName())) {
-                currentObj = formats.get(attr.getName());
+                currentObj = formats.get(attr.getName()).parse(attr);
                 attr.fulfill(1);
             } else {
                 currentObj = TagManager.executeBaseTag(attr);
             }
 
-            if (currentObj == null) {
-                return buildRawTag();
-            }
-
-            while (attr.hasNext()) {
+            while (attr.hasNext() && currentObj != null) {
                 AbstractTag nextObj = currentObj.getAttribute(attr);
-                if (nextObj == null) {
-                    return buildRawTag();
-                }
+                if (nextObj == null) break;
                 currentObj = nextObj;
                 attr.fulfill(1);
             }
-
-            return currentObj.identify();
-        }
-
-        private String buildRawTag() {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < nodes.length; i++) {
-                sb.append(nodes[i].name);
-                if (i < nodes.length - 1) sb.append(".");
-            }
-            return sb.toString();
+            return currentObj != null ? currentObj.identify() : "null";
         }
     }
 }
