@@ -42,8 +42,6 @@ public class KickCommand implements AbstractCommand {
     }
 
     @Override
-    public void setSyntax(@NonNull String syntax) {}
-    @Override
     public @NonNull String getSyntax() { return "[<player>|...] (reason:<text>)"; }
     @Override
     public int getMinArgs() { return 1; }
