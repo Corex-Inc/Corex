@@ -4,6 +4,8 @@ import dev.corexmc.corex.Corex;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
+import dev.corexmc.corex.engine.tags.ObjectFetcher;
+import dev.corexmc.corex.engine.tags.TagManager;
 import org.jspecify.annotations.NonNull;
 
 public class EnvTag implements AbstractTag {
@@ -16,9 +18,15 @@ public class EnvTag implements AbstractTag {
 
     public static void register() {
 
-        dev.corexmc.corex.engine.tags.TagManager.registerBaseTag(prefix, (attr) -> {
+        TagManager.registerBaseTag(prefix, (attr) -> {
             if (!attr.hasParam()) return null;
             return new EnvTag(attr.getParam());
+        });
+
+        ObjectFetcher.registerFetcher(prefix, EnvTag::new);
+
+        PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> {
+           return new ElementTag(obj.getKey());
         });
     }
 
@@ -28,9 +36,15 @@ public class EnvTag implements AbstractTag {
         this.hiddenValue = val != null ? val : "NOT_FOUND";
     }
 
+    public String getKey() {
+        return key;
+    }
+
     public String getSecretValue() {
         return hiddenValue;
     }
+
+
 
     @Override public @NonNull String getPrefix() { return prefix; }
     @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { EnvTag.prefix = prefix; return this; }
@@ -47,11 +61,11 @@ public class EnvTag implements AbstractTag {
 
     @Override
     public String getTestValue() {
-        return "";
+        return "env@my_secret_password";
     }
 
     @Override
     public TagProcessor<? extends AbstractTag> getProcessor() {
-        return null;
+        return PROCESSOR;
     }
 }
