@@ -26,8 +26,7 @@ public class DefCommand implements AbstractCommand {
         queue.define(key, value == null ? null : new ElementTag(value));
     }
 
-    @Override public void setSyntax(@NonNull String syntax) {}
-    @Override public @NonNull String getSyntax() { return "- def [<name>] [<value>]"; }
+    @Override public @NonNull String getSyntax() { return "[<name>] [<value>]"; }
     @Override public int getMinArgs() { return 1; }
     @Override public int getMaxArgs() { return 2; }
 }

@@ -58,8 +58,7 @@ public class DoCommand implements AbstractCommand {
         newQueue.start();
     }
 
-    @Override public void setSyntax(@NonNull String syntax) {}
-    @Override public @NonNull String getSyntax() { return "- run [<script>] (def.<key>:<value>)"; }
+    @Override public @NonNull String getSyntax() { return "[<script>] (def.<key>:<value>)"; }
     @Override public int getMinArgs() { return 1; }
     @Override public int getMaxArgs() { return 10; }
 }

@@ -47,9 +47,7 @@ public class NarrateCommand implements AbstractCommand {
     }
 
     @Override
-    public void setSyntax(@NonNull String syntax) {}
-    @Override
-    public @NonNull String getSyntax() { return "- narrate [<text>] (targets:<player>|...)"; }
+    public @NonNull String getSyntax() { return "[<text>] (targets:<player>|...)"; }
     @Override
     public int getMinArgs() { return 1; }
     @Override

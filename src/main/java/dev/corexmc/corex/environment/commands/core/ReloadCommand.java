@@ -34,8 +34,7 @@ public class ReloadCommand implements AbstractCommand {
         }
     }
 
-    @Override public void setSyntax(@NonNull String syntax) {}
-    @Override public @NonNull String getSyntax() { return "- reload"; }
+    @Override public @NonNull String getSyntax() { return ""; }
     @Override public int getMinArgs() { return 0; }
     @Override public int getMaxArgs() { return 0; }
 }
