@@ -36,11 +36,21 @@ public class LocationTag implements AbstractTag {
 
         PROCESSOR.registerTag(LocationTag.class, "add", (attr, obj) -> {
             if (!attr.hasParam()) return null;
-            LocationTag other = (LocationTag) ObjectFetcher.pickObject(attr.getParam());
+
+            String param = attr.getParam();
+            LocationTag other;
+
+            Object fetched = ObjectFetcher.pickObject(param);
+            if (fetched instanceof LocationTag) {
+                other = (LocationTag) fetched;
+            } else {
+                other = new LocationTag(param);
+            }
+
             Location loc = obj.location.clone();
-            loc.add(other.location.getX(), other.location.getY(), other.location.getZ());
+            loc.add(other.getLocation().getX(), other.getLocation().getY(), other.getLocation().getZ());
             return new LocationTag(loc);
-        }).test("l@1,2,3");
+        }).test("1, 2, 3");
 
         PROCESSOR.registerTag(LocationTag.class, "withWorld", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -82,7 +92,7 @@ public class LocationTag implements AbstractTag {
             raw = raw.substring(2);
         }
 
-        String[] split = raw.split(",");
+        String[] split = raw.trim().split("\\s*,\\s*");
         double x = 0, y = 0, z = 0;
         float pitch = 0, yaw = 0;
         World world = null;

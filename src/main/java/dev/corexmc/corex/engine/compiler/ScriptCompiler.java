@@ -50,10 +50,56 @@ public class ScriptCompiler {
     }
 
     private static CompiledArgument parseArg(String text) {
-        if (text.contains("<") && text.contains(">")) {
-            return new CompiledArgument.Dynamic(text);
+        if (!text.contains("<")) {
+            return new CompiledArgument.Static(text);
         }
-        return new CompiledArgument.Static(text);
+
+        if (text.startsWith("<") && text.endsWith(">") && text.indexOf('<', 1) == -1) {
+            String rawTag = text.substring(1, text.length() - 1);
+
+            dev.corexmc.corex.engine.registry.FormatRegistry formats =
+                    dev.corexmc.corex.Corex.getInstance().getRegistry().getFormats();
+
+            if (formats.isFormat(rawTag)) {
+                String formatValue = formats.get(rawTag).identify();
+                return new CompiledArgument.Static(formatValue);
+            }
+
+            TagNode[] nodes = parseTagNodes(rawTag);
+            return new CompiledArgument.PreSlicedDynamic(nodes);
+        }
+        return new CompiledArgument.Dynamic(text);
+    }
+
+    public static TagNode[] parseTagNodes(String rawTag) {
+        List<TagNode> nodes = new ArrayList<>();
+        StringBuilder name = new StringBuilder();
+        StringBuilder param = new StringBuilder();
+        int bracketDepth = 0;
+
+        for (char c : rawTag.toCharArray()) {
+            if (c == '[') {
+                bracketDepth++;
+                if (bracketDepth == 1) continue;
+            } else if (c == ']') {
+                bracketDepth--;
+                if (bracketDepth == 0) continue;
+            } else if (c == '.' && bracketDepth == 0) {
+                nodes.add(new TagNode(name.toString(), param.isEmpty() ? null : parseArg(param.toString())));
+                name.setLength(0);
+                param.setLength(0);
+                continue;
+            }
+
+            if (bracketDepth > 0) {
+                param.append(c);
+            } else {
+                name.append(c);
+            }
+        }
+        nodes.add(new TagNode(name.toString(), param.isEmpty() ? null : parseArg(param.toString())));
+
+        return nodes.toArray(new TagNode[0]);
     }
 
     private static List<String> tokenize(String line) {

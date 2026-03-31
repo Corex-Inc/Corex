@@ -57,7 +57,10 @@ public class TagParser {
             } else if (piece instanceof TagPiece) {
                 String rawTag = ((TagPiece) piece).raw;
 
-                Attribute attribute = new Attribute(rawTag, queue);
+                dev.corexmc.corex.engine.compiler.TagNode[] nodes =
+                        dev.corexmc.corex.engine.compiler.ScriptCompiler.parseTagNodes(rawTag);
+
+                Attribute attribute = new Attribute(nodes, queue);
 
                 AbstractTag currentObj = null;
                 boolean failed = false;
