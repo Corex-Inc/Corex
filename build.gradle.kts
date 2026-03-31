@@ -12,9 +12,22 @@ repositories {
 }
 
 dependencies {
-//    compileOnly("dev.pulsemc.pulse:pulse-api:1.21.11-R0.1-SNAPSHOT")
+    @SuppressWarnings("deprecation")
     compileOnly("dev.folia:folia-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:24.1.0")
+
+
+    // Tests
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    @SuppressWarnings("deprecation")
+    testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0")
+    testImplementation("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 java {
@@ -29,5 +42,39 @@ tasks.processResources {
     filteringCharset = "UTF-8"
     filesMatching("paper-plugin.yml") {
         expand(props)
+    }
+}
+
+tasks.register<Test>("ObjectTagPreTest") {
+    group = "verification"
+    description = "Runs automated testing of all ObjectTags and properties."
+
+    testClassesDirs = tasks.test.get().testClassesDirs
+    classpath = tasks.test.get().classpath
+
+    useJUnitPlatform {
+        includeTags("ObjectTagTest")
+    }
+
+    testLogging {
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
+tasks.register<Test>("FormatterTagPreTest") {
+    group = "verification"
+    description = "Runs automated testing of all FormatterTags."
+
+    testClassesDirs = tasks.test.get().testClassesDirs
+    classpath = tasks.test.get().classpath
+
+    useJUnitPlatform {
+        includeTags("FormatterTest")
+    }
+
+    testLogging {
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }

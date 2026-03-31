@@ -5,6 +5,7 @@ import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.tags.TagManager;
+import dev.corexmc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -62,6 +63,24 @@ public class PlayerTag implements AbstractTag {
         return offlinePlayer.getPlayer();
     }
 
+    public PlayerTag(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            this.offlinePlayer = null;
+        } else {
+            String cleanRaw = raw.toLowerCase().startsWith("p@") ? raw.substring(2) : raw;
+
+            org.bukkit.OfflinePlayer tempPlayer;
+            try {
+                tempPlayer = org.bukkit.Bukkit.getOfflinePlayer(java.util.UUID.fromString(cleanRaw));
+            } catch (Exception e) {
+                @SuppressWarnings("deprecation")
+                org.bukkit.OfflinePlayer p = org.bukkit.Bukkit.getOfflinePlayer(cleanRaw);
+                tempPlayer = p;
+            }
+            this.offlinePlayer = tempPlayer;
+        }
+    }
+
     @Override
     public @NonNull String getPrefix() {
         return prefix;
@@ -81,5 +100,15 @@ public class PlayerTag implements AbstractTag {
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
         return PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public TagProcessor<PlayerTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return "p@465876c1-2a15-4fc0-9f0b-97de13aa46f1";
     }
 }

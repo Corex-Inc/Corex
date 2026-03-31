@@ -74,14 +74,19 @@ public final class TagProcessor<T extends AbstractTag> {
      * @throws NullPointerException if any of the arguments are {@code null}.
      */
     @ApiStatus.AvailableSince("1.0.0")
-    public <R extends AbstractTag> void registerTag(
+    public <R extends AbstractTag> TagRegistration<T> registerTag(
             @NotNull final Class<R> returnType,
             @NotNull final String name,
             @NotNull final BiFunction<@NotNull Attribute, @NotNull T, @NotNull R> action
     ) {
         @SuppressWarnings("unchecked")
-        BiFunction<Attribute, T, AbstractTag> erasedAction = (BiFunction<Attribute, T, AbstractTag>) (BiFunction<?, ?, ?>) action;
-        registeredTags.put(name.toLowerCase(), new TagData<>(returnType, erasedAction));
+        TagData<T> data = new TagData<>(returnType, (BiFunction<Attribute, T, AbstractTag>) action);
+        registeredTags.put(name, data);
+        return new TagRegistration<>(data);
+    }
+
+    public Map<String, TagData<T>> getRegisteredTags() { // Todo дописать документацию
+        return registeredTags;
     }
 
     /**
@@ -101,7 +106,7 @@ public final class TagProcessor<T extends AbstractTag> {
     @ApiStatus.Internal
     @ApiStatus.AvailableSince("1.0.0")
     public AbstractTag process(@NotNull final T object, @NotNull final Attribute attribute) {
-        final TagData<T> data = registeredTags.get(attribute.getName().toLowerCase());
+        final TagData<T> data = registeredTags.get(attribute.getName());
         if (data != null) {
             return data.action.apply(attribute, object);
         }
@@ -113,11 +118,14 @@ public final class TagProcessor<T extends AbstractTag> {
      *
      * @param <T> the owner tag type.
      */
-    private static final class TagData<T extends AbstractTag> {
+    public  static final class TagData<T extends AbstractTag> {
         /**
          * The expected type of the object returned by this handler.
          */
-        private final Class<? extends AbstractTag> returnType;
+        public final Class<? extends AbstractTag> returnType;
+        public boolean isStatic = false;
+        public String testParam = null;
+        public String[] testChain = null;
 
         /**
          * The functional logic of the sub-tag.
@@ -127,6 +135,25 @@ public final class TagProcessor<T extends AbstractTag> {
         private TagData(Class<? extends AbstractTag> returnType, BiFunction<Attribute, T, AbstractTag> action) {
             this.returnType = returnType;
             this.action = action;
+        }
+    }
+
+    public static class TagRegistration<T extends AbstractTag> {
+        private final TagData<T> data;
+
+        TagRegistration(TagData<T> data) {
+            this.data = data;
+        }
+
+        /**
+         * Указывает параметры для автоматического теста.
+         * @param param Основной параметр тега в []
+         * @param chain Дополнительные подтеги цепочки (например, "with[test]")
+         */
+        public TagRegistration<T> test(String param, String... chain) {
+            this.data.testParam = param;
+            this.data.testChain = chain;
+            return this;
         }
     }
 }

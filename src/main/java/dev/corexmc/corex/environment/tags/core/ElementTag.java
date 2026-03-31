@@ -1,4 +1,4 @@
-package dev.corexmc.corex.environment.tags;
+package dev.corexmc.corex.environment.tags.core;
 
 import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
@@ -103,13 +103,13 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(attribute.getParam());
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase()));
-        PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase()));
-        PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length()));
+        PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase())).test(null);
+        PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase())).test(null);
+        PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length())).test(null);
 
-        PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt()));
-        PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble()));
-        PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean()));
+        PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt())).test(null);
+        PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble())).test(null);
+        PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean())).test(null);
 
         PROCESSOR.registerTag(ElementTag.class, "add", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -117,7 +117,7 @@ public class ElementTag implements AbstractTag {
                 return new ElementTag(obj.asDouble() + new ElementTag(attr.getParam()).asDouble());
             }
             return null;
-        });
+        }).test("5");
 
         PROCESSOR.registerTag(ElementTag.class, "ifTrue", (attr, el) -> {
             boolean isTrue = el.asBoolean();
@@ -135,7 +135,12 @@ public class ElementTag implements AbstractTag {
             }
 
             return new ElementTag(resultText);
-        });
+        }).test("This is true", "ifFalse[This is false!]");
+
+        PROCESSOR.registerTag(ElementTag.class, "repeat", (attribute, elementTag) -> {
+            if (!attribute.hasParam()) return null;
+            return new ElementTag(elementTag.element.repeat(new ElementTag(attribute.getParam()).asInt()));
+        }).test("2");
     }
 
     @Override
@@ -169,5 +174,12 @@ public class ElementTag implements AbstractTag {
     @Override
     public int hashCode() {
         return element.hashCode();
+    }
+
+    public String getTestValue() { return "123456789"; }
+
+    @Override
+    public TagProcessor<ElementTag> getProcessor() {
+        return PROCESSOR;
     }
 }

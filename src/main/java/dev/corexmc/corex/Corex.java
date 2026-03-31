@@ -3,9 +3,11 @@ package dev.corexmc.corex;
 import dev.corexmc.corex.engine.CorexRegistry;
 import dev.corexmc.corex.engine.scripts.ScriptManager;
 import dev.corexmc.corex.engine.utils.CorexLogger;
+import dev.corexmc.corex.engine.utils.EnvManager;
 import dev.corexmc.corex.environment.EnvironmentLoader;
 import dev.corexmc.corex.engine.utils.SchedulerAdapter;
 import dev.corexmc.corex.environment.utils.commands.RunCommand;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -13,10 +15,9 @@ import java.io.File;
 public class Corex extends JavaPlugin {
 
     private static Corex instance;
-
     private static SchedulerAdapter schedulerAdapter;
-
     private CorexRegistry registry;
+    private EnvManager envManager;
 
 
 
@@ -30,17 +31,20 @@ public class Corex extends JavaPlugin {
         getConfig().options().copyDefaults();
         saveDefaultConfig();
         this.registry = new CorexRegistry();
+        this.envManager = new EnvManager();
         EnvironmentLoader.registerDefaults(this.registry);
+        this.envManager.load(getDataFolder());
 
-        registerCommand("run", new RunCommand());
+        try {
+            registerCommand("run", new RunCommand());
+        }
+        catch (NoClassDefFoundError | NoSuchMethodError e) {
+            CorexLogger.warn("Не удалось зарегистрировать Brigadier команды. Возможно, старая версия Paper?");
+        }
+
 
         this.scriptManager = new ScriptManager();
         this.scriptManager.loadScripts(new File(getDataFolder(), "scripts"));
-
-//        CorexLogger.success("Loaded <aqua>" + scriptCount + "</aqua> scripts.");
-
-//        CorexLogger.warn("Missing dependency 'Vault', economy features disabled.");
-
     }
 
     @Override
@@ -69,5 +73,13 @@ public class Corex extends JavaPlugin {
         } catch (ClassNotFoundException e) {
             return false;
         }
+    }
+
+    public EnvManager getEnvManager() {
+        return envManager;
+    }
+
+    public static boolean isTest() {
+        return Bukkit.getName().equalsIgnoreCase("MockBukkit");
     }
 }

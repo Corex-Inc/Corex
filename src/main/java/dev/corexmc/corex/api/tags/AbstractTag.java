@@ -69,4 +69,7 @@ public interface AbstractTag {
     @AvailableSince("1.0.0")
     AbstractTag getAttribute(@NotNull Attribute attribute);
 
+    String getTestValue(); // TODO дописать документацию
+
+    TagProcessor<? extends AbstractTag> getProcessor(); // TODO дописать документацию
 }

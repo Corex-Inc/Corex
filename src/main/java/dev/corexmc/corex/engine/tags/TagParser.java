@@ -56,10 +56,24 @@ public class TagParser {
                 result.append(piece);
             } else if (piece instanceof TagPiece) {
                 String rawTag = ((TagPiece) piece).raw;
+
                 Attribute attribute = new Attribute(rawTag, queue);
 
-                AbstractTag currentObj = TagManager.executeBaseTag(attribute);
-                boolean failed = (currentObj == null);
+                AbstractTag currentObj = null;
+                boolean failed = false;
+
+                dev.corexmc.corex.engine.registry.FormatRegistry formats =
+                        dev.corexmc.corex.Corex.getInstance().getRegistry().getFormats();
+
+                if (formats.isFormat(attribute.getName())) {
+                    currentObj = formats.get(attribute.getName());
+                    attribute.fulfill(1);
+                }
+                else {
+                    currentObj = TagManager.executeBaseTag(attribute);
+                }
+
+                if (currentObj == null) failed = true;
 
                 if (!failed) {
                     while (attribute.hasNext()) {

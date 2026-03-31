@@ -1,4 +1,4 @@
-package dev.corexmc.corex.environment.tags;
+package dev.corexmc.corex.environment.tags.core;
 
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
@@ -24,11 +24,8 @@ public class ListTag implements AbstractTag {
 
         PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.list.size()));
 
-        PROCESSOR.registerTag(ElementTag.class, "commaSeparated", (attr, obj) ->
-                new ElementTag(String.join(", ", obj.list)));
-
         PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) ->
-                new ElementTag(String.join(attr.getParam(), obj.list)));
+                new ElementTag(String.join(attr.getParam(), obj.list))).test(", ");
 
         PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -37,7 +34,7 @@ public class ListTag implements AbstractTag {
                 return ObjectFetcher.pickObject(obj.list.get(index));
             }
             return null;
-        });
+        }).test("3");
 
     }
 
@@ -69,4 +66,14 @@ public class ListTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
+
+    @Override
+    public TagProcessor<ListTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return "li@a|b|c";
+    }
 }
