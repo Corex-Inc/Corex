@@ -68,7 +68,7 @@ public interface AbstractCommand {
      * Gets the syntax pattern for this command.
      * This string is used by the Compiler to distinguish between prefixes, flags, and linear arguments.
      * <p>
-     * Format example: "[- narrate] [<text>] (targets:<player>|...) (per_player)"
+     * Format example: "- narrate [<text>] (targets:<player>|...) (per_player)"
      *
      * @return the command syntax string.
      */
