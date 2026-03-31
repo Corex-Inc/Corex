@@ -14,18 +14,13 @@ public class Corex extends JavaPlugin {
 
     private static Corex instance;
 
-    private static SchedulerAdapter schedulerAdapter;
-
     private CorexRegistry registry;
-
-
 
     private ScriptManager scriptManager;
 
     @Override
     public void onEnable() {
         instance = this;
-        schedulerAdapter = new SchedulerAdapter(this, isFolia());
         if(!getDataFolder().exists()) CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
         getConfig().options().copyDefaults();
         saveDefaultConfig();
@@ -51,10 +46,6 @@ public class Corex extends JavaPlugin {
     public static Corex getInstance() {
         return instance;
     }
-    public static SchedulerAdapter getSchedulerAdapter() {
-        return schedulerAdapter;
-    }
-
 
     public CorexRegistry getRegistry() {
         return registry;
