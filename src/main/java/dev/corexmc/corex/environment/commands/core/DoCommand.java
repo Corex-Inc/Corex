@@ -5,6 +5,7 @@ import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.compiler.CompiledArgument;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
+import dev.corexmc.corex.engine.scripts.ScriptManager;
 import dev.corexmc.corex.engine.scripts.TaskScript;
 import dev.corexmc.corex.engine.utils.debugging.Debugger;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
@@ -28,7 +29,7 @@ public class DoCommand implements AbstractCommand {
         String scriptName = instruction.getLinear(0, queue);
         if (scriptName == null) return;
 
-        TaskScript script = Corex.getInstance().getScriptManager().getTaskScript(scriptName);
+        TaskScript script = ScriptManager.getTaskScript(scriptName);
         if (script == null) {
             Debugger.echoError("Script Container '" + scriptName + "' not found!");
             return;

@@ -1,4 +1,4 @@
-package dev.corexmc.corex.environment.tags;
+package dev.corexmc.corex.environment.tags.player;
 
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;

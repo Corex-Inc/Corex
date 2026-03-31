@@ -12,11 +12,11 @@ import dev.corexmc.corex.environment.commands.player.NarrateCommand;
 import dev.corexmc.corex.environment.commands.player.TeleportCommand;
 import dev.corexmc.corex.environment.formatters.NewLineFormatter;
 import dev.corexmc.corex.environment.formatters.SpaceFormatter;
-import dev.corexmc.corex.environment.tags.*;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
 import dev.corexmc.corex.environment.tags.core.EnvTag;
 import dev.corexmc.corex.environment.tags.core.ListTag;
 import dev.corexmc.corex.environment.tags.core.MapTag;
+import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import dev.corexmc.corex.environment.tags.world.LocationTag;
 import dev.corexmc.corex.environment.tags.world.MaterialTag;
 

@@ -1,15 +1,12 @@
 package dev.corexmc.corex.engine.queue;
 
-import dev.corexmc.corex.Corex;
-import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.utils.CorexLogger;
-import dev.corexmc.corex.environment.tags.PlayerTag;
+import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -20,13 +17,14 @@ public class ScriptQueue {
     private int pointer = 0;
 
     private boolean isPaused = false;
-    private boolean isAsync;
+
+    public boolean isAsync() {
+        return isAsync;
+    }
+
+    private final boolean isAsync;
 
     private PlayerTag linkedPlayer;
-
-    public boolean isAcync() {
-        return isAcync();
-    }
 
     private final ConcurrentHashMap<String, AbstractTag> definitions = new ConcurrentHashMap<>();
 

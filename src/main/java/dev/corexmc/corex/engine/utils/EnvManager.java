@@ -8,9 +8,9 @@ import java.util.Map;
 
 public class EnvManager {
 
-    private final Map<String, String> secrets = new HashMap<>();
+    private static final Map<String, String> secrets = new HashMap<>();
 
-    public void load(File dataFolder) {
+    public static void load(File dataFolder) {
         secrets.clear();
         File envFile = new File(dataFolder, "secrets.env");
 
@@ -42,7 +42,7 @@ public class EnvManager {
         }
     }
 
-    public String getSecret(String key) {
+    public static String getSecret(String key) {
         return secrets.get(key);
     }
 }

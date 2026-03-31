@@ -1,7 +1,10 @@
 package dev.corexmc.corex.engine.scripts;
 
+import dev.corexmc.corex.Corex;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.compiler.ScriptCompiler;
+import dev.corexmc.corex.engine.scripts.ScriptPreprocessor;
+import dev.corexmc.corex.engine.scripts.TaskScript;
 import dev.corexmc.corex.engine.utils.CorexLogger;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -14,9 +17,9 @@ import java.util.Map;
 
 public class ScriptManager {
 
-    private final Map<String, TaskScript> taskScripts = new HashMap<>();
+    private static final Map<String, TaskScript> taskScripts = new HashMap<>();
 
-    public void loadScripts(File scriptsFolder) {
+    public static void loadScripts(File scriptsFolder) {
         taskScripts.clear();
         if (!scriptsFolder.exists()) scriptsFolder.mkdirs();
 
@@ -28,9 +31,7 @@ public class ScriptManager {
         for (File file : files) {
             try {
                 List<String> rawLines = Files.readAllLines(file.toPath());
-
                 String cleanYamlString = ScriptPreprocessor.preprocess(rawLines);
-
                 YamlConfiguration yaml = new YamlConfiguration();
                 yaml.loadFromString(cleanYamlString);
 
@@ -58,7 +59,7 @@ public class ScriptManager {
         CorexLogger.success("Reloaded <aqua>" + loadedCount + "</aqua> scripts!");
     }
 
-    private void findScriptsRecursively(File folder, List<File> list) {
+    private static void findScriptsRecursively(File folder, List<File> list) {
         File[] files = folder.listFiles();
         if (files == null) return;
         for (File file : files) {
@@ -70,15 +71,13 @@ public class ScriptManager {
         }
     }
 
-    public TaskScript getTaskScript(String name) {
+    public static TaskScript getTaskScript(String name) {
         return taskScripts.get(name.toLowerCase());
     }
 
-    public void reloadScripts() {
+    public static void reloadScripts() {
         taskScripts.clear();
-
-        File scriptsFolder = new File(dev.corexmc.corex.Corex.getInstance().getDataFolder(), "scripts");
+        File scriptsFolder = new File(Corex.getInstance().getDataFolder(), "scripts");
         loadScripts(scriptsFolder);
     }
-
 }

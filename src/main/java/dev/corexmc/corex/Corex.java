@@ -17,20 +17,18 @@ public class Corex extends JavaPlugin {
     private static Corex instance;
 
     private CorexRegistry registry;
-    private EnvManager envManager;
-
-    private ScriptManager scriptManager;
 
     @Override
     public void onEnable() {
         instance = this;
         if(!getDataFolder().exists()) CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
+
         getConfig().options().copyDefaults();
         saveDefaultConfig();
+
         this.registry = new CorexRegistry();
-        this.envManager = new EnvManager();
         EnvironmentLoader.registerDefaults(this.registry);
-        this.envManager.load(getDataFolder());
+        EnvManager.load(getDataFolder());
 
         try {
             registerCommand("run", new RunCommand());
@@ -40,8 +38,7 @@ public class Corex extends JavaPlugin {
         }
 
 
-        this.scriptManager = new ScriptManager();
-        this.scriptManager.loadScripts(new File(getDataFolder(), "scripts"));
+        ScriptManager.loadScripts(new File(getDataFolder(), "scripts"));
     }
 
     @Override
@@ -57,8 +54,6 @@ public class Corex extends JavaPlugin {
         return registry;
     }
 
-    public ScriptManager getScriptManager() { return scriptManager; }
-
     public static boolean isFolia() {
         try {
             Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
@@ -66,10 +61,6 @@ public class Corex extends JavaPlugin {
         } catch (ClassNotFoundException e) {
             return false;
         }
-    }
-
-    public EnvManager getEnvManager() {
-        return envManager;
     }
 
     public static boolean isTest() {

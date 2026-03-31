@@ -1,11 +1,11 @@
 package dev.corexmc.corex.environment.tags.core;
 
-import dev.corexmc.corex.Corex;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.tags.TagManager;
+import dev.corexmc.corex.engine.utils.EnvManager;
 import org.jspecify.annotations.NonNull;
 
 public class EnvTag implements AbstractTag {
@@ -32,8 +32,8 @@ public class EnvTag implements AbstractTag {
 
     public EnvTag(String key) {
         this.key = key;
-        String val = Corex.getInstance().getEnvManager().getSecret(key);
-        this.hiddenValue = val != null ? val : "NOT_FOUND";
+        String value = EnvManager.getSecret(key);
+        this.hiddenValue = value != null ? value : "NOT_FOUND";
     }
 
     public String getKey() {
@@ -43,8 +43,6 @@ public class EnvTag implements AbstractTag {
     public String getSecretValue() {
         return hiddenValue;
     }
-
-
 
     @Override public @NonNull String getPrefix() { return prefix; }
     @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { EnvTag.prefix = prefix; return this; }
