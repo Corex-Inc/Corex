@@ -3,7 +3,7 @@ package dev.corexmc.corex.environment.utils.commands;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
 import dev.corexmc.corex.engine.registry.ScriptCommandRegistry;
-import dev.corexmc.corex.environment.tags.PlayerTag;
+import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.entity.Player;

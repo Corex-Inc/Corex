@@ -3,11 +3,15 @@ package dev.corexmc.corex.environment.commands.player;
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
 import dev.corexmc.corex.engine.compiler.Instruction;
+import dev.corexmc.corex.engine.utils.SchedulerAdapter;
+import dev.corexmc.corex.environment.tags.player.PlayerTag;
+import dev.corexmc.corex.environment.tags.core.ListTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
+
+import java.util.List;
 
 public class NarrateCommand implements AbstractCommand {
 
@@ -23,19 +27,22 @@ public class NarrateCommand implements AbstractCommand {
 
         Component message = MiniMessage.miniMessage().deserialize(text);
 
-        String targetsRaw = entry.getPrefix("targets", queue);
+        String targets = entry.getPrefix("targets", queue);
 
-        if (targetsRaw != null) {
-            Player target = Bukkit.getPlayer(targetsRaw.replace("p@", ""));
-            if (target != null) {
-                target.sendMessage(message);
+        if (targets != null) {
+            ListTag targetList = new ListTag(targets);
+            List<PlayerTag> players = targetList.filter(PlayerTag.class);
+
+
+            for (PlayerTag pTag : players) {
+                Player player = pTag.getPlayer();
+                if (player != null && player.isOnline()) {
+                    SchedulerAdapter.runEntity(player, () -> player.sendMessage(message));
+                }
             }
-        } else {
-            if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
-                queue.getPlayer().getPlayer().sendMessage(message);
-            } else {
-                Bukkit.getConsoleSender().sendMessage(message);
-            }
+        } else if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
+            SchedulerAdapter.runEntity(queue.getPlayer().getPlayer(),
+                    () -> queue.getPlayer().getPlayer().sendMessage(message));
         }
     }
 

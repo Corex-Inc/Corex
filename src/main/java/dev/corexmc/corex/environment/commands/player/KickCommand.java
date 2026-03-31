@@ -3,8 +3,9 @@ package dev.corexmc.corex.environment.commands.player;
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
+import dev.corexmc.corex.engine.utils.SchedulerAdapter;
 import dev.corexmc.corex.environment.tags.core.ListTag;
-import dev.corexmc.corex.environment.tags.PlayerTag;
+import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
@@ -24,18 +25,18 @@ public class KickCommand implements AbstractCommand {
         String firstArg = entry.getLinear(0, queue);
         String secondArg = entry.getPrefix("reason", queue);
 
-        // TODO нужна проверка количества аргументов, желательно автоматически
+        // TODO нужна проверка количества аргументов, желательно автоматически (getMinArgs/getMaxArgs)
 
-        Component reason = (secondArg == null ? null : MiniMessage.miniMessage().deserialize(secondArg));
+        final Component reason = (secondArg == null ? null : MiniMessage.miniMessage().deserialize(secondArg));
 
         ListTag targetList = new ListTag(firstArg);
 
         List<PlayerTag> players = targetList.filter(PlayerTag.class);
 
         for (PlayerTag pTag : players) {
-            Player p = pTag.getPlayer();
-            if (p != null && p.isOnline()) {
-                p.kick(reason);
+            Player player = pTag.getPlayer();
+            if (player != null && player.isOnline()) {
+                SchedulerAdapter.runEntity(player, () -> player.kick(reason));
             }
         }
     }
@@ -43,7 +44,7 @@ public class KickCommand implements AbstractCommand {
     @Override
     public void setSyntax(@NonNull String syntax) {}
     @Override
-    public @NonNull String getSyntax() { return "- kick [<player>|...] (reason:<text>)"; }
+    public @NonNull String getSyntax() { return "[<player>|...] (reason:<text>)"; }
     @Override
     public int getMinArgs() { return 1; }
     @Override
