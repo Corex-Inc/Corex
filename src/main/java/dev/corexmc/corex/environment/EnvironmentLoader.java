@@ -7,16 +7,14 @@ import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.environment.commands.core.DefCommand;
 import dev.corexmc.corex.environment.commands.core.ReloadCommand;
 import dev.corexmc.corex.environment.commands.core.DoCommand;
+import dev.corexmc.corex.environment.commands.core.WaitCommand;
 import dev.corexmc.corex.environment.commands.player.KickCommand;
 import dev.corexmc.corex.environment.commands.player.NarrateCommand;
 import dev.corexmc.corex.environment.commands.player.TeleportCommand;
 import dev.corexmc.corex.environment.formatters.CharFormatter;
 import dev.corexmc.corex.environment.formatters.NewLineFormatter;
 import dev.corexmc.corex.environment.formatters.SpaceFormatter;
-import dev.corexmc.corex.environment.tags.core.ElementTag;
-import dev.corexmc.corex.environment.tags.core.EnvTag;
-import dev.corexmc.corex.environment.tags.core.ListTag;
-import dev.corexmc.corex.environment.tags.core.MapTag;
+import dev.corexmc.corex.environment.tags.core.*;
 import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import dev.corexmc.corex.environment.tags.world.LocationTag;
 import dev.corexmc.corex.environment.tags.world.MaterialTag;
@@ -45,6 +43,7 @@ public class EnvironmentLoader {
                 ReloadCommand.class,
                 KickCommand.class,
                 DefCommand.class,
+                WaitCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -54,6 +53,7 @@ public class EnvironmentLoader {
                 MaterialTag.class,
                 LocationTag.class,
                 EnvTag.class,
+                DurationTag.class,
 
                 // Formatters
                 NewLineFormatter.class,

@@ -3,24 +3,19 @@ package dev.corexmc.corex.engine.queue;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.utils.CorexLogger;
+import dev.corexmc.corex.engine.utils.SchedulerAdapter;
 import dev.corexmc.corex.environment.tags.player.PlayerTag;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class ScriptQueue {
+
     private final String id;
 
     private final Instruction[] bytecode;
     private int pointer = 0;
 
-    private boolean isPaused = false;
-
-    public boolean isAsync() {
-        return isAsync;
-    }
+    private volatile boolean isPaused = false;
 
     private final boolean isAsync;
 
@@ -33,6 +28,10 @@ public class ScriptQueue {
         this.bytecode = bytecode;
         this.isAsync = isAsync;
         this.linkedPlayer = linkedPlayer;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
     }
 
     public void start() {
@@ -53,13 +52,22 @@ public class ScriptQueue {
         }
     }
 
-    public void delay(Plugin plugin, long ticks) {
+    /**
+     * Pauses the queue and resumes it after {@code ticks} server ticks.
+     * Works on both Paper (Bukkit scheduler) and Folia (region/async scheduler)
+     * via {@link SchedulerAdapter}.
+     *
+     * <p>Async queues use {@link SchedulerAdapter#runAsyncLater} so they stay
+     * off the main thread. Sync queues use {@link SchedulerAdapter#runLater}
+     * and resume on the global region (main-thread equivalent on Folia).</p>
+     */
+    public void delay(long ticks) {
         this.isPaused = true;
 
         if (isAsync) {
-            Bukkit.getAsyncScheduler().runDelayed(plugin, task -> resume(), ticks * 50, TimeUnit.MILLISECONDS);
+            SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
         } else {
-            Bukkit.getGlobalRegionScheduler().runDelayed(plugin, task -> resume(), ticks);
+            SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
         }
     }
 
@@ -86,5 +94,9 @@ public class ScriptQueue {
             return (PlayerTag) definedPlayer;
         }
         return linkedPlayer;
+    }
+
+    public String getId() {
+        return id;
     }
 }
