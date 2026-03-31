@@ -7,6 +7,7 @@ import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
 import dev.corexmc.corex.environment.tags.world.LocationTag;
+import dev.corexmc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -39,7 +40,9 @@ public class PlayerTag implements AbstractTag {
 
         PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) -> new ElementTag(String.valueOf(object.offlinePlayer.isOnline())));
 
-        PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new ElementTag(object.offlinePlayer.getUniqueId().toString()));
+        PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> {
+            return new ElementTag(object.offlinePlayer.getUniqueId().toString());
+        });
 
         PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.getPlayer().getLocation()));
     }
