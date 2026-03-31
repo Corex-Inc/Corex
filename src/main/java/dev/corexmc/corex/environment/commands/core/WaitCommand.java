@@ -10,25 +10,9 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-/**
- * Pauses the current queue for a specified duration.
- *
- * <pre>
- * Syntax:  wait [&lt;duration&gt;]
- *
- * The argument is parsed by {@link DurationTag}, so any valid duration expression works:
- *   wait 5s          →  5 seconds
- *   wait 2m34s       →  2 min 34 sec
- *   wait 40t         →  40 ticks
- *   wait 0.1t        →  0.1 ticks
- *   wait 1h30m       →  1 hour 30 min
- *
- * Default (no argument): 3 seconds (60 ticks).
- * </pre>
- */
 public class WaitCommand implements AbstractCommand {
 
-    private static final DurationTag DEFAULT_DURATION = new DurationTag("3s"); // 60 ticks
+    private static final DurationTag DEFAULT_DURATION = new DurationTag("1s");
 
     @Override
     public @NotNull String getName() {
@@ -66,7 +50,7 @@ public class WaitCommand implements AbstractCommand {
                 if (parsed.getTicks() > 0) {
                     duration = parsed;
                 } else {
-                    Debugger.echoError("WaitCommand: could not parse duration '" + raw + "', defaulting to 3s.");
+                    Debugger.echoError("WaitCommand: could not parse duration '" + raw + "', defaulting to 1s.");
                 }
             }
         }
