@@ -55,16 +55,6 @@ public interface AbstractCommand {
     void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction);
 
     /**
-     * Sets the raw syntax string for this command.
-     * Usually called by the Registry during the command registration process.
-     *
-     * @param syntax the syntax pattern string.
-     */
-    @Internal
-    @AvailableSince("1.0.0")
-    void setSyntax(@NotNull String syntax);
-
-    /**
      * Gets the syntax pattern for this command.
      * This string is used by the Compiler to distinguish between prefixes, flags, and linear arguments.
      * <p>
