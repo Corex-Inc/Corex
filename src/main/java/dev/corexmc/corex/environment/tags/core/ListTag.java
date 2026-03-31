@@ -56,6 +56,15 @@ public class ListTag implements AbstractTag {
         return results;
     }
 
+    public List<AbstractTag> getList() {
+        List<AbstractTag> results = new ArrayList<>();
+        for (String item : this.list) {
+            AbstractTag obj = ObjectFetcher.pickObject(item);
+            results.add(obj);
+        }
+        return results;
+    }
+
     @Override public @NonNull String getPrefix() { return prefix; }
     @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { this.prefix = prefix; return this; }
 

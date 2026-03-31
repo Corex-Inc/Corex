@@ -6,6 +6,7 @@ import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
+import dev.corexmc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -25,12 +26,10 @@ public class PlayerTag implements AbstractTag {
             if (attribute.getQueue() != null && attribute.getQueue().getPlayer() != null) {
                 return attribute.getQueue().getPlayer();
             }
-            return new ElementTag("null");
+            return null;
         });
 
-        ObjectFetcher.registerFetcher(prefix, (uuidStr) -> {
-            return new PlayerTag(java.util.UUID.fromString(uuidStr));
-        });
+        ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new PlayerTag(UUID.fromString(uuidStr)));
 
 
         PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> {
@@ -38,13 +37,11 @@ public class PlayerTag implements AbstractTag {
             return new ElementTag(name != null ? name : "Unknown");
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) -> {
-            return new ElementTag(String.valueOf(object.offlinePlayer.isOnline()));
-        });
+        PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) -> new ElementTag(String.valueOf(object.offlinePlayer.isOnline())));
 
-        PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> {
-            return new ElementTag(object.offlinePlayer.getUniqueId().toString());
-        });
+        PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new ElementTag(object.offlinePlayer.getUniqueId().toString()));
+
+        PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.getPlayer().getLocation()));
     }
 
     public PlayerTag(UUID uuid) {
@@ -67,15 +64,13 @@ public class PlayerTag implements AbstractTag {
         if (raw == null || raw.isEmpty()) {
             this.offlinePlayer = null;
         } else {
-            String cleanRaw = raw.toLowerCase().startsWith("p@") ? raw.substring(2) : raw;
+            String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(2) : raw;
 
             org.bukkit.OfflinePlayer tempPlayer;
             try {
                 tempPlayer = org.bukkit.Bukkit.getOfflinePlayer(java.util.UUID.fromString(cleanRaw));
             } catch (Exception e) {
-                @SuppressWarnings("deprecation")
-                org.bukkit.OfflinePlayer p = org.bukkit.Bukkit.getOfflinePlayer(cleanRaw);
-                tempPlayer = p;
+                tempPlayer = Bukkit.getOfflinePlayer(cleanRaw);
             }
             this.offlinePlayer = tempPlayer;
         }
@@ -88,7 +83,7 @@ public class PlayerTag implements AbstractTag {
 
     @Override
     public @NonNull AbstractTag setPrefix(@NonNull String prefix) {
-        this.prefix = prefix;
+        PlayerTag.prefix = prefix;
         return this;
     }
 

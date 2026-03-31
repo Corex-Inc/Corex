@@ -78,7 +78,7 @@ public class LocationTag implements AbstractTag {
             return;
         }
 
-        if (raw.toLowerCase().startsWith("l@")) {
+        if (raw.toLowerCase().startsWith(prefix + "@")) {
             raw = raw.substring(2);
         }
 
