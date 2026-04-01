@@ -1,10 +1,10 @@
 package dev.corexmc.corex.environment.tags.player;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
 import dev.corexmc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
@@ -22,7 +22,7 @@ public class PlayerTag implements AbstractTag {
     public static final TagProcessor<PlayerTag> PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        TagManager.registerBaseTag("player", (attribute) -> {
+        BaseTagProcessor.registerBaseTag("player", (attribute) -> {
             if (attribute.getQueue() != null && attribute.getQueue().getPlayer() != null) {
                 return attribute.getQueue().getPlayer();
             }

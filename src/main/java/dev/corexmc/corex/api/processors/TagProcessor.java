@@ -77,7 +77,7 @@ public final class TagProcessor<T extends AbstractTag> {
     public <R extends AbstractTag> TagRegistration<T> registerTag(
             @NotNull final Class<R> returnType,
             @NotNull final String name,
-            @NotNull final BiFunction<@NotNull Attribute, @NotNull T, @NotNull R> action
+            @NotNull final BiFunction<@NotNull Attribute, @NotNull T, R> action
     ) {
         @SuppressWarnings("unchecked")
         TagData<T> data = new TagData<>(returnType, (BiFunction<Attribute, T, AbstractTag>) action);

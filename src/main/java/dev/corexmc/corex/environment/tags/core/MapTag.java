@@ -1,10 +1,10 @@
 package dev.corexmc.corex.environment.tags.core;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.engine.tags.TagManager;
 import org.jspecify.annotations.NonNull;
 
 import java.util.LinkedHashMap;
@@ -19,7 +19,7 @@ public class MapTag implements AbstractTag {
     public static final TagProcessor<MapTag> PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        TagManager.registerBaseTag(prefix, attr -> new MapTag(attr.getParam()));
+        BaseTagProcessor.registerBaseTag(prefix, attr -> new MapTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, MapTag::new);
 
@@ -53,7 +53,7 @@ public class MapTag implements AbstractTag {
     }
 
     @Override public @NonNull String getPrefix() { return prefix; }
-    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { this.prefix = prefix; return this; }
+    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { MapTag.prefix = prefix; return this; }
 
     @Override
     public @NonNull String identify() {

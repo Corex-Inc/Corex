@@ -1,10 +1,10 @@
 package dev.corexmc.corex.environment.tags.core;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.engine.utils.EnvManager;
 import org.jspecify.annotations.NonNull;
 
@@ -18,16 +18,14 @@ public class EnvTag implements AbstractTag {
 
     public static void register() {
 
-        TagManager.registerBaseTag(prefix, (attr) -> {
-            if (!attr.hasParam()) return null;
-            return new EnvTag(attr.getParam());
+        BaseTagProcessor.registerBaseTag(prefix, (attr) -> {
+            if (attr.hasParam()) return new EnvTag(attr.getParam());
+            return null;
         });
 
         ObjectFetcher.registerFetcher(prefix, EnvTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> {
-           return new ElementTag(obj.getKey());
-        });
+        PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> new ElementTag(obj.getKey()));
     }
 
     public EnvTag(String key) {

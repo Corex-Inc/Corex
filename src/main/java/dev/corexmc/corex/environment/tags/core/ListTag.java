@@ -1,10 +1,10 @@
 package dev.corexmc.corex.environment.tags.core;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.engine.tags.TagManager;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ public class ListTag implements AbstractTag {
     public static final TagProcessor<ListTag> PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        TagManager.registerBaseTag("list", attr -> new ListTag(attr.getParam()));
+        BaseTagProcessor.registerBaseTag("list", attr -> new ListTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, ListTag::new);
 

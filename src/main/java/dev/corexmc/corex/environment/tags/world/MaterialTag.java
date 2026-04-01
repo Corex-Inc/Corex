@@ -1,15 +1,17 @@
 package dev.corexmc.corex.environment.tags.world;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NonNull;
+
+import java.util.Objects;
 
 public class MaterialTag implements AbstractTag {
 
@@ -20,7 +22,7 @@ public class MaterialTag implements AbstractTag {
     public static final TagProcessor<MaterialTag> PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        TagManager.registerBaseTag("material", attr -> new MaterialTag(attr.getParam()));
+        BaseTagProcessor.registerBaseTag("material", attr -> new MaterialTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, MaterialTag::new);
 
@@ -61,11 +63,7 @@ public class MaterialTag implements AbstractTag {
 
         Material match = Material.matchMaterial(raw.toUpperCase());
 
-        if (match != null) {
-            this.material = match;
-        } else {
-            this.material = Material.AIR;
-        }
+        this.material = Objects.requireNonNullElse(match, Material.AIR);
 
         this.blockData = this.material.isBlock() ? this.material.createBlockData() : null;
     }
@@ -74,7 +72,7 @@ public class MaterialTag implements AbstractTag {
     public BlockData getBlockData() { return blockData; }
 
     @Override public @NonNull String getPrefix() { return prefix; }
-    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { this.prefix = prefix; return this; }
+    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { MaterialTag.prefix = prefix; return this; }
 
     @Override
     public @NonNull String identify() {

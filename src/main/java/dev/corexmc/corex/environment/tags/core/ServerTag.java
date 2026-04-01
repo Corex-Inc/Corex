@@ -1,9 +1,9 @@
 package dev.corexmc.corex.environment.tags.core;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
-import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.environment.tags.world.MaterialTag;
 import org.jspecify.annotations.NonNull;
 
@@ -35,9 +35,7 @@ public class ServerTag implements AbstractTag {
     }
 
     public static void register() {
-        TagManager.registerBaseTag("server", (attribute) -> {
-            return new ServerTag();
-        });
+        BaseTagProcessor.registerBaseTag("server", (attribute) -> new ServerTag());
     }
 
     @Override

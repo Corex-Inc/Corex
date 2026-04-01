@@ -1,10 +1,10 @@
 package dev.corexmc.corex.environment.tags.world;
 
+import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.api.tags.Attribute;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.engine.tags.TagManager;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -19,7 +19,7 @@ public class LocationTag implements AbstractTag {
     public static final TagProcessor<LocationTag> PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        TagManager.registerBaseTag("location", attr -> new LocationTag(attr.getParam()));
+        BaseTagProcessor.registerBaseTag("location", attr -> new LocationTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, LocationTag::new);
 
@@ -124,7 +124,7 @@ public class LocationTag implements AbstractTag {
     }
 
     @Override public @NonNull String getPrefix() { return prefix; }
-    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { this.prefix = prefix; return this; }
+    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { LocationTag.prefix = prefix; return this; }
 
     @Override
     public @NonNull String identify() {
