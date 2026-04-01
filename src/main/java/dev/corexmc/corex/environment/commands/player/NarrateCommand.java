@@ -8,6 +8,7 @@ import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import dev.corexmc.corex.environment.tags.core.ListTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
@@ -43,6 +44,9 @@ public class NarrateCommand implements AbstractCommand {
         } else if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
             SchedulerAdapter.runEntity(queue.getPlayer().getPlayer(),
                     () -> queue.getPlayer().getPlayer().sendMessage(message));
+        }
+        else {
+            Bukkit.getServer().getConsoleSender().sendMessage(message);
         }
     }
 
