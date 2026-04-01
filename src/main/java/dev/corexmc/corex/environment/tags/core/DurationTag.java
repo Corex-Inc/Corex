@@ -137,11 +137,6 @@ public class DurationTag implements AbstractTag {
     }
 
     @Override
-    public @NonNull AbstractTag setPrefix(@NonNull String prefix) {
-        return this;
-    }
-
-    @Override
     public @NonNull String identify() {
         return prefix + "@" + ticks + "t";
     }
