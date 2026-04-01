@@ -13,7 +13,7 @@ import org.jspecify.annotations.NonNull;
 
 public class LocationTag implements AbstractTag {
 
-    private static String prefix = "l";
+    private static final String prefix = "l";
     private final Location location;
 
     public static final TagProcessor<LocationTag> PROCESSOR = new TagProcessor<>();
@@ -29,9 +29,9 @@ public class LocationTag implements AbstractTag {
         PROCESSOR.registerTag(ElementTag.class, "yaw", (attr, obj) -> new ElementTag(obj.location.getYaw()));
         PROCESSOR.registerTag(ElementTag.class, "pitch", (attr, obj) -> new ElementTag(obj.location.getPitch()));
 
-        PROCESSOR.registerTag(ElementTag.class, "world", (attr, obj) -> {
+        PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> {
             World w = obj.location.getWorld();
-            return new ElementTag(w != null ? w.getName() : null);
+            return w != null ? new WorldTag(w) : null;
         });
 
         PROCESSOR.registerTag(LocationTag.class, "add", (attr, obj) -> {
@@ -55,7 +55,14 @@ public class LocationTag implements AbstractTag {
         PROCESSOR.registerTag(LocationTag.class, "withWorld", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             Location loc = obj.location.clone();
-            loc.setWorld(Bukkit.getWorld(attr.getParam()));
+
+            Object fetched = ObjectFetcher.pickObject(attr.getParam());
+            if (fetched instanceof WorldTag wt) {
+                loc.setWorld(wt.getWorld());
+            } else {
+                loc.setWorld(Bukkit.getWorld(attr.getParam()));
+            }
+
             return new LocationTag(loc);
         }).test("world");
 
