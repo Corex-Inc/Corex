@@ -72,7 +72,6 @@ public class MaterialTag implements AbstractTag {
     public BlockData getBlockData() { return blockData; }
 
     @Override public @NonNull String getPrefix() { return prefix; }
-    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { MaterialTag.prefix = prefix; return this; }
 
     @Override
     public @NonNull String identify() {

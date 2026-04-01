@@ -32,9 +32,6 @@ public class DurationTag implements AbstractTag {
         PROCESSOR.registerTag(ElementTag.class, "ticks", (attr, obj) ->
                 new ElementTag(obj.ticks));
 
-        PROCESSOR.registerTag(ElementTag.class, "ticks_long", (attr, obj) ->
-                new ElementTag((long) Math.round(obj.ticks)));
-
         PROCESSOR.registerTag(ElementTag.class, "seconds", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_SECOND));
 
@@ -119,19 +116,19 @@ public class DurationTag implements AbstractTag {
 
         double ticksComponent = leftover + fractional;
 
-        StringBuilder sb = new StringBuilder();
-        if (hours   > 0)                    sb.append(hours).append("h ");
-        if (minutes > 0)                    sb.append(minutes).append("m ");
-        if (seconds > 0)                    sb.append(seconds).append("s ");
-        if (ticksComponent > 0.0 || sb.isEmpty()) {
+        StringBuilder stringBuilder = new StringBuilder();
+        if (hours   > 0) stringBuilder.append(hours).append("h ");
+        if (minutes > 0) stringBuilder.append(minutes).append("m ");
+        if (seconds > 0) stringBuilder.append(seconds).append("s ");
+        if (ticksComponent > 0.0 || stringBuilder.isEmpty()) {
             if (ticksComponent == Math.floor(ticksComponent)) {
-                sb.append((long) ticksComponent).append("t");
+                stringBuilder.append((long) ticksComponent).append("t");
             } else {
-                sb.append(String.format("%.1f", ticksComponent)).append("t");
+                stringBuilder.append(String.format("%.1f", ticksComponent)).append("t");
             }
         }
 
-        return sb.toString().trim();
+        return stringBuilder.toString().trim();
     }
 
     @Override

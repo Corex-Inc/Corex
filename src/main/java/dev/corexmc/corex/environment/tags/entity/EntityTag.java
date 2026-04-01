@@ -81,12 +81,6 @@ public class EntityTag implements AbstractTag {
     }
 
     @Override
-    public @NotNull AbstractTag setPrefix(@NotNull String prefix) {
-        EntityTag.prefix = prefix;
-        return this;
-    }
-
-    @Override
     public @Nullable AbstractTag getAttribute(@NotNull Attribute attribute) {
         return PROCESSOR.process(this, attribute);
     }

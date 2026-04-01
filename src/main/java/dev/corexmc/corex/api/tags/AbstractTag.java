@@ -40,18 +40,6 @@ public interface AbstractTag {
     String getPrefix();
 
     /**
-     * Sets a custom prefix for this object instance.
-     * Primarily used for internal engine organization or debugging.
-     *
-     * @param prefix the new prefix to use.
-     * @return the same AbstractTag instance (Fluent API).
-     */
-    @NotNull
-    @Contract("_ -> this")
-    @AvailableSince("1.0.0")
-    AbstractTag setPrefix(@NotNull String prefix);
-
-    /**
      * Processes a sub-tag (attribute) of this object.
      * <p>
      * When the parser encounters a dot (e.g., <player.name>), it calls this method

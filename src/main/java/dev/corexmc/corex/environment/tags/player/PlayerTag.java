@@ -82,12 +82,6 @@ public class PlayerTag implements AbstractTag {
     }
 
     @Override
-    public @NonNull AbstractTag setPrefix(@NonNull String prefix) {
-        PlayerTag.prefix = prefix;
-        return this;
-    }
-
-    @Override
     public @NonNull String identify() {
         return prefix + "@" + offlinePlayer.getUniqueId().toString();
     }

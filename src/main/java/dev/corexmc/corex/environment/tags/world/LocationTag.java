@@ -124,7 +124,6 @@ public class LocationTag implements AbstractTag {
     }
 
     @Override public @NonNull String getPrefix() { return prefix; }
-    @Override public @NonNull AbstractTag setPrefix(@NonNull String prefix) { LocationTag.prefix = prefix; return this; }
 
     @Override
     public @NonNull String identify() {
