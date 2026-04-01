@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class ScriptCompiler {
 
-    public static Instruction compile(String rawLine) {
+    public static Instruction compile(String rawLine, Instruction[] innerBlock) {
         List<String> tokens = tokenize(rawLine.trim());
         if (tokens.isEmpty()) return null;
 
@@ -21,7 +21,7 @@ public class ScriptCompiler {
                 Corex.getInstance().getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) {
-            CorexLogger.error("SCRIPT ERROR: Unknown script command '<yellow>" + cmdName + "<yellow/>'!");
+            CorexLogger.error("SCRIPT ERROR: Unknown script command '<yellow>" + cmdName + "</yellow>'!");
             return null;
         }
 
@@ -47,7 +47,11 @@ public class ScriptCompiler {
             if (!token.contains("<")) flags.add(token.toLowerCase());
         }
 
-        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]));
+        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock);
+    }
+
+    public static Instruction compile(String rawLine) {
+        return compile(rawLine, null);
     }
 
     public static CompiledArgument parseArg(String text) {
@@ -85,7 +89,7 @@ public class ScriptCompiler {
         }
         if (!buffer.isEmpty()) parts.add(new CompiledArgument.Static(buffer.toString()));
 
-        if (parts.size() == 1) return parts.get(0);
+        if (parts.size() == 1) return parts.getFirst();
 
         return new CompiledArgument.Mixed(parts.toArray(new CompiledArgument[0]));
     }

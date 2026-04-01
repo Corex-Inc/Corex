@@ -50,7 +50,11 @@ public class ScriptPreprocessor {
             String spaces = line.substring(0, dashIndex + 2);
             String content = line.substring(dashIndex + 2);
 
-            result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
+            if (content.trim().endsWith(":")) {
+                result.append(line).append("\n");
+            } else {
+                result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
+            }
         } else {
             result.append(line).append("\n");
         }

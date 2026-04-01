@@ -4,13 +4,11 @@ import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.CorexRegistry;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
-import dev.corexmc.corex.environment.commands.core.DefCommand;
-import dev.corexmc.corex.environment.commands.core.ReloadCommand;
-import dev.corexmc.corex.environment.commands.core.DoCommand;
-import dev.corexmc.corex.environment.commands.core.WaitCommand;
+import dev.corexmc.corex.environment.commands.core.*;
 import dev.corexmc.corex.environment.commands.player.KickCommand;
 import dev.corexmc.corex.environment.commands.player.NarrateCommand;
 import dev.corexmc.corex.environment.commands.player.TeleportCommand;
+import dev.corexmc.corex.environment.containers.TaskContainer;
 import dev.corexmc.corex.environment.formatters.CharFormatter;
 import dev.corexmc.corex.environment.formatters.NewLineFormatter;
 import dev.corexmc.corex.environment.formatters.SpaceFormatter;
@@ -45,6 +43,10 @@ public class EnvironmentLoader {
                 KickCommand.class,
                 DefCommand.class,
                 WaitCommand.class,
+                RepeatCommand.class,
+                SwitchCommand.class,
+                SwitchCaseCommand.class,
+                SwitchDefaultCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -60,7 +62,10 @@ public class EnvironmentLoader {
                 // Formatters
                 NewLineFormatter.class,
                 SpaceFormatter.class,
-                CharFormatter.class
+                CharFormatter.class,
+
+                // Script containers
+                TaskContainer.class
         );
     }
 }

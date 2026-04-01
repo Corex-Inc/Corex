@@ -52,6 +52,16 @@ public class MapTag implements AbstractTag {
         }
     }
 
+    public java.util.Set<String> keySet() {
+        return map.keySet();
+    }
+
+    public AbstractTag getObject(String key) {
+        String val = map.get(key);
+        return val != null ? ObjectFetcher.pickObject(val) : null;
+    }
+
+
     @Override public @NonNull String getPrefix() { return prefix; }
 
     @Override

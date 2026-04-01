@@ -1,6 +1,7 @@
 package dev.corexmc.corex.engine;
 
 import dev.corexmc.corex.api.commands.AbstractCommand;
+import dev.corexmc.corex.api.containers.AbstractContainer;
 import dev.corexmc.corex.api.tags.AbstractFormatter;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.registry.FormatRegistry;
@@ -9,13 +10,16 @@ import dev.corexmc.corex.engine.utils.CorexLogger;
 import dev.corexmc.corex.engine.utils.debugging.Debugger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CorexRegistry {
     private final ScriptCommandRegistry scriptCommandRegistry;
     private final FormatRegistry formatRegistry;
     private final java.util.List<Class<? extends AbstractTag>> registeredTagClasses = new java.util.ArrayList<>();
     private final List<Class<? extends AbstractFormatter>> registeredFormatterClasses = new ArrayList<>();
+    private final Map<String, Class<? extends AbstractContainer>> registeredContainerClasses = new HashMap<>();
 
     public CorexRegistry() {
         this.scriptCommandRegistry = new ScriptCommandRegistry();
@@ -48,6 +52,13 @@ public class CorexRegistry {
                     CorexLogger.info("FormatTag registered: <yellow><" + formatter.getName() + "></yellow>");
                 }
 
+                else if (AbstractContainer.class.isAssignableFrom(clazz)) {
+                    AbstractContainer dummy = (AbstractContainer) clazz.getDeclaredConstructor().newInstance();
+
+                    registeredContainerClasses.put(dummy.getType().toLowerCase(), clazz.asSubclass(AbstractContainer.class));
+                    dev.corexmc.corex.engine.utils.CorexLogger.info("Script container registered: <yellow>" + dummy.getType() + "</yellow>");
+                }
+
                 else {
                     CorexLogger.warn("Class " + clazz.getSimpleName() + " not found!");
                 }
@@ -73,7 +84,11 @@ public class CorexRegistry {
         return registeredTagClasses;
     }
 
-    public List<Class<? extends dev.corexmc.corex.api.tags.AbstractFormatter>> getRegisteredFormatterClasses() {
+    public List<Class<? extends AbstractFormatter>> getRegisteredFormatterClasses() {
         return registeredFormatterClasses;
+    }
+
+    public Class<? extends AbstractContainer> getContainerClass(String type) {
+        return registeredContainerClasses.get(type.toLowerCase());
     }
 }

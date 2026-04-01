@@ -28,7 +28,6 @@ public class Attribute {
 
     public String getParam() {
         if (components[currentIndex].param == null) return null;
-        // ВЫЗЫВАЕМ УЖЕ СКОМПИЛИРОВАННЫЙ АРГУМЕНТ. НОЛЬ НАГРУЗКИ!
         return components[currentIndex].param.evaluate(queue);
     }
 

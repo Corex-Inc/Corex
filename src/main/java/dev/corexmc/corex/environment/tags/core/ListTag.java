@@ -8,7 +8,9 @@ import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ListTag implements AbstractTag {
 
@@ -35,6 +37,35 @@ public class ListTag implements AbstractTag {
             }
             return null;
         }).test("3");
+
+        PROCESSOR.registerTag(AbstractTag.class, "random", (attr, obj) -> {
+            if (obj.list.isEmpty()) return null;
+
+            if (!attr.hasParam()) {
+                int index = ThreadLocalRandom.current().nextInt(obj.list.size());
+                return ObjectFetcher.pickObject(obj.list.get(index));
+            }
+
+            int count = new ElementTag(attr.getParam()).asInt();
+            if (count <= 0) return new ListTag("");
+
+            List<String> copy = new ArrayList<>(obj.list);
+            Collections.shuffle(copy);
+
+            int limit = Math.min(count, copy.size());
+            List<String> subList = copy.subList(0, limit);
+
+            return new ListTag(String.join("|", subList));
+        }).test("2");
+
+        PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
+            if (obj.list.isEmpty()) return new ListTag("");
+
+            List<String> copy = new ArrayList<>(obj.list);
+            Collections.shuffle(copy);
+
+            return new ListTag(String.join("|", copy));
+        });
 
     }
 
@@ -63,6 +94,17 @@ public class ListTag implements AbstractTag {
             results.add(obj);
         }
         return results;
+    }
+
+    public int size() {
+        return list.size();
+    }
+
+    public String get(int index) {
+        if (index >= 0 && index < list.size()) {
+            return list.get(index);
+        }
+        return null;
     }
 
     @Override public @NonNull String getPrefix() { return prefix; }

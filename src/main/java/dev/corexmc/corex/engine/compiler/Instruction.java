@@ -11,12 +11,15 @@ public class Instruction {
     public final CompiledArgument[] linearArgs;
     public final Map<String, CompiledArgument> prefixArgs;
     public final String[] flags;
+    public final Instruction[] innerBlock;
+    public Object customData = null;
 
-    public Instruction(AbstractCommand command, CompiledArgument[] linearArgs, Map<String, CompiledArgument> prefixArgs, String[] flags) {
+    public Instruction(AbstractCommand command, CompiledArgument[] linearArgs, Map<String, CompiledArgument> prefixArgs, String[] flags, Instruction[] innerBlock) {
         this.command = command;
         this.linearArgs = linearArgs;
         this.prefixArgs = prefixArgs;
         this.flags = flags;
+        this.innerBlock = innerBlock;
     }
 
     public String getLinear(int index, ScriptQueue queue) {

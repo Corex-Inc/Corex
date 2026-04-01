@@ -6,82 +6,91 @@ import dev.corexmc.corex.engine.utils.CorexLogger;
 import dev.corexmc.corex.engine.utils.SchedulerAdapter;
 import dev.corexmc.corex.environment.tags.player.PlayerTag;
 
+import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ScriptQueue {
 
     private final String id;
-
-    private final Instruction[] bytecode;
-    private int pointer = 0;
-
-    private volatile boolean isPaused = false;
-
     private final boolean isAsync;
-
-    private PlayerTag linkedPlayer;
-
+    private final PlayerTag linkedPlayer;
     private final ConcurrentHashMap<String, AbstractTag> definitions = new ConcurrentHashMap<>();
 
+    private Instruction[] bytecode;
+    private int pointer = 0;
+    private Runnable onFinish;
+
+    private record QueueFrame(Instruction[] bytecode, int pointer, Runnable onFinish) {}
+    private final Stack<QueueFrame> callStack = new Stack<>();
+
+    private volatile boolean isPaused = false;
+    private boolean isStopped = false;
+    private boolean isBroken = false;
+
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
-        this.id = id;
-        this.bytecode = bytecode;
-        this.isAsync = isAsync;
-        this.linkedPlayer = linkedPlayer;
+        this.id = id; this.bytecode = bytecode; this.isAsync = isAsync; this.linkedPlayer = linkedPlayer;
     }
 
-    public boolean isAsync() {
-        return isAsync;
-    }
-
-    public void start() {
-        executeNext();
-    }
+    public void start() { executeNext(); }
 
     public void executeNext() {
-        while (!isPaused && pointer < bytecode.length) {
-            Instruction inst = bytecode[pointer];
-            pointer++;
+        while (!isPaused && !isStopped) {
 
-            try {
-                inst.command.run(this, inst);
-            } catch (Exception e) {
-                CorexLogger.error("ERROR while executing script command in " + id + ": " + e.getMessage());
-                e.printStackTrace();
+            if (pointer < bytecode.length) {
+                Instruction inst = bytecode[pointer++];
+                try {
+                    inst.command.run(this, inst);
+                } catch (Exception e) {
+                    CorexLogger.error("ERROR in " + id + ": " + e.getMessage());
+                }
+            } else {
+                Runnable callback = this.onFinish;
+
+                if (callStack.isEmpty()) {
+                    isStopped = true;
+                    if (callback != null) callback.run();
+                    break;
+                } else {
+                    QueueFrame frame = callStack.pop();
+                    this.bytecode = frame.bytecode;
+                    this.pointer = frame.pointer;
+                    this.onFinish = frame.onFinish;
+                }
+
+                if (callback != null) {
+                    callback.run();
+                }
             }
         }
     }
 
-    /**
-     * Pauses the queue and resumes it after {@code ticks} server ticks.
-     * Works on both Paper (Bukkit scheduler) and Folia (region/async scheduler)
-     * via {@link SchedulerAdapter}.
-     *
-     * <p>Async queues use {@link SchedulerAdapter#runAsyncLater} so they stay
-     * off the main thread. Sync queues use {@link SchedulerAdapter#runLater}
-     * and resume on the global region (main-thread equivalent on Folia).</p>
-     */
-    public void delay(long ticks) {
-        this.isPaused = true;
-
-        if (isAsync) {
-            SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
-        } else {
-            SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
-        }
+    public void pushFrame(Instruction[] newBytecode, Runnable newOnFinish) {
+        callStack.push(new QueueFrame(this.bytecode, this.pointer, this.onFinish));
+        this.bytecode = newBytecode;
+        this.pointer = 0;
+        this.onFinish = newOnFinish;
     }
 
-    public void resume() {
-        this.isPaused = false;
-        executeNext();
+    public void skipFrame(boolean breakLoop) {
+        this.pointer = this.bytecode.length;
+        this.isBroken = breakLoop;
+    }
+
+    public boolean isBroken() { return isBroken; }
+    public void setBroken(boolean broken) { this.isBroken = broken; }
+
+    public void pause() { this.isPaused = true; }
+    public void resume() { this.isPaused = false; executeNext(); }
+
+    public void delay(long ticks) {
+        pause();
+        if (isAsync) SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
+        else SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
     }
 
     public void define(String name, AbstractTag value) {
-        if (value == null) {
-            definitions.remove(name.toLowerCase());
-        } else {
-            definitions.put(name.toLowerCase(), value);
-        }
+        if (value == null) definitions.remove(name.toLowerCase());
+        else definitions.put(name.toLowerCase(), value);
     }
 
     public AbstractTag getDefinition(String name) {
@@ -89,14 +98,10 @@ public class ScriptQueue {
     }
 
     public PlayerTag getPlayer() {
-        AbstractTag definedPlayer = getDefinition("__player");
-        if (definedPlayer instanceof PlayerTag) {
-            return (PlayerTag) definedPlayer;
-        }
+        AbstractTag def = getDefinition("__player");
+        if (def instanceof PlayerTag) return (PlayerTag) def;
         return linkedPlayer;
     }
 
-    public String getId() {
-        return id;
-    }
+    public String getId() { return id; }
 }

@@ -38,7 +38,7 @@ public class Corex extends JavaPlugin {
         }
 
 
-        ScriptManager.loadScripts(new File(getDataFolder(), "scripts"));
+        ScriptManager.loadScripts(new File(getDataFolder().toURI()));
     }
 
     @Override

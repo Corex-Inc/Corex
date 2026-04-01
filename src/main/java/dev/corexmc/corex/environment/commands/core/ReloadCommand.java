@@ -1,6 +1,5 @@
 package dev.corexmc.corex.environment.commands.core;
 
-import dev.corexmc.corex.Corex;
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
