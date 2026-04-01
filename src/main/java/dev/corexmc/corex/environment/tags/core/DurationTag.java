@@ -46,6 +46,25 @@ public class DurationTag implements AbstractTag {
 
         PROCESSOR.registerTag(ElementTag.class, "formatted", (attr, obj) ->
                 new ElementTag(obj.format()));
+
+        PROCESSOR.registerTag(DurationTag.class, "add", (attr, obj) ->
+                new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks()));
+
+        PROCESSOR.registerTag(DurationTag.class, "sub", (attr, obj) ->
+                new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks())));
+
+        PROCESSOR.registerTag(DurationTag.class, "mul", (attr, obj) -> {
+            String param = attr.getParam();
+            if (param == null || param.isBlank()) return obj;
+            return new DurationTag(obj.ticks * Double.parseDouble(param));
+        });
+
+        PROCESSOR.registerTag(DurationTag.class, "div", (attr, obj) -> {
+            String param = attr.getParam();
+            if (param == null || param.isBlank()) return obj;
+            double divisor = Double.parseDouble(param);
+            return divisor != 0 ? new DurationTag(obj.ticks / divisor) : new DurationTag(0.0);
+        });
     }
 
     public DurationTag(String raw) {
@@ -78,13 +97,13 @@ public class DurationTag implements AbstractTag {
         }
 
         double total = 0.0;
-        Matcher m = SEGMENT.matcher(expr);
+        Matcher matcher = SEGMENT.matcher(expr);
         boolean matched = false;
 
-        while (m.find()) {
+        while (matcher.find()) {
             matched = true;
-            double value = Double.parseDouble(m.group(1));
-            char unit = m.group(2).charAt(0);
+            double value = Double.parseDouble(matcher.group(1));
+            char unit = matcher.group(2).charAt(0);
             total += switch (unit) {
                 case 'h' -> value * TICKS_PER_HOUR;
                 case 'm' -> value * TICKS_PER_MINUTE;
@@ -107,10 +126,10 @@ public class DurationTag implements AbstractTag {
         long remaining = (long) ticks;
         double fractional = ticks - remaining;
 
-        long hours   = remaining / (long) TICKS_PER_HOUR;
-        remaining   %= (long) TICKS_PER_HOUR;
+        long hours = remaining / (long) TICKS_PER_HOUR;
+        remaining %= (long) TICKS_PER_HOUR;
         long minutes = remaining / (long) TICKS_PER_MINUTE;
-        remaining   %= (long) TICKS_PER_MINUTE;
+        remaining %= (long) TICKS_PER_MINUTE;
         long seconds = remaining / (long) TICKS_PER_SECOND;
         long leftover = remaining % (long) TICKS_PER_SECOND;
 
