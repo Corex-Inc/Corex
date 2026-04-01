@@ -8,7 +8,7 @@ import org.jspecify.annotations.NonNull;
 
 public class ElementTag implements AbstractTag {
 
-    private String prefix;
+    private final String prefix;
     private final String element;
 
     public static final TagProcessor<ElementTag> PROCESSOR = new TagProcessor<>();

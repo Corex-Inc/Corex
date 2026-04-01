@@ -66,14 +66,12 @@ public class LocationTag implements AbstractTag {
             return new LocationTag(loc);
         }).test("world");
 
-        PROCESSOR.registerTag(LocationTag.class, "block", (attr, obj) -> {
-            return new LocationTag(new Location(
-                    obj.location.getWorld(),
-                    obj.location.getBlockX(),
-                    obj.location.getBlockY(),
-                    obj.location.getBlockZ()
-            ));
-        });
+        PROCESSOR.registerTag(LocationTag.class, "block", (attr, obj) -> new LocationTag(new Location(
+                obj.location.getWorld(),
+                obj.location.getBlockX(),
+                obj.location.getBlockY(),
+                obj.location.getBlockZ()
+        )));
 
         PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> {
             if (obj.getLocation().getWorld() != null) {
