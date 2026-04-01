@@ -18,6 +18,7 @@ import dev.corexmc.corex.environment.tags.core.*;
 import dev.corexmc.corex.environment.tags.player.PlayerTag;
 import dev.corexmc.corex.environment.tags.world.LocationTag;
 import dev.corexmc.corex.environment.tags.world.MaterialTag;
+import dev.corexmc.corex.environment.tags.world.WorldTag;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
@@ -54,6 +55,7 @@ public class EnvironmentLoader {
                 LocationTag.class,
                 EnvTag.class,
                 DurationTag.class,
+                WorldTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
