@@ -28,7 +28,11 @@ public class ScriptPreprocessor {
             String trimmed = line.trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
 
-            if (trimmed.startsWith("- ") || trimmed.matches("^[a-zA-Z0-9_]+:.*")) {
+            boolean isNewYamlLine = trimmed.startsWith("- ")
+                    || trimmed.endsWith(":")
+                    || (trimmed.contains(": ") && !trimmed.startsWith("<"));
+
+            if (isNewYamlLine) {
                 flushLine(result, currentLine);
                 currentLine.append(line);
             } else {
@@ -36,7 +40,6 @@ public class ScriptPreprocessor {
             }
         }
         flushLine(result, currentLine);
-
         return result.toString();
     }
 

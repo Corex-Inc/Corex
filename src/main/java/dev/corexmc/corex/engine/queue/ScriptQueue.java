@@ -4,8 +4,11 @@ import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.utils.CorexLogger;
 import dev.corexmc.corex.engine.utils.SchedulerAdapter;
+import dev.corexmc.corex.environment.tags.core.ContextTag;
 import dev.corexmc.corex.environment.tags.player.PlayerTag;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,6 +25,9 @@ public class ScriptQueue {
 
     private record QueueFrame(Instruction[] bytecode, int pointer, Runnable onFinish) {}
     private final Stack<QueueFrame> callStack = new Stack<>();
+    private final Map<String, Object> tempData = new HashMap<>();
+
+    private ContextTag context;
 
     private volatile boolean isPaused = false;
     private boolean isStopped = false;
@@ -112,5 +118,13 @@ public class ScriptQueue {
 
     public Object getTempData(String key) {
         return tempData.get(key.toLowerCase());
+    }
+
+    public void setContext(ContextTag context) {
+        this.context = context;
+    }
+
+    public ContextTag getContext() {
+        return context;
     }
 }

@@ -7,6 +7,8 @@ import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.environment.commands.core.*;
 import dev.corexmc.corex.environment.commands.player.*;
 import dev.corexmc.corex.environment.containers.*;
+import dev.corexmc.corex.environment.events.EventRegistry;
+import dev.corexmc.corex.environment.events.impl.core.DeltaTimeEvent;
 import dev.corexmc.corex.environment.formatters.*;
 import dev.corexmc.corex.environment.tags.core.*;
 import dev.corexmc.corex.environment.tags.player.*;
@@ -25,7 +27,6 @@ public class EnvironmentLoader {
             }
             return null;
         });
-
 
         registry.register(
 
@@ -54,6 +55,7 @@ public class EnvironmentLoader {
                 EnvTag.class,
                 DurationTag.class,
                 WorldTag.class,
+                ContextTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
@@ -61,8 +63,13 @@ public class EnvironmentLoader {
                 CharFormatter.class,
 
                 // Script containers
-                TaskContainer.class
                 TaskContainer.class,
+                EventsContainer.class
+        );
+
+        // Events
+        EventRegistry.register(
+                DeltaTimeEvent.class
         );
     }
 }

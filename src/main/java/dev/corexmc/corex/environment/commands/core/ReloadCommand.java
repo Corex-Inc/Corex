@@ -4,6 +4,7 @@ import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
 import dev.corexmc.corex.engine.scripts.ScriptManager;
+import dev.corexmc.corex.environment.events.EventRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jspecify.annotations.NonNull;
@@ -19,6 +20,7 @@ public class ReloadCommand implements AbstractCommand {
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         long start = System.currentTimeMillis();
 
+        EventRegistry.resetAll();
         ScriptManager.reloadScripts();
 
         long end = System.currentTimeMillis() - start;
