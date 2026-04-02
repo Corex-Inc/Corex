@@ -118,12 +118,12 @@ public class ListTag implements AbstractTag {
     public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
 
     @Override
-    public TagProcessor<ListTag> getProcessor() {
+    public @NonNull TagProcessor<ListTag> getProcessor() {
         return PROCESSOR;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "li@a|b|c";
     }
 }

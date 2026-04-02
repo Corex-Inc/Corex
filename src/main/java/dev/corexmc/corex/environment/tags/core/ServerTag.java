@@ -35,12 +35,12 @@ public class ServerTag implements AbstractTag {
     }
 
     @Override
-    public TagProcessor<MaterialTag> getProcessor() {
+    public @NonNull TagProcessor<MaterialTag> getProcessor() {
         return null;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return null;
     }
 }

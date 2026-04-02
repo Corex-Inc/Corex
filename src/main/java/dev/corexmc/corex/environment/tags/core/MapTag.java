@@ -83,12 +83,12 @@ public class MapTag implements AbstractTag {
     public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
 
     @Override
-    public TagProcessor<MapTag> getProcessor() {
+    public @NonNull TagProcessor<MapTag> getProcessor() {
         return PROCESSOR;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "map@[a=1;b=2]";
     }
 }

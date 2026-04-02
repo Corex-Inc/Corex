@@ -158,12 +158,12 @@ public class LocationTag implements AbstractTag {
     }
 
     @Override
-    public TagProcessor<LocationTag> getProcessor() {
+    public @NonNull TagProcessor<LocationTag> getProcessor() {
         return PROCESSOR;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "l@1,1,1,world";
     }
 }

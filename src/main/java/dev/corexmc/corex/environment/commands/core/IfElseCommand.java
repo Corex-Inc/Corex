@@ -1,6 +1,7 @@
 package dev.corexmc.corex.environment.commands.core;
 
 import dev.corexmc.corex.api.commands.AbstractCommand;
+import dev.corexmc.corex.engine.compiler.CompiledArgument;
 import dev.corexmc.corex.environment.utils.ConditionCompiler;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
@@ -32,7 +33,7 @@ public class IfElseCommand implements AbstractCommand {
 
                 ConditionCompiler.Condition condition = (ConditionCompiler.Condition) instruction.customData;
                 if (condition == null) {
-                    dev.corexmc.corex.engine.compiler.CompiledArgument[] conditionArgs =
+                    CompiledArgument[] conditionArgs =
                             Arrays.copyOfRange(instruction.linearArgs, 1, instruction.linearArgs.length);
 
                     condition = ConditionCompiler.compile(conditionArgs);

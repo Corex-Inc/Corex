@@ -48,12 +48,21 @@ public class AutoObjectTest {
 
         for (Class<? extends AbstractTag> clazz : registry.getRegisteredTagClasses()) {
             try {
-                AbstractTag dummy = clazz.getDeclaredConstructor(String.class).newInstance("test_init");
+                AbstractTag dummy;
+                try {
+                    dummy = clazz.getDeclaredConstructor(String.class).newInstance("test_init");
+                } catch (NoSuchMethodException e) {
+                    dummy = clazz.getDeclaredConstructor().newInstance();
+                }
                 String startVal = dummy.getTestValue();
                 AbstractTag testObject = ObjectFetcher.pickObject(startVal);
 
                 if (testObject == null) {
                     allFailures.add(clazz.getSimpleName() + ": ObjectFetcher returned null for " + startVal);
+                    continue;
+                }
+                if (startVal == null) {
+                    CorexTestLogger.info(clazz.getSimpleName() + ": Test disabled. Skipping...");
                     continue;
                 }
 

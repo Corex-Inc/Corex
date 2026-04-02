@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -86,12 +87,12 @@ public class EntityTag implements AbstractTag {
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "e@cf5d1e35-fb92-476e-9c96-bc932ca0b0cb";
     }
 
     @Override
-    public TagProcessor<EntityTag> getProcessor() {
+    public @NonNull TagProcessor<EntityTag> getProcessor() {
         return PROCESSOR;
     }
 }

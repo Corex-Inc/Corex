@@ -4,6 +4,7 @@ import dev.corexmc.corex.api.containers.AbstractContainer;
 import dev.corexmc.corex.api.containers.PathType;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import org.bukkit.configuration.ConfigurationSection;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,10 +18,10 @@ public class TaskContainer implements AbstractContainer {
     private final Map<String, Instruction[]> compiledScripts = new HashMap<>();
     private List<String> definitions = new ArrayList<>();
 
-    @Override public String getType() { return "task"; }
+    @Override public @NonNull String getType() { return "task"; }
 
     @Override
-    public void init(String name, ConfigurationSection section) {
+    public void init(@NonNull String name, @NonNull ConfigurationSection section) {
         this.name = name;
         this.rawData = section;
         String defs = section.getString("definitions");
@@ -30,15 +31,15 @@ public class TaskContainer implements AbstractContainer {
     }
 
     @Override
-    public List<String> getDefinitions() {
+    public @NonNull List<String> getDefinitions() {
         return definitions;
     }
 
-    @Override public String getName() { return name; }
-    @Override public ConfigurationSection getData() { return rawData; }
+    @Override public @NonNull String getName() { return name; }
+    @Override public @NonNull ConfigurationSection getData() { return rawData; }
 
     @Override
-    public PathType resolvePath(String path) {
+    public @NonNull PathType resolvePath(@NonNull String path) {
         String lower = path.toLowerCase();
 
         if (lower.equals("type") || lower.equals("definitions")) return PathType.IGNORE;
@@ -48,12 +49,12 @@ public class TaskContainer implements AbstractContainer {
     }
 
     @Override
-    public void addCompiledScript(String path, Instruction[] bytecode) {
+    public void addCompiledScript(@NonNull String path, Instruction[] bytecode) {
         compiledScripts.put(path.toLowerCase(), bytecode);
     }
 
     @Override
-    public Instruction[] getScript(String path) {
+    public Instruction[] getScript(@NonNull String path) {
         return compiledScripts.get(path.toLowerCase());
     }
 }

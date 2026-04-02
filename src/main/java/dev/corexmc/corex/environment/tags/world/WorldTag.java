@@ -100,12 +100,12 @@ public class WorldTag implements AbstractTag {
     }
 
     @Override
-    public TagProcessor<WorldTag> getProcessor() {
+    public @NonNull TagProcessor<WorldTag> getProcessor() {
         return PROCESSOR;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "w@world";
     }
 }

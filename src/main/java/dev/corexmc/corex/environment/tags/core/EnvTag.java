@@ -55,12 +55,12 @@ public class EnvTag implements AbstractTag {
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "env@my_secret_password";
     }
 
     @Override
-    public TagProcessor<? extends AbstractTag> getProcessor() {
+    public @NonNull TagProcessor<? extends AbstractTag> getProcessor() {
         return PROCESSOR;
     }
 }

@@ -57,7 +57,37 @@ public interface AbstractTag {
     @AvailableSince("1.0.0")
     AbstractTag getAttribute(@NotNull Attribute attribute);
 
-    String getTestValue(); // TODO дописать документацию
+    /**
+     * Provides a sample raw value that can be used to recreate this object type.
+     * <p>
+     * This value is used by the automated testing framework to verify all registered
+     * sub-tags (attributes) of this object class.
+     * <p>
+     * <b>Examples:</b>
+     * <ul>
+     *   <li>PlayerTag: {@code "p@00000000-0000-0000-0000-000000000000"}</li>
+     *   <li>ElementTag: {@code "hello_world"}</li>
+     *   <li>LocationTag: {@code "l@100,64,100,world"}</li>
+     * </ul>
+     *
+     * @return a raw string representing a valid instance of this tag.
+     */
+    @Nullable
+    @OverrideOnly
+    @AvailableSince("1.0.0")
+    String getTestValue();
 
-    TagProcessor<? extends AbstractTag> getProcessor(); // TODO дописать документацию
+    /**
+     * Gets the {@link TagProcessor} responsible for handling sub-tags for this object.
+     * <p>
+     * The processor contains the mapping of attribute names to their respective
+     * logic lambdas. It is used by both the Runtime Engine and the Compiler
+     * for optimization and static analysis.
+     *
+     * @return the processor instance for this tag type.
+     */
+    @NotNull
+    @OverrideOnly
+    @AvailableSince("1.0.0")
+    TagProcessor<? extends AbstractTag> getProcessor();
 }

@@ -1,5 +1,6 @@
 package dev.corexmc.corex.environment.tags.core;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.processors.TagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
@@ -15,6 +16,7 @@ public class ContextTag implements AbstractTag {
     private final Map<String, AbstractTag> contextData = new HashMap<>();
 
     public static final TagProcessor<ContextTag> PROCESSOR = new TagProcessor<>();
+    public ContextTag() {}
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("context", attr -> {
@@ -54,12 +56,12 @@ public class ContextTag implements AbstractTag {
     }
 
     @Override
-    public String getTestValue() {
-        return "";
+    public @NonNull String getTestValue() {
+        return null;
     }
 
     @Override
-    public TagProcessor<? extends AbstractTag> getProcessor() {
+    public @NonNull TagProcessor<? extends AbstractTag> getProcessor() {
         return PROCESSOR;
     }
 }

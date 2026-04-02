@@ -92,12 +92,12 @@ public class PlayerTag implements AbstractTag {
     }
 
     @Override
-    public TagProcessor<PlayerTag> getProcessor() {
+    public @NonNull TagProcessor<PlayerTag> getProcessor() {
         return PROCESSOR;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "p@465876c1-2a15-4fc0-9f0b-97de13aa46f1";
     }
 }

@@ -170,10 +170,10 @@ public class ElementTag implements AbstractTag {
         return element.hashCode();
     }
 
-    public String getTestValue() { return "123456789"; }
+    public @NonNull String getTestValue() { return "123456789"; }
 
     @Override
-    public TagProcessor<ElementTag> getProcessor() {
+    public @NonNull TagProcessor<ElementTag> getProcessor() {
         return PROCESSOR;
     }
 }

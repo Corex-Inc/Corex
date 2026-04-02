@@ -6,6 +6,7 @@ import dev.corexmc.corex.environment.events.EventData;
 import dev.corexmc.corex.environment.events.EventRegistry;
 import dev.corexmc.corex.environment.tags.core.ContextTag;
 import dev.corexmc.corex.environment.tags.core.ElementTag;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +22,11 @@ public class DeltaTimeEvent implements AbstractEvent {
     private final List<EventData> minutely = new ArrayList<>();
     private final List<EventData> hourly = new ArrayList<>();
 
-    @Override public String getName() { return "DeltaTime"; }
-    @Override public String getSyntax() { return "delta time"; }
+    @Override public @NonNull String getName() { return "DeltaTime"; }
+    @Override public @NonNull String getSyntax() { return "delta time"; }
 
     @Override
-    public void addScript(EventData data) {
+    public void addScript(@NonNull EventData data) {
         String raw = data.rawLine;
         if (raw.contains("secondly")) secondly.add(data);
         else if (raw.contains("minutely")) minutely.add(data);

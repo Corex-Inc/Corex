@@ -166,12 +166,12 @@ public class DurationTag implements AbstractTag {
     }
 
     @Override
-    public TagProcessor<DurationTag> getProcessor() {
+    public @NonNull TagProcessor<DurationTag> getProcessor() {
         return PROCESSOR;
     }
 
     @Override
-    public String getTestValue() {
+    public @NonNull String getTestValue() {
         return "dur@2m34s5t";
     }
 }
