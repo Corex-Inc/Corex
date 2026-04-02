@@ -104,4 +104,13 @@ public class ScriptQueue {
     }
 
     public String getId() { return id; }
+
+    public void setTempData(String key, Object value) {
+        if (value == null) tempData.remove(key.toLowerCase());
+        else tempData.put(key.toLowerCase(), value);
+    }
+
+    public Object getTempData(String key) {
+        return tempData.get(key.toLowerCase());
+    }
 }

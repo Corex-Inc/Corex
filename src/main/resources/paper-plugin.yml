@@ -1,7 +1,7 @@
 name: Corex
 version: '${version}'
 main: dev.corexmc.corex.Corex
-description: Modern, Paper-exclusive scripting engine.
+description: Modern, Paper-exclusive compiled scripting engine
 authors:
   - tizis0
   - Nybik_YT

@@ -30,7 +30,7 @@ public class TaskContainer implements AbstractContainer {
     }
 
     @Override
-    public java.util.List<String> getDefinitions() {
+    public List<String> getDefinitions() {
         return definitions;
     }
 
@@ -42,9 +42,8 @@ public class TaskContainer implements AbstractContainer {
         String lower = path.toLowerCase();
 
         if (lower.equals("type") || lower.equals("definitions")) return PathType.IGNORE;
-        if (lower.startsWith("data") || lower.startsWith("my_data")) return PathType.DATA;
+        if (lower.startsWith("data")) return PathType.DATA;
 
-        // Если это не data, значит это список команд! Компилируем!
         return PathType.SCRIPT;
     }
 

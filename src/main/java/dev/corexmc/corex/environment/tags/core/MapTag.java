@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class MapTag implements AbstractTag {
 
-    private static String prefix = "map";
+    private static final String prefix = "map";
     private final Map<String, String> map = new LinkedHashMap<>();
 
     public static final TagProcessor<MapTag> PROCESSOR = new TagProcessor<>();
@@ -69,6 +69,14 @@ public class MapTag implements AbstractTag {
         List<String> pairs = new java.util.ArrayList<>();
         map.forEach((k, v) -> pairs.add(k + "=" + v));
         return prefix + "@[" + String.join(";", pairs) + "]";
+    }
+
+    public void putObject(String key, AbstractTag tag) {
+        if (tag == null) {
+            map.remove(key);
+        } else {
+            map.put(key, tag.identify());
+        }
     }
 
     @Override

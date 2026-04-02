@@ -95,12 +95,22 @@ public class ScriptCompiler {
     }
 
     private static CompiledArgument compileSingleTag(String rawTag) {
-        TagNode[] nodes = parseTagNodes(rawTag);
+        String mainTag = rawTag;
+        CompiledArgument fallback = null;
+        if (rawTag.contains("||")) {
+            int pipeIndex = rawTag.indexOf("||");
 
-        if (nodes.length == 1) {
+            mainTag = rawTag.substring(0, pipeIndex);
+            String fallbackStr = rawTag.substring(pipeIndex + 2);
+
+            fallback = parseArg(fallbackStr);
+        }
+
+        TagNode[] nodes = parseTagNodes(mainTag);
+
+        if (nodes.length == 1 && fallback == null) {
             dev.corexmc.corex.engine.registry.FormatRegistry formats =
-                    Corex.getInstance().getRegistry().getFormats();
-
+                    dev.corexmc.corex.Corex.getInstance().getRegistry().getFormats();
             if (formats.isFormat(nodes[0].name)) {
                 if (nodes[0].param == null || nodes[0].param instanceof CompiledArgument.Static) {
                     dev.corexmc.corex.api.tags.Attribute mockAttr = new dev.corexmc.corex.api.tags.Attribute(nodes, null);
@@ -110,7 +120,7 @@ public class ScriptCompiler {
             }
         }
 
-        return new CompiledArgument.PreSlicedDynamic(nodes);
+        return new CompiledArgument.PreSlicedDynamic(nodes, fallback, mainTag);
     }
 
     public static TagNode[] parseTagNodes(String rawTag) {

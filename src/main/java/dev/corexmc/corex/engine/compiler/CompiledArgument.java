@@ -29,8 +29,14 @@ public interface CompiledArgument {
 
     class PreSlicedDynamic implements CompiledArgument {
         private final TagNode[] nodes;
+        private final CompiledArgument fallback;
+        private final String rawFullTag;
 
-        public PreSlicedDynamic(TagNode[] nodes) { this.nodes = nodes; }
+        public PreSlicedDynamic(TagNode[] nodes, CompiledArgument fallback, String rawFullTag) {
+            this.nodes = nodes;
+            this.fallback = fallback;
+            this.rawFullTag = rawFullTag;
+        }
 
         @Override
         public String evaluate(ScriptQueue queue) {
@@ -47,13 +53,27 @@ public interface CompiledArgument {
                 currentObj = TagManager.executeBaseTag(attr);
             }
 
-            while (attr.hasNext() && currentObj != null) {
+            while (attr.hasNext()) {
+                if (currentObj == null) {
+                    if (attr.getName().equals("ifNull") && attr.hasParam()) {
+                        currentObj = dev.corexmc.corex.engine.tags.ObjectFetcher.pickObject(attr.getParam());
+                        attr.fulfill(1);
+                        continue;
+                    }
+                    break;
+                }
                 AbstractTag nextObj = currentObj.getAttribute(attr);
                 if (nextObj == null) break;
                 currentObj = nextObj;
                 attr.fulfill(1);
             }
-            return currentObj != null ? currentObj.identify() : "null";
+
+            if (currentObj == null) {
+                if (fallback != null) return fallback.evaluate(queue);
+
+                return rawFullTag;
+            }
+            return currentObj.identify();
         }
     }
 }

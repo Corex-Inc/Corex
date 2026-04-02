@@ -101,6 +101,8 @@ public class ElementTag implements AbstractTag {
     public static void register() {
         BaseTagProcessor.registerBaseTag("element", (attribute) -> new ElementTag(attribute.getParam()));
 
+        PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj);
+
         PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase()));
         PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase()));
         PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length()));

@@ -5,18 +5,12 @@ import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.CorexRegistry;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.environment.commands.core.*;
-import dev.corexmc.corex.environment.commands.player.KickCommand;
-import dev.corexmc.corex.environment.commands.player.NarrateCommand;
-import dev.corexmc.corex.environment.commands.player.TeleportCommand;
-import dev.corexmc.corex.environment.containers.TaskContainer;
-import dev.corexmc.corex.environment.formatters.CharFormatter;
-import dev.corexmc.corex.environment.formatters.NewLineFormatter;
-import dev.corexmc.corex.environment.formatters.SpaceFormatter;
+import dev.corexmc.corex.environment.commands.player.*;
+import dev.corexmc.corex.environment.containers.*;
+import dev.corexmc.corex.environment.formatters.*;
 import dev.corexmc.corex.environment.tags.core.*;
-import dev.corexmc.corex.environment.tags.player.PlayerTag;
-import dev.corexmc.corex.environment.tags.world.LocationTag;
-import dev.corexmc.corex.environment.tags.world.MaterialTag;
-import dev.corexmc.corex.environment.tags.world.WorldTag;
+import dev.corexmc.corex.environment.tags.player.*;
+import dev.corexmc.corex.environment.tags.world.*;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
@@ -47,6 +41,8 @@ public class EnvironmentLoader {
                 SwitchCommand.class,
                 SwitchCaseCommand.class,
                 SwitchDefaultCommand.class,
+                IfCommand.class,
+                IfElseCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -66,6 +62,7 @@ public class EnvironmentLoader {
 
                 // Script containers
                 TaskContainer.class
+                TaskContainer.class,
         );
     }
 }
