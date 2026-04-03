@@ -56,13 +56,13 @@ public class DurationTag implements AbstractTag {
         PROCESSOR.registerTag(DurationTag.class, "mul", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
-            return new DurationTag(obj.ticks * Double.parseDouble(param));
+            return new DurationTag(obj.ticks * new DurationTag(param).getTicks());
         }).test("4s");
 
         PROCESSOR.registerTag(DurationTag.class, "div", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
-            double divisor = Double.parseDouble(param);
+            double divisor = new DurationTag(param).getTicks();
             return divisor != 0 ? new DurationTag(obj.ticks / divisor) : new DurationTag(0.0);
         }).test("4s");
     }
