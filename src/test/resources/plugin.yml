@@ -1,4 +1,4 @@
 name: Corex
 version: 1.0-SNAPSHOT
-main: dev.corexmc.corex.Corex
+main: dev.corexinc.corex.Corex
 api-version: '1.21'

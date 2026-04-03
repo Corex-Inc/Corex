@@ -1,6 +1,6 @@
 name: Corex
 version: '${version}'
-main: dev.corexmc.corex.Corex
+main: dev.corexinc.corex.Corex
 description: Modern, Paper-exclusive compiled scripting engine
 authors:
   - tizis0

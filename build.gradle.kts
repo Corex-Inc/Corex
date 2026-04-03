@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-group = "dev.corexmc.corex"
+group = "dev.corexinc.corex"
 version = "1.0-SNAPSHOT"
 
 repositories {
