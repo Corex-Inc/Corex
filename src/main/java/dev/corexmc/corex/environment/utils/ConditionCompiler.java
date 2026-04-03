@@ -23,19 +23,17 @@ public class ConditionCompiler {
 
                 String lower = token.toLowerCase();
 
-                // Логические операторы
                 if (lower.equals("&&") || lower.equals("and")) {
-                    if (!finalResult) return false; // Оптимизация: дальше нет смысла проверять
+                    if (!finalResult) return false;
                     nextIsOr = false;
                     continue;
                 }
                 if (lower.equals("||") || lower.equals("or")) {
-                    if (finalResult) return true; // Оптимизация
+                    if (finalResult) return true;
                     nextIsOr = true;
                     continue;
                 }
 
-                // Инверсия
                 boolean inverted = false;
                 if (lower.startsWith("!")) {
                     inverted = true;
@@ -44,14 +42,12 @@ public class ConditionCompiler {
 
                 boolean checkResult = false;
 
-                // Если есть оператор сравнения
                 if (i + 2 < args.length && isOperator(args[i + 1].evaluate(queue))) {
                     String op = args[i + 1].evaluate(queue);
                     String val2 = args[i + 2].evaluate(queue);
                     checkResult = compare(token, op, val2);
-                    i += 2; // Пропускаем оператор и второе значение
+                    i += 2;
                 } else {
-                    // Проверка на правдивость (truthiness)
                     checkResult = new ElementTag(token).asBoolean() ||
                             (!token.equalsIgnoreCase("null") && !token.equals("false") && !token.isEmpty());
                 }

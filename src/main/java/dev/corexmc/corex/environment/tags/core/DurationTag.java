@@ -14,8 +14,8 @@ public class DurationTag implements AbstractTag {
 
     public static final double TICKS_PER_SECOND = 20.0;
     public static final double TICKS_PER_MINUTE = TICKS_PER_SECOND * 60.0;
-    public static final double TICKS_PER_HOUR   = TICKS_PER_MINUTE * 60.0;
-    public static final double MS_PER_TICK       = 50.0; // 1 tick = 50 ms
+    public static final double TICKS_PER_HOUR = TICKS_PER_MINUTE * 60.0;
+    public static final double MS_PER_TICK = 50.0;
 
     private static final Pattern SEGMENT = Pattern.compile("([0-9]*\\.?[0-9]+)([hmst])");
 
@@ -48,23 +48,23 @@ public class DurationTag implements AbstractTag {
                 new ElementTag(obj.format()));
 
         PROCESSOR.registerTag(DurationTag.class, "add", (attr, obj) ->
-                new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks()));
+                new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks())).test("4s");
 
         PROCESSOR.registerTag(DurationTag.class, "sub", (attr, obj) ->
-                new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks())));
+                new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks()))).test("4s");
 
         PROCESSOR.registerTag(DurationTag.class, "mul", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
             return new DurationTag(obj.ticks * Double.parseDouble(param));
-        });
+        }).test("4s");
 
         PROCESSOR.registerTag(DurationTag.class, "div", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
             double divisor = Double.parseDouble(param);
             return divisor != 0 ? new DurationTag(obj.ticks / divisor) : new DurationTag(0.0);
-        });
+        }).test("4s");
     }
 
     public DurationTag(String raw) {
@@ -109,7 +109,7 @@ public class DurationTag implements AbstractTag {
                 case 'm' -> value * TICKS_PER_MINUTE;
                 case 's' -> value * TICKS_PER_SECOND;
                 case 't' -> value;
-                default  -> 0.0;
+                default -> 0.0;
             };
         }
 

@@ -59,5 +59,5 @@ public class IfElseCommand implements AbstractCommand {
 
     @Override public @NonNull String getSyntax() { return "(if) (<value>)"; }
     @Override public int getMinArgs() { return 0; }
-    @Override public int getMaxArgs() { return 99; }
+    @Override public int getMaxArgs() { return -1; }
 }

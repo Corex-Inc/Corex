@@ -17,6 +17,51 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.Map;
 
+/* @[command]
+ *
+ * @Name Do
+ * @Syntax do [<script>] (path:<name>) (def:<element>|.../def.<name>:<value>) (id:<name>)
+ * @RequiredArgs 1
+ * @MaxArgs -1
+ * @Aliases run
+ * @ShortDescription Runs a script in a new queue.
+ *
+ * @Implements Run
+ *
+ * @Description
+ * Runs a script in a new queue.
+ *
+ * You must specify a script object to run.
+ *
+ * Optionally, use the "path:" argument to choose a specific sub-path within a script.
+ *
+ * Optionally, use the "def:" argument to specify definition values to pass to the script,
+ * the definitions will be named via the "definitions:" script key on the script being run.
+ *
+ * Alternately, use "def.<name>:<value>" to define one or more  named definitions individually.
+ *
+ * Optionally, specify the "id:" argument to choose a custom queue ID to be used.
+ * If none is specified, a randomly generated one will be used. Generally, don't use this argument.
+ *
+ * @Tags
+ * <save[saveName].created_queue> - returns the queue that was started by the run command.
+ *
+ * @Usage
+ * // Use to do a task script named 'MyTask'.
+ * - do MyTask
+ *
+ * @Usage
+ * // Use to do a local subscript named 'alt_path'.
+ * - do <script> path:alt_path
+ *
+ * @Usage
+ * // Use to do 'MyTask' and pass 3 definitions to it.
+ * - do MyTask def:A|Second_Def|Taco
+ *
+ * @Usage
+ * // Use to do 'MyTask' and pass 3 named definitions to it.
+ * - do MyTask def.count:5 def.type:Taco def.smell:Tasty
+ */
 public class DoCommand implements AbstractCommand {
 
     @Override public @NonNull String getName() { return "do"; }
@@ -27,7 +72,6 @@ public class DoCommand implements AbstractCommand {
         String target = instruction.getLinear(0, queue);
         if (target == null) return;
 
-        // ИСПРАВЛЕНО: Безопасное разделение target на ИмяСкрипта и Путь
         String scriptName = target;
         String path = "script";
 
@@ -54,7 +98,6 @@ public class DoCommand implements AbstractCommand {
 
         ScriptQueue newQueue = new ScriptQueue(scriptName + "_" + System.currentTimeMillis(), bytecode, false, queue.getPlayer());
 
-        // 1. ВАРИАНТ def.<key>:<value>
         for (Map.Entry<String, CompiledArgument> entry : instruction.prefixArgs.entrySet()) {
             if (entry.getKey().startsWith("def.")) {
                 String defName = entry.getKey().substring(4);
@@ -63,23 +106,17 @@ public class DoCommand implements AbstractCommand {
             }
         }
 
-        // 2. ВАРИАНТ def:<map> ИЛИ def:<list>
         String defRaw = instruction.getPrefix("def", queue);
         if (defRaw != null) {
             AbstractTag defTag = ObjectFetcher.pickObject(defRaw);
 
-            if (defTag instanceof MapTag) {
-                // Если передали мапу: def:map[player=tizis0;score=10]
-                MapTag map = (MapTag) defTag;
+            if (defTag instanceof MapTag map) {
                 for (String key : map.keySet()) {
                     newQueue.define(key, map.getObject(key));
                 }
             } else {
-                // Если передали список (или просто текст через пайпы): def:val1|val2|val3
                 ListTag list = (defTag instanceof ListTag) ? (ListTag) defTag : new ListTag(defTag.identify());
 
-                // Чтобы это работало, убедись, что в AbstractContainer есть метод getDefinitions()
-                // и TaskContainer его переопределяет (как я писал в прошлом сообщении)
                 List<String> keys = container.getDefinitions();
 
                 if (keys != null) {
@@ -93,7 +130,7 @@ public class DoCommand implements AbstractCommand {
         newQueue.start();
     }
 
-    @Override public @NonNull String getSyntax() { return "- do [<script>] (def.<key>:<value>) (def:<map/list>) (path:<path>)"; }
+    @Override public @NonNull String getSyntax() { return "[<script>] (def.<key>:<value>) (def:<map/list>) (path:<path>)"; }
     @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 10; }
+    @Override public int getMaxArgs() { return -1; }
 }

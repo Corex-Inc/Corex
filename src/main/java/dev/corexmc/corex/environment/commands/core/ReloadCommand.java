@@ -9,6 +9,26 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jspecify.annotations.NonNull;
 
+/* @[command]
+ *
+ * @Name Reload
+ * @Syntax reload
+ * @RequiredArgs 0
+ * @MaxArgs 0
+ * @ShortDescription Reloads and recompile all Corex scripts. Primarily for use as an in-game command.
+ *
+ * @Implements Reload
+ *
+ * @Description
+ * Reloads and recompile all Corex scripts.
+ * Primarily for use as an in-game command, like "/run reload".
+ *
+ * Reloads and recompile scripts in a way that may delay a few ticks to avoid interrupting the server on large reloads.
+ *
+ * @Usage
+ * // Use to reload scripts automatically
+ * - reload
+ */
 public class ReloadCommand implements AbstractCommand {
 
     @Override

@@ -10,6 +10,32 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
+/* @[command]
+ *
+ * @Name Wait
+ * @Syntax wait (<duration>)
+ * @RequiredArgs 0
+ * @MaxArgs 1
+ * @Aliases delay
+ * @ShortDescription Delays a script for a specified amount of time.
+ *
+ * @Implements Wait
+ *
+ * @Description
+ * Pauses the script queue for the duration specified. If no duration is specified it defaults to 1 seconds.
+ *
+ * @Usage
+ * // Use to delay the current queue for 1 minute.
+ * - wait 1m
+ *
+ * @Usage
+ * // Use to delay using multiple time types.
+ * - wait 1m34s8t
+ *
+ * @Usage
+ * // Use to delay using DurationTag.
+ * - wait <duration[1s]>
+ */
 public class WaitCommand implements AbstractCommand {
 
     private static final DurationTag DEFAULT_DURATION = new DurationTag("1s");
@@ -21,7 +47,7 @@ public class WaitCommand implements AbstractCommand {
 
     @Override
     public @NotNull @Unmodifiable List<String> getAlias() {
-        return List.of("wait", "delay");
+        return List.of("delay");
     }
 
     @Override
