@@ -4,12 +4,17 @@ import dev.corexmc.corex.api.processors.BaseTagProcessor;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.CorexRegistry;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
+import dev.corexmc.corex.environment.events.EventRegistry;
+// Commands
 import dev.corexmc.corex.environment.commands.core.*;
 import dev.corexmc.corex.environment.commands.player.*;
+// Containers
 import dev.corexmc.corex.environment.containers.*;
-import dev.corexmc.corex.environment.events.EventRegistry;
-import dev.corexmc.corex.environment.events.impl.core.DeltaTimeEvent;
+// Events
+import dev.corexmc.corex.environment.events.impl.core.*;
+// Formatters
 import dev.corexmc.corex.environment.formatters.*;
+// BaseTags
 import dev.corexmc.corex.environment.tags.core.*;
 import dev.corexmc.corex.environment.tags.player.*;
 import dev.corexmc.corex.environment.tags.world.*;
@@ -40,10 +45,11 @@ public class EnvironmentLoader {
                 WaitCommand.class,
                 RepeatCommand.class,
                 SwitchCommand.class,
-                SwitchCaseCommand.class,
-                SwitchDefaultCommand.class,
+                SwitchCaseCommand.class, // Switch subcommand
+                SwitchDefaultCommand.class, // Switch subcommand
                 IfCommand.class,
-                IfElseCommand.class,
+                IfElseCommand.class, // If subcommand
+                InjectCommand.class,
 
                 // Tags
                 ElementTag.class,
