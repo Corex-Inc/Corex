@@ -1,7 +1,11 @@
 package dev.corexmc.corex.engine.compiler;
 
 import dev.corexmc.corex.Corex;
+import dev.corexmc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexmc.corex.api.tags.AbstractTag;
+import dev.corexmc.corex.api.tags.Attribute;
+import dev.corexmc.corex.engine.registry.CommandMetadata;
+import dev.corexmc.corex.engine.registry.FormatRegistry;
 import dev.corexmc.corex.engine.utils.CorexLogger;
 
 import java.util.ArrayList;
@@ -17,7 +21,13 @@ public class ScriptCompiler {
 
         String cmdName = tokens.getFirst().toLowerCase();
 
-        dev.corexmc.corex.engine.registry.CommandMetadata meta =
+        boolean isWaitable = false;
+        if (cmdName.startsWith("~")) {
+            isWaitable = true;
+            cmdName = cmdName.substring(1);
+        }
+
+        CommandMetadata meta =
                 Corex.getInstance().getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) {
@@ -29,12 +39,21 @@ public class ScriptCompiler {
         Map<String, CompiledArgument> prefixArgs = new HashMap<>();
         List<String> flags = new ArrayList<>();
 
+        Map<AbstractGlobalFlag, CompiledArgument> gFlags = new HashMap<>();
+
         for (int i = 1; i < tokens.size(); i++) {
             String token = tokens.get(i);
             int colonIndex = token.indexOf(':');
 
             if (colonIndex > 0) {
                 String potentialPrefix = token.substring(0, colonIndex);
+
+                AbstractGlobalFlag gFlag = Corex.getInstance().getRegistry().getGlobalFlag(potentialPrefix);
+
+                if (gFlag != null) {
+                    gFlags.put(gFlag, parseArg(token.substring(colonIndex + 1)));
+                    continue;
+                }
 
                 if (meta.isAllowedPrefix(potentialPrefix)) {
                     String value = token.substring(colonIndex + 1);
@@ -47,7 +66,16 @@ public class ScriptCompiler {
             if (!token.contains("<")) flags.add(token.toLowerCase());
         }
 
-        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock);
+        int argsCount = linearArgs.size();
+        if (argsCount < meta.command.getMinArgs() || (meta.command.getMaxArgs() != -1 && argsCount > meta.command.getMaxArgs())) {
+            CorexLogger.error("COMPILE ERROR: Command '" + cmdName + "' expect from "
+                    + meta.command.getMinArgs() + " to " + meta.command.getMaxArgs()
+                    + " args, but provided " + argsCount + "!");
+            CorexLogger.error("-> Line: " + rawLine);
+            return null;
+        }
+
+        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock, isWaitable, gFlags);
     }
 
     public static Instruction compile(String rawLine) {
@@ -109,13 +137,13 @@ public class ScriptCompiler {
         TagNode[] nodes = parseTagNodes(mainTag);
 
         if (nodes.length == 1 && fallback == null) {
-            dev.corexmc.corex.engine.registry.FormatRegistry formats =
-                    dev.corexmc.corex.Corex.getInstance().getRegistry().getFormats();
+            FormatRegistry formats =
+                    Corex.getInstance().getRegistry().getFormats();
             if (formats.isFormat(nodes[0].name)) {
                 if (nodes[0].param == null || nodes[0].param instanceof CompiledArgument.Static) {
-                    dev.corexmc.corex.api.tags.Attribute mockAttr = new dev.corexmc.corex.api.tags.Attribute(nodes, null);
+                    Attribute mockAttr = new Attribute(nodes, null);
                     AbstractTag result = formats.get(nodes[0].name).parse(mockAttr);
-                    if (result != null) return new CompiledArgument.Static(result.identify());
+                    return new CompiledArgument.Static(result.identify());
                 }
             }
         }

@@ -2,6 +2,7 @@ package dev.corexmc.corex.engine;
 
 import dev.corexmc.corex.api.commands.AbstractCommand;
 import dev.corexmc.corex.api.containers.AbstractContainer;
+import dev.corexmc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexmc.corex.api.tags.AbstractFormatter;
 import dev.corexmc.corex.api.tags.AbstractTag;
 import dev.corexmc.corex.engine.registry.FormatRegistry;
@@ -17,9 +18,10 @@ import java.util.Map;
 public class CorexRegistry {
     private final ScriptCommandRegistry scriptCommandRegistry;
     private final FormatRegistry formatRegistry;
-    private final java.util.List<Class<? extends AbstractTag>> registeredTagClasses = new java.util.ArrayList<>();
+    private final List<Class<? extends AbstractTag>> registeredTagClasses = new ArrayList<>();
     private final List<Class<? extends AbstractFormatter>> registeredFormatterClasses = new ArrayList<>();
     private final Map<String, Class<? extends AbstractContainer>> registeredContainerClasses = new HashMap<>();
+    private final Map<String, AbstractGlobalFlag> globalFlags = new HashMap<>();
 
     public CorexRegistry() {
         this.scriptCommandRegistry = new ScriptCommandRegistry();
@@ -48,7 +50,7 @@ public class CorexRegistry {
                             (AbstractFormatter) clazz.getDeclaredConstructor().newInstance();
 
                     formatRegistry.register(formatter);
-                    registeredFormatterClasses.add(clazz.asSubclass(dev.corexmc.corex.api.tags.AbstractFormatter.class));
+                    registeredFormatterClasses.add(clazz.asSubclass(AbstractFormatter.class));
                     CorexLogger.info("FormatTag registered: <yellow><" + formatter.getName() + "></yellow>");
                 }
 
@@ -57,6 +59,13 @@ public class CorexRegistry {
 
                     registeredContainerClasses.put(dummy.getType().toLowerCase(), clazz.asSubclass(AbstractContainer.class));
                     dev.corexmc.corex.engine.utils.CorexLogger.info("Script container registered: <yellow>" + dummy.getType() + "</yellow>");
+                }
+
+                else if (AbstractGlobalFlag.class.isAssignableFrom(clazz)) {
+                    AbstractGlobalFlag flag =
+                            (AbstractGlobalFlag) clazz.getDeclaredConstructor().newInstance();
+                    globalFlags.put(flag.getName().toLowerCase(), flag);
+                    CorexLogger.info("Global flag registered: <yellow>" + flag.getName() + ":</yellow>");
                 }
 
                 else {
@@ -90,5 +99,9 @@ public class CorexRegistry {
 
     public Class<? extends AbstractContainer> getContainerClass(String type) {
         return registeredContainerClasses.get(type.toLowerCase());
+    }
+
+    public AbstractGlobalFlag getGlobalFlag(String name) {
+        return globalFlags.get(name.toLowerCase());
     }
 }

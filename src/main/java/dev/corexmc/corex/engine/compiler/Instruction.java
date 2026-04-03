@@ -1,6 +1,7 @@
 package dev.corexmc.corex.engine.compiler;
 
 import dev.corexmc.corex.api.commands.AbstractCommand;
+import dev.corexmc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexmc.corex.engine.queue.ScriptQueue;
 
 import javax.annotation.Nullable;
@@ -13,13 +14,25 @@ public class Instruction {
     public final String[] flags;
     public final Instruction[] innerBlock;
     public Object customData = null;
+    public final boolean isWaitable;
+    public final java.util.Map<dev.corexmc.corex.api.flags.AbstractGlobalFlag, CompiledArgument> globalFlags;
 
-    public Instruction(AbstractCommand command, CompiledArgument[] linearArgs, Map<String, CompiledArgument> prefixArgs, String[] flags, Instruction[] innerBlock) {
+    public Instruction(
+           AbstractCommand command,
+           CompiledArgument[] linearArgs,
+           Map<String, CompiledArgument> prefixArgs,
+           String[] flags,
+           Instruction[] innerBlock,
+           boolean isWaitable,
+           Map<AbstractGlobalFlag, CompiledArgument> globalFlags
+    ) {
         this.command = command;
         this.linearArgs = linearArgs;
         this.prefixArgs = prefixArgs;
         this.flags = flags;
         this.innerBlock = innerBlock;
+        this.isWaitable = isWaitable;
+        this.globalFlags = globalFlags;
     }
 
     public String getLinear(int index, ScriptQueue queue) {

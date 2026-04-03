@@ -13,6 +13,7 @@ import dev.corexmc.corex.environment.containers.*;
 // Events
 import dev.corexmc.corex.environment.events.impl.core.*;
 // Formatters
+import dev.corexmc.corex.environment.flags.IfGlobalFlag;
 import dev.corexmc.corex.environment.formatters.*;
 // BaseTags
 import dev.corexmc.corex.environment.tags.core.*;
@@ -50,6 +51,7 @@ public class EnvironmentLoader {
                 IfCommand.class,
                 IfElseCommand.class, // If subcommand
                 InjectCommand.class,
+                ReturnCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -70,7 +72,10 @@ public class EnvironmentLoader {
 
                 // Script containers
                 TaskContainer.class,
-                EventsContainer.class
+                EventsContainer.class,
+
+                // Global Flags
+                IfGlobalFlag.class
         );
 
         // Events

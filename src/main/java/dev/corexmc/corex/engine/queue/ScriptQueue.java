@@ -1,6 +1,8 @@
 package dev.corexmc.corex.engine.queue;
 
+import dev.corexmc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexmc.corex.api.tags.AbstractTag;
+import dev.corexmc.corex.engine.compiler.CompiledArgument;
 import dev.corexmc.corex.engine.compiler.Instruction;
 import dev.corexmc.corex.engine.utils.CorexLogger;
 import dev.corexmc.corex.engine.utils.SchedulerAdapter;
@@ -46,7 +48,24 @@ public class ScriptQueue {
             if (pointer < bytecode.length) {
                 Instruction inst = bytecode[pointer++];
                 try {
-                    inst.command.run(this, inst);
+                    if (isAsync && !inst.command.isAsyncSafe()) {
+                        CorexLogger.error("!! CRITICAL ERROR !!\n: Attempt to execute a sync command '" + inst.command.getName() + "' in an async queue " + id + "!");
+                        stopEntireQueue();
+                        return;
+                    }
+
+                    boolean skipCommand = false;
+                    for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
+                        if (!entry.getKey().execute(this, inst, entry.getValue())) {
+                            skipCommand = true;
+                            break;
+                        }
+                    }
+
+                    if (!skipCommand) {
+                        inst.command.run(this, inst);
+                    }
+
                 } catch (Exception e) {
                     CorexLogger.error("ERROR in " + id + ": " + e.getMessage());
                 }
@@ -92,6 +111,10 @@ public class ScriptQueue {
     public void stopEntireQueue() {
         this.isStopped = true;
         this.callStack.clear();
+    }
+
+    public void setOnFinish(Runnable onFinish) {
+        this.onFinish = onFinish;
     }
 
     public void delay(long ticks) {
