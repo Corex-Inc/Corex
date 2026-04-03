@@ -64,6 +64,8 @@ public class EnvironmentLoader {
                 DurationTag.class,
                 WorldTag.class,
                 ContextTag.class,
+                UtilTag.class,
+                RandomTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
