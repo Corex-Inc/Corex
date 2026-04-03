@@ -9,7 +9,7 @@ import org.jspecify.annotations.NonNull;
 
 public class ServerTag implements AbstractTag {
 
-    private String prefix = "server";
+    private final String prefix = "server";
 
     public static final TagProcessor<ServerTag> PROCESSOR = new TagProcessor<>();
 

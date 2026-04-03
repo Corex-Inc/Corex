@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Represents a script command that can be executed within a Corex ScriptQueue.
- * Implementations should be thread-safe if {@link #setCanBeAsync()} returns true.
+ * Implementations should be thread-safe if {@link #isAsyncSafe()} returns true.
  */
 public interface AbstractCommand {
 
@@ -107,7 +107,7 @@ public interface AbstractCommand {
      */
     @OverrideOnly
     @AvailableSince("1.0.0")
-    default boolean setCanBeAsync() {
+    default boolean isAsyncSafe() {
         return false;
     }
 }

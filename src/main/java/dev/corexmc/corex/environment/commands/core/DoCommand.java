@@ -65,6 +65,7 @@ public class DoCommand implements AbstractCommand {
 
     @Override public @NonNull String getName() { return "do"; }
     @Override public @NonNull List<String> getAlias() { return List.of("run"); }
+    @Override public boolean isAsyncSafe() { return true; }
 
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
@@ -118,12 +119,15 @@ public class DoCommand implements AbstractCommand {
 
                 List<String> keys = container.getDefinitions();
 
-                if (keys != null) {
-                    for (int i = 0; i < list.size() && i < keys.size(); i++) {
-                        newQueue.define(keys.get(i), ObjectFetcher.pickObject(list.get(i)));
-                    }
+                for (int i = 0; i < list.size() && i < keys.size(); i++) {
+                    newQueue.define(keys.get(i), ObjectFetcher.pickObject(list.get(i)));
                 }
             }
+        }
+
+        if (instruction.isWaitable) {
+            queue.pause();
+            newQueue.setOnFinish(queue::resume);
         }
 
         newQueue.start();
