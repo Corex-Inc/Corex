@@ -22,7 +22,7 @@ import java.util.List;
  * @Implements Wait
  *
  * @Description
- * Pauses the script queue for the duration specified. If no duration is specified it defaults to 1 seconds.
+ * Pauses the script queue for the duration specified. If no duration is specified it defaults to 1 second.
  *
  * @Usage
  * // Use to delay the current queue for 1 minute.
