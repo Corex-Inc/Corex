@@ -9,7 +9,6 @@ import dev.corexmc.corex.engine.queue.ScriptQueue;
 import dev.corexmc.corex.engine.scripts.ScriptManager;
 import dev.corexmc.corex.engine.tags.ObjectFetcher;
 import dev.corexmc.corex.engine.utils.debugging.Debugger;
-import dev.corexmc.corex.environment.tags.core.ElementTag;
 import dev.corexmc.corex.environment.tags.core.ListTag;
 import dev.corexmc.corex.environment.tags.core.MapTag;
 import org.jspecify.annotations.NonNull;

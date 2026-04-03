@@ -18,6 +18,7 @@ public class ScriptQueue {
     private final boolean isAsync;
     private final PlayerTag linkedPlayer;
     private final ConcurrentHashMap<String, AbstractTag> definitions = new ConcurrentHashMap<>();
+    private final java.util.List<AbstractTag> returnValues = new java.util.ArrayList<>();
 
     private Instruction[] bytecode;
     private int pointer = 0;
@@ -88,6 +89,11 @@ public class ScriptQueue {
     public void pause() { this.isPaused = true; }
     public void resume() { this.isPaused = false; executeNext(); }
 
+    public void stopEntireQueue() {
+        this.isStopped = true;
+        this.callStack.clear();
+    }
+
     public void delay(long ticks) {
         pause();
         if (isAsync) SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
@@ -126,5 +132,13 @@ public class ScriptQueue {
 
     public ContextTag getContext() {
         return context;
+    }
+
+    public void addReturn(AbstractTag tag) {
+        if (tag != null) returnValues.add(tag);
+    }
+
+    public java.util.List<AbstractTag> getReturns() {
+        return returnValues;
     }
 }

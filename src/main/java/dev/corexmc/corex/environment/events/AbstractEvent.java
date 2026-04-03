@@ -1,5 +1,7 @@
 package dev.corexmc.corex.environment.events;
 
+import dev.corexmc.corex.api.tags.AbstractTag;
+import dev.corexmc.corex.engine.queue.ScriptQueue;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -83,4 +85,13 @@ public interface AbstractEvent extends Listener {
     @Internal
     @AvailableSince("1.0.0")
     void reset();
+
+    default boolean isCancelled(ScriptQueue queue) {
+        for (AbstractTag tag : queue.getReturns()) {
+            if (tag.identify().equalsIgnoreCase("cancelled")) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

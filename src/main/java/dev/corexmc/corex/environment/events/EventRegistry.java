@@ -67,24 +67,23 @@ public class EventRegistry {
         Debugger.echoError("No handler found for event: " + rawLine);
     }
 
-    public static void fire(EventData data, PlayerTag player, ContextTag context) {
-        Runnable execute = () -> {
-            ScriptQueue queue = new ScriptQueue(
-                    "Event_" + System.currentTimeMillis(),
-                    data.bytecode,
-                    false,
-                    player
-            );
-            if (context != null) {
-                queue.setContext(context);
-            }
-            queue.start();
-        };
+    public static ScriptQueue fire(EventData data, PlayerTag player, ContextTag context) {
+        ScriptQueue queue = new ScriptQueue(
+                "Event_" + System.currentTimeMillis(),
+                data.bytecode,
+                false,
+                player
+        );
+        if (context != null) {
+            queue.setContext(context);
+        }
+        queue.start();
 
         if (data.isAfter) {
-            SchedulerAdapter.runLater(execute, 1L);
+            SchedulerAdapter.runLater(queue::start, 1L);
         } else {
-            execute.run();
+            queue.start();
         }
+        return queue;
     }
 }
