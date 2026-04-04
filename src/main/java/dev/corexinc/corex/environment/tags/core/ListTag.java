@@ -107,6 +107,18 @@ public class ListTag implements AbstractTag {
         return null;
     }
 
+    public void addString(String value) {
+        if (value != null) {
+            this.list.add(value);
+        }
+    }
+
+    public void addObject(AbstractTag tag) {
+        if (tag != null) {
+            this.list.add(tag.identify());
+        }
+    }
+
     @Override public @NonNull String getPrefix() { return prefix; }
 
     @Override
