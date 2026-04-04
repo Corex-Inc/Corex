@@ -31,7 +31,7 @@ public class Corex extends JavaPlugin {
         EnvManager.load(getDataFolder());
 
         int pluginId = 30505;
-        Metrics metrics = new Metrics(this, pluginId);
+        new Metrics(this, pluginId);
 
         try {
             registerCommand("run", new RunCommand());

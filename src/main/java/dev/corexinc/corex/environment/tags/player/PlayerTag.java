@@ -23,6 +23,9 @@ public class PlayerTag implements AbstractTag {
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("player", (attribute) -> {
+            if (attribute.hasParam()) {
+                return new PlayerTag(attribute.getParam());
+            }
             if (attribute.getQueue() != null && attribute.getQueue().getPlayer() != null) {
                 return attribute.getQueue().getPlayer();
             }
@@ -66,9 +69,9 @@ public class PlayerTag implements AbstractTag {
         } else {
             String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(2) : raw;
 
-            org.bukkit.OfflinePlayer tempPlayer;
+            OfflinePlayer tempPlayer;
             try {
-                tempPlayer = org.bukkit.Bukkit.getOfflinePlayer(java.util.UUID.fromString(cleanRaw));
+                tempPlayer = Bukkit.getOfflinePlayer(UUID.fromString(cleanRaw));
             } catch (Exception e) {
                 tempPlayer = Bukkit.getOfflinePlayer(cleanRaw);
             }
