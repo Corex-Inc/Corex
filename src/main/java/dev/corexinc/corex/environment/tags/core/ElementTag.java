@@ -4,6 +4,8 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
 public class ElementTag implements AbstractTag {
@@ -11,6 +13,7 @@ public class ElementTag implements AbstractTag {
     private final String prefix;
     private final String element;
 
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     public static final TagProcessor<ElementTag> PROCESSOR = new TagProcessor<>();
 
     public ElementTag(String string) {
@@ -21,6 +24,11 @@ public class ElementTag implements AbstractTag {
         } else {
             this.element = string.toLowerCase().startsWith(prefix + "@") ? string.substring(3) : string;
         }
+    }
+
+    public ElementTag(Component component) {
+        this.prefix = "el";
+        this.element = MINI_MESSAGE.serialize(component);
     }
 
     public ElementTag(boolean bool) {
