@@ -4,6 +4,7 @@ import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.EnvManager;
+import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.utils.commands.RunCommand;
 import org.bukkit.Bukkit;
@@ -28,6 +29,9 @@ public class Corex extends JavaPlugin {
         this.registry = new CorexRegistry();
         EnvironmentLoader.registerDefaults(this.registry);
         EnvManager.load(getDataFolder());
+
+        int pluginId = 30505;
+        Metrics metrics = new Metrics(this, pluginId);
 
         try {
             registerCommand("run", new RunCommand());
