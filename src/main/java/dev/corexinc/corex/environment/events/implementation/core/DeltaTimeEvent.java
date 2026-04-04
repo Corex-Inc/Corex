@@ -9,7 +9,9 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DeltaTimeEvent implements AbstractEvent {
 
@@ -18,9 +20,9 @@ public class DeltaTimeEvent implements AbstractEvent {
 
     private int currentSessionId = 0;
 
-    private final List<EventData> secondly = new ArrayList<>();
-    private final List<EventData> minutely = new ArrayList<>();
-    private final List<EventData> hourly = new ArrayList<>();
+    private final Set<EventData> secondly = new LinkedHashSet<>();
+    private final Set<EventData> minutely = new LinkedHashSet<>();
+    private final Set<EventData> hourly   = new LinkedHashSet<>();
 
     @Override public @NonNull String getName() { return "DeltaTime"; }
     @Override public @NonNull String getSyntax() { return "delta time"; }
@@ -70,7 +72,7 @@ public class DeltaTimeEvent implements AbstractEvent {
         if (secondsPassed % 3600 == 0) checkAndFire(hourly, secondsPassed / 3600, context);
     }
 
-    private void checkAndFire(List<EventData> scripts, long timeValue, ContextTag context) {
+    private void checkAndFire(Set<EventData> scripts, long timeValue, ContextTag context) {
         for (EventData data : scripts) {
             int every = 1;
             String switchVal = data.getSwitch("every");
