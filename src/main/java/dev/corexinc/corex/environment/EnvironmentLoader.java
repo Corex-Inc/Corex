@@ -82,7 +82,8 @@ public class EnvironmentLoader {
 
         // Events
         EventRegistry.register(
-                DeltaTimeEvent.class
+                DeltaTimeEvent.class,
+                PlayerJoinEvent.class
         );
     }
 }
