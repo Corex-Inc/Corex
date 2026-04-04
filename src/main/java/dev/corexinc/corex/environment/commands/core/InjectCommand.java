@@ -79,6 +79,6 @@ public class InjectCommand implements AbstractCommand {
             return;
         }
 
-        queue.pushFrame(bytecode, null);
+        queue.pushFrame(getName(), bytecode, null);
     }
 }

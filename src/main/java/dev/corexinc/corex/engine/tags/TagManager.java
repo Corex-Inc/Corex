@@ -12,12 +12,11 @@ public class TagManager {
     private static final Map<String, Function<Attribute, AbstractTag>> baseTags = new HashMap<>();
 
     public static void registerBaseTag(String name, Function<Attribute, AbstractTag> function) {
-        baseTags.put(name.toLowerCase(), function);
+        baseTags.put(name, function);
     }
 
     public static AbstractTag executeBaseTag(Attribute attribute) {
-        String baseName = attribute.getName().toLowerCase();
-        Function<Attribute, AbstractTag> function = baseTags.get(baseName);
+        Function<Attribute, AbstractTag> function = baseTags.get(attribute.getName());
 
         if (function != null) {
             AbstractTag tag = function.apply(attribute);

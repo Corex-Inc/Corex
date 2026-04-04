@@ -9,19 +9,19 @@ public class FormatRegistry {
     private final Map<String, AbstractFormatter> formats = new HashMap<>();
 
     public void register(AbstractFormatter formatter) {
-        formats.put(formatter.getName().toLowerCase(), formatter);
+        formats.put(formatter.getName(), formatter);
         if (formatter.getAlias() != null) {
             for (String alias : formatter.getAlias()) {
-                formats.put(alias.toLowerCase(), formatter);
+                formats.put(alias, formatter);
             }
         }
     }
 
     public AbstractFormatter get(String tag) {
-        return formats.get(tag.toLowerCase());
+        return formats.get(tag);
     }
 
     public boolean isFormat(String tag) {
-        return formats.containsKey(tag.toLowerCase());
+        return formats.containsKey(tag);
     }
 }

@@ -77,7 +77,8 @@ public class SwitchCommand implements AbstractCommand {
         }
 
         if (targetBlock != null) {
-            queue.pushFrame(targetBlock, null);
+            queue.pushFrame(getName(), targetBlock, null);
+
         }
     }
 }

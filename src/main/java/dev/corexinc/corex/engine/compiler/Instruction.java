@@ -18,13 +18,13 @@ public class Instruction {
     public final java.util.Map<AbstractGlobalFlag, CompiledArgument> globalFlags;
 
     public Instruction(
-           AbstractCommand command,
-           CompiledArgument[] linearArgs,
-           Map<String, CompiledArgument> prefixArgs,
-           String[] flags,
-           Instruction[] innerBlock,
-           boolean isWaitable,
-           Map<AbstractGlobalFlag, CompiledArgument> globalFlags
+            AbstractCommand command,
+            CompiledArgument[] linearArgs,
+            Map<String, CompiledArgument> prefixArgs,
+            String[] flags,
+            Instruction[] innerBlock,
+            boolean isWaitable,
+            Map<AbstractGlobalFlag, CompiledArgument> globalFlags
     ) {
         this.command = command;
         this.linearArgs = linearArgs;
@@ -42,7 +42,7 @@ public class Instruction {
 
     @Nullable
     public String getPrefix(String prefix, ScriptQueue queue) {
-        CompiledArgument arg = prefixArgs.get(prefix.toLowerCase());
+        CompiledArgument arg = prefixArgs.get(prefix);
         return arg != null ? arg.evaluate(queue) : null;
     }
 

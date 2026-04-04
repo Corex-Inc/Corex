@@ -3,6 +3,7 @@ package dev.corexinc.corex.engine.compiler;
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
 import dev.corexinc.corex.engine.registry.FormatRegistry;
@@ -62,8 +63,9 @@ public class ScriptCompiler {
                 }
             }
 
-            linearArgs.add(parseArg(token));
-            if (!token.contains("<")) flags.add(token.toLowerCase());
+            CompiledArgument compiled = parseArg(token);
+            linearArgs.add(compiled);
+            if (compiled instanceof CompiledArgument.Static) flags.add(token.toLowerCase());
         }
 
         int argsCount = linearArgs.size();
@@ -85,12 +87,15 @@ public class ScriptCompiler {
     public static CompiledArgument parseArg(String text) {
         if (!text.contains("<")) return new CompiledArgument.Static(text);
 
-        java.util.List<CompiledArgument> parts = new java.util.ArrayList<>();
+        List<CompiledArgument> parts = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
         int tagDepth = 0;
         boolean escaped = false;
+        int len = text.length();
 
-        for (char c : text.toCharArray()) {
+        for (int i = 0; i < len; i++) {
+            char c = text.charAt(i);
+
             if (escaped) {
                 if (tagDepth > 0) buffer.append('\\');
                 buffer.append(c);
@@ -125,24 +130,22 @@ public class ScriptCompiler {
     private static CompiledArgument compileSingleTag(String rawTag) {
         String mainTag = rawTag;
         CompiledArgument fallback = null;
-        if (rawTag.contains("||")) {
-            int pipeIndex = rawTag.indexOf("||");
 
+        int pipeIndex = rawTag.indexOf("||");
+        if (pipeIndex >= 0) {
             mainTag = rawTag.substring(0, pipeIndex);
-            String fallbackStr = rawTag.substring(pipeIndex + 2);
-
-            fallback = parseArg(fallbackStr);
+            fallback = parseArg(rawTag.substring(pipeIndex + 2));
         }
 
         TagNode[] nodes = parseTagNodes(mainTag);
 
         if (nodes.length == 1 && fallback == null) {
-            FormatRegistry formats =
-                    Corex.getInstance().getRegistry().getFormats();
-            if (formats.isFormat(nodes[0].name)) {
+            FormatRegistry formats = Corex.getInstance().getRegistry().getFormats();
+            AbstractFormatter fmt = formats.get(nodes[0].name);
+            if (fmt != null) {
                 if (nodes[0].param == null || nodes[0].param instanceof CompiledArgument.Static) {
                     Attribute mockAttr = new Attribute(nodes, null);
-                    AbstractTag result = formats.get(nodes[0].name).parse(mockAttr);
+                    AbstractTag result = fmt.parse(mockAttr);
                     return new CompiledArgument.Static(result.identify());
                 }
             }
@@ -152,12 +155,15 @@ public class ScriptCompiler {
     }
 
     public static TagNode[] parseTagNodes(String rawTag) {
-        java.util.List<TagNode> nodes = new java.util.ArrayList<>();
+        List<TagNode> nodes = new ArrayList<>();
         StringBuilder name = new StringBuilder();
         StringBuilder param = new StringBuilder();
         int bracketDepth = 0;
+        int len = rawTag.length();
 
-        for (char c : rawTag.toCharArray()) {
+        for (int i = 0; i < len; i++) {
+            char c = rawTag.charAt(i);
+
             if (c == '[') {
                 bracketDepth++;
                 if (bracketDepth == 1) continue;
@@ -184,8 +190,9 @@ public class ScriptCompiler {
         boolean inQuotes = false;
         int tagDepth = 0;
         boolean escaped = false;
+        int len = line.length();
 
-        for (int i = 0; i < line.length(); i++) {
+        for (int i = 0; i < len; i++) {
             char c = line.charAt(i);
             if (escaped) { current.append('\\').append(c); escaped = false; continue; }
             if (c == '\\') { escaped = true; continue; }

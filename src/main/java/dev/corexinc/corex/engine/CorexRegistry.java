@@ -28,7 +28,6 @@ public class CorexRegistry {
         this.formatRegistry = new FormatRegistry();
     }
 
-
     public void register(Class<?>... injectables) {
         for (Class<?> clazz : injectables) {
             try {
@@ -73,10 +72,15 @@ public class CorexRegistry {
                 }
 
             } catch (NoSuchMethodException e) {
-                Debugger.echoError("Class " + clazz.getSimpleName() + " doesn't have method!");
+                Debugger.error(
+                        "Class " + clazz.getSimpleName() + " doesn't have required method!",
+                        e
+                );
             } catch (Exception e) {
-                Debugger.echoError("Error with registration " + clazz.getSimpleName() + ": " + e.getMessage());
-                e.printStackTrace();
+                Debugger.error(
+                        "Error registering " + clazz.getSimpleName() + ": " + e.getMessage(),
+                        e
+                );
             }
         }
     }
@@ -89,7 +93,7 @@ public class CorexRegistry {
         return formatRegistry;
     }
 
-    public java.util.List<Class<? extends AbstractTag>> getRegisteredTagClasses() {
+    public List<Class<? extends AbstractTag>> getRegisteredTagClasses() {
         return registeredTagClasses;
     }
 

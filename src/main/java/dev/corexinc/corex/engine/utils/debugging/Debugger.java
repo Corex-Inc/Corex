@@ -29,7 +29,6 @@ public class Debugger {
 
     private static volatile DebugLevel globalLevel = DebugLevel.INFO;
 
-    // Кэш отступов для снижения нагрузки на Garbage Collector
     private static final String[] INDENTS = new String[32];
     static {
         for (int i = 0; i < INDENTS.length; i++) {
@@ -65,9 +64,10 @@ public class Debugger {
         CorexLogger.info(format.header + " <gray>started <dark_gray>(" + mode + "<dark_gray>)" + player);
     }
 
-    public static void queueStop(ScriptQueue queue, long elapsedMs) {
+    public static void queueStop(ScriptQueue queue, double elapsedMs) {
         if (!allows(queue, DebugLevel.INFO)) return;
-        CorexLogger.success(formatFor(queue).header + " <gray>done <dark_gray>(" + elapsedMs + "ms)");
+        String timeStr = String.format(java.util.Locale.US, "%.4f", elapsedMs);
+        CorexLogger.success(formatFor(queue).header + " <gray>done <dark_gray>(" + timeStr + "ms)");
     }
 
     public static void queuePaused(ScriptQueue queue, long ticks) {
@@ -81,13 +81,13 @@ public class Debugger {
     }
 
     public static void frameCall(ScriptQueue queue, String calledScript, int depth) {
-        if (!allows(queue, DebugLevel.INFO)) return;
+        if (!allows(queue, DebugLevel.VERBOSE)) return;
         QueueFormat format = formatFor(queue);
         CorexLogger.info(indent(depth) + "<" + format.color + ">+-></" + format.color + "> <gray>calling <white>" + calledScript);
     }
 
     public static void frameReturn(ScriptQueue queue, int depth) {
-        if (!allows(queue, DebugLevel.INFO)) return;
+        if (!allows(queue, DebugLevel.VERBOSE)) return;
         QueueFormat format = formatFor(queue);
         CorexLogger.info(indent(depth) + "<" + format.color + ">+<-</" + format.color + "> <gray>returned");
     }
@@ -168,14 +168,16 @@ public class Debugger {
     }
 
     private static boolean allows(ScriptQueue queue, DebugLevel required) {
-        if (queue == null) return globalLevel.ordinal() >= required.ordinal();
-        DebugLevel effective = queueLevelOverrides.getOrDefault(queue.getId(), globalLevel);
-        return effective.ordinal() >= required.ordinal();
+        if (globalLevel.ordinal() >= required.ordinal()) return true;
+
+        if (queue == null || queueLevelOverrides.isEmpty()) return false;
+
+        DebugLevel override = queueLevelOverrides.get(queue.getId());
+        return override != null && override.ordinal() >= required.ordinal();
     }
 
     private static QueueFormat formatFor(ScriptQueue queue) {
         return queueFormats.computeIfAbsent(queue.getId(), id -> {
-            // Math.abs защищает от отрицательных значений при переполнении int
             int index = Math.abs(colorCounter.getAndIncrement()) % COLOR_POOL.size();
             return new QueueFormat(COLOR_POOL.get(index), id);
         });
