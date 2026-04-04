@@ -29,6 +29,16 @@ public class TeleportCommand implements AbstractCommand {
     }
 
     @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 3;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
         int argCount = entry.linearArgs.length;
 
@@ -61,13 +71,13 @@ public class TeleportCommand implements AbstractCommand {
         }
 
         if (targets.isEmpty()) {
-            Debugger.echoError("TeleportCommand: could not resolve any target entities.");
+            Debugger.error(queue, getName() + " could not resolve any target entities.", 0);
             return;
         }
 
         LocationTag location = new LocationTag(rawLocation);
         if (location.getLocation().getWorld() == null) {
-            Debugger.echoError("TeleportCommand: invalid or world-less location: " + rawLocation);
+            Debugger.error(queue, getName() + " invalid or world-less location: " + rawLocation, 0);
             return;
         }
 
@@ -77,7 +87,7 @@ public class TeleportCommand implements AbstractCommand {
             try {
                 cause = TeleportCause.valueOf(rawCause.toUpperCase());
             } catch (IllegalArgumentException e) {
-                Debugger.echoError("TeleportCommand: unknown TeleportCause '" + rawCause + "', defaulting to PLUGIN.");
+                Debugger.error(queue, getName() + " unknown TeleportCause '" + rawCause + "', defaulting to PLUGIN.", e, 0);
             }
         }
 
@@ -89,15 +99,5 @@ public class TeleportCommand implements AbstractCommand {
                     .filter(e -> e.getLocation().equals(target))
                     .forEach(e -> e.teleportAsync(destination, finalCause));
         }
-    }
-
-    @Override
-    public int getMinArgs() {
-        return 1;
-    }
-
-    @Override
-    public int getMaxArgs() {
-        return 3;
     }
 }

@@ -79,7 +79,23 @@ import org.jspecify.annotations.NonNull;
  */
 public class IfCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "if"; }
+    @Override
+    public @NonNull String getName() {
+        return "if";
+    }
+
+    @Override
+    public @NonNull String getSyntax() { return "[<value>]"; }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return -1;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
@@ -97,8 +113,4 @@ public class IfCommand implements AbstractCommand {
             queue.pushFrame(instruction.innerBlock, null);
         }
     }
-
-    @Override public @NonNull String getSyntax() { return "[<value>]"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return -1; }
 }

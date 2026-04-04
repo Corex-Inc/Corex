@@ -7,14 +7,29 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 
 public class SwitchCaseCommand implements AbstractCommand {
-    @Override public @NonNull String getName() { return "case"; }
+
+    @Override
+    public @NonNull String getName() {
+        return "case";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<text>|...]";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return -1;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        Debugger.echoError("ERROR: Command '- case' can ONLY be used inside '- switch'!");
+        Debugger.error(queue, "Command '" + getName() + "' can ONLY be used inside 'switch'!", 0);
     }
-
-    @Override public @NonNull String getSyntax() { return "[<text>|...]"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 99; }
 }

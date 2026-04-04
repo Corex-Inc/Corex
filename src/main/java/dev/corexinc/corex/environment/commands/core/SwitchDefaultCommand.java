@@ -7,14 +7,29 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 
 public class SwitchDefaultCommand implements AbstractCommand {
-    @Override public @NonNull String getName() { return "default"; }
+
+    @Override
+    public @NonNull String getName() {
+        return "default";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 0;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 0;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        Debugger.echoError("ERROR: Command '- default' can ONLY be used inside '- switch'!");
+        Debugger.error(queue, "Command '" + getName() + "' can ONLY be used inside 'switch'!", 0);
     }
-
-    @Override public @NonNull String getSyntax() { return ""; }
-    @Override public int getMinArgs() { return 0; }
-    @Override public int getMaxArgs() { return 0; }
 }

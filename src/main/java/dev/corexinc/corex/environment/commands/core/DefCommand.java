@@ -11,10 +11,29 @@ import java.util.List;
 public class DefCommand implements AbstractCommand {
 
     @Override
-    public @NonNull String getName() { return "def"; }
+    public @NonNull String getName() {
+        return "def";
+    }
 
     @Override
-    public @NonNull List<String> getAlias() { return List.of("define"); }
+    public @NonNull List<String> getAlias() {
+        return List.of("define");
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<name>] [<value>]";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 2;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
@@ -25,8 +44,4 @@ public class DefCommand implements AbstractCommand {
 
         queue.define(key, value == null ? null : new ElementTag(value));
     }
-
-    @Override public @NonNull String getSyntax() { return "[<name>] [<value>]"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 2; }
 }

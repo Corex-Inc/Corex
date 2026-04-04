@@ -49,7 +49,25 @@ import org.jspecify.annotations.NonNull;
  */
 public class RepeatCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "repeat"; }
+    @Override
+    public @NonNull String getName() {
+        return "repeat";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<amount>|stop|next] (from:<#>) (as:<name>)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 3;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
@@ -92,8 +110,4 @@ public class RepeatCommand implements AbstractCommand {
             runIteration(queue, block, current + 1, max, asVar);
         });
     }
-
-    @Override public @NonNull String getSyntax() { return "[<amount>|stop|next] (from:<#>) (as:<name>)"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 3; }
 }

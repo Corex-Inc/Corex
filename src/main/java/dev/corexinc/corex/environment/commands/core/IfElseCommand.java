@@ -12,14 +12,31 @@ import java.util.Arrays;
 
 public class IfElseCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "else"; }
+    @Override
+    public @NonNull String getName() {
+        return "else";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "(if) (<value>)";
+    }
+
+    @Override public int getMinArgs() {
+        return 0;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return -1;
+    }
 
     @Override
     public void run(ScriptQueue queue, @NonNull Instruction instruction) {
         Object lastIfObj = queue.getTempData("corex_if_result");
 
         if (!(lastIfObj instanceof Boolean)) {
-            Debugger.echoError("ERROR: Command '- else' can not be called avoid '- if'!");
+            Debugger.error(queue, "Command '" + getName() +"' cannot be called without a preceding '- if'!", 0);
             return;
         }
 
@@ -56,8 +73,4 @@ public class IfElseCommand implements AbstractCommand {
             queue.pushFrame(instruction.innerBlock, null);
         }
     }
-
-    @Override public @NonNull String getSyntax() { return "(if) (<value>)"; }
-    @Override public int getMinArgs() { return 0; }
-    @Override public int getMaxArgs() { return -1; }
 }

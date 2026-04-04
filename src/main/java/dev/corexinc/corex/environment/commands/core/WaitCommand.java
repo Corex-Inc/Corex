@@ -38,8 +38,6 @@ import java.util.List;
  */
 public class WaitCommand implements AbstractCommand {
 
-    private static final DurationTag DEFAULT_DURATION = new DurationTag("1s");
-
     @Override
     public @NotNull String getName() {
         return "wait";
@@ -67,20 +65,16 @@ public class WaitCommand implements AbstractCommand {
 
     @Override
     public void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction) {
-        DurationTag duration = DEFAULT_DURATION;
-
         if (instruction.linearArgs != null && instruction.linearArgs.length > 0) {
             String raw = instruction.getLinear(0, queue);
             if (raw != null && !raw.isBlank()) {
                 DurationTag parsed = new DurationTag(raw);
                 if (parsed.getTicks() > 0) {
-                    duration = parsed;
+                    queue.delay(parsed.getTicksLong());
                 } else {
-                    Debugger.echoError("WaitCommand: could not parse duration '" + raw + "', defaulting to 1s.");
+                    Debugger.error(queue, getName() + " could not parse duration '" + raw + "'", 0);
                 }
             }
         }
-
-        queue.delay(duration.getTicksLong());
     }
 }

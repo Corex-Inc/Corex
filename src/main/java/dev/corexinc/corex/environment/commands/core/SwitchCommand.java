@@ -12,9 +12,30 @@ import java.util.Map;
 
 public class SwitchCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "switch"; }
+    @Override
+    public @NonNull String getName() {
+        return "switch";
+    }
 
-    @Override public java.util.@NonNull List<String> getAlias() { return List.of("choose"); }
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("choose");
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<value>]";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 1;
+    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -38,22 +59,18 @@ public class SwitchCommand implements AbstractCommand {
                             lookupTable.put(caseVal.toLowerCase(), child.innerBlock);
                         }
                     }
-                }
-                else if (child.command instanceof SwitchDefaultCommand) {
+                } else if (child.command instanceof SwitchDefaultCommand) {
                     if (child.innerBlock != null) {
                         lookupTable.put("\0DEFAULT", child.innerBlock);
                     }
-                }
-                else {
-                    Debugger.echoError("Unknown command in switch: " + child.command.getName());
+                } else {
+                    Debugger.error(queue, "Unknown command inside switch block: " + child.command.getName(), 0);
                 }
             }
             instruction.customData = lookupTable;
         }
 
-        String choiceLow = switchValue.toLowerCase();
-
-        Instruction[] targetBlock = lookupTable.get(choiceLow);
+        Instruction[] targetBlock = lookupTable.get(switchValue.toLowerCase());
 
         if (targetBlock == null) {
             targetBlock = lookupTable.get("\0DEFAULT");
@@ -63,8 +80,4 @@ public class SwitchCommand implements AbstractCommand {
             queue.pushFrame(targetBlock, null);
         }
     }
-
-    @Override public @NonNull String getSyntax() { return "[<value>]"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 1; }
 }

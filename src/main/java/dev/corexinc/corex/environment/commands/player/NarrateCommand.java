@@ -22,6 +22,21 @@ public class NarrateCommand implements AbstractCommand {
     }
 
     @Override
+    public @NonNull String getSyntax() {
+        return "[<text>] (targets:<player>|...)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 2;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
         String text = entry.getLinear(0, queue);
         if (text == null) return;
@@ -49,11 +64,4 @@ public class NarrateCommand implements AbstractCommand {
             Bukkit.getServer().getConsoleSender().sendMessage(message);
         }
     }
-
-    @Override
-    public @NonNull String getSyntax() { return "[<text>] (targets:<player>|...)"; }
-    @Override
-    public int getMinArgs() { return 1; }
-    @Override
-    public int getMaxArgs() { return 2; }
 }

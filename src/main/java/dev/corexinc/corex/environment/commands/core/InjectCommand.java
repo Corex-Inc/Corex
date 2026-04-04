@@ -10,27 +10,45 @@ import org.jspecify.annotations.NonNull;
 
 
 /* @[command]
-*
-* @Name Inject
-* @Syntax inject [<script>] (path:<name>)
-* @RequiredArgs 1
-* @MaxArgs 2
-* @ShortDescription Runs a script in the current queue.
-*
-* @Implements Inject
-*
-* @Description
-* Injects a script into the current queue.
-* This means this task will run with all the original queue's definitions and tags.
-* It will also now be part of the queue, so any delays or definitions used in the injected script will be accessible in the original queue.
-*
-* @Usage
-* // Injects the MyCustomTask task with path into the current queue
-* - inject MyCustomTask path:myAwesomePath
-*/
+ *
+ * @Name Inject
+ * @Syntax inject [<script>] (path:<name>)
+ * @RequiredArgs 1
+ * @MaxArgs 2
+ * @ShortDescription Runs a script in the current queue.
+ *
+ * @Implements Inject
+ *
+ * @Description
+ * Injects a script into the current queue.
+ * This means this task will run with all the original queue's definitions and tags.
+ * It will also now be part of the queue, so any delays or definitions used in the injected script will be accessible in the original queue.
+ *
+ * @Usage
+ * // Injects the MyCustomTask task with path into the current queue
+ * - inject MyCustomTask path:myAwesomePath
+ */
 public class InjectCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "inject"; }
+    @Override
+    public @NonNull String getName() {
+        return "inject";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<script>] (path:<path>)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 2;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
@@ -51,20 +69,16 @@ public class InjectCommand implements AbstractCommand {
 
         AbstractContainer container = ScriptManager.getContainer(scriptName);
         if (container == null) {
-            Debugger.echoError("Inject error: Container '" + scriptName + "' not found!");
+            Debugger.error(queue, getName() + " container '" + scriptName + "' not found!", 0);
             return;
         }
 
         Instruction[] bytecode = container.getScript(path);
         if (bytecode == null) {
-            Debugger.echoError("Inject error: Path '" + path + "' in script '" + scriptName + "' has no commands!");
+            Debugger.error(queue, getName() + " path '" + path + "' in script '" + scriptName + "' has no commands!", 0);
             return;
         }
 
         queue.pushFrame(bytecode, null);
     }
-
-    @Override public @NonNull String getSyntax() { return "[<script>] (path:<path>)"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 2; }
 }

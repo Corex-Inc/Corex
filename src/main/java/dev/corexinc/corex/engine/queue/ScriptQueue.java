@@ -6,6 +6,8 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.engine.utils.debugging.DebugLevel;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 
@@ -36,81 +38,145 @@ public class ScriptQueue {
     private boolean isStopped = false;
     private boolean isBroken = false;
 
+    private long startNanos;
+
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
-        this.id = id; this.bytecode = bytecode; this.isAsync = isAsync; this.linkedPlayer = linkedPlayer;
+        this.id = id;
+        this.bytecode = bytecode;
+        this.isAsync = isAsync;
+        this.linkedPlayer = linkedPlayer;
     }
 
-    public void start() { executeNext(); }
+    public void start() {
+        startNanos = System.nanoTime();
+        Debugger.queueStart(this);
+        executeNext();
+    }
 
     public void executeNext() {
-        while (!isPaused && !isStopped) {
+        try {
+            while (!isPaused && !isStopped) {
 
-            if (pointer < bytecode.length) {
-                Instruction inst = bytecode[pointer++];
-                try {
-                    if (isAsync && !inst.command.isAsyncSafe()) {
-                        CorexLogger.error("!! CRITICAL ERROR !!\n: Attempt to execute a sync command '" + inst.command.getName() + "' in an async queue " + id + "!");
-                        stopEntireQueue();
-                        return;
-                    }
+                if (bytecode == null) {
+                    this.bytecode = new Instruction[0];
+                }
 
-                    boolean skipCommand = false;
-                    for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
-                        if (!entry.getKey().execute(this, inst, entry.getValue())) {
-                            skipCommand = true;
-                            break;
+                if (pointer < bytecode.length) {
+                    Instruction inst = bytecode[pointer++];
+                    int depth = callStack.size();
+
+                    try {
+                        if (isAsync && !inst.command.isAsyncSafe()) {
+                            Debugger.critical(this, "Attempt to execute a sync command '" + inst.command.getName() + "' in an async queue!");
+                            stopEntireQueue();
+                            return;
                         }
+
+                        boolean skipCommand = false;
+                        String skipReason = null;
+
+                        if (inst.globalFlags != null) {
+                            for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
+                                if (!entry.getKey().execute(this, inst, entry.getValue())) {
+                                    skipCommand = true;
+                                    skipReason = entry.getKey().getClass().getSimpleName();
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (skipCommand) {
+                            Debugger.instructionSkipped(this, inst, skipReason, depth);
+                        } else {
+                            Debugger.instructionStart(this, inst, depth);
+
+                            long startNanos = 0;
+                            if (Debugger.getGlobalLevel() == DebugLevel.TRACE) {
+                                startNanos = System.nanoTime();
+                            }
+
+                            if (inst.command != null) {
+                                inst.command.run(this, inst);
+                            }
+
+                            if (Debugger.getGlobalLevel() == DebugLevel.TRACE) {
+                                double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
+                                Debugger.instructionEnd(this, inst, depth, elapsedMs);
+                            }
+                        }
+
+                    } catch (Exception e) {
+                        String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
+                        Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, depth);
                     }
-
-                    if (!skipCommand) {
-                        inst.command.run(this, inst);
-                    }
-
-                } catch (Exception e) {
-                    CorexLogger.error("ERROR in " + id + ": " + e.getMessage());
-                }
-            } else {
-                Runnable callback = this.onFinish;
-
-                if (callStack.isEmpty()) {
-                    isStopped = true;
-                    if (callback != null) callback.run();
-                    break;
                 } else {
-                    QueueFrame frame = callStack.pop();
-                    this.bytecode = frame.bytecode;
-                    this.pointer = frame.pointer;
-                    this.onFinish = frame.onFinish;
-                }
+                    Runnable callback = this.onFinish;
 
-                if (callback != null) {
-                    callback.run();
+                    if (callStack.isEmpty()) {
+                        isStopped = true;
+                        double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
+                        Debugger.queueStop(this, elapsedMs);
+                        Debugger.releaseQueue(id);
+                        if (callback != null) callback.run();
+                        break;
+                    } else {
+                        int depth = callStack.size();
+                        QueueFrame frame = callStack.pop();
+                        this.bytecode = frame.bytecode;
+                        this.pointer = frame.pointer;
+                        this.onFinish = frame.onFinish;
+                        Debugger.frameReturn(this, depth);
+                    }
+
+                    if (callback != null) {
+                        callback.run();
+                    }
                 }
             }
+        } catch (Throwable t) {
+            // Если очередь крашнулась системной ошибкой (NPE и т.д.), отлавливаем это здесь
+            Debugger.error(this, "Fatal queue execution crash: " + t.getMessage(), t, callStack.size());
+            stopEntireQueue();
         }
     }
 
-    public void pushFrame(Instruction[] newBytecode, Runnable newOnFinish) {
+    public void pushFrame(String calledScriptName, Instruction[] newBytecode, Runnable newOnFinish) {
+        int depth = callStack.size();
         callStack.push(new QueueFrame(this.bytecode, this.pointer, this.onFinish));
         this.bytecode = newBytecode;
         this.pointer = 0;
         this.onFinish = newOnFinish;
+        Debugger.frameCall(this, calledScriptName, depth);
+    }
+
+    public void pushFrame(Instruction[] newBytecode, Runnable newOnFinish) {
+        pushFrame("<unknown>", newBytecode, newOnFinish);
     }
 
     public void skipFrame(boolean breakLoop) {
-        this.pointer = this.bytecode.length;
+        this.pointer = this.bytecode != null ? this.bytecode.length : 0;
         this.isBroken = breakLoop;
     }
 
     public boolean isBroken() { return isBroken; }
     public void setBroken(boolean broken) { this.isBroken = broken; }
 
-    public void pause() { this.isPaused = true; }
-    public void resume() { this.isPaused = false; executeNext(); }
+    public void pause() {
+        this.isPaused = true;
+    }
+
+    public void resume() {
+        Debugger.queueResumed(this);
+        this.isPaused = false;
+        executeNext();
+    }
 
     public void stopEntireQueue() {
         this.isStopped = true;
         this.callStack.clear();
+        double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
+        Debugger.queueStop(this, elapsedMs);
+        Debugger.releaseQueue(id);
     }
 
     public void setOnFinish(Runnable onFinish) {
@@ -118,6 +184,7 @@ public class ScriptQueue {
     }
 
     public void delay(long ticks) {
+        Debugger.queuePaused(this, ticks);
         pause();
         if (isAsync) SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
         else SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
@@ -163,5 +230,13 @@ public class ScriptQueue {
 
     public java.util.List<AbstractTag> getReturns() {
         return returnValues;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
+    }
+
+    public int getDepth() {
+        return callStack.size();
     }
 }

@@ -64,7 +64,7 @@ public class EventRegistry {
                 return;
             }
         }
-        Debugger.echoError("No handler found for event: " + rawLine);
+        Debugger.error("No handler found for event: " + rawLine);
     }
 
     public static ScriptQueue fire(EventData data, PlayerTag player, ContextTag context) {
@@ -77,7 +77,6 @@ public class EventRegistry {
         if (context != null) {
             queue.setContext(context);
         }
-        queue.start();
 
         if (data.isAfter) {
             SchedulerAdapter.runLater(queue::start, 1L);

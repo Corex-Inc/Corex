@@ -63,9 +63,35 @@ import java.util.Map;
  */
 public class DoCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "do"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("run"); }
-    @Override public boolean isAsyncSafe() { return true; }
+    @Override
+    public @NonNull String getName() {
+        return "do";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("run");
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<script>] (def.<key>:<value>) (def:<map/list>) (path:<path>)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return -1;
+    }
+
+    @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
@@ -86,13 +112,13 @@ public class DoCommand implements AbstractCommand {
 
         AbstractContainer container = ScriptManager.getContainer(scriptName);
         if (container == null) {
-            Debugger.echoError("Container '" + scriptName + "' not found!");
+            Debugger.error(queue, "Container '" + scriptName + "' not found!", 0);
             return;
         }
 
         Instruction[] bytecode = container.getScript(path);
         if (bytecode == null) {
-            Debugger.echoError("Path '" + path + "' doesn't contain any commands in " + scriptName);
+            Debugger.error(queue, "Path '" + path + "' doesn't contain any commands in " + scriptName, 0);
             return;
         }
 
@@ -132,8 +158,4 @@ public class DoCommand implements AbstractCommand {
 
         newQueue.start();
     }
-
-    @Override public @NonNull String getSyntax() { return "[<script>] (def.<key>:<value>) (def:<map/list>) (path:<path>)"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return -1; }
 }

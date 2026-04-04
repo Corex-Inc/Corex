@@ -10,8 +10,30 @@ import java.util.List;
 
 public class ReturnCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "return"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("determine"); }
+    @Override
+    public @NonNull String getName() {
+        return "return";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("determine");
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<value>] (passive)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 2;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
@@ -25,8 +47,4 @@ public class ReturnCommand implements AbstractCommand {
             queue.stopEntireQueue();
         }
     }
-
-    @Override public @NonNull String getSyntax() { return "[<value>] (passive)"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 2; }
 }

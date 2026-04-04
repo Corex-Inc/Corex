@@ -37,6 +37,21 @@ public class ReloadCommand implements AbstractCommand {
     }
 
     @Override
+    public @NonNull String getSyntax() {
+        return "";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 0;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 0;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         long start = System.currentTimeMillis();
 
@@ -54,8 +69,4 @@ public class ReloadCommand implements AbstractCommand {
             org.bukkit.Bukkit.getConsoleSender().sendMessage(msg);
         }
     }
-
-    @Override public @NonNull String getSyntax() { return ""; }
-    @Override public int getMinArgs() { return 0; }
-    @Override public int getMaxArgs() { return 0; }
 }
