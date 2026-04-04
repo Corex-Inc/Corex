@@ -9,6 +9,8 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.bukkit.Bukkit;
 import org.jspecify.annotations.NonNull;
 
+import java.nio.charset.Charset;
+
 public class UtilTag implements AbstractTag {
 
     private static final String PREFIX = "util";
@@ -29,11 +31,11 @@ public class UtilTag implements AbstractTag {
         PROCESSOR.registerTag(ElementTag.class, "uptime", (attr, obj) ->
                 new ElementTag(java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime()));
 
-        PROCESSOR.registerTag(ElementTag.class, "debugEnabled", (attr, obj) ->
-                new ElementTag(Debugger.isDebugEnabled));
+        PROCESSOR.registerTag(ElementTag.class, "debugLevel", (attr, obj) ->
+                new ElementTag(Debugger.getGlobalLevel().name()));
 
         PROCESSOR.registerTag(ElementTag.class, "defaultEncoding", (attr, obj) ->
-                new ElementTag(java.nio.charset.Charset.defaultCharset().name()));
+                new ElementTag(Charset.defaultCharset().name()));
 
         PROCESSOR.registerTag(ElementTag.class, "pi", (attr, obj) -> new ElementTag(Math.PI));
         PROCESSOR.registerTag(ElementTag.class, "e", (attr, obj) -> new ElementTag(Math.E));
@@ -47,7 +49,7 @@ public class UtilTag implements AbstractTag {
         PROCESSOR.registerTag(ElementTag.class, "shortMin", (attr, obj) -> new ElementTag(Short.MIN_VALUE));
 
         PROCESSOR.registerTag(ListTag.class, "listNumbers", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
+            if (!attr.hasParam()) return new ListTag("");
 
             long from = 1;
             long to = 1;
