@@ -2,6 +2,7 @@ package dev.corexinc.corex.environment.events;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -87,11 +88,10 @@ public interface AbstractEvent extends Listener {
     void reset();
 
     default boolean isCancelled(ScriptQueue queue) {
-        for (AbstractTag tag : queue.getReturns()) {
-            if (tag.identify().equalsIgnoreCase("cancelled")) {
-                return true;
-            }
-        }
-        return false;
+        return queue.isCancelled();
+    }
+
+    default void unregister() {
+        HandlerList.unregisterAll(this);
     }
 }
