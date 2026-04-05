@@ -33,6 +33,7 @@ public class EventRegistry {
 
     public static void resetAll() {
         for (AbstractEvent event : registeredEvents) {
+            event.unregister();
             event.reset();
         }
     }
