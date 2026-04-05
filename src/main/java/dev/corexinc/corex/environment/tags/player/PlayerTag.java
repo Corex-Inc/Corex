@@ -19,7 +19,7 @@ public class PlayerTag implements AbstractTag {
     private static String prefix = "p";
     private final OfflinePlayer offlinePlayer;
 
-    public static final TagProcessor<PlayerTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<PlayerTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("player", (attribute) -> {
@@ -35,16 +35,16 @@ public class PlayerTag implements AbstractTag {
         ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new PlayerTag(UUID.fromString(uuidStr)));
 
 
-        PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> {
             String name = object.offlinePlayer.getName();
             return new ElementTag(name != null ? name : "Unknown");
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) -> new ElementTag(String.valueOf(object.offlinePlayer.isOnline())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) -> new ElementTag(String.valueOf(object.offlinePlayer.isOnline())));
 
-        PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new ElementTag(object.offlinePlayer.getUniqueId().toString()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new ElementTag(object.offlinePlayer.getUniqueId().toString()));
 
-        PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.getPlayer().getLocation()));
+        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.getPlayer().getLocation()));
     }
 
     public PlayerTag(UUID uuid) {
@@ -91,12 +91,12 @@ public class PlayerTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
     public @NonNull TagProcessor<PlayerTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

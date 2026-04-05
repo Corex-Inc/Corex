@@ -20,26 +20,26 @@ public class EntityTag implements AbstractTag {
     private static String prefix = "e";
     private final Entity entity;
 
-    public static final TagProcessor<EntityTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<EntityTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("entity", (attribute) -> new EntityTag(attribute.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new EntityTag(UUID.fromString(uuidStr)));
 
-        PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) ->
                 new ElementTag(object.entity.getUniqueId().toString()));
 
-        PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) ->
                 new ElementTag(object.entity.getName()));
 
-        PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) ->
                 new ElementTag(object.entity.getType().name()));
 
-        PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) ->
                 new ElementTag(String.valueOf(!object.entity.isDead())));
 
-        PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) ->
+        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) ->
                 new LocationTag(object.entity.getLocation()));
     }
 
@@ -83,7 +83,7 @@ public class EntityTag implements AbstractTag {
 
     @Override
     public @Nullable AbstractTag getAttribute(@NotNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
@@ -93,6 +93,6 @@ public class EntityTag implements AbstractTag {
 
     @Override
     public @NonNull TagProcessor<EntityTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 }

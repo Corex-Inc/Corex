@@ -15,7 +15,7 @@ public class ElementTag implements AbstractTag {
     private final String element;
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
-    public static final TagProcessor<ElementTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<ElementTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public ElementTag(String string) {
         this.prefix = "el";
@@ -110,17 +110,17 @@ public class ElementTag implements AbstractTag {
     public static void register() {
         BaseTagProcessor.registerBaseTag("element", (attribute) -> new ElementTag(attribute.getParam()));
 
-        PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj);
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj);
 
-        PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase()));
-        PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase()));
-        PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length()));
 
-        PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt()));
-        PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble()));
-        PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean()));
 
-        PROCESSOR.registerTag(ElementTag.class, "add", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "add", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
                 return new ElementTag(obj.asDouble() + new ElementTag(attr.getParam()).asDouble());
@@ -128,7 +128,7 @@ public class ElementTag implements AbstractTag {
             return null;
         }).test("5");
 
-        PROCESSOR.registerTag(ElementTag.class, "root", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "root", (attr, obj) -> {
             double value = obj.asDouble();
             double degree = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 2.0;
 
@@ -137,7 +137,7 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(Math.pow(value, 1.0 / degree));
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "pow", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "pow", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             double base = obj.asDouble();
             double exponent = new ElementTag(attr.getParam()).asDouble();
@@ -145,7 +145,7 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(Math.pow(base, exponent));
         }).test("2");
 
-        PROCESSOR.registerTag(ElementTag.class, "ifTrue", (attr, el) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ifTrue", (attr, el) -> {
             boolean isTrue = el.asBoolean();
             String resultText = el.asString();
 
@@ -163,7 +163,7 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(resultText);
         }).test("This is true", "ifFalse[This is false!]");
 
-        PROCESSOR.registerTag(ElementTag.class, "repeat", (attribute, elementTag) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "repeat", (attribute, elementTag) -> {
             if (!attribute.hasParam()) return null;
             return new ElementTag(elementTag.element.repeat(new ElementTag(attribute.getParam()).asInt()));
         }).test("2");
@@ -181,7 +181,7 @@ public class ElementTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
@@ -200,7 +200,7 @@ public class ElementTag implements AbstractTag {
 
     @Override
     public @NonNull TagProcessor<ElementTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

@@ -17,19 +17,19 @@ public class ListTag implements AbstractTag {
     private static String prefix = "li";
     private final List<String> list = new ArrayList<>();
 
-    public static final TagProcessor<ListTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<ListTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("list", attr -> new ListTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, ListTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.list.size()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.list.size()));
 
-        PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) ->
                 new ElementTag(String.join(attr.getParam(), obj.list))).test(", ");
 
-        PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             int index = new ElementTag(attr.getParam()).asInt() - 1;
             if (index >= 0 && index < obj.list.size()) {
@@ -38,7 +38,7 @@ public class ListTag implements AbstractTag {
             return null;
         }).test("3");
 
-        PROCESSOR.registerTag(AbstractTag.class, "random", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "random", (attr, obj) -> {
             if (obj.list.isEmpty()) return null;
 
             if (!attr.hasParam()) {
@@ -58,7 +58,7 @@ public class ListTag implements AbstractTag {
             return new ListTag(String.join("|", subList));
         }).test("2");
 
-        PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
             if (obj.list.isEmpty()) return new ListTag("");
 
             List<String> copy = new ArrayList<>(obj.list);
@@ -127,11 +127,11 @@ public class ListTag implements AbstractTag {
     }
 
     @Override
-    public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
+    public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
 
     @Override
     public @NonNull TagProcessor<ListTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

@@ -14,7 +14,7 @@ public class ContextTag implements AbstractTag {
     private final String prefix = "context";
     private final Map<String, AbstractTag> contextData = new HashMap<>();
 
-    public static final TagProcessor<ContextTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<ContextTag> TAG_PROCESSOR = new TagProcessor<>();
     public ContextTag() {}
 
     public static void register() {
@@ -42,7 +42,7 @@ public class ContextTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        AbstractTag result = PROCESSOR.process(this, attribute);
+        AbstractTag result = TAG_PROCESSOR.process(this, attribute);
         if (result != null) return result;
 
         String key = attribute.getName().toLowerCase();
@@ -61,6 +61,6 @@ public class ContextTag implements AbstractTag {
 
     @Override
     public @NonNull TagProcessor<? extends AbstractTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 }

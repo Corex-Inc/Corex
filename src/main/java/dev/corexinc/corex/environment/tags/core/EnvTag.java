@@ -14,7 +14,7 @@ public class EnvTag implements AbstractTag {
     private final String key;
     private final String hiddenValue;
 
-    public static final TagProcessor<EnvTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<EnvTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
 
@@ -25,7 +25,7 @@ public class EnvTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(prefix, EnvTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> new ElementTag(obj.getKey()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> new ElementTag(obj.getKey()));
     }
 
     public EnvTag(String key) {
@@ -51,7 +51,7 @@ public class EnvTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
@@ -61,6 +61,6 @@ public class EnvTag implements AbstractTag {
 
     @Override
     public @NonNull TagProcessor<? extends AbstractTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 }

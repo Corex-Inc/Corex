@@ -15,7 +15,7 @@ import java.nio.charset.Charset;
 public class UtilTag implements AbstractTag {
 
     private static final String PREFIX = "util";
-    public static final TagProcessor<UtilTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<UtilTag> TAG_PROCESSOR = new TagProcessor<>();
 
     private static final UtilTag INSTANCE = new UtilTag();
 
@@ -23,33 +23,33 @@ public class UtilTag implements AbstractTag {
         ObjectFetcher.registerFetcher(PREFIX, s -> INSTANCE);
         BaseTagProcessor.registerBaseTag("util", attr -> INSTANCE);
 
-        PROCESSOR.registerTag(ElementTag.class, "serverTick", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "serverTick", (attr, obj) ->
                 new ElementTag(Bukkit.getServer().getCurrentTick()));
 
-        PROCESSOR.registerTag(ElementTag.class, "timeMillis", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "timeMillis", (attr, obj) ->
                 new ElementTag(System.currentTimeMillis()));
 
-        PROCESSOR.registerTag(ElementTag.class, "uptime", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uptime", (attr, obj) ->
                 new ElementTag(java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime()));
 
-        PROCESSOR.registerTag(ElementTag.class, "debugLevel", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "debugLevel", (attr, obj) ->
                 new ElementTag(Debugger.getGlobalLevel().name()));
 
-        PROCESSOR.registerTag(ElementTag.class, "defaultEncoding", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "defaultEncoding", (attr, obj) ->
                 new ElementTag(Charset.defaultCharset().name()));
 
-        PROCESSOR.registerTag(ElementTag.class, "pi", (attr, obj) -> new ElementTag(Math.PI));
-        PROCESSOR.registerTag(ElementTag.class, "e", (attr, obj) -> new ElementTag(Math.E));
-        PROCESSOR.registerTag(ElementTag.class, "tau", (attr, obj) -> new ElementTag(Math.PI * 2));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "pi", (attr, obj) -> new ElementTag(Math.PI));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "e", (attr, obj) -> new ElementTag(Math.E));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "tau", (attr, obj) -> new ElementTag(Math.PI * 2));
 
-        PROCESSOR.registerTag(ElementTag.class, "intMax", (attr, obj) -> new ElementTag(Integer.MAX_VALUE));
-        PROCESSOR.registerTag(ElementTag.class, "intMin", (attr, obj) -> new ElementTag(Integer.MIN_VALUE));
-        PROCESSOR.registerTag(ElementTag.class, "longMax", (attr, obj) -> new ElementTag(Long.MAX_VALUE));
-        PROCESSOR.registerTag(ElementTag.class, "longMin", (attr, obj) -> new ElementTag(Long.MIN_VALUE));
-        PROCESSOR.registerTag(ElementTag.class, "shortMax", (attr, obj) -> new ElementTag(Short.MAX_VALUE));
-        PROCESSOR.registerTag(ElementTag.class, "shortMin", (attr, obj) -> new ElementTag(Short.MIN_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "intMax", (attr, obj) -> new ElementTag(Integer.MAX_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "intMin", (attr, obj) -> new ElementTag(Integer.MIN_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "longMax", (attr, obj) -> new ElementTag(Long.MAX_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "longMin", (attr, obj) -> new ElementTag(Long.MIN_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "shortMax", (attr, obj) -> new ElementTag(Short.MAX_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "shortMin", (attr, obj) -> new ElementTag(Short.MIN_VALUE));
 
-        PROCESSOR.registerTag(ListTag.class, "listNumbers", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "listNumbers", (attr, obj) -> {
             if (!attr.hasParam()) return new ListTag("");
 
             long from = 1;
@@ -93,7 +93,7 @@ public class UtilTag implements AbstractTag {
             return resultList;
         });
 
-        PROCESSOR.registerTag(RandomTag.class, "random", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(RandomTag.class, "random", (attr, obj) -> {
             if (attr.hasParam()) {
                 try { return new RandomTag(Long.parseLong(attr.getParam())); }
                 catch (NumberFormatException ignored) {}
@@ -108,7 +108,7 @@ public class UtilTag implements AbstractTag {
 
     @Override public @NonNull String getPrefix() { return PREFIX; }
     @Override public @NonNull String identify() { return PREFIX + "@"; }
-    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
-    @Override public @NonNull TagProcessor<UtilTag> getProcessor() { return PROCESSOR; }
+    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
+    @Override public @NonNull TagProcessor<UtilTag> getProcessor() { return TAG_PROCESSOR; }
     @Override public String getTestValue() { return PREFIX + "@"; }
 }

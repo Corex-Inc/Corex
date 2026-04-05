@@ -19,18 +19,18 @@ public class MaterialTag implements AbstractTag {
     private final Material material;
     private final BlockData blockData;
 
-    public static final TagProcessor<MaterialTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<MaterialTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("material", attr -> new MaterialTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, MaterialTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) -> new ElementTag(obj.material.name().toLowerCase()));
-        PROCESSOR.registerTag(ElementTag.class, "isBlock", (attr, obj) -> new ElementTag(obj.material.isBlock()));
-        PROCESSOR.registerTag(ElementTag.class, "isItem", (attr, obj) -> new ElementTag(obj.material.isItem()));
-        PROCESSOR.registerTag(ElementTag.class, "isEdible", (attr, obj) -> new ElementTag(obj.material.isEdible()));
-        PROCESSOR.registerTag(ElementTag.class, "maxStackSize", (attr, obj) -> new ElementTag(obj.material.getMaxStackSize()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) -> new ElementTag(obj.material.name().toLowerCase()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isBlock", (attr, obj) -> new ElementTag(obj.material.isBlock()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isItem", (attr, obj) -> new ElementTag(obj.material.isItem()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isEdible", (attr, obj) -> new ElementTag(obj.material.isEdible()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "maxStackSize", (attr, obj) -> new ElementTag(obj.material.getMaxStackSize()));
     }
 
     public MaterialTag(Material material) {
@@ -80,12 +80,12 @@ public class MaterialTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
     public @NonNull TagProcessor<MaterialTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

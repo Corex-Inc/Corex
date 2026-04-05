@@ -16,18 +16,18 @@ public class MapTag implements AbstractTag {
     private static final String prefix = "map";
     private final Map<String, String> map = new LinkedHashMap<>();
 
-    public static final TagProcessor<MapTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<MapTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag(prefix, attr -> new MapTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, MapTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.map.size()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.map.size()));
 
-        PROCESSOR.registerTag(ListTag.class, "keys", (attr, obj) -> new ListTag(String.join("|", obj.map.keySet())));
+        TAG_PROCESSOR.registerTag(ListTag.class, "keys", (attr, obj) -> new ListTag(String.join("|", obj.map.keySet())));
 
-        PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             String val = obj.map.get(attr.getParam());
             return val != null ? ObjectFetcher.pickObject(val) : null;
@@ -80,11 +80,11 @@ public class MapTag implements AbstractTag {
     }
 
     @Override
-    public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
+    public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
 
     @Override
     public @NonNull TagProcessor<MapTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

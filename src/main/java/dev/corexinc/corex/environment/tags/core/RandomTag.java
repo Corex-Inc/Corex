@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomTag implements AbstractTag {
 
     private static final String PREFIX = "random";
-    public static final TagProcessor<RandomTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<RandomTag> TAG_PROCESSOR = new TagProcessor<>();
 
     private static final RandomTag SHARED_INSTANCE = new RandomTag();
 
@@ -31,10 +31,10 @@ public class RandomTag implements AbstractTag {
             }
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
                 new ElementTag(UUID.randomUUID().toString()));
 
-        PROCESSOR.registerTag(ElementTag.class, "int", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "int", (attr, obj) -> {
             Random r = obj.getRandom();
             if (!attr.hasParam()) {
                 return new ElementTag(r.nextInt());
@@ -53,7 +53,7 @@ public class RandomTag implements AbstractTag {
             return new ElementTag(r.nextInt(Math.max(1, min)));
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "decimal", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "decimal", (attr, obj) -> {
             Random r = obj.getRandom();
 
             if (!attr.hasParam()) {
@@ -72,10 +72,10 @@ public class RandomTag implements AbstractTag {
             return new ElementTag(r.nextDouble() * min);
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "boolean", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "boolean", (attr, obj) ->
                 new ElementTag(obj.getRandom().nextBoolean()));
 
-        PROCESSOR.registerTag(ElementTag.class, "simplex", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ElementTag.class, "simplex", (attr, obj) -> {
             if (!attr.hasParam()) return new ElementTag(0);
 
             double x = 0, y = 0, z = 0;
@@ -137,7 +137,7 @@ public class RandomTag implements AbstractTag {
         return seed != null ? PREFIX + "@" + seed : PREFIX + "@";
     }
 
-    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
-    @Override public @NonNull TagProcessor<RandomTag> getProcessor() { return PROCESSOR; }
+    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
+    @Override public @NonNull TagProcessor<RandomTag> getProcessor() { return TAG_PROCESSOR; }
     @Override public String getTestValue() { return PREFIX + "@"; }
 }

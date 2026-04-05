@@ -16,25 +16,25 @@ public class LocationTag implements AbstractTag {
     private static final String prefix = "l";
     private final Location location;
 
-    public static final TagProcessor<LocationTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<LocationTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("location", attr -> new LocationTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, LocationTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.location.getX()));
-        PROCESSOR.registerTag(ElementTag.class, "y", (attr, obj) -> new ElementTag(obj.location.getY()));
-        PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.location.getZ()));
-        PROCESSOR.registerTag(ElementTag.class, "yaw", (attr, obj) -> new ElementTag(obj.location.getYaw()));
-        PROCESSOR.registerTag(ElementTag.class, "pitch", (attr, obj) -> new ElementTag(obj.location.getPitch()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.location.getX()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "y", (attr, obj) -> new ElementTag(obj.location.getY()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.location.getZ()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "yaw", (attr, obj) -> new ElementTag(obj.location.getYaw()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "pitch", (attr, obj) -> new ElementTag(obj.location.getPitch()));
 
-        PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> {
             World w = obj.location.getWorld();
             return w != null ? new WorldTag(w) : null;
         });
 
-        PROCESSOR.registerTag(LocationTag.class, "add", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(LocationTag.class, "add", (attr, obj) -> {
             if (!attr.hasParam()) return null;
 
             String param = attr.getParam();
@@ -52,7 +52,7 @@ public class LocationTag implements AbstractTag {
             return new LocationTag(loc);
         }).test("1, 2, 3");
 
-        PROCESSOR.registerTag(LocationTag.class, "withWorld", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(LocationTag.class, "withWorld", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             Location loc = obj.location.clone();
 
@@ -66,14 +66,14 @@ public class LocationTag implements AbstractTag {
             return new LocationTag(loc);
         }).test("world");
 
-        PROCESSOR.registerTag(LocationTag.class, "block", (attr, obj) -> new LocationTag(new Location(
+        TAG_PROCESSOR.registerTag(LocationTag.class, "block", (attr, obj) -> new LocationTag(new Location(
                 obj.location.getWorld(),
                 obj.location.getBlockX(),
                 obj.location.getBlockY(),
                 obj.location.getBlockZ()
         )));
 
-        PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> {
             if (obj.getLocation().getWorld() != null) {
                 return new MaterialTag(obj.getLocation().getBlock());
             }
@@ -154,12 +154,12 @@ public class LocationTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
     public @NonNull TagProcessor<LocationTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

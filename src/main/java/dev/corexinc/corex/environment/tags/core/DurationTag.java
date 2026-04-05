@@ -22,44 +22,44 @@ public class DurationTag implements AbstractTag {
     private static final String prefix = "dur";
     private final double ticks;
 
-    public static final TagProcessor<DurationTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<DurationTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("duration", attr -> new DurationTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, DurationTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "ticks", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ticks", (attr, obj) ->
                 new ElementTag(obj.ticks));
 
-        PROCESSOR.registerTag(ElementTag.class, "seconds", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "seconds", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_SECOND));
 
-        PROCESSOR.registerTag(ElementTag.class, "minutes", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "minutes", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_MINUTE));
 
-        PROCESSOR.registerTag(ElementTag.class, "hours", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "hours", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_HOUR));
 
-        PROCESSOR.registerTag(ElementTag.class, "milliseconds", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "milliseconds", (attr, obj) ->
                 new ElementTag(obj.ticks * MS_PER_TICK));
 
-        PROCESSOR.registerTag(ElementTag.class, "formatted", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "formatted", (attr, obj) ->
                 new ElementTag(obj.format()));
 
-        PROCESSOR.registerTag(DurationTag.class, "add", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(DurationTag.class, "add", (attr, obj) ->
                 new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks())).test("4s");
 
-        PROCESSOR.registerTag(DurationTag.class, "sub", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(DurationTag.class, "sub", (attr, obj) ->
                 new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks()))).test("4s");
 
-        PROCESSOR.registerTag(DurationTag.class, "mul", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(DurationTag.class, "mul", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
             return new DurationTag(obj.ticks * new DurationTag(param).getTicks());
         }).test("4s");
 
-        PROCESSOR.registerTag(DurationTag.class, "div", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(DurationTag.class, "div", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
             double divisor = new DurationTag(param).getTicks();
@@ -162,12 +162,12 @@ public class DurationTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
     public @NonNull TagProcessor<DurationTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

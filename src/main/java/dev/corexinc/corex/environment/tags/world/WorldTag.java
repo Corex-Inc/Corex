@@ -18,44 +18,44 @@ public class WorldTag implements AbstractTag {
     private static final String prefix = "w";
     private final World world;
 
-    public static final TagProcessor<WorldTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<WorldTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("world", attr -> new WorldTag(attr.getParam()));
 
         ObjectFetcher.registerFetcher(prefix, WorldTag::new);
 
-        PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getName() : ""));
 
-        PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getUID().toString() : ""));
 
-        PROCESSOR.registerTag(ElementTag.class, "environment", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "environment", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getEnvironment().name() : ""));
 
-        PROCESSOR.registerTag(ElementTag.class, "time", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "time", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getTime() : 0));
 
-        PROCESSOR.registerTag(DurationTag.class, "fullTime", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(DurationTag.class, "fullTime", (attr, obj) ->
                 obj.world != null ? new DurationTag(obj.world.getFullTime()) : null);
 
-        PROCESSOR.registerTag(ElementTag.class, "players", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "players", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getPlayers().size() : 0));
 
-        PROCESSOR.registerTag(ElementTag.class, "seed", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "seed", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getSeed() : 0));
 
-        PROCESSOR.registerTag(ElementTag.class, "difficulty", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "difficulty", (attr, obj) ->
                 new ElementTag(obj.world != null ? obj.world.getDifficulty().name() : ""));
 
-        PROCESSOR.registerTag(ElementTag.class, "isStorming", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isStorming", (attr, obj) ->
                 new ElementTag(obj.world != null && obj.world.hasStorm()));
 
-        PROCESSOR.registerTag(ElementTag.class, "isThundering", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isThundering", (attr, obj) ->
                 new ElementTag(obj.world != null && obj.world.isThundering()));
 
-        PROCESSOR.registerTag(LocationTag.class, "spawn", (attr, obj) ->
+        TAG_PROCESSOR.registerTag(LocationTag.class, "spawn", (attr, obj) ->
                 obj.world != null ? new LocationTag(obj.world.getSpawnLocation()) : null);
     }
 
@@ -96,12 +96,12 @@ public class WorldTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
     public @NonNull TagProcessor<WorldTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

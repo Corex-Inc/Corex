@@ -11,7 +11,7 @@ public class ServerTag implements AbstractTag {
 
     private final String prefix = "server";
 
-    public static final TagProcessor<ServerTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<ServerTag> TAG_PROCESSOR = new TagProcessor<>();
 
     @Override
     public @NonNull String getPrefix() {
@@ -27,7 +27,7 @@ public class ServerTag implements AbstractTag {
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     public static void register() {
