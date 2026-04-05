@@ -58,7 +58,7 @@ public class Debugger {
         QueueFormat format = formatFor(queue);
         String mode   = queue.isAsync() ? "<gray>async" : "<gray>sync";
         String player = queue.getPlayer() != null
-                ? " <dark_gray>player=<white>" + queue.getPlayer()
+                ? " <dark_gray>player=<white>" + queue.getPlayer().identify()
                 : "";
 
         CorexLogger.info(format.header + " <gray>started <dark_gray>(" + mode + "<dark_gray>)" + player);
