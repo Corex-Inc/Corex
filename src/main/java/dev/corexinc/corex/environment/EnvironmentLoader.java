@@ -13,6 +13,8 @@ import dev.corexinc.corex.environment.containers.*;
 // Events
 import dev.corexinc.corex.environment.events.implementation.core.*;
 // Formatters
+import dev.corexinc.corex.environment.events.implementation.player.PlayerBreakBlockEvent;
+import dev.corexinc.corex.environment.events.implementation.player.PlayerJoinEvent;
 import dev.corexinc.corex.environment.flags.IfGlobalFlag;
 import dev.corexinc.corex.environment.formatters.*;
 // BaseTags
@@ -83,7 +85,8 @@ public class EnvironmentLoader {
         // Events
         EventRegistry.register(
                 DeltaTimeEvent.class,
-                PlayerJoinEvent.class
+                PlayerJoinEvent.class,
+                PlayerBreakBlockEvent.class
         );
     }
 }
