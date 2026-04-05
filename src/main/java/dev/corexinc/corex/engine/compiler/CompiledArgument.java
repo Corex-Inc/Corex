@@ -1,5 +1,6 @@
 package dev.corexinc.corex.engine.compiler;
 
+import dev.corexinc.corex.engine.compiler.math.MathNode;
 import dev.corexinc.corex.engine.registry.FormatRegistry;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.Corex;
@@ -8,6 +9,7 @@ import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.TagManager;
+import dev.corexinc.corex.engine.utils.CorexLogger;
 
 public interface CompiledArgument {
     String evaluate(ScriptQueue queue);
@@ -94,5 +96,31 @@ public interface CompiledArgument {
 
         @Override
         public String getRaw() { return rawFullTag; }
+    }
+
+    class MathArg implements CompiledArgument {
+        private final MathNode node;
+        private final String raw;
+
+        public MathArg(MathNode node, String raw) {
+            this.node = node;
+            this.raw = raw;
+        }
+
+        @Override
+        public String evaluate(ScriptQueue queue) {
+            try {
+                double result = node.eval(queue);
+                return (result == (long) result) ? String.format("%d", (long) result) : String.valueOf(result);
+            } catch (Exception e) {
+                CorexLogger.error("ERROR while calculating expression " + raw + ": " + e.getMessage());
+                return "0";
+            }
+        }
+
+        @Override
+        public String getRaw() {
+            return "";
+        }
     }
 }

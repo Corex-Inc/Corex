@@ -5,6 +5,8 @@ import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.compiler.math.MathCompiler;
+import dev.corexinc.corex.engine.compiler.math.MathNode;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
 import dev.corexinc.corex.engine.registry.FormatRegistry;
 import dev.corexinc.corex.engine.utils.CorexLogger;
@@ -85,6 +87,17 @@ public class ScriptCompiler {
     }
 
     public static CompiledArgument parseArg(String text) {
+
+        if (text.startsWith("(") && text.endsWith(")")) {
+            try {
+                MathNode node = MathCompiler.compile(text);
+                return new CompiledArgument.MathArg(node, text);
+            } catch (Exception e) {
+                CorexLogger.error("ERROR: " + e.getMessage() + " in expression: " + text);
+                return null;
+            }
+        }
+
         if (!text.contains("<")) return new CompiledArgument.Static(text);
 
         List<CompiledArgument> parts = new ArrayList<>();
@@ -189,20 +202,26 @@ public class ScriptCompiler {
         StringBuilder current = new StringBuilder();
         boolean inQuotes = false;
         int tagDepth = 0;
+        int mathDepth = 0;
         boolean escaped = false;
-        int len = line.length();
 
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
             if (escaped) { current.append('\\').append(c); escaped = false; continue; }
             if (c == '\\') { escaped = true; continue; }
             if (c == '"') { inQuotes = !inQuotes; continue; }
+
             if (c == '<') tagDepth++;
             if (c == '>') tagDepth--;
 
-            if (c == ' ' && !inQuotes && tagDepth == 0) {
+            if (c == '(' && tagDepth == 0) mathDepth++;
+            if (c == ')' && tagDepth == 0) mathDepth--;
+
+            if (c == ' ' && !inQuotes && tagDepth == 0 && mathDepth == 0) {
                 if (!current.isEmpty()) { tokens.add(current.toString()); current.setLength(0); }
-            } else { current.append(c); }
+            } else {
+                current.append(c);
+            }
         }
         if (!current.isEmpty()) tokens.add(current.toString());
         return tokens;
