@@ -126,6 +126,7 @@ public final class TagProcessor<T extends AbstractTag> {
         public boolean isStatic = false;
         public String testParam = null;
         public String[] testChain = null;
+        public boolean skipTest = false;
 
         /**
          * The functional logic of the sub-tag.
@@ -145,14 +146,14 @@ public final class TagProcessor<T extends AbstractTag> {
             this.data = data;
         }
 
-        /**
-         * Указывает параметры для автоматического теста.
-         * @param param Основной параметр тега в []
-         * @param chain Дополнительные подтеги цепочки (например, "with[test]")
-         */
         public TagRegistration<T> test(String param, String... chain) {
             this.data.testParam = param;
             this.data.testChain = chain;
+            return this;
+        }
+
+        public TagRegistration<T> ignoreTest() {
+            this.data.skipTest = true;
             return this;
         }
     }

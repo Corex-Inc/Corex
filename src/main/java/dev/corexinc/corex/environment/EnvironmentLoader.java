@@ -54,6 +54,7 @@ public class EnvironmentLoader {
                 IfElseCommand.class, // If subcommand
                 InjectCommand.class,
                 ReturnCommand.class,
+                AdjustCommand.class,
 
                 // Tags
                 ElementTag.class,

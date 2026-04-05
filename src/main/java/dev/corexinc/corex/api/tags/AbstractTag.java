@@ -1,5 +1,6 @@
 package dev.corexinc.corex.api.tags;
 
+import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -95,5 +96,22 @@ public interface AbstractTag {
 
     default Component asComponent() {
         return LegacyComponentSerializer.legacySection().deserialize(identify());
+    }
+
+    @OverrideOnly
+    @SuppressWarnings("unchecked")
+    default @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
+        MechanismProcessor<AbstractTag> proc = (MechanismProcessor<AbstractTag>) getMechanismProcessor();
+        if (proc != null) {
+            return proc.process(this, mechanism, value);
+        }
+        return this;
+    }
+
+    @Nullable
+    @OverrideOnly
+    @AvailableSince("1.0.0")
+    default MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+        return null;
     }
 }

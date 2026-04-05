@@ -72,6 +72,11 @@ public class AutoObjectTest {
                 TagProcessor<?> processor = testObject.getProcessor();
 
                 processor.getRegisteredTags().forEach((tagName, data) -> {
+                    if (data.skipTest) {
+                        CorexTestLogger.info("    [Skipped] ." + tagName + " (Manual ignore)");
+                        return;
+                    }
+
                     String fullTagStr = tagName + (data.testParam != null ? "[" + data.testParam + "]" : "");
                     if (data.testChain != null) {
                         for (String c : data.testChain) fullTagStr += "." + c;

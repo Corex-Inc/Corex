@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment.tags.player;
 
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
+import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
@@ -10,16 +11,20 @@ import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class PlayerTag implements AbstractTag {
 
-    private static String prefix = "p";
+    private static final String prefix = "p";
     private final OfflinePlayer offlinePlayer;
 
     public static final TagProcessor<PlayerTag> TAG_PROCESSOR = new TagProcessor<>();
+    public static final MechanismProcessor<PlayerTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("player", (attribute) -> {
@@ -45,6 +50,52 @@ public class PlayerTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new ElementTag(object.offlinePlayer.getUniqueId().toString()));
 
         TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.getPlayer().getLocation()));
+
+        TAG_PROCESSOR.registerTag(ElementTag.class, "health", ((attribute, object) -> new ElementTag(object.getPlayer().getHealth())));
+
+        TAG_PROCESSOR.registerTag(ElementTag.class, "food", ((attribute, object) -> new ElementTag(object.getPlayer().getFoodLevel())));
+
+        TAG_PROCESSOR.registerTag(ElementTag.class, "maxHealth", ((attribute, object) ->
+                new ElementTag(Objects.requireNonNull(object.getPlayer().getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue()))).ignoreTest();
+
+
+        MECHANISM_PROCESSOR.registerMechanism("health", (playerTag, value) -> {
+            if (value instanceof ElementTag el && el.isDouble()) {
+                Player player = playerTag.getPlayer();
+                if (player != null) {
+                    double maxHp = Objects.requireNonNull(player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue();
+                    player.setHealth(Math.max(0, Math.min(el.asDouble(), maxHp)));
+                }
+            }
+            return playerTag;
+        });
+
+        MECHANISM_PROCESSOR.registerMechanism("maxHealth", (playerTag, value) -> {
+            Player player = playerTag.getPlayer();
+            if (player == null) return playerTag;
+
+            var attribute = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (attribute == null) return playerTag;
+            double targetMax;
+
+            if (value instanceof ElementTag el && el.isDouble()) {
+                targetMax = el.asDouble();
+            } else {
+                targetMax = attribute.getDefaultValue();
+            }
+            if (targetMax < 0.1) targetMax = 0.1;
+            attribute.setBaseValue(targetMax);
+
+            return playerTag;
+        });
+
+        MECHANISM_PROCESSOR.registerMechanism("food", (playerTag, value) -> {
+            if (value instanceof ElementTag el && el.isInt()) {
+                Player player = playerTag.getPlayer();
+                if (player != null) player.setFoodLevel(Math.max(0, Math.min(el.asInt(), 20)));
+            }
+            return playerTag;
+        });
     }
 
     public PlayerTag(UUID uuid) {
@@ -100,7 +151,19 @@ public class PlayerTag implements AbstractTag {
     }
 
     @Override
+    public @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
+        return MECHANISM_PROCESSOR.process(this, mechanism, value);
+    }
+
+    @Override
+    public @Nullable MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+        return MECHANISM_PROCESSOR;
+    }
+
+    @Override
     public @NonNull String getTestValue() {
         return "p@465876c1-2a15-4fc0-9f0b-97de13aa46f1";
     }
+
+
 }
