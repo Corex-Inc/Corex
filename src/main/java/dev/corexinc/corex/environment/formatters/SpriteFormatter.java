@@ -7,6 +7,7 @@ import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -15,14 +16,14 @@ import java.util.Optional;
 public class SpriteFormatter implements AbstractFormatter {
 
     private static final String DEFAULT_ATLAS = "minecraft:items";
-    private static final AbstractTag EMPTY = new ElementTag("");
+    private static final ElementTag INSTANCE = new ElementTag("");
 
     @Override public @NonNull String getName() { return "&sprite"; }
     @Override public @NonNull List<String> getAlias() { return List.of("&icon"); }
 
     @Override
     public @NonNull AbstractTag parse(@NonNull Attribute attribute) {
-        if (!attribute.hasParam()) return EMPTY;
+        if (!attribute.hasParam()) return INSTANCE;
 
         String param = attribute.getParam();
         String atlas = DEFAULT_ATLAS;
@@ -36,7 +37,7 @@ public class SpriteFormatter implements AbstractFormatter {
         } else if (param.contains("|")) {
             String[] parts = param.split("\\|", 2);
 
-            if (parts.length < 2) return EMPTY;
+            if (parts.length < 2) return INSTANCE;
 
             atlas = parts[0].strip();
             sprite = parts[1].strip();
@@ -45,10 +46,16 @@ public class SpriteFormatter implements AbstractFormatter {
             sprite = param.strip();
         }
 
-        if (sprite.isBlank()) return EMPTY;
+        if (sprite.isBlank()) return INSTANCE;
 
-        String tag = "<sprite:\"%s\":\"%s\">".formatted(sanitize(atlas), sanitize(sprite));
-        return new ComponentTag(MiniMessage.miniMessage().deserialize(tag));
+        try {
+            return new ComponentTag(MiniMessage.miniMessage().deserialize("<sprite:atlas:name>",
+                    Placeholder.unparsed("atlas", atlas),
+                    Placeholder.unparsed("name", sprite)
+            ));
+        } catch (Exception e) {
+            return INSTANCE;
+        }
     }
 
     private Optional<String> getValue(MapTag map, String key) {
