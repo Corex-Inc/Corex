@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import org.bukkit.util.noise.SimplexNoiseGenerator;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Random;
@@ -34,16 +35,70 @@ public class RandomTag implements AbstractTag {
                 new ElementTag(UUID.randomUUID().toString()));
 
         PROCESSOR.registerTag(ElementTag.class, "int", (attr, obj) -> {
-            int max = attr.hasParam() ? new ElementTag(attr.getParam()).asInt() : Integer.MAX_VALUE;
-            if (max <= 0) max = 1;
-            return new ElementTag(obj.getRandom().nextInt(max));
+            Random r = obj.getRandom();
+            if (!attr.hasParam()) {
+                return new ElementTag(r.nextInt());
+            }
+
+            int min = new ElementTag(attr.getParam()).asInt();
+
+            if (attr.matchesNext("to") && attr.hasNextParam()) {
+                int max = new ElementTag(attr.getNextParam()).asInt();
+                attr.fulfill(1);
+
+                if (min >= max) return new ElementTag(min);
+                return new ElementTag(r.nextInt(max - min + 1) + min);
+            }
+
+            return new ElementTag(r.nextInt(Math.max(1, min)));
         });
 
-        PROCESSOR.registerTag(ElementTag.class, "decimal", (attr, obj) ->
-                new ElementTag(obj.getRandom().nextDouble()));
+        PROCESSOR.registerTag(ElementTag.class, "decimal", (attr, obj) -> {
+            Random r = obj.getRandom();
+
+            if (!attr.hasParam()) {
+                return new ElementTag(r.nextDouble());
+            }
+
+            double min = new ElementTag(attr.getParam()).asDouble();
+
+            if (attr.matchesNext("to") && attr.hasNextParam()) {
+                double max = new ElementTag(attr.getNextParam()).asDouble();
+                attr.fulfill(1);
+
+                return new ElementTag(min + (max - min) * r.nextDouble());
+            }
+
+            return new ElementTag(r.nextDouble() * min);
+        });
 
         PROCESSOR.registerTag(ElementTag.class, "boolean", (attr, obj) ->
                 new ElementTag(obj.getRandom().nextBoolean()));
+
+        PROCESSOR.registerTag(ElementTag.class, "simplex", (attr, obj) -> {
+            if (!attr.hasParam()) return new ElementTag(0);
+
+            double x = 0, y = 0, z = 0;
+            String param = attr.getParam();
+
+            if (param.contains("=")) {
+                if (!param.startsWith("[")) param = "[" + param + "]";
+                MapTag map = new MapTag(param);
+
+                AbstractTag tX = map.getObject("x");
+                if (tX != null) x = new ElementTag(tX.identify()).asDouble();
+
+                AbstractTag tY = map.getObject("y");
+                if (tY != null) y = new ElementTag(tY.identify()).asDouble();
+
+                AbstractTag tZ = map.getObject("z");
+                if (tZ != null) z = new ElementTag(tZ.identify()).asDouble();
+            } else {
+                x = new ElementTag(param).asDouble();
+            }
+
+            return new ElementTag(SimplexNoiseGenerator.getNoise(x, y, z));
+        }).test("x=1;y=2;z=14");
     }
 
     public RandomTag(String raw) {

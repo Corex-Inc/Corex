@@ -18,6 +18,7 @@ import java.util.Map;
 public class ScriptManager {
 
     private static final Map<String, AbstractContainer> containers = new HashMap<>();
+    public static long lastReloadTime = System.currentTimeMillis();
 
     public static void loadScripts(File scriptsFolder) {
         containers.clear();
@@ -86,6 +87,7 @@ public class ScriptManager {
 
     public static void reloadScripts() {
         File scriptsFolder = new File(Corex.getInstance().getDataFolder(), "scripts");
+        lastReloadTime = System.currentTimeMillis();
         loadScripts(scriptsFolder);
     }
 

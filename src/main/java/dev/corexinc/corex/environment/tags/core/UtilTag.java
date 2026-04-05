@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.bukkit.Bukkit;
