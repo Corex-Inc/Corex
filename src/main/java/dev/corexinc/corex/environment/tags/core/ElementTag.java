@@ -127,6 +127,23 @@ public class ElementTag implements AbstractTag {
             return null;
         }).test("5");
 
+        PROCESSOR.registerTag(ElementTag.class, "root", (attr, obj) -> {
+            double value = obj.asDouble();
+            double degree = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 2.0;
+
+            if (degree == 0) return new ElementTag(1);
+
+            return new ElementTag(Math.pow(value, 1.0 / degree));
+        });
+
+        PROCESSOR.registerTag(ElementTag.class, "pow", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            double base = obj.asDouble();
+            double exponent = new ElementTag(attr.getParam()).asDouble();
+
+            return new ElementTag(Math.pow(base, exponent));
+        }).test("2");
+
         PROCESSOR.registerTag(ElementTag.class, "ifTrue", (attr, el) -> {
             boolean isTrue = el.asBoolean();
             String resultText = el.asString();
