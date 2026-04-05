@@ -10,43 +10,54 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Optional;
 
 public class SpriteFormatter implements AbstractFormatter {
+
+    private static final String DEFAULT_ATLAS = "minecraft:items";
+    private static final AbstractTag EMPTY = new ElementTag("");
 
     @Override public @NonNull String getName() { return "&sprite"; }
     @Override public @NonNull List<String> getAlias() { return List.of("&icon"); }
 
     @Override
-    public @NonNull AbstractTag parse(Attribute attribute) {
-        if (!attribute.hasParam()) return new ElementTag("");
+    public @NonNull AbstractTag parse(@NonNull Attribute attribute) {
+        if (!attribute.hasParam()) return EMPTY;
 
         String param = attribute.getParam();
-        String atlas = "minecraft:items";
-        String sprite = "";
+        String atlas = DEFAULT_ATLAS;
+        String sprite;
 
         if (param.contains("=") || param.contains(";")) {
             MapTag map = new MapTag(param);
+            atlas = getValue(map, "atlas").orElse(DEFAULT_ATLAS);
+            sprite = getValue(map, "name").or(() -> getValue(map, "key")).orElse("");
 
-            AbstractTag spaceTag = map.getObject("space");
-            if (spaceTag != null) atlas = spaceTag.identify();
+        } else if (param.contains("|")) {
+            String[] parts = param.split("\\|", 2);
 
-            AbstractTag nameTag = map.getObject("name");
-            if (nameTag == null) nameTag = map.getObject("key");
+            if (parts.length < 2) return EMPTY;
 
-            if (nameTag != null) sprite = nameTag.identify();
-        }
-        else if (param.contains("|")) {
-            String[] parts = param.split("\\|");
-            atlas = parts[0];
-            sprite = parts[1];
+            atlas = parts[0].strip();
+            sprite = parts[1].strip();
+
         } else {
-            sprite = param;
+            sprite = param.strip();
         }
 
-        if (sprite.isEmpty()) return new ElementTag("");
+        if (sprite.isBlank()) return EMPTY;
 
-        String mmTag = "<sprite:\"" + atlas + "\":\"" + sprite + "\">";
+        String tag = "<sprite:\"%s\":\"%s\">".formatted(sanitize(atlas), sanitize(sprite));
+        return new ComponentTag(MiniMessage.miniMessage().deserialize(tag));
+    }
 
-        return new ComponentTag(MiniMessage.miniMessage().deserialize(mmTag));
+    private Optional<String> getValue(MapTag map, String key) {
+        return Optional.ofNullable(map.getObject(key))
+                .map(AbstractTag::identify)
+                .filter(value -> !value.isBlank());
+    }
+
+    private String sanitize(String input) {
+        return input.replace("\"", "").replace("<", "").replace(">", "");
     }
 }
