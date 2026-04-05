@@ -15,7 +15,7 @@ import java.util.Objects;
 
 public class MaterialTag implements AbstractTag {
 
-    private static String prefix = "m";
+    private static final String prefix = "m";
     private final Material material;
     private final BlockData blockData;
 

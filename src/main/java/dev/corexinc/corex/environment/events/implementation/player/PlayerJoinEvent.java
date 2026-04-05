@@ -1,4 +1,4 @@
-package dev.corexinc.corex.environment.events.implementation.core;
+package dev.corexinc.corex.environment.events.implementation.player;
 
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.tags.AbstractTag;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PlayerJoinEvent implements AbstractEvent, Listener {
+public class PlayerJoinEvent implements AbstractEvent {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
