@@ -6,7 +6,6 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.engine.utils.debugging.DebugLevel;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 
@@ -40,6 +39,9 @@ public class ScriptQueue {
 
     private long startNanos;
 
+    // Кэш вычисленных аргументов на время одной инструкции (только в VERBOSE)
+    private IdentityHashMap<CompiledArgument, AbstractTag> evalCache;
+
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
         this.id = id;
         this.bytecode = bytecode;
@@ -54,13 +56,24 @@ public class ScriptQueue {
         executeNext();
     }
 
-    public boolean isCancelled() {
-        return isCancelled;
+    public boolean isCancelled() { return isCancelled; }
+    public void setCancelled(boolean cancelled) { isCancelled = cancelled; }
+
+    // --- Eval Cache ---
+
+    public AbstractTag getCached(CompiledArgument arg) {
+        return evalCache != null ? evalCache.get(arg) : null;
     }
 
-    public void setCancelled(boolean cancelled) {
-        isCancelled = cancelled;
+    public void setEvalCache(IdentityHashMap<CompiledArgument, AbstractTag> cache) {
+        this.evalCache = cache;
     }
+
+    public void clearEvalCache() {
+        this.evalCache = null;
+    }
+
+    // ------------------
 
     public void executeNext() {
         try {
@@ -74,45 +87,43 @@ public class ScriptQueue {
 
                     try {
                         if (isAsync && !inst.command.isAsyncSafe()) {
-                            Debugger.critical(this, "Attempt to execute a sync command '" + inst.command.getName() + "' in an async queue!");
+                            Debugger.error(this, "Attempt to execute a sync command '" + inst.command.getName() + "' in an async queue!", depth);
                             stopEntireQueue();
                             return;
                         }
 
                         boolean skipCommand = false;
-                        String skipReason = null;
 
                         if (inst.globalFlags != null) {
                             for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
                                 if (!entry.getKey().execute(this, inst, entry.getValue())) {
                                     skipCommand = true;
-                                    skipReason = entry.getKey().getClass().getSimpleName();
                                     break;
                                 }
                             }
                         }
 
-                        if (skipCommand) {
-                            Debugger.instructionSkipped(this, inst, skipReason, depth);
-                        } else {
-                            Debugger.instructionStart(this, inst, depth);
+                        if (!skipCommand) {
+                            if (Debugger.needsEvalCache()) {
+                                IdentityHashMap<CompiledArgument, AbstractTag> cache = new IdentityHashMap<>();
+                                for (CompiledArgument arg : inst.linearArgs)
+                                    cache.put(arg, arg.evaluate(this));
+                                for (CompiledArgument arg : inst.prefixArgs.values())
+                                    cache.put(arg, arg.evaluate(this));
+                                setEvalCache(cache);
+                            }
 
-                            long startT = 0;
-                            if (Debugger.getGlobalLevel() == DebugLevel.TRACE) startT = System.nanoTime();
-
+                            Debugger.instruction(this, inst, depth);
                             if (inst.command != null) inst.command.run(this, inst);
 
-                            if (Debugger.getGlobalLevel() == DebugLevel.TRACE) {
-                                double elapsedMs = (System.nanoTime() - startT) / 1_000_000.0;
-                                Debugger.instructionEnd(this, inst, depth, elapsedMs);
-                            }
+                            clearEvalCache();
                         }
                     } catch (Exception e) {
+                        clearEvalCache();
                         String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
                         Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, depth);
                     }
-                }
-                else if (!isPaused) {
+                } else if (!isPaused) {
                     if (loopCondition != null && loopCondition.getAsBoolean()) {
                         this.pointer = 0;
                         continue;
@@ -128,19 +139,18 @@ public class ScriptQueue {
                         if (callback != null) callback.run();
                         break;
                     } else {
-                        int depth = callStack.size();
                         QueueFrame frame = callStack.pop();
                         this.bytecode = frame.bytecode();
                         this.pointer = frame.pointer();
                         this.onFinish = frame.onFinish();
                         this.loopCondition = frame.loopCondition();
-                        Debugger.frameReturn(this, depth);
                     }
 
                     if (callback != null) callback.run();
                 }
             }
         } catch (Throwable t) {
+            clearEvalCache();
             Debugger.error(this, "Fatal queue execution crash: " + t.getMessage(), t, callStack.size());
             stopEntireQueue();
         }
@@ -151,13 +161,11 @@ public class ScriptQueue {
     }
 
     public void pushFrame(String calledScriptName, Instruction[] newBytecode, Runnable newOnFinish, BooleanSupplier loopCondition) {
-        int depth = callStack.size();
         callStack.push(new QueueFrame(this.bytecode, this.pointer, this.onFinish, this.loopCondition));
         this.bytecode = newBytecode;
         this.pointer = 0;
         this.onFinish = newOnFinish;
         this.loopCondition = loopCondition;
-        Debugger.frameCall(this, calledScriptName, depth);
     }
 
     public void skipFrame(boolean breakLoop) {
@@ -170,7 +178,6 @@ public class ScriptQueue {
     public void pause() { this.isPaused = true; }
 
     public void resume() {
-        Debugger.queueResumed(this);
         this.isPaused = false;
         executeNext();
     }
@@ -186,7 +193,6 @@ public class ScriptQueue {
     public void setOnFinish(Runnable onFinish) { this.onFinish = onFinish; }
 
     public void delay(long ticks) {
-        Debugger.queuePaused(this, ticks);
         pause();
         if (isAsync) SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
         else SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
@@ -219,7 +225,7 @@ public class ScriptQueue {
     public void setContext(ContextTag context) { this.context = context; }
     public ContextTag getContext() { return context; }
     public void addReturn(AbstractTag tag) { if (tag != null) returnValues.add(tag); }
-    public java.util.List<AbstractTag> getReturns() { return returnValues; }
+    public List<AbstractTag> getReturns() { return returnValues; }
     public boolean isAsync() { return isAsync; }
     public int getDepth() { return callStack.size(); }
 }

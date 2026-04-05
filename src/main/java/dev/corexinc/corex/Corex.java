@@ -5,6 +5,7 @@ import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.EnvManager;
 import dev.corexinc.corex.engine.utils.Metrics;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.utils.commands.RunCommand;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -28,10 +29,11 @@ public class Corex extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        if(!getDataFolder().exists()) CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
+        if (!getDataFolder().exists()) CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
 
         getConfig().options().copyDefaults();
         saveDefaultConfig();
+        Debugger.updateDebugMode();
 
         this.registry = new CorexRegistry();
         EnvironmentLoader.registerDefaults(this.registry);
@@ -44,7 +46,7 @@ public class Corex extends JavaPlugin {
             registerCommand("run", new RunCommand());
         }
         catch (NoClassDefFoundError | NoSuchMethodError e) {
-            CorexLogger.warn("Не удалось зарегистрировать Brigadier команды. Возможно, старая версия Paper?");
+            CorexLogger.warn("Failed to register Brigadier commands. Possibly an outdated version of Paper?");
         }
 
 

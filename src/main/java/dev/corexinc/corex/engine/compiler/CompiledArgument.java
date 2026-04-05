@@ -24,8 +24,14 @@ public interface CompiledArgument {
 
     String getRaw();
 
+    default AbstractTag evaluateCached(ScriptQueue queue) {
+        AbstractTag cached = queue.getCached(this);
+        if (cached != null) return cached;
+        return evaluate(queue);
+    }
+
     class Static implements CompiledArgument {
-        private final AbstractTag tag; // Храним готовый объект
+        private final AbstractTag tag;
 
         public Static(String text) {
             this.tag = new ElementTag(text);
@@ -52,7 +58,7 @@ public interface CompiledArgument {
             net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
 
             for (CompiledArgument part : parts) {
-                AbstractTag tag = part.evaluate(queue);
+                AbstractTag tag = part.evaluateCached(queue);
                 builder.append(tag.asComponent());
             }
 

@@ -1,9 +1,11 @@
 package dev.corexinc.corex.environment.commands.core;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.events.EventRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -55,6 +57,8 @@ public class ReloadCommand implements AbstractCommand {
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         long start = System.currentTimeMillis();
 
+        Corex.getInstance().reloadConfig();
+        Debugger.updateDebugMode();
         EventRegistry.resetAll();
         ScriptManager.reloadScripts();
 

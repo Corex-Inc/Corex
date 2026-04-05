@@ -61,7 +61,6 @@ public class KickCommand implements AbstractCommand {
         for (PlayerTag pTag : players) {
             Player player = pTag.getPlayer();
             if (player != null && player.isOnline()) {
-                Debugger.tagFilled(queue, "player", player.getName(), 0);
                 SchedulerAdapter.runEntity(player, () -> player.kick(reason));
             } else {
                 Debugger.error(queue, getName() + ": player '" + pTag.getPlayer().getName() + "' is offline or not found", 0);
