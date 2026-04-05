@@ -22,7 +22,7 @@ public class ReturnCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<value>] (passive)";
+        return "[<value>] (cancelled) (passive)";
     }
 
     @Override
@@ -41,6 +41,10 @@ public class ReturnCommand implements AbstractCommand {
 
         if (value != null) {
             queue.addReturn(ObjectFetcher.pickObject(value));
+        }
+
+        if (instruction.hasFlag("cancelled")) {
+            queue.setCancelled(true);
         }
 
         if (!instruction.hasFlag("passive")) {

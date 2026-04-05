@@ -10,9 +10,7 @@ import dev.corexinc.corex.engine.utils.debugging.DebugLevel;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 
@@ -22,7 +20,7 @@ public class ScriptQueue {
     private final boolean isAsync;
     private final PlayerTag linkedPlayer;
     private final Map<String, AbstractTag> definitions;
-    private final java.util.List<AbstractTag> returnValues = new java.util.ArrayList<>();
+    private final List<AbstractTag> returnValues = new ArrayList<>();
 
     private Instruction[] bytecode;
     private int pointer = 0;
@@ -38,6 +36,7 @@ public class ScriptQueue {
     private volatile boolean isPaused = false;
     private boolean isStopped = false;
     private boolean isBroken = false;
+    private boolean isCancelled = false;
 
     private long startNanos;
 
@@ -53,6 +52,14 @@ public class ScriptQueue {
         startNanos = System.nanoTime();
         Debugger.queueStart(this);
         executeNext();
+    }
+
+    public boolean isCancelled() {
+        return isCancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        isCancelled = cancelled;
     }
 
     public void executeNext() {
