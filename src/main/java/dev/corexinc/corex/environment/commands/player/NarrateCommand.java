@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
@@ -8,6 +9,7 @@ import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
@@ -38,10 +40,10 @@ public class NarrateCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
-        String text = entry.getLinear(0, queue);
+        AbstractTag text = entry.getLinearObject(0, queue);
         if (text == null) return;
 
-        Component message = MiniMessage.miniMessage().deserialize(text);
+        Component message = text.asComponent();
 
         String targets = entry.getPrefix("targets", queue);
 

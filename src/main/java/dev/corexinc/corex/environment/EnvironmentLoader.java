@@ -73,6 +73,9 @@ public class EnvironmentLoader {
                 NewLineFormatter.class,
                 SpaceFormatter.class,
                 CharFormatter.class,
+                SpriteFormatter.class,
+                ColorFormatter.class,
+                HeadFormatter.class,
 
                 // Script containers
                 TaskContainer.class,

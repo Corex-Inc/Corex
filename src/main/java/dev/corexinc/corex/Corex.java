@@ -7,6 +7,7 @@ import dev.corexinc.corex.engine.utils.EnvManager;
 import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.utils.commands.RunCommand;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -17,6 +18,12 @@ public class Corex extends JavaPlugin {
     private static Corex instance;
 
     private CorexRegistry registry;
+
+    public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
+            .character('§')
+            .hexColors()
+            .useUnusualXRepeatedCharacterHexFormat()
+            .build();
 
     @Override
     public void onEnable() {

@@ -18,8 +18,8 @@ public class ConditionCompiler {
             boolean nextIsOr = false;
 
             for (int i = 0; i < args.length; i++) {
-                String token = args[i].evaluate(queue);
-                if (token == null || token.isEmpty()) continue;
+                String token = args[i].evaluate(queue).identify();
+                if (token.isEmpty()) continue;
 
                 String lower = token.toLowerCase();
 
@@ -42,9 +42,9 @@ public class ConditionCompiler {
 
                 boolean checkResult = false;
 
-                if (i + 2 < args.length && isOperator(args[i + 1].evaluate(queue))) {
-                    String op = args[i + 1].evaluate(queue);
-                    String val2 = args[i + 2].evaluate(queue);
+                if (i + 2 < args.length && isOperator(args[i + 1].evaluate(queue).identify())) {
+                    String op = args[i + 1].evaluate(queue).identify();
+                    String val2 = args[i + 2].evaluate(queue).identify();
                     checkResult = compare(token, op, val2);
                     i += 2;
                 } else {

@@ -90,7 +90,7 @@ public class MathCompiler {
                 x = q -> {
                     try {
                         assert arg != null;
-                        return Double.parseDouble(arg.evaluate(q)); }
+                        return Double.parseDouble(arg.evaluate(q).identify()); }
                     catch(Exception e) { return 0.0; }
                 };
             }

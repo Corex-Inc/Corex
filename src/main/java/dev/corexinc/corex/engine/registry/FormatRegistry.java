@@ -10,10 +10,9 @@ public class FormatRegistry {
 
     public void register(AbstractFormatter formatter) {
         formats.put(formatter.getName(), formatter);
-        if (formatter.getAlias() != null) {
-            for (String alias : formatter.getAlias()) {
-                formats.put(alias, formatter);
-            }
+        formatter.getAlias();
+        for (String alias : formatter.getAlias()) {
+            formats.put(alias, formatter);
         }
     }
 

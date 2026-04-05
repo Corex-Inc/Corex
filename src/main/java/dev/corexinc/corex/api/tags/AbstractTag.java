@@ -1,6 +1,8 @@
 package dev.corexinc.corex.api.tags;
 
 import dev.corexinc.corex.api.processors.TagProcessor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.ApiStatus.OverrideOnly;
 import org.jetbrains.annotations.Contract;
@@ -90,4 +92,8 @@ public interface AbstractTag {
     @OverrideOnly
     @AvailableSince("1.0.0")
     TagProcessor<? extends AbstractTag> getProcessor();
+
+    default Component asComponent() {
+        return LegacyComponentSerializer.legacySection().deserialize(identify());
+    }
 }

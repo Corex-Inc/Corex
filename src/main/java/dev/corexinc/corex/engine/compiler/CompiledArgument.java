@@ -10,32 +10,53 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.TagManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.environment.tags.core.ComponentTag;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public interface CompiledArgument {
-    String evaluate(ScriptQueue queue);
+    AbstractTag evaluate(ScriptQueue queue);
 
     String getRaw();
 
     class Static implements CompiledArgument {
-        private final String text;
-        public Static(String text) { this.text = text; }
+        private final AbstractTag tag; // Храним готовый объект
 
-        @Override public String evaluate(ScriptQueue queue) { return text; }
-        @Override public String getRaw() { return text; }
+        public Static(String text) {
+            this.tag = new ElementTag(text);
+        }
+
+        public Static(AbstractTag tag) {
+            this.tag = tag;
+        }
+
+        @Override
+        public AbstractTag evaluate(ScriptQueue queue) {
+            return tag;
+        }
+
+        @Override public String getRaw() { return tag.identify(); }
     }
 
     class Mixed implements CompiledArgument {
-        private static final ThreadLocal<StringBuilder> SB = ThreadLocal.withInitial(StringBuilder::new);
-
         private final CompiledArgument[] parts;
         public Mixed(CompiledArgument[] parts) { this.parts = parts; }
 
         @Override
-        public String evaluate(ScriptQueue queue) {
-            StringBuilder sb = SB.get();
-            sb.setLength(0);
-            for (CompiledArgument part : parts) sb.append(part.evaluate(queue));
-            return sb.toString();
+        public AbstractTag evaluate(ScriptQueue queue) {
+            net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
+
+            for (CompiledArgument part : parts) {
+                AbstractTag tag = part.evaluate(queue);
+                builder.append(tag.asComponent());
+            }
+
+            return new dev.corexinc.corex.environment.tags.core.ComponentTag(builder.build());
         }
 
         @Override
@@ -60,7 +81,7 @@ public interface CompiledArgument {
         }
 
         @Override
-        public String evaluate(ScriptQueue queue) {
+        public AbstractTag evaluate(ScriptQueue queue) {
             Attribute attr = new Attribute(nodes, queue);
             AbstractTag currentObj;
 
@@ -89,9 +110,9 @@ public interface CompiledArgument {
 
             if (currentObj == null) {
                 if (fallback != null) return fallback.evaluate(queue);
-                return rawFullTag;
+                return new ElementTag(rawFullTag);
             }
-            return currentObj.identify();
+            return currentObj;
         }
 
         @Override
@@ -108,13 +129,13 @@ public interface CompiledArgument {
         }
 
         @Override
-        public String evaluate(ScriptQueue queue) {
+        public AbstractTag evaluate(ScriptQueue queue) {
             try {
                 double result = node.eval(queue);
-                return (result == (long) result) ? String.format("%d", (long) result) : String.valueOf(result);
+                return new ElementTag(result);
             } catch (Exception e) {
                 CorexLogger.error("ERROR while calculating expression " + raw + ": " + e.getMessage());
-                return "0";
+                return new ElementTag(0);
             }
         }
 

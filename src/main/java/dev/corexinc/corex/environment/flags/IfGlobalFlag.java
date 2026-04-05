@@ -11,7 +11,7 @@ public class IfGlobalFlag implements AbstractGlobalFlag {
 
     @Override
     public boolean execute(ScriptQueue queue, Instruction instruction, CompiledArgument value) {
-        String result = value.evaluate(queue);
+        String result = value.evaluate(queue).identify();
         return new ElementTag(result).asBoolean();
     }
 }

@@ -87,7 +87,6 @@ public class ScriptCompiler {
     }
 
     public static CompiledArgument parseArg(String text) {
-
         if (text.startsWith("(") && text.endsWith(")")) {
             try {
                 MathNode node = MathCompiler.compile(text);
@@ -98,29 +97,31 @@ public class ScriptCompiler {
             }
         }
 
-        if (!text.contains("<")) return new CompiledArgument.Static(text);
+        if (!text.contains("<")) return new CompiledArgument.Static(unescape(text));
 
         List<CompiledArgument> parts = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
         int tagDepth = 0;
         boolean escaped = false;
-        int len = text.length();
 
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
 
             if (escaped) {
-                if (tagDepth > 0) buffer.append('\\');
                 buffer.append(c);
                 escaped = false;
                 continue;
             }
-            if (c == '\\') { escaped = true; continue; }
+
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
 
             if (c == '<') {
                 if (tagDepth == 0) {
                     if (!buffer.isEmpty()) {
-                        parts.add(new CompiledArgument.Static(buffer.toString()));
+                        parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
                         buffer.setLength(0);
                     }
                 } else buffer.append(c);
@@ -133,10 +134,12 @@ public class ScriptCompiler {
                 } else buffer.append(c);
             } else buffer.append(c);
         }
-        if (!buffer.isEmpty()) parts.add(new CompiledArgument.Static(buffer.toString()));
+
+        if (!buffer.isEmpty()) {
+            parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
+        }
 
         if (parts.size() == 1) return parts.getFirst();
-
         return new CompiledArgument.Mixed(parts.toArray(new CompiledArgument[0]));
     }
 
@@ -153,17 +156,15 @@ public class ScriptCompiler {
         TagNode[] nodes = parseTagNodes(mainTag);
 
         if (nodes.length == 1 && fallback == null) {
-            FormatRegistry formats = Corex.getInstance().getRegistry().getFormats();
-            AbstractFormatter fmt = formats.get(nodes[0].name);
-            if (fmt != null) {
+            var formats = Corex.getInstance().getRegistry().getFormats();
+            if (formats.isFormat(nodes[0].name)) {
                 if (nodes[0].param == null || nodes[0].param instanceof CompiledArgument.Static) {
                     Attribute mockAttr = new Attribute(nodes, null);
-                    AbstractTag result = fmt.parse(mockAttr);
-                    return new CompiledArgument.Static(result.identify());
+                    AbstractTag result = formats.get(nodes[0].name).parse(mockAttr);
+                    return new CompiledArgument.Static(result);
                 }
             }
         }
-
         return new CompiledArgument.PreSlicedDynamic(nodes, fallback, mainTag);
     }
 
@@ -173,9 +174,22 @@ public class ScriptCompiler {
         StringBuilder param = new StringBuilder();
         int bracketDepth = 0;
         int len = rawTag.length();
+        boolean escaped = false;
 
         for (int i = 0; i < len; i++) {
             char c = rawTag.charAt(i);
+
+            if (escaped) {
+                if (bracketDepth > 0) param.append(c);
+                else name.append(c);
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
 
             if (c == '[') {
                 bracketDepth++;
@@ -207,23 +221,55 @@ public class ScriptCompiler {
 
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
-            if (escaped) { current.append('\\').append(c); escaped = false; continue; }
-            if (c == '\\') { escaped = true; continue; }
-            if (c == '"') { inQuotes = !inQuotes; continue; }
+
+            if (escaped) {
+                if (inQuotes && c != '"' && c != '\\') {
+                    current.append('\\');
+                }
+                current.append(c);
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"') {
+                inQuotes = !inQuotes;
+                continue;
+            }
 
             if (c == '<') tagDepth++;
             if (c == '>') tagDepth--;
-
             if (c == '(' && tagDepth == 0) mathDepth++;
             if (c == ')' && tagDepth == 0) mathDepth--;
 
             if (c == ' ' && !inQuotes && tagDepth == 0 && mathDepth == 0) {
-                if (!current.isEmpty()) { tokens.add(current.toString()); current.setLength(0); }
+                if (!current.isEmpty()) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                }
             } else {
                 current.append(c);
             }
         }
         if (!current.isEmpty()) tokens.add(current.toString());
         return tokens;
+    }
+
+    public static String unescape(String str) {
+        if (str == null || !str.contains("\\")) return str;
+        StringBuilder sb = new StringBuilder();
+        boolean escaped = false;
+        for (char c : str.toCharArray()) {
+            if (!escaped && c == '\\') escaped = true;
+            else {
+                sb.append(c);
+                escaped = false;
+            }
+        }
+        return sb.toString();
     }
 }

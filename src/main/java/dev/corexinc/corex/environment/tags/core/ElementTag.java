@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.tags.core;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -200,5 +201,11 @@ public class ElementTag implements AbstractTag {
     @Override
     public @NonNull TagProcessor<ElementTag> getProcessor() {
         return PROCESSOR;
+    }
+
+    @Override
+    public @NonNull Component asComponent() {
+        if (identify().isEmpty()) return Component.empty();
+        return Corex.SERIALIZER.deserialize(identify());
     }
 }

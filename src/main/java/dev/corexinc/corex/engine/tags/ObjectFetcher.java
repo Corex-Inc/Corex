@@ -40,9 +40,21 @@ public class ObjectFetcher {
         List<String> result = new ArrayList<>();
         int brackets = 0;
         int start = 0;
+        boolean escaped = false;
 
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
+
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                escaped = true;
+                continue;
+            }
+
             if (c == '[') brackets++;
             else if (c == ']') brackets--;
             else if (brackets == 0 && c == delimiter) {
@@ -54,5 +66,20 @@ public class ObjectFetcher {
             result.add(str.substring(start));
         }
         return result;
+    }
+
+    private static String unescape(String str) {
+        if (!str.contains("\\")) return str;
+        StringBuilder sb = new StringBuilder();
+        boolean escaped = false;
+        for (char c : str.toCharArray()) {
+            if (!escaped && c == '\\') {
+                escaped = true;
+            } else {
+                sb.append(c);
+                escaped = false;
+            }
+        }
+        return sb.toString();
     }
 }

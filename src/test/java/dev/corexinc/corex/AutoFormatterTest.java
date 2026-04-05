@@ -59,7 +59,8 @@ public class AutoFormatterTest {
                 CompiledArgument arg =
                         ScriptCompiler.parseArg(fullTag);
 
-                String result = arg.evaluate(null);
+                assertNotNull(arg);
+                String result = arg.evaluate(null).identify();
 
                 assertNotNull(result, "Formatter " + name + " returned null!");
 

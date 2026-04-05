@@ -27,6 +27,11 @@ public class Attribute {
     }
 
     public String getParam() {
+        AbstractTag tag = getParamObject();
+        return tag != null ? tag.identify() : null;
+    }
+
+    public AbstractTag getParamObject() {
         if (components[currentIndex].param == null) return null;
         return components[currentIndex].param.evaluate(queue);
     }
@@ -42,7 +47,12 @@ public class Attribute {
     }
 
     public String getNextParam() {
-        if (components[currentIndex + 1].param == null) return null;
+        AbstractTag tag = getNextParamObject();
+        return tag != null ? tag.identify() : null;
+    }
+
+    public AbstractTag getNextParamObject() {
+        if (currentIndex + 1 >= components.length || components[currentIndex + 1].param == null) return null;
         return components[currentIndex + 1].param.evaluate(queue);
     }
 

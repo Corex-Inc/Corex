@@ -127,8 +127,8 @@ public class DoCommand implements AbstractCommand {
         for (Map.Entry<String, CompiledArgument> entry : instruction.prefixArgs.entrySet()) {
             if (entry.getKey().startsWith("def.")) {
                 String defName = entry.getKey().substring(4);
-                String defValue = entry.getValue().evaluate(queue);
-                newQueue.define(defName, ObjectFetcher.pickObject(defValue));
+                AbstractTag defValue = entry.getValue().evaluate(queue);
+                newQueue.define(defName, defValue);
             }
         }
 

@@ -2,6 +2,7 @@ package dev.corexinc.corex.engine.compiler;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 
 import javax.annotation.Nullable;
@@ -36,13 +37,23 @@ public class Instruction {
     }
 
     public String getLinear(int index, ScriptQueue queue) {
+        AbstractTag tag = getLinearObject(index, queue);
+        return tag != null ? tag.identify() : null;
+    }
+
+    public AbstractTag getLinearObject(int index, ScriptQueue queue) {
         if (index < 0 || index >= linearArgs.length) return null;
         return linearArgs[index].evaluate(queue);
     }
 
     @Nullable
     public String getPrefix(String prefix, ScriptQueue queue) {
-        CompiledArgument arg = prefixArgs.get(prefix);
+        AbstractTag tag = getPrefixObject(prefix, queue);
+        return tag != null ? tag.identify() : null;
+    }
+
+    public AbstractTag getPrefixObject(String prefix, ScriptQueue queue) {
+        CompiledArgument arg = prefixArgs.get(prefix.toLowerCase());
         return arg != null ? arg.evaluate(queue) : null;
     }
 
