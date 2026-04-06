@@ -17,30 +17,28 @@ import java.util.UUID;
 
 public class EntityTag implements AbstractTag {
 
-    private static String prefix = "e";
+    private static final String prefix = "e";
     private final Entity entity;
 
     public static final TagProcessor<EntityTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag("entity", (attribute) -> new EntityTag(attribute.getParam()));
+        BaseTagProcessor.registerBaseTag("entity", (attribute) -> {
+            if (!attribute.hasParam()) return null;
+            return new EntityTag(attribute.getParam());
+        });
 
         ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new EntityTag(UUID.fromString(uuidStr)));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) ->
-                new ElementTag(object.entity.getUniqueId().toString()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new  ElementTag(object.entity.getUniqueId().toString()));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) ->
-                new ElementTag(object.entity.getName()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> new ElementTag(object.entity.getName()));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) ->
-                new ElementTag(object.entity.getType().name()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.entity.getType().name()));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) ->
-                new ElementTag(String.valueOf(!object.entity.isDead())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) -> new ElementTag(String.valueOf(!object.entity.isDead())));
 
-        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) ->
-                new LocationTag(object.entity.getLocation()));
+        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.entity.getLocation()));
     }
 
     public EntityTag(UUID uuid) {
@@ -55,7 +53,7 @@ public class EntityTag implements AbstractTag {
         if (raw == null || raw.isEmpty()) {
             this.entity = null;
         } else {
-            String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(2) : raw;
+            String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(prefix.length() + 1) : raw;
 
             Entity tempEntity;
             try {
@@ -73,7 +71,7 @@ public class EntityTag implements AbstractTag {
 
     @Override
     public @NotNull String identify() {
-        return prefix + "@" + entity.getUniqueId().toString();
+        return prefix + "@" + entity.getUniqueId();
     }
 
     @Override
