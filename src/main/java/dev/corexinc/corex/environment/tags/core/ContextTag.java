@@ -28,13 +28,13 @@ public class ContextTag implements AbstractTag {
 
     public ContextTag put(String key, AbstractTag value) {
         if (value != null) {
-            contextData.put(key.toLowerCase(), value);
+            contextData.put(key, value);
         }
         return this;
     }
 
     public AbstractTag get(String key) {
-        return contextData.get(key.toLowerCase());
+        return contextData.get(key);
     }
 
     @Override public @NonNull String getPrefix() { return prefix; }
@@ -45,7 +45,7 @@ public class ContextTag implements AbstractTag {
         AbstractTag result = TAG_PROCESSOR.process(this, attribute);
         if (result != null) return result;
 
-        String key = attribute.getName().toLowerCase();
+        String key = attribute.getName();
         if (contextData.containsKey(key)) {
             attribute.fulfill(1);
             return contextData.get(key);

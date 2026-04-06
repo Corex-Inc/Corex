@@ -12,6 +12,7 @@ import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MaterialTag implements AbstractTag {
 
@@ -56,7 +57,7 @@ public class MaterialTag implements AbstractTag {
 
         if (raw.equalsIgnoreCase("RANDOM")) {
             Material[] values = Material.values();
-            this.material = values[new java.util.Random().nextInt(values.length)];
+            this.material = values[ThreadLocalRandom.current().nextInt(values.length)];
             this.blockData = this.material.isBlock() ? this.material.createBlockData() : null;
             return;
         }

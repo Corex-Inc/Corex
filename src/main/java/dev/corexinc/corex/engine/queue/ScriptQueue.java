@@ -17,7 +17,7 @@ public class ScriptQueue {
 
     private final String id;
     private final boolean isAsync;
-    private final PlayerTag linkedPlayer;
+    private PlayerTag linkedPlayer;
     private final Map<String, AbstractTag> definitions;
     private final List<AbstractTag> returnValues = new ArrayList<>();
 
