@@ -7,6 +7,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +30,14 @@ public class MapTag implements AbstractTag {
 
         TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
-            String val = obj.map.get(attr.getParam());
-            return val != null ? ObjectFetcher.pickObject(val) : null;
+
+            AbstractTag current = obj;
+            for (String key : attr.getParam().split("\\.", -1)) {
+                if (!(current instanceof MapTag mapTag)) return null;
+                current = mapTag.getObject(key);
+            }
+            return current;
+
         }).test("a");
 
     }
