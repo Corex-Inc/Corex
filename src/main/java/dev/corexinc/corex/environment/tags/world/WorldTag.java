@@ -7,8 +7,11 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.ListTag;
+import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
@@ -21,42 +24,54 @@ public class WorldTag implements AbstractTag {
     public static final TagProcessor<WorldTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag("world", attr -> new WorldTag(attr.getParam()));
+        BaseTagProcessor.registerBaseTag("world", attribute -> {
+            if (!attribute.hasParam()) return null;
+            WorldTag worldTag = new WorldTag(attribute.getParam());
+            return worldTag.getWorld() != null ? worldTag : null;
+        });
 
-        ObjectFetcher.registerFetcher(prefix, WorldTag::new);
+        ObjectFetcher.registerFetcher(prefix, raw -> {
+            WorldTag tag = new WorldTag(raw);
+            return tag.getWorld() != null ? tag : null;
+        });
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getName() : ""));
+                new ElementTag(obj.world.getName()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getUID().toString() : ""));
+                new ElementTag(obj.world.getUID().toString()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "environment", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getEnvironment().name() : ""));
+                new ElementTag(obj.world.getEnvironment().name()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "time", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getTime() : 0));
+                new ElementTag(obj.world.getTime()));
 
         TAG_PROCESSOR.registerTag(DurationTag.class, "fullTime", (attr, obj) ->
-                obj.world != null ? new DurationTag(obj.world.getFullTime()) : null);
+                new DurationTag(obj.world.getFullTime()));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "players", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getPlayers().size() : 0));
+        TAG_PROCESSOR.registerTag(ListTag.class, "players", (attr, obj) -> {
+            ListTag listTag = new ListTag("");
+            for (Player player : obj.world.getPlayers()) {
+                listTag.addObject(new PlayerTag(player));
+            }
+            return listTag;
+        });
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "seed", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getSeed() : 0));
+                new ElementTag(obj.world.getSeed()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "difficulty", (attr, obj) ->
-                new ElementTag(obj.world != null ? obj.world.getDifficulty().name() : ""));
+                new ElementTag(obj.world.getDifficulty().name()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "isStorming", (attr, obj) ->
-                new ElementTag(obj.world != null && obj.world.hasStorm()));
+                new ElementTag(obj.world.hasStorm()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "isThundering", (attr, obj) ->
-                new ElementTag(obj.world != null && obj.world.isThundering()));
+                new ElementTag(obj.world.isThundering()));
 
         TAG_PROCESSOR.registerTag(LocationTag.class, "spawn", (attr, obj) ->
-                obj.world != null ? new LocationTag(obj.world.getSpawnLocation()) : null);
+                new LocationTag(obj.world.getSpawnLocation()));
     }
 
     public WorldTag(World world) {
@@ -91,7 +106,7 @@ public class WorldTag implements AbstractTag {
 
     @Override
     public @NonNull String identify() {
-        return prefix + "@" + (world != null ? world.getName() : "");
+        return prefix + "@" + world.getName();
     }
 
     @Override
