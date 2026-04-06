@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.TagManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -56,7 +57,7 @@ public final class BaseTagProcessor {
     @ApiStatus.AvailableSince("1.0.0")
     public static void registerBaseTag(
             @NotNull final String name,
-            @NotNull final Function<@NotNull Attribute, @NotNull AbstractTag> function
+            @NotNull final Function<@NotNull Attribute, @Nullable AbstractTag> function
     ) {
         TagManager.registerBaseTag(name, function);
     }
