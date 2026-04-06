@@ -54,6 +54,7 @@ public class EnvironmentLoader {
                 InjectCommand.class,
                 ReturnCommand.class,
                 AdjustCommand.class,
+                GiveCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -69,6 +70,7 @@ public class EnvironmentLoader {
                 ContextTag.class,
                 UtilTag.class,
                 RandomTag.class,
+                ItemTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
@@ -81,6 +83,7 @@ public class EnvironmentLoader {
                 // Script containers
                 TaskContainer.class,
                 EventsContainer.class,
+                ItemContainer.class,
 
                 // Global Flags
                 IfGlobalFlag.class,

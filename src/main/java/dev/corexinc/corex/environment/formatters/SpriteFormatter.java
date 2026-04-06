@@ -7,7 +7,6 @@ import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -48,11 +47,11 @@ public class SpriteFormatter implements AbstractFormatter {
 
         if (sprite.isBlank()) return INSTANCE;
 
+        String safeAtlas = atlas.replace("<", "").replace(">", "");
+        String safeSprite = sprite.replace("<", "").replace(">", "");
+
         try {
-            return new ComponentTag(MiniMessage.miniMessage().deserialize("<sprite:atlas:name>",
-                    Placeholder.unparsed("atlas", atlas),
-                    Placeholder.unparsed("name", sprite)
-            ));
+            return new ComponentTag(MiniMessage.miniMessage().deserialize("<sprite:\"" + safeAtlas + "\":" + safeSprite + ">"));
         } catch (Exception e) {
             return INSTANCE;
         }

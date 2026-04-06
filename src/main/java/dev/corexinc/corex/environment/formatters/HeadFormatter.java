@@ -6,7 +6,6 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.jspecify.annotations.NonNull;
 
 public class HeadFormatter implements AbstractFormatter {
@@ -17,9 +16,10 @@ public class HeadFormatter implements AbstractFormatter {
     public @NonNull AbstractTag parse(Attribute attribute) {
         if (!attribute.hasParam()) return INSTANCE;
 
+        String safeName = attribute.getParam().replace("<", "").replace(">", "");
+
         try {
-            return new ComponentTag(MiniMessage.miniMessage().deserialize("<head:name>",
-                    Placeholder.unparsed("name", attribute.getParam())));
+            return new ComponentTag(MiniMessage.miniMessage().deserialize("<head:" + safeName + ">"));
         } catch (Exception e) {
             return INSTANCE;
         }

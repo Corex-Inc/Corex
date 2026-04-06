@@ -13,8 +13,7 @@ import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextReplacementConfig;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.TextComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +22,6 @@ public interface CompiledArgument {
     AbstractTag evaluate(ScriptQueue queue);
 
     String getRaw();
-
-    default AbstractTag evaluateCached(ScriptQueue queue) {
-        AbstractTag cached = queue.getCached(this);
-        if (cached != null) return cached;
-        return evaluate(queue);
-    }
 
     class Static implements CompiledArgument {
         private final AbstractTag tag;
@@ -55,14 +48,38 @@ public interface CompiledArgument {
 
         @Override
         public AbstractTag evaluate(ScriptQueue queue) {
-            net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
+            TextComponent.Builder builder = Component.text();
+            StringBuilder textBuffer = new StringBuilder();
+            String lastColors = "";
 
             for (CompiledArgument part : parts) {
-                AbstractTag tag = part.evaluateCached(queue);
-                builder.append(tag.asComponent());
+                AbstractTag tag = part.evaluate(queue);
+
+                if (tag instanceof ComponentTag) {
+                    if (!textBuffer.isEmpty()) {
+                        String flushedText = textBuffer.toString();
+                        builder.append(Corex.SERIALIZER.deserialize(flushedText));
+
+                        lastColors = extractLastColors(flushedText);
+                        textBuffer.setLength(0);
+                    }
+
+                    builder.append(tag.asComponent());
+
+                    textBuffer.append(lastColors);
+                } else {
+                    textBuffer.append(tag.identify());
+                }
             }
 
-            return new dev.corexinc.corex.environment.tags.core.ComponentTag(builder.build());
+            if (!textBuffer.isEmpty()) {
+                String remaining = textBuffer.toString();
+                if (!remaining.equals(lastColors)) {
+                    builder.append(Corex.SERIALIZER.deserialize(remaining));
+                }
+            }
+
+            return new ComponentTag(builder.build());
         }
 
         @Override
@@ -70,6 +87,36 @@ public interface CompiledArgument {
             StringBuilder sb = new StringBuilder();
             for (CompiledArgument part : parts) sb.append(part.getRaw());
             return sb.toString();
+        }
+
+        private String extractLastColors(String text) {
+            StringBuilder result = new StringBuilder();
+            int length = text.length();
+            for (int i = 0; i < length; i++) {
+                char c = text.charAt(i);
+                if (c == '§' && i + 1 < length) {
+                    char code = text.charAt(i + 1);
+                    if (code == 'x' && i + 13 < length) {
+                        result.setLength(0);
+                        result.append(text.substring(i, i + 14));
+                        i += 13;
+                    } else if (isColorCode(code)) {
+                        result.setLength(0);
+                        result.append('§').append(code);
+                    } else if (isFormatCode(code)) {
+                        result.append('§').append(code);
+                    }
+                }
+            }
+            return result.toString();
+        }
+
+        private boolean isColorCode(char c) {
+            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'r' || c == 'R';
+        }
+
+        private boolean isFormatCode(char c) {
+            return (c >= 'k' && c <= 'o') || (c >= 'K' && c <= 'O');
         }
     }
 
@@ -100,21 +147,17 @@ public interface CompiledArgument {
             }
 
             while (attr.hasNext()) {
-
                 if (currentObj == null) {
                     if (attr.getName().equals("ifNull") && attr.hasParam()) {
                         currentObj = ObjectFetcher.pickObject(attr.getParam());
+                        attr.fulfill(1);
+                        continue;
                     }
-                    attr.fulfill(1);
-                    continue;
+                    break;
                 }
-
-                if (attr.getName().equals("ifNull")) {
-                    attr.fulfill(1);
-                    continue;
-                }
-
-                currentObj = currentObj.getAttribute(attr);
+                AbstractTag nextObj = currentObj.getAttribute(attr);
+                if (nextObj == null) break;
+                currentObj = nextObj;
                 attr.fulfill(1);
             }
 
@@ -122,7 +165,6 @@ public interface CompiledArgument {
                 if (fallback != null) return fallback.evaluate(queue);
                 return new ElementTag(rawFullTag);
             }
-
             return currentObj;
         }
 
