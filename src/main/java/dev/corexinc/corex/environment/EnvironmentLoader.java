@@ -16,9 +16,11 @@ import dev.corexinc.corex.environment.events.implementation.core.*;
 import dev.corexinc.corex.environment.events.implementation.player.PlayerBreakBlockEvent;
 import dev.corexinc.corex.environment.events.implementation.player.PlayerJoinEvent;
 import dev.corexinc.corex.environment.flags.IfGlobalFlag;
+import dev.corexinc.corex.environment.flags.PlayerGlobalFlag;
 import dev.corexinc.corex.environment.formatters.*;
 // BaseTags
 import dev.corexinc.corex.environment.tags.core.*;
+import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.*;
 import dev.corexinc.corex.environment.tags.world.*;
 
@@ -56,6 +58,7 @@ public class EnvironmentLoader {
                 // Tags
                 ElementTag.class,
                 PlayerTag.class,
+                EntityTag.class,
                 ListTag.class,
                 MapTag.class,
                 MaterialTag.class,
@@ -80,7 +83,8 @@ public class EnvironmentLoader {
                 EventsContainer.class,
 
                 // Global Flags
-                IfGlobalFlag.class
+                IfGlobalFlag.class,
+                PlayerGlobalFlag.class
         );
 
         // Events
