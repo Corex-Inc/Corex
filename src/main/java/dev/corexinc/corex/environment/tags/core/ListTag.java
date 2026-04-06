@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class ListTag implements AbstractTag {
 
     private static String prefix = "li";
-    private final List<String> list = new ArrayList<>();
+    private final List<AbstractTag> list = new ArrayList<>();
 
     public static final TagProcessor<ListTag> TAG_PROCESSOR = new TagProcessor<>();
 
@@ -26,14 +26,17 @@ public class ListTag implements AbstractTag {
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.list.size()));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) ->
-                new ElementTag(String.join(attr.getParam(), obj.list))).test(", ");
+        TAG_PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) -> {
+            List<String> strings = new ArrayList<>();
+            for (AbstractTag t : obj.list) strings.add(t.identify());
+            return new ElementTag(String.join(attr.getParam(), strings));
+        }).test(", ");
 
         TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             int index = new ElementTag(attr.getParam()).asInt() - 1;
             if (index >= 0 && index < obj.list.size()) {
-                return ObjectFetcher.pickObject(obj.list.get(index));
+                return obj.list.get(index);
             }
             return null;
         }).test("3");
@@ -43,57 +46,56 @@ public class ListTag implements AbstractTag {
 
             if (!attr.hasParam()) {
                 int index = ThreadLocalRandom.current().nextInt(obj.list.size());
-                return ObjectFetcher.pickObject(obj.list.get(index));
+                return obj.list.get(index);
             }
 
             int count = new ElementTag(attr.getParam()).asInt();
             if (count <= 0) return new ListTag("");
 
-            List<String> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.list);
             Collections.shuffle(copy);
 
             int limit = Math.min(count, copy.size());
-            List<String> subList = copy.subList(0, limit);
+            ListTag result = new ListTag("");
+            for (AbstractTag t : copy.subList(0, limit)) result.addObject(t);
 
-            return new ListTag(String.join("|", subList));
+            return result;
         }).test("2");
 
         TAG_PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
             if (obj.list.isEmpty()) return new ListTag("");
 
-            List<String> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.list);
             Collections.shuffle(copy);
 
-            return new ListTag(String.join("|", copy));
-        });
+            ListTag result = new ListTag("");
+            for (AbstractTag t : copy) result.addObject(t);
 
+            return result;
+        });
     }
 
     public ListTag(String raw) {
         if (raw == null || raw.isEmpty()) return;
 
-        this.list.addAll(ObjectFetcher.splitIgnoringBrackets(raw, '|'));
+        List<String> split = ObjectFetcher.splitIgnoringBrackets(raw, '|');
+        for (String s : split) {
+            this.list.add(ObjectFetcher.pickObject(s));
+        }
     }
 
     public <T extends AbstractTag> List<T> filter(Class<T> clazz) {
-        List<T> results = new java.util.ArrayList<>();
-        for (String item : this.list) {
-            AbstractTag obj = ObjectFetcher.pickObject(item);
-
-            if (clazz.isInstance(obj)) {
-                results.add(clazz.cast(obj));
+        List<T> results = new ArrayList<>();
+        for (AbstractTag item : this.list) {
+            if (clazz.isInstance(item)) {
+                results.add(clazz.cast(item));
             }
         }
         return results;
     }
 
     public List<AbstractTag> getList() {
-        List<AbstractTag> results = new ArrayList<>();
-        for (String item : this.list) {
-            AbstractTag obj = ObjectFetcher.pickObject(item);
-            results.add(obj);
-        }
-        return results;
+        return new ArrayList<>(list);
     }
 
     public int size() {
@@ -102,20 +104,20 @@ public class ListTag implements AbstractTag {
 
     public String get(int index) {
         if (index >= 0 && index < list.size()) {
-            return list.get(index);
+            return list.get(index).identify();
         }
         return null;
     }
 
     public void addString(String value) {
         if (value != null) {
-            this.list.add(value);
+            this.list.add(new ElementTag(value));
         }
     }
 
     public void addObject(AbstractTag tag) {
         if (tag != null) {
-            this.list.add(tag.identify());
+            this.list.add(tag);
         }
     }
 
@@ -123,7 +125,9 @@ public class ListTag implements AbstractTag {
 
     @Override
     public @NonNull String identify() {
-        return prefix + "@" + String.join("|", list);
+        List<String> strings = new ArrayList<>();
+        for (AbstractTag t : list) strings.add(t.identify());
+        return prefix + "@" + String.join("|", strings);
     }
 
     @Override
