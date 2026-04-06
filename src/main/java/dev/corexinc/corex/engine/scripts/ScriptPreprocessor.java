@@ -52,10 +52,16 @@ public class ScriptPreprocessor {
         if (dashIndex != -1 && line.substring(0, dashIndex).trim().isEmpty()) {
             String spaces = line.substring(0, dashIndex + 2);
             String content = line.substring(dashIndex + 2);
+            String trimmedContent = content.trim();
 
-            if (content.trim().endsWith(":")) {
+            if (trimmedContent.endsWith(":")) {
                 result.append(line).append("\n");
-            } else {
+            }
+            else if ((trimmedContent.startsWith("\"") && trimmedContent.endsWith("\"")) ||
+                    (trimmedContent.startsWith("'") && trimmedContent.endsWith("'"))) {
+                result.append(line).append("\n");
+            }
+            else {
                 result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
             }
         } else {

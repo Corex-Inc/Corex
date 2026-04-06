@@ -66,6 +66,7 @@ public class EnvironmentLoader {
                 ContextTag.class,
                 UtilTag.class,
                 RandomTag.class,
+                ItemTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
@@ -78,6 +79,7 @@ public class EnvironmentLoader {
                 // Script containers
                 TaskContainer.class,
                 EventsContainer.class,
+                ItemContainer.class,
 
                 // Global Flags
                 IfGlobalFlag.class
