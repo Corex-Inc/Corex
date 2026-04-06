@@ -18,18 +18,14 @@ public class ObjectFetcher {
     }
 
     public static AbstractTag pickObject(String value) {
-        if (value == null) return new ElementTag("null");
+        if (value == null) return null;
 
         int atIndex = value.indexOf('@');
         if (atIndex > 0) {
-            String prefix = value.substring(0, atIndex).toLowerCase();
-            Function<String, AbstractTag> constructor = fetchers.get(prefix);
-
+            Function<String, AbstractTag> constructor = fetchers.get(value.substring(0, atIndex).toLowerCase());
             if (constructor != null) {
-                try {
-                    return constructor.apply(value.substring(atIndex + 1));
-                } catch (Exception ignored) {
-                }
+                AbstractTag result = constructor.apply(value.substring(atIndex + 1));
+                if (result != null) return result;
             }
         }
 
@@ -45,15 +41,8 @@ public class ObjectFetcher {
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
 
-            if (escaped) {
-                escaped = false;
-                continue;
-            }
-
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            }
+            if (escaped) { escaped = false; continue; }
+            if (c == '\\') { escaped = true; continue; }
 
             if (c == '[') brackets++;
             else if (c == ']') brackets--;
@@ -62,24 +51,8 @@ public class ObjectFetcher {
                 start = i + 1;
             }
         }
-        if (start <= str.length()) {
-            result.add(str.substring(start));
-        }
-        return result;
-    }
 
-    private static String unescape(String str) {
-        if (!str.contains("\\")) return str;
-        StringBuilder sb = new StringBuilder();
-        boolean escaped = false;
-        for (char c : str.toCharArray()) {
-            if (!escaped && c == '\\') {
-                escaped = true;
-            } else {
-                sb.append(c);
-                escaped = false;
-            }
-        }
-        return sb.toString();
+        result.add(str.substring(start));
+        return result;
     }
 }
