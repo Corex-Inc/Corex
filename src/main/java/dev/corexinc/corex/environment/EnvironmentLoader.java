@@ -28,10 +28,7 @@ public class EnvironmentLoader {
         // DefinitionTag
         BaseTagProcessor.registerBaseTag("", (attribute) -> {
             if (attribute.hasParam() && attribute.getQueue() != null) {
-                AbstractTag def = attribute.getQueue().getDefinition(attribute.getParam());
-                if (def != null) {
-                    return ObjectFetcher.pickObject(def.identify());
-                }
+                return attribute.getQueue().getDefinition(attribute.getParam());
             }
             return null;
         });

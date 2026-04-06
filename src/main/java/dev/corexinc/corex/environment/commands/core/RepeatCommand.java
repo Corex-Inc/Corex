@@ -27,25 +27,32 @@ public class RepeatCommand implements AbstractCommand {
         int times = new ElementTag(action).asInt();
         if (times <= 0) return;
 
-        String fromStr = instruction.getPrefix("from", queue);
-        int from = fromStr != null ? new ElementTag(fromStr).asInt() : 1;
+        String fromPrefix = instruction.getPrefix("from", queue);
+        int from = (fromPrefix != null) ? Integer.parseInt(fromPrefix) : 1;
         String asVar = instruction.getPrefix("as", queue) != null ? instruction.getPrefix("as", queue) : "loopIndex";
 
-        int max = from + times - 1;
-        int[] current = { from };
+        final int max = from + times - 1;
 
-        queue.define(asVar, new ElementTag(current[0]));
+
+        String stateKey = "rep_idx_" + queue.getDepth();
+        queue.setTempData(stateKey, from);
+
+        final String finalVar = asVar;
+        queue.define(finalVar, new ElementTag(from));
 
         queue.pushFrame("repeat_loop", instruction.innerBlock,
                 () -> {
                     queue.setBroken(false);
-                    queue.define(asVar, null);
+                    queue.define(finalVar, null);
+                    queue.setTempData(stateKey, null);
                 },
                 () -> {
                     if (queue.isBroken()) return false;
-                    current[0]++;
-                    if (current[0] > max) return false;
-                    queue.define(asVar, new ElementTag(current[0]));
+                    int next = (int) queue.getTempData(stateKey) + 1;
+                    if (next > max) return false;
+
+                    queue.setTempData(stateKey, next);
+                    queue.define(finalVar, new ElementTag(next));
                     return true;
                 }
         );

@@ -39,7 +39,6 @@ public class ScriptQueue {
 
     private long startNanos;
 
-    // Кэш вычисленных аргументов на время одной инструкции (только в VERBOSE)
     private IdentityHashMap<CompiledArgument, AbstractTag> evalCache;
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
@@ -56,10 +55,13 @@ public class ScriptQueue {
         executeNext();
     }
 
-    public boolean isCancelled() { return isCancelled; }
-    public void setCancelled(boolean cancelled) { isCancelled = cancelled; }
+    public boolean isCancelled() {
+        return isCancelled;
+    }
 
-    // --- Eval Cache ---
+    public void setCancelled(boolean cancelled) {
+        isCancelled = cancelled;
+    }
 
     public AbstractTag getCached(CompiledArgument arg) {
         return evalCache != null ? evalCache.get(arg) : null;
@@ -72,8 +74,6 @@ public class ScriptQueue {
     public void clearEvalCache() {
         this.evalCache = null;
     }
-
-    // ------------------
 
     public void executeNext() {
         try {
@@ -102,24 +102,13 @@ public class ScriptQueue {
                                 }
                             }
                         }
-
-                        if (!skipCommand) {
-                            if (Debugger.needsEvalCache()) {
-                                IdentityHashMap<CompiledArgument, AbstractTag> cache = new IdentityHashMap<>();
-                                for (CompiledArgument arg : inst.linearArgs)
-                                    cache.put(arg, arg.evaluate(this));
-                                for (CompiledArgument arg : inst.prefixArgs.values())
-                                    cache.put(arg, arg.evaluate(this));
-                                setEvalCache(cache);
-                            }
-
-                            Debugger.instruction(this, inst, depth);
-                            if (inst.command != null) inst.command.run(this, inst);
-
-                            clearEvalCache();
+                        
+                        if (Debugger.needsEvalCache()) {
+                            handleDebugExecution(inst);
+                        } else {
+                            inst.command.run(this, inst);
                         }
                     } catch (Exception e) {
-                        clearEvalCache();
                         String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
                         Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, depth);
                     }
@@ -156,6 +145,22 @@ public class ScriptQueue {
         }
     }
 
+    private void handleDebugExecution(Instruction instruction) {
+        if (Debugger.needsEvalCache()) {
+            IdentityHashMap<CompiledArgument, AbstractTag> cache = new IdentityHashMap<>();
+            for (CompiledArgument argument : instruction.linearArgs) {
+                cache.put(argument, argument.evaluate(this));
+            }
+            for (CompiledArgument argument : instruction.prefixArgs.values()) {
+                cache.put(argument, argument.evaluate(this));
+            }
+            this.evalCache = cache;
+        }
+        Debugger.instruction(this, instruction, callStack.size());
+        instruction.command.run(this, instruction);
+        this.evalCache = null;
+    }
+
     public void pushFrame(String calledScriptName, Instruction[] newBytecode, Runnable newOnFinish) {
         pushFrame(calledScriptName, newBytecode, newOnFinish, null);
     }
@@ -173,9 +178,17 @@ public class ScriptQueue {
         this.isBroken = breakLoop;
     }
 
-    public boolean isBroken() { return isBroken; }
-    public void setBroken(boolean broken) { this.isBroken = broken; }
-    public void pause() { this.isPaused = true; }
+    public boolean isBroken() {
+        return isBroken;
+    }
+
+    public void setBroken(boolean broken) {
+        this.isBroken = broken;
+    }
+
+    public void pause() {
+        this.isPaused = true;
+    }
 
     public void resume() {
         this.isPaused = false;
@@ -190,7 +203,9 @@ public class ScriptQueue {
         Debugger.releaseQueue(id);
     }
 
-    public void setOnFinish(Runnable onFinish) { this.onFinish = onFinish; }
+    public void setOnFinish(Runnable onFinish) {
+        this.onFinish = onFinish;
+    }
 
     public void delay(long ticks) {
         pause();
@@ -213,19 +228,40 @@ public class ScriptQueue {
         return linkedPlayer;
     }
 
-    public String getId() { return id; }
+    public String getId() {
+        return id;
+    }
 
     public void setTempData(String key, Object value) {
         if (value == null) tempData.remove(key);
         else tempData.put(key, value);
     }
 
-    public Object getTempData(String key) { return tempData.get(key); }
+    public Object getTempData(String key) {
+        return tempData.get(key);
+    }
 
-    public void setContext(ContextTag context) { this.context = context; }
-    public ContextTag getContext() { return context; }
-    public void addReturn(AbstractTag tag) { if (tag != null) returnValues.add(tag); }
-    public List<AbstractTag> getReturns() { return returnValues; }
-    public boolean isAsync() { return isAsync; }
-    public int getDepth() { return callStack.size(); }
+    public void setContext(ContextTag context) {
+        this.context = context;
+
+    }
+    public ContextTag getContext() {
+        return context;
+    }
+
+    public void addReturn(AbstractTag tag) {
+        if (tag != null) returnValues.add(tag);
+    }
+
+    public List<AbstractTag> getReturns() {
+        return returnValues;
+    }
+
+    public boolean isAsync() {
+        return isAsync;
+    }
+
+    public int getDepth() {
+        return callStack.size();
+    }
 }

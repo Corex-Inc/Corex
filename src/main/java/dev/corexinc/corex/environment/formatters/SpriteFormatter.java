@@ -63,8 +63,4 @@ public class SpriteFormatter implements AbstractFormatter {
                 .map(AbstractTag::identify)
                 .filter(value -> !value.isBlank());
     }
-
-    private String sanitize(String input) {
-        return input.replace("\"", "").replace("<", "").replace(">", "");
-    }
 }
