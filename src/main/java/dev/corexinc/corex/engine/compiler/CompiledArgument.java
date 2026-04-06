@@ -100,17 +100,21 @@ public interface CompiledArgument {
             }
 
             while (attr.hasNext()) {
+
                 if (currentObj == null) {
                     if (attr.getName().equals("ifNull") && attr.hasParam()) {
                         currentObj = ObjectFetcher.pickObject(attr.getParam());
-                        attr.fulfill(1);
-                        continue;
                     }
-                    break;
+                    attr.fulfill(1);
+                    continue;
                 }
-                AbstractTag nextObj = currentObj.getAttribute(attr);
-                if (nextObj == null) break;
-                currentObj = nextObj;
+
+                if (attr.getName().equals("ifNull")) {
+                    attr.fulfill(1);
+                    continue;
+                }
+
+                currentObj = currentObj.getAttribute(attr);
                 attr.fulfill(1);
             }
 
@@ -118,6 +122,7 @@ public interface CompiledArgument {
                 if (fallback != null) return fallback.evaluate(queue);
                 return new ElementTag(rawFullTag);
             }
+
             return currentObj;
         }
 
