@@ -52,6 +52,7 @@ public class EnvironmentLoader {
                 InjectCommand.class,
                 ReturnCommand.class,
                 AdjustCommand.class,
+                GiveCommand.class,
 
                 // Tags
                 ElementTag.class,
