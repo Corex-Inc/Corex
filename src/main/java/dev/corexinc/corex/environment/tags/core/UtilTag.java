@@ -32,8 +32,8 @@ public class UtilTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "uptime", (attr, obj) ->
                 new ElementTag(java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime()));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "debugLevel", (attr, obj) ->
-                new ElementTag(Debugger.getGlobalLevel().name()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "debugMode", (attr, obj) ->
+                new ElementTag(Debugger.getMode().name()));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "defaultEncoding", (attr, obj) ->
                 new ElementTag(Charset.defaultCharset().name()));
