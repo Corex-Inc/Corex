@@ -18,7 +18,7 @@ public class ObjectFetcher {
     }
 
     public static AbstractTag pickObject(String value) {
-        if (value == null) return null;
+        if (value == null) return new ElementTag("null");
 
         int atIndex = value.indexOf('@');
         if (atIndex > 0) {

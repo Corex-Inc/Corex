@@ -14,11 +14,11 @@ public final class MechanismProcessor<T extends AbstractTag> {
     private final Map<String, BiFunction<T, AbstractTag, AbstractTag>> mechanisms = new HashMap<>();
 
     public void registerMechanism(@NotNull String name, @NotNull BiFunction<T, AbstractTag, AbstractTag> action) {
-        mechanisms.put(name.toLowerCase(), action);
+        mechanisms.put(name, action);
     }
 
     public AbstractTag process(@NotNull T object, @NotNull String name, @NotNull AbstractTag value) {
-        BiFunction<T, AbstractTag, AbstractTag> action = mechanisms.get(name.toLowerCase());
+        BiFunction<T, AbstractTag, AbstractTag> action = mechanisms.get(name);
 
         if (action != null) {
             return action.apply(object, value);

@@ -15,6 +15,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -55,7 +56,7 @@ public class ItemContainer implements AbstractContainer {
             item.applyMechanism("displayName", parsedName);
         }
 
-        java.util.List<String> loreList = rawData.getStringList("lore");
+        List<String> loreList = rawData.getStringList("lore");
         if (!loreList.isEmpty()) {
             ListTag loreTag = new ListTag("");
             for (String line : loreList) {
