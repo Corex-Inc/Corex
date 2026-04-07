@@ -9,6 +9,8 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.containers.ItemContainer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
+import dev.corexinc.corex.environment.tags.core.MapTag;
+import dev.corexinc.corex.environment.utils.versions.VersionController;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
@@ -21,6 +23,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class ItemTag implements AbstractTag {
@@ -32,20 +35,28 @@ public class ItemTag implements AbstractTag {
     public static final MechanismProcessor<ItemTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
     private String scriptName = null;
 
+    @SuppressWarnings("unchecked")
     public static void register() {
         BaseTagProcessor.registerBaseTag("item", attr -> new ItemTag(attr.getParam()));
         ObjectFetcher.registerFetcher(prefix, ItemTag::new);
 
         TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> new MaterialTag(obj.item.getType()));
+
         TAG_PROCESSOR.registerTag(ElementTag.class, "amount", (attr, obj) -> new ElementTag(obj.item.getAmount()));
-        TAG_PROCESSOR.registerTag(ElementTag.class, "customModelData", (attr, obj) -> {
-            ItemMeta meta = obj.item.getItemMeta();
-            return new ElementTag(meta != null && meta.hasCustomModelData() ? meta.getCustomModelData() : 0);
+
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "customModelData", (attr, obj) -> {
+            Object data = VersionController.getCustomModelDataAdapter().getCustomModelData(obj.item);
+            if (data instanceof Map<?, ?> map) {
+                return new MapTag((Map<String, ?>) map);
+            } else if (data instanceof Integer integer) {
+                return new ElementTag(integer);
+            }
+            return null;
         });
 
         MECHANISM_PROCESSOR.registerMechanism("material", (obj, val) -> {
             Material targetMaterial = Material.matchMaterial(val.identify().toUpperCase());
-            if (targetMaterial != null) obj.item.withType(targetMaterial);
+            if (targetMaterial != null) obj.item = obj.item.withType(targetMaterial);
             return obj;
         });
 
@@ -88,11 +99,7 @@ public class ItemTag implements AbstractTag {
         });
 
         MECHANISM_PROCESSOR.registerMechanism("customModelData", (obj, val) -> {
-            ItemMeta meta = obj.item.getItemMeta();
-            if (meta != null && val instanceof ElementTag el) {
-                meta.setCustomModelData(el.asInt());
-                obj.item.setItemMeta(meta);
-            }
+            VersionController.getCustomModelDataAdapter().applyCustomModelData(obj.item, val);
             return obj;
         });
 
@@ -163,15 +170,11 @@ public class ItemTag implements AbstractTag {
     public @NonNull String identify() {
         StringBuilder stringBuilder = new StringBuilder(prefix + "@");
 
-        if (scriptName != null) {
-            stringBuilder.append(scriptName.toLowerCase());
-        } else {
-            stringBuilder.append(item.getType().name().toLowerCase());
-        }
+        stringBuilder.append(Objects.requireNonNullElseGet(scriptName, () -> item.getType().name()).toLowerCase());
 
         List<String> propertiesList = new ArrayList<>();
 
-        if (item.getAmount() != 1) {
+        if (item.getAmount() > 1) {
             propertiesList.add("amount=" + item.getAmount());
         }
 
@@ -179,17 +182,7 @@ public class ItemTag implements AbstractTag {
         if (meta != null) {
             if (meta.hasDisplayName() && meta.displayName() != null) {
                 String nameStr = LegacyComponentSerializer.legacySection().serialize(Objects.requireNonNull(meta.displayName()));
-                propertiesList.add("displayname=" + nameStr.replace(";", "\\;").replace("=", "\\="));
-            }
-            if (meta.hasLore() && meta.lore() != null) {
-                List<String> loreStrs = new ArrayList<>();
-                for (Component comp : Objects.requireNonNull(meta.lore())) {
-                    loreStrs.add(LegacyComponentSerializer.legacySection().serialize(comp).replace("|", "\\|"));
-                }
-                propertiesList.add("lore=li@" + String.join("|", loreStrs));
-            }
-            if (meta.hasCustomModelData()) {
-                propertiesList.add("custommodeldata=" + meta.getCustomModelData());
+                propertiesList.add("displayName=" + nameStr.replace(";", "\\;").replace("=", "\\=")); // FIX #2: имя механизма приведено к camelCase
             }
         }
 
@@ -214,5 +207,5 @@ public class ItemTag implements AbstractTag {
         return MECHANISM_PROCESSOR.process(this, mechanism, value);
     }
 
-    @Override public @NonNull String getTestValue() { return "i@stone"; }
+    @Override public @NonNull String getTestValue() { return "i@stone[customModelData=1]"; }
 }

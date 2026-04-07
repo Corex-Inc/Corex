@@ -7,10 +7,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /* @doc object
  *
@@ -112,6 +109,20 @@ public class MapTag implements AbstractTag {
 
     }
 
+    public MapTag() {}
+
+    public MapTag(Map<String, ?> javaMap) {
+        if (javaMap == null) return;
+        for (Map.Entry<String, ?> entry : javaMap.entrySet()) {
+            Object value = entry.getValue();
+            if (value == null) continue;
+            AbstractTag tag = value instanceof List<?> list
+                    ? new ListTag(list)
+                    : ObjectFetcher.pickObject(value.toString());
+            map.put(entry.getKey(), tag.identify());
+        }
+    }
+
     public MapTag(String raw) {
         if (raw == null || raw.isEmpty()) return;
 
@@ -129,7 +140,7 @@ public class MapTag implements AbstractTag {
         }
     }
 
-    public java.util.Set<String> keySet() {
+    public Set<String> keySet() {
         return map.keySet();
     }
 

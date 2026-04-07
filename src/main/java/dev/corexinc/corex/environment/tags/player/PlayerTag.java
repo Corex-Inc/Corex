@@ -8,6 +8,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
+import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -62,6 +63,8 @@ public class PlayerTag implements AbstractTag {
             if (entity == null) return null;
             return new EntityTag(entity);
         })).ignoreTest();
+
+        TAG_PROCESSOR.registerTag(ItemTag.class, "itemInHand", ((attribute, object) -> new ItemTag(object.getPlayer().getInventory().getItemInMainHand())));
 
         TAG_PROCESSOR.registerTag(ElementTag.class, "maxHealth", ((attribute, object) ->
                 new ElementTag(Objects.requireNonNull(object.getPlayer().getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue()))).ignoreTest();

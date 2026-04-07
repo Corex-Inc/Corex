@@ -1,9 +1,7 @@
 package dev.corexinc.corex.environment;
 
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
-import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
-import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // Commands
 import dev.corexinc.corex.environment.commands.core.*;

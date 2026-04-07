@@ -15,6 +15,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -55,9 +56,9 @@ public class ItemContainer implements AbstractContainer {
             item.applyMechanism("displayName", parsedName);
         }
 
-        java.util.List<String> loreList = rawData.getStringList("lore");
+        List<String> loreList = rawData.getStringList("lore");
         if (!loreList.isEmpty()) {
-            ListTag loreTag = new ListTag("");
+            ListTag loreTag = new ListTag();
             for (String line : loreList) {
                 AbstractTag parsedLine = Objects.requireNonNull(ScriptCompiler.parseArg(line)).evaluate(dummyQueue);
                 loreTag.addObject(parsedLine);
@@ -78,7 +79,7 @@ public class ItemContainer implements AbstractContainer {
 
     private AbstractTag parseYamlValueToTag(ConfigurationSection section, String key, ScriptQueue queue) {
         if (section.isList(key)) {
-            ListTag listTag = new ListTag("");
+            ListTag listTag = new ListTag();
             for (String listVal : section.getStringList(key)) {
                 AbstractTag parsed = Objects.requireNonNull(ScriptCompiler.parseArg(listVal)).evaluate(queue);
                 listTag.addString(parsed.identify());
@@ -86,7 +87,7 @@ public class ItemContainer implements AbstractContainer {
             return listTag;
         } else if (section.isConfigurationSection(key)) {
             ConfigurationSection subSection = section.getConfigurationSection(key);
-            MapTag mapTag = new MapTag("");
+            MapTag mapTag = new MapTag();
             if (subSection != null) {
                 for (String subKey : subSection.getKeys(false)) {
                     mapTag.putObject(subKey, parseYamlValueToTag(subSection, subKey, queue));

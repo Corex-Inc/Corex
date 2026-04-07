@@ -140,13 +140,13 @@ public class ListTag implements AbstractTag {
             }
 
             int count = new ElementTag(attr.getParam()).asInt();
-            if (count <= 0) return new ListTag("");
+            if (count <= 0) return new ListTag();
 
             List<AbstractTag> copy = new ArrayList<>(obj.list);
             Collections.shuffle(copy);
 
             int limit = Math.min(count, copy.size());
-            ListTag result = new ListTag("");
+            ListTag result = new ListTag();
             for (AbstractTag t : copy.subList(0, limit)) result.addObject(t);
 
             return result;
@@ -162,24 +162,31 @@ public class ListTag implements AbstractTag {
          * Returns a new list with the items in a randomized order.
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
-            if (obj.list.isEmpty()) return new ListTag("");
+            if (obj.list.isEmpty()) return new ListTag();
 
             List<AbstractTag> copy = new ArrayList<>(obj.list);
             Collections.shuffle(copy);
 
-            ListTag result = new ListTag("");
+            ListTag result = new ListTag();
             for (AbstractTag t : copy) result.addObject(t);
 
             return result;
         });
     }
 
+    public ListTag() {}
+
     public ListTag(String raw) {
         if (raw == null || raw.isEmpty()) return;
-
-        List<String> split = ObjectFetcher.splitIgnoringBrackets(raw, '|');
-        for (String s : split) {
+        for (String s : ObjectFetcher.splitIgnoringBrackets(raw, '|')) {
             this.list.add(ObjectFetcher.pickObject(s));
+        }
+    }
+
+    public ListTag(List<?> list) {
+        for (Object element : list) {
+            if (element == null) continue;
+            this.list.add(ObjectFetcher.pickObject(element.toString()));
         }
     }
 
