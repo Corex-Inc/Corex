@@ -8,6 +8,7 @@ import dev.corexinc.corex.environment.utils.versions.adapters.CustomModelDataAda
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,17 +19,16 @@ public class CustomModelData implements CustomModelDataAdapter {
     public Object getCustomModelData(ItemStack item) {
         if (item == null) return null;
 
-        io.papermc.paper.datacomponent.item.CustomModelData customModelData =
-                item.getData(DataComponentTypes.CUSTOM_MODEL_DATA);
+        var cmd = item.getData(DataComponentTypes.CUSTOM_MODEL_DATA);
+        if (cmd == null) return null;
 
-        if (customModelData == null) return null;
+        Map<String, Object> map = new HashMap<>();
+        if (!cmd.strings().isEmpty()) map.put("strings", cmd.strings());
+        if (!cmd.colors().isEmpty()) map.put("colors", cmd.colors());
+        if (!cmd.flags().isEmpty()) map.put("flags", cmd.flags());
+        if (!cmd.floats().isEmpty()) map.put("floats", cmd.floats());
 
-        return Map.of(
-                "strings", List.copyOf(customModelData.strings()),
-                "colors", List.copyOf(customModelData.colors()),
-                "flags", List.copyOf(customModelData.flags()),
-                "floats", List.copyOf(customModelData.floats())
-        );
+        return map;
     }
 
     @Override
