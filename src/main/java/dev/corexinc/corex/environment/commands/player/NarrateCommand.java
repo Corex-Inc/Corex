@@ -59,8 +59,8 @@ public class NarrateCommand implements AbstractCommand {
                 }
             }
         } else if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
-            SchedulerAdapter.runEntity(queue.getPlayer().getPlayer(),
-                    () -> queue.getPlayer().getPlayer().sendMessage(message));
+            Player player = queue.getPlayer().getPlayer();
+            SchedulerAdapter.runEntity(player, () -> player.sendMessage(message));
         }
         else {
             Bukkit.getServer().getConsoleSender().sendMessage(message);

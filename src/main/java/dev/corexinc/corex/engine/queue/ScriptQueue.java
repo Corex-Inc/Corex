@@ -102,11 +102,13 @@ public class ScriptQueue {
                                 }
                             }
                         }
-                        
-                        if (Debugger.needsEvalCache()) {
-                            handleDebugExecution(inst);
-                        } else {
-                            inst.command.run(this, inst);
+
+                        if (!skipCommand) {
+                            if (Debugger.needsEvalCache()) {
+                                handleDebugExecution(inst);
+                            } else {
+                                inst.command.run(this, inst);
+                            }
                         }
                     } catch (Exception e) {
                         String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
