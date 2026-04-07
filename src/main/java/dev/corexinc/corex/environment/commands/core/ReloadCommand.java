@@ -55,22 +55,13 @@ public class ReloadCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        long start = System.currentTimeMillis();
-
-        Corex.getInstance().reloadConfig();
-        Debugger.updateDebugMode();
-        EventRegistry.resetAll();
-        ScriptManager.reloadScripts();
-
-        long end = System.currentTimeMillis() - start;
-
-        Component msg = Component.text("[Corex] on " + end + "ms.")
-                .color(NamedTextColor.AQUA);
-
-        if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
-            queue.getPlayer().getPlayer().sendMessage(msg);
-        } else {
-            org.bukkit.Bukkit.getConsoleSender().sendMessage(msg);
+        try {
+            Corex.getInstance().reloadConfig();
+            Debugger.updateDebugMode();
+            EventRegistry.resetAll();
+            ScriptManager.reloadScripts();
+        } catch (Exception e) {
+            Debugger.error("ERROR while reloading scripts. See console logs above this message.");
         }
     }
 }

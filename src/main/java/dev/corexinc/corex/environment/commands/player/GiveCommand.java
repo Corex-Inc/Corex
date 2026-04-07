@@ -21,7 +21,9 @@ import java.util.Map;
 
 public class GiveCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "give"; }
+    @Override public @NonNull String getName() {
+        return "give";
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
@@ -95,8 +97,18 @@ public class GiveCommand implements AbstractCommand {
         }
     }
 
-    @Override public boolean isAsyncSafe() { return false; }
-    @Override public @NonNull String getSyntax() { return "[<player>|...] [<item>|...] (quantity:<#>)"; }
-    @Override public int getMinArgs() { return 2; }
-    @Override public int getMaxArgs() { return 2; }
+    @Override public boolean isAsyncSafe() {
+        return false;
+    }
+
+    @Override public @NonNull String getSyntax() {
+        return "[<player>|...] [<item>|...] (quantity:<#>)";
+    }
+
+    @Override public int getMinArgs() {
+        return 2;
+    }
+    @Override public int getMaxArgs() {
+        return 2;
+    }
 }

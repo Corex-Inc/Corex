@@ -41,13 +41,6 @@ public class KickCommand implements AbstractCommand {
         String firstArg = entry.getLinear(0, queue);
         String secondArg = entry.getPrefix("reason", queue);
 
-        // TODO нужна проверка количества аргументов, желательно автоматически (getMinArgs/getMaxArgs)
-
-        if (firstArg == null) {
-            Debugger.error(queue, getName() + ": no player specified", 0);
-            return;
-        }
-
         final Component reason = (secondArg == null ? null : MiniMessage.miniMessage().deserialize(secondArg));
 
         ListTag targetList = new ListTag(firstArg);

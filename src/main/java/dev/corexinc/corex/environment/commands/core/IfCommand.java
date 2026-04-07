@@ -85,7 +85,9 @@ public class IfCommand implements AbstractCommand {
     }
 
     @Override
-    public @NonNull String getSyntax() { return "[<value>]"; }
+    public @NonNull String getSyntax() {
+        return "[<value>]";
+    }
 
     @Override
     public int getMinArgs() {

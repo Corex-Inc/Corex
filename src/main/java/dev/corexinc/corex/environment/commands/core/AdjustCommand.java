@@ -25,10 +25,14 @@ public class AdjustCommand implements AbstractCommand {
     }
 
     @Override
-    public int getMinArgs() { return 2; }
+    public int getMinArgs() {
+        return 2;
+    }
 
     @Override
-    public int getMaxArgs() { return 2; }
+    public int getMaxArgs() {
+        return 2;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
