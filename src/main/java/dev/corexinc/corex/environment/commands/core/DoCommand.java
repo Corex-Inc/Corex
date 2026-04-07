@@ -16,7 +16,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.Map;
 
-/* @[command]
+/* @doc command
  *
  * @Name Do
  * @Syntax do [<script>] (path:<name>) (def:<element>|.../def.<name>:<value>) (id:<name>)
@@ -50,8 +50,8 @@ import java.util.Map;
  * - do MyTask
  *
  * @Usage
- * // Use to do a local subscript named 'alt_path'.
- * - do <script> path:alt_path
+ * // Use to do a local subscript named 'altPath'.
+ * - do <script> path:altPath
  *
  * @Usage
  * // Use to do 'MyTask' and pass 3 definitions to it.

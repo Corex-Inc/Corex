@@ -14,6 +14,32 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
+/* @doc command
+ *
+ * @Name kick
+ * @Syntax kick [<player>|...] (reason:<text>)
+ * @RequiredArgs 1
+ * @MaxArgs 2
+ * @ShortDescription Kicks a player from the server.
+ *
+ * @Implements Kick
+ *
+ * @Description
+ * Kick a player or a list of players from the server and optionally specify a reason.
+ * If no reason is specified it defaults to "Kicked."
+ *
+ * @Usage
+ * // Use to kick the player with the default reason.
+ * - kick <player>
+ *
+ * @Usage
+ * // Use to kick the player with a reason.
+ * - kick <player> "reason:Because I can."
+ *
+ * @Usage
+ * // Use to kick another player with a reason.
+ * - kick <server.onlinePlayers.exclude[<player>]> "reason:I.. AM.. GOOOOD!!"
+ */
 public class KickCommand implements AbstractCommand {
 
     @Override

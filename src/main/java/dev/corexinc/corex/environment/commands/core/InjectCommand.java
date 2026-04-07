@@ -8,8 +8,7 @@ import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 
-
-/* @[command]
+/* @doc command
  *
  * @Name Inject
  * @Syntax inject [<script>] (path:<name>)

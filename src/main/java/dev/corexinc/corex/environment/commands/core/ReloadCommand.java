@@ -11,7 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jspecify.annotations.NonNull;
 
-/* @[command]
+/* @doc command
  *
  * @Name Reload
  * @Syntax reload

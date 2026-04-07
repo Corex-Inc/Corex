@@ -12,6 +12,36 @@ import org.jspecify.annotations.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+/* @doc command
+ *
+ * @Name Adjust
+ * @Syntax adjust [<object>|...] [<mechanism>:<value>/<map>]
+ * @RequiredArgs 2
+ * @MaxArgs 2
+ * @ShortDescription Adjusts an object's mechanism.
+ *
+ * @Implements Adjust
+ *
+ * @Description
+ * Many object tag types contains options and properties that need to be adjusted.
+ * Corex employs a mechanism interface to deal with those adjustments.
+ * To easily accomplish this, use this command with a valid object mechanism, and sometimes accompanying value.
+ *
+ * You can optionally adjust a MapTag of mechanisms to values.
+ *
+ *
+ * @Usage
+ * // Use to set a custom display name on an entity.
+ * - adjust <[someEntity]> customName:ANGRY!
+ *
+ * @Usage
+ * // Use to set the skin of every online player.
+ * - adjust <server.onlinePlayers> skin:Notch
+ *
+ * @Usage
+ * // Use to adjust a MapTag of mechanisms.
+ * - adjust <player> <map[maxHealth=10;health=4]>
+ */
 public class AdjustCommand implements AbstractCommand {
 
     @Override

@@ -16,6 +16,27 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+/* @doc command
+ *
+ * @Name Narrate
+ * @Syntax narrate [<text>] (targets:<player>|...)
+ * @RequiredArgs 1
+ * @MaxArgs 2
+ * @ShortDescription Shows some text to the player.
+ *
+ * @Implements Narrate
+ *
+ * @Description
+ * Prints some text into the target's chat area. If no target is specified it will default to the attached player or the console.
+ *
+ * @Usage
+ * // Use to narrate text to the player.
+ * - narrate "Hello World!"
+ *
+ * @Usage
+ * // Use to narrate text to a list of players.
+ * - narrate "Hello there." targets:<[player]>|<[somePlayer]>|<[thatPlayer]>
+ */
 public class NarrateCommand implements AbstractCommand {
 
     @Override

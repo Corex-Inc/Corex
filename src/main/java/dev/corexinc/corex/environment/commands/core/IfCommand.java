@@ -6,7 +6,7 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.utils.ConditionCompiler;
 import org.jspecify.annotations.NonNull;
 
-/* @[command]
+/* @doc command
  *
  * @Name If
  * @Syntax if [<value>] (!)(<operator> <value>) (&&/|| ...): [<commands>]
@@ -44,9 +44,8 @@ import org.jspecify.annotations.NonNull;
  * that example is the exactly same as "if !<[a]> && !<[b]>".
  *
  * You can also use keyword "not" as its own argument to negate a boolean or an operator.
- * For example, "if not <[a]>:" will require a to be false, and "if <[a]> not equals <[b]>:" will require that 'a' does not equal 'b'.
+ * For example, "if not <[A]>:" will require A to be false, and "if <[A]> not equals <[b]>:" will require that 'A' does not equal 'B'.
  *
- * When not using a specific comparison operator, true vs false will be determined by Truthiness, see {@link tag ObjectTag.is_truthy} for details.
  * For example, "- if <player||null>:" will pass if a player is linked, valid, and online.
  *
  * @Tags
@@ -73,7 +72,7 @@ import org.jspecify.annotations.NonNull;
  * - narrate "Okay so your quest is to find the needle item in the haystack build next to town."
  *
  * @Usage
- * // Use to perform a complicated requirements test before before changing some event.
+ * // Use to perform a complicated requirements test before changing some event.
  * - if ( poison|magic|melting contains <context.cause> and <context.damage> > 5 ) or <player.has_flag[weak]>:
  *     - determine <context.damage.mul[2]>
  */

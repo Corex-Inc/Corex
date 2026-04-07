@@ -16,6 +16,47 @@ import org.jspecify.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/* @[command]
+ *
+ * @Name Teleport
+ * @Syntax teleport [<entity>|...] [<location>] (cause:<TeleportCause>)
+ * @RequiredArgs 1
+ * @MaxArgs 3
+ * @ShortDescription Teleports the entity(s) to a new location.
+ *
+ * @Implements Teleport
+ *
+ * @Description
+ * Teleports the entity or entities to the new location.
+ * Entities can be teleported between worlds using this command.
+ * You may optionally specify a teleport cause for player entities, allowing proper teleport event handling. When not specified, this is "PLUGIN". See {@link language teleport cause} for causes.
+ *
+ * Instead of a valid entity, an offline player may also be used.
+ *
+ *
+ * @Tags
+ * <EntityTag.location>
+ *
+ * @Usage
+ * // Use to teleport a player to the location their cursor is pointing at.
+ * - teleport <player> <player.cursorOn>
+ *
+ * @Usage
+ * // Use to teleport a player high above.
+ * - teleport <player> <player.location.above[200]>
+ *
+ * @Usage
+ * // Use to teleport to a random online player.
+ * - teleport <player> <server.onlinePlayers.random.location>
+ *
+ * @Usage
+ * // Use to teleport all players to your location.
+ * - teleport <server.onlinePlayers> <player.location>
+ *
+ * @Usage
+ * // Use to teleport a player to some location, and inform events that it was caused by a nether portal.
+ * - teleport <player> <server.flag[netherHubLocation]> cause:nether_portal
+ */
 public class TeleportCommand implements AbstractCommand {
 
     @Override

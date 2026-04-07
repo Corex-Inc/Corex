@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 
-/* @[command]
+/* @doc command
  *
  * @Name Wait
  * @Syntax wait (<duration>)
