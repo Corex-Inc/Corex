@@ -10,6 +10,28 @@ import org.jspecify.annotations.NonNull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/* @doc object
+ *
+ * @Name DurationTag
+ * @Prefix dur
+ * @Format
+ * The identity format for DurationTags' is the number of ticks, followed by an "t".
+ *
+ * @Description
+ * Durations are a unified and convenient way to get a 'unit of time' throughout Corex.
+ * Many commands and features that require a duration can be satisfied by specifying a number and unit of time, especially command arguments that are prefixed 'duration:', etc.
+ * The unit of time can be specified by using one of the following:
+ * t=ticks (0.05 seconds), s=seconds, m=minutes (60 seconds), h=hours (60 minutes), d=days (24 hours), w=weeks (7 days), y=years (365 days).
+ * Not using a unit will imply seconds.
+ * You can use multiple types in a single DurationTag in any order.
+ * Examples: 10s, 50m6s, 1d54m8s1t, 20.
+ *
+ * The input of 'inst' or 'inf' will be interpreted as 0 (for use with commands where instant/infinite logic applies).
+ *
+ * @Usage
+ * // Use for delay queue for 1 minute 10 ticks
+ * - wait <duration[1s10t]>
+ */
 public class DurationTag implements AbstractTag {
 
     public static final double TICKS_PER_SECOND = 20.0;
@@ -29,36 +51,143 @@ public class DurationTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(prefix, DurationTag::new);
 
+        /* @doc tag
+         *
+         * @Name ticks
+         * @RawName <DurationTag.ticks>
+         * @Object DurationTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the number of ticks in the duration.
+         *
+         * @Implements DurationTag.in_ticks
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "ticks", (attr, obj) ->
                 new ElementTag(obj.ticks));
 
+        /* @doc tag
+         *
+         * @Name seconds
+         * @RawName <DurationTag.seconds>
+         * @Object DurationTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the number of seconds in the duration.
+         *
+         * @Implements DurationTag.in_seconds
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "seconds", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_SECOND));
 
+        /* @doc tag
+         *
+         * @Name minutes
+         * @RawName <DurationTag.minutes>
+         * @Object DurationTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the number of minutes in the duration.
+         *
+         * @Implements DurationTag.in_minutes
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "minutes", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_MINUTE));
 
+        /* @doc tag
+         *
+         * @Name hours
+         * @RawName <DurationTag.hours>
+         * @Object DurationTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the number of hours in the duration.
+         *
+         * @Implements DurationTag.in_hours
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "hours", (attr, obj) ->
                 new ElementTag(obj.ticks / TICKS_PER_HOUR));
 
+        /* @doc tag
+         *
+         * @Name milliseconds
+         * @RawName <DurationTag.milliseconds>
+         * @Object DurationTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the number of milliseconds in the duration.
+         *
+         * @Implements DurationTag.in_milliseconds
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "milliseconds", (attr, obj) ->
                 new ElementTag(obj.ticks * MS_PER_TICK));
 
+        /* @doc tag
+         *
+         * @Name formatted
+         * @RawName <DurationTag.formatted>
+         * @Object DurationTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the value of the duration in an easily readable format like 2h 30m.
+         * Will show seconds, minutes, hours, days, and/or years.
+         *
+         * @Implements DurationTag.formatted
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "formatted", (attr, obj) ->
                 new ElementTag(obj.format()));
 
+        /* @doc tag
+         *
+         * @Name add[]
+         * @RawName <DurationTag.add[<duration>]>
+         * @Object DurationTag
+         * @ReturnType DurationTag
+         * @Description
+         * Returns this duration + another.
+         *
+         * @Implements DurationTag.add[<duration>]
+         */
         TAG_PROCESSOR.registerTag(DurationTag.class, "add", (attr, obj) ->
                 new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks())).test("4s");
 
+        /* @doc tag
+         *
+         * @Name sub[]
+         * @RawName <DurationTag.sub[<duration>]>
+         * @Object DurationTag
+         * @ReturnType DurationTag
+         * @Description
+         * Returns this duration - another.
+         *
+         * @Implements DurationTag.sub[<duration>]
+         */
         TAG_PROCESSOR.registerTag(DurationTag.class, "sub", (attr, obj) ->
                 new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks()))).test("4s");
 
+        /* @doc tag
+         *
+         * @Name mul[]
+         * @RawName <DurationTag.mul[<duration>]>
+         * @Object DurationTag
+         * @ReturnType DurationTag
+         * @Description
+         * Returns this duration * another.
+         */
         TAG_PROCESSOR.registerTag(DurationTag.class, "mul", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
             return new DurationTag(obj.ticks * new DurationTag(param).getTicks());
         }).test("4s");
 
+        /* @doc tag
+         *
+         * @Name div[]
+         * @RawName <DurationTag.div[<duration>]>
+         * @Object DurationTag
+         * @ReturnType DurationTag
+         * @Description
+         * Returns this duration / another.
+         */
         TAG_PROCESSOR.registerTag(DurationTag.class, "div", (attr, obj) -> {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;

@@ -11,6 +11,22 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+/* @doc object
+ *
+ * @Name RandomTag
+ * @Prefix random
+ * @Format
+ * The identity format for RandomTags is 'random@' followed by an optional numeric seed.
+ * For example, 'random@' for a standard random source, or 'random@12345' for a seeded source.
+ *
+ * @Description
+ * A RandomTag represents a source of randomness used to generate values.
+ *
+ * By default, a RandomTag uses the system's thread-local random generator.
+ * If a seed is provided, the generator becomes deterministic, meaning it will produce the exact same
+ * sequence of values every time the same seed is used. This is particularly useful for
+ * procedural generation or debugging.
+ */
 public class RandomTag implements AbstractTag {
 
     private static final String PREFIX = "random";
@@ -31,9 +47,31 @@ public class RandomTag implements AbstractTag {
             }
         });
 
+        /* @doc tag
+         *
+         * @Name uuid
+         * @RawName <RandomTag.uuid>
+         * @Object RandomTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns a random unique ID.
+         *
+         * @Implements util.random_uuid
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
                 new ElementTag(UUID.randomUUID().toString()));
 
+        /* @doc tag
+         *
+         * @Name int[]
+         * @RawName <RandomTag.int[(<#>)]>
+         * @Object RandomTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns a random integer number from 0 to max integer.
+         *
+         * @Implements util.random.int[<#>].to[<#>]
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "int", (attr, obj) -> {
             Random r = obj.getRandom();
             if (!attr.hasParam()) {
@@ -42,6 +80,24 @@ public class RandomTag implements AbstractTag {
 
             int min = new ElementTag(attr.getParam()).asInt();
 
+            /* @doc tag
+             *
+             * @Name int[].to[]
+             * @RawName <RandomTag.int[<#>].to[<#>]>
+             * @Object RandomTag
+             * @ReturnType ElementTag(Decimal)
+             * @Description
+             * Returns a random decimal number between the 2 specified decimal numbers, inclusive.
+             * @Usage
+             * // Will narrate '2', or '5', or '9', or any other int in range.
+             * - narrate <util.random.decimal[1].to[10]>
+             *
+             * @Usage
+             * // Will narrate '1457', '9832', or any other int to max.
+             * - narrate <util.random.int>
+             *
+             * @Implements RandomTag.int[<#>].to[<#>]
+             */
             if (attr.matchesNext("to") && attr.hasNextParam()) {
                 int max = new ElementTag(attr.getNextParam()).asInt();
                 attr.fulfill(1);
@@ -53,6 +109,17 @@ public class RandomTag implements AbstractTag {
             return new ElementTag(r.nextInt(Math.max(1, min)));
         });
 
+        /* @doc tag
+         *
+         * @Name decimal[]
+         * @RawName <RandomTag.decimal>
+         * @Object RandomTag
+         * @ReturnType ElementTag(Decimal)
+         * @Description
+         * Returns a random decimal number from 0 to 1.
+         *
+         * @Implements util.random_decimal
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "decimal", (attr, obj) -> {
             Random r = obj.getRandom();
 
@@ -62,6 +129,20 @@ public class RandomTag implements AbstractTag {
 
             double min = new ElementTag(attr.getParam()).asDouble();
 
+            /* @doc tag
+             *
+             * @Name decimal[].to[]
+             * @RawName <RandomTag.decimal[<#.#>].to[<#.#>]>
+             * @Object RandomTag
+             * @ReturnType ElementTag(Decimal)
+             * @Description
+             * Returns a random decimal number between the 2 specified decimal numbers, inclusive.
+             * @Usage
+             * // Will narrate '1.5', or '1.75', or '1.01230123', or any other decimal in range.
+             * - narrate <util.random.decimal[1].to[2]>
+             *
+             * @Implements RandomTag.decimal[<#.#>].to[<#.#>]
+             */
             if (attr.matchesNext("to") && attr.hasNextParam()) {
                 double max = new ElementTag(attr.getNextParam()).asDouble();
                 attr.fulfill(1);
@@ -72,9 +153,33 @@ public class RandomTag implements AbstractTag {
             return new ElementTag(r.nextDouble() * min);
         });
 
+        /* @doc tag
+         *
+         * @Name boolean
+         * @RawName <RandomTag.boolean>
+         * @Object RandomTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Returns a random boolean (true or false). Essentially a coin flip.
+         *
+         * @Implements util.random_boolean
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "boolean", (attr, obj) ->
                 new ElementTag(obj.getRandom().nextBoolean()));
 
+        /* @doc tag
+         *
+         * @Name simplex[]
+         * @RawName <util.random_simplex[x=<#.#>;(y=<#.#>);(z=<#.#>)]>
+         * @Object util
+         * @ReturnType ElementTag(Decimal)
+         * @Description
+         * Returns a pseudo-random decimal number from -1 to 1, based on a Simplex Noise algorithm. See {@link url https://en.wikipedia.org/wiki/Simplex_noise}
+         * Input map is like "x=1.0", or "x=1.0;y=2.0", or "x=1.0;y=2.0;z=3" or "x=1;y=2;z=3"
+         * (That is: 1d, 2d, 3d, or 4d).
+         *
+         * @Implements util.random_simplex
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "simplex", (attr, obj) -> {
             if (!attr.hasParam()) return new ElementTag(0);
 

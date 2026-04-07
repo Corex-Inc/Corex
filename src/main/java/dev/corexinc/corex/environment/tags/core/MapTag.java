@@ -12,6 +12,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/* @doc object
+ *
+ * @Name MapTag
+ * @Prefix map
+ * @Format
+ * The identity format for MapTags is a replica of property syntax - square brackets surrounded a semi-colon separated list of key=value pairs.
+ * For example, a map of "taco" to "food", "chicken" to "animal", and "bob" to "person" would be "map@[taco=food;chicken=animal;bob=person]"
+ * A map with zero items in it is simply 'map@[]'.
+ *
+ * @Description
+ * A MapTag represents a mapping of keys to values.
+ * Keys are plain text, case-insensitive.
+ * Values can be anything, even lists or maps themselves.
+ *
+ * Any given key can only appear in a map once (ie, no duplicate keys).
+ * Values can be duplicated into multiple keys without issue.
+ *
+ * Order of keys is preserved. Casing in keys is preserved in the object but ignored for map lookups.
+ */
 public class MapTag implements AbstractTag {
 
     private static final String prefix = "map";
@@ -24,10 +43,61 @@ public class MapTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(prefix, MapTag::new);
 
+        /* @doc tag
+         *
+         * @Name size
+         * @RawName <MapTag.size>
+         * @Object MapTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the size of the map - that is, how many key/value pairs are within it.
+         * @Usage
+         * // Narrates "2"
+         * - narrate <map[a=1;b=2].size>
+         *
+         * @Implements MapTag.size
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.map.size()));
 
+        /* @doc tag
+         *
+         * @Name keys
+         * @RawName <MapTag.keys>
+         * @Object MapTag
+         * @ReturnType ListTag
+         * @Description
+         * Returns a list of all keys in this map.
+         * @example
+         * // Narrates a list of 'a|b|c'
+         * - narrate <map[a=1;b=2;c=3].keys>
+         *
+         * @Implements MapTag.keys
+         */
         TAG_PROCESSOR.registerTag(ListTag.class, "keys", (attr, obj) -> new ListTag(String.join("|", obj.map.keySet())));
 
+        /* @doc tag
+         *
+         * @Name get[]
+         * @RawName <MapTag.get[<key>|...]>
+         * @Object MapTag
+         * @ReturnType ObjectTag
+         * @Description
+         * Returns the object value at the specified key, using deep key paths separated by the '.' symbol.
+         * If a list is given as input, returns a list of values.
+         * @Usage
+         * // Narrates 'myvalue'
+         * - narrate <map.with[root].as[<map[leaf=myvalue]>].get[root.leaf]>
+         * @Usage
+         * // Narrates 'myvalue'
+         * - definemap mymap:
+         *     root:
+         *         leaf: myvalue
+         * - narrate <[mymap].get[root.leaf]>
+         * // The below will also get the same result ('myvalue') using the definition tag's special automatic deep get syntax:
+         * - narrate <[mymap.root.leaf]>
+         *
+         * @Implements MapTag.deep_get[<key>|...], MapTag.get[<key>|...]
+         */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
 

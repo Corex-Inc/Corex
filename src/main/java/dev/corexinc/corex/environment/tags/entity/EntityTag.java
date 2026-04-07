@@ -15,6 +15,17 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
+/* @doc object
+ *
+ * @Name EntityTag
+ * @Prefix e
+ * @Format
+ * The identity format for entities is a spawned entity's UUID, or an entity type.
+ * For example, 'e@abc123' or 'e@zombie'.
+ *
+ * @Description
+ * An EntityTag represents a spawned entity, or a generic entity type.
+ */
 public class EntityTag implements AbstractTag {
 
     private static final String prefix = "e";
@@ -30,14 +41,60 @@ public class EntityTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new EntityTag(UUID.fromString(uuidStr)));
 
+        /* @doc tag
+         *
+         * @Name uuid
+         * @RawName <EntityTag.uuid>
+         * @Object EntityTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the permanent unique ID of the entity.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new  ElementTag(object.entity.getUniqueId().toString()));
 
+        /* @doc tag
+         *
+         * @Name name
+         * @RawName <EntityTag.name>
+         * @Object EntityTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the name of the entity.
+         * This can be a custom_name or the entity type.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> new ElementTag(object.entity.getName()));
 
+        /* @doc tag
+         *
+         * @Name type
+         * @RawName <EntityTag.type>
+         * @Object EntityTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the type of the entity.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.entity.getType().name()));
 
+        /* @doc tag
+         *
+         * @Name isAlive
+         * @RawName <EntityTag.isAlive>
+         * @Object EntityTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Returns 'true' whether the entity is alive.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) -> new ElementTag(String.valueOf(!object.entity.isDead())));
 
+        /* @doc tag
+         *
+         * @Name location
+         * @RawName <EntityTag.location>
+         * @Object EntityTag
+         * @ReturnType LocationTag
+         * @Description
+         * For living entities, this is at the center of their feet.
+         */
         TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.entity.getLocation()));
     }
 

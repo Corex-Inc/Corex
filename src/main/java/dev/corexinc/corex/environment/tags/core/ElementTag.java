@@ -9,6 +9,32 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
+/* @doc object
+ *
+ * @Name ElementTag
+ * @Prefix
+ * @Format
+ * Just the plain text of the element value, no prefix or formatting.
+ *
+ * @Description
+ * ElementTags are simple objects that contain a simple bit of text.
+ * Their main usage is within the replaceable tag system,
+ * often times returned from the use of another tag that isn't returning a specific object type, such as a location or entity.
+ * For example, <player.name> or <list[item1|item2|item3].join[, ]> will both return ElementTags.
+ *
+ * Pluses to the ElementTag system is the ability to utilize its tag attributes,
+ * which can provide a range of functionality that should be familiar from any other programming language,
+ * such as 'toUppercase', 'split', 'replace', 'contains', and many more.
+ * See 'ElementTag.*' tags for more information.
+ *
+ * While information fetched from other tags resulting in an ElementTag is often times automatically handled,
+ * it may be desirable to utilize element attributes from text/numbers/etc. that aren't already an element object.
+ * To accomplish this, the standard 'element' tag base can be used for the creation of a new element.
+ * For example: <element[This_is_a_test].toUppercase>
+ * will result in the value 'THIS_IS_A_TEST'.
+ *
+ * Note that while other objects often return their object identifier (p@, li@, e@, etc.), elements usually do not (except special type-validation circumstances).
+ */
 public class ElementTag implements AbstractTag {
 
     private final String prefix;
@@ -112,14 +138,95 @@ public class ElementTag implements AbstractTag {
 
         TAG_PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj);
 
+        /* @doc tag
+         *
+         * @Name toUppercase
+         * @RawName <ElementTag.toUppercase>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the value of an element in all uppercase letters.
+         *
+         * @Implements ElementTag.to_uppercase
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase()));
+
+        /* @doc tag
+         *
+         * @Name toLowercase
+         * @RawName <ElementTag.toLowercase>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the value of an element in all lowercase letters.
+         *
+         * @Implements ElementTag.to_lowercase
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase()));
+
+        /* @doc tag
+         *
+         * @Name length
+         * @RawName <ElementTag.length>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Number)
+         * @Description
+         * Returns the length of the element.
+         *
+         * @Implements ElementTag.length
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length()));
 
+        /* @doc tag
+         *
+         * @Name isInteger
+         * @RawName <ElementTag.isInteger>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Returns whether the element is an integer number (a number without a decimal point), within the limits of a Java "long" (64-bit signed integer).
+         *
+         * @Implements ElementTag.is_integer
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt()));
+
+        /* @doc tag
+         *
+         * @Name isDecimal
+         * @RawName <ElementTag.isDecimal>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Returns whether the element is a valid decimal number (the decimal point is optional).
+         *
+         * @Implements ElementTag.is_decimal
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble()));
+
+        /* @doc tag
+         *
+         * @Name isBoolean
+         * @RawName <ElementTag.isBoolean>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Returns whether the element is a boolean ("true" or "false").
+         *
+         * @Implements ElementTag.is_boolean
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean()));
 
+        /* @doc tag
+         *
+         * @Name add[]
+         * @RawName <ElementTag.add[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @Description
+         * Returns the element + number.
+         *
+         * @Implements ElementTag.add
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "add", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
@@ -128,6 +235,19 @@ public class ElementTag implements AbstractTag {
             return null;
         }).test("5");
 
+        /* @doc tag
+         *
+         * @Name root[]
+         * @RawName <ElementTag.root[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @Description
+         * Returns the root of the element.
+         * If no number is specified, returns the square root.
+         * Null for negative numbers when asking for an even root.
+         *
+         * @Implements ElementTag.sqrt
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "root", (attr, obj) -> {
             double value = obj.asDouble();
             double degree = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 2.0;
@@ -137,6 +257,17 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(Math.pow(value, 1.0 / degree));
         });
 
+        /* @doc tag
+         *
+         * @Name pow[]
+         * @RawName <ElementTag.pow[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @Description
+         * Returns the element to the power of a number.
+         *
+         * @Implements ElementTag.power
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "pow", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             double base = obj.asDouble();
@@ -145,6 +276,21 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(Math.pow(base, exponent));
         }).test("2");
 
+        /* @doc tag
+         *
+         * @Name ifTrue[].ifFalse[]
+         * @RawName <ElementTag.ifTrue[<object>].ifFalse[<object>]>
+         * @Object ElementTag
+         * @ReturnType ObjectTag
+         * @Group element checking
+         * @Description
+         * If this element is "true", returns the first given object. If it isn't "true", returns the second given object.
+         * If the input objects are tags, only the matching tag will be parsed.
+         * For example: "<player.exists.ifTrue[<player.name>].ifFalse[server]>"
+         * will return the player's name if there's a player present, or if not will return "server", and won't show any errors from the "<player.name>" tag even without a player linked.
+         *
+         * @Implements ElementTag.if_true[<object>].if_false[<object>]
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "ifTrue", (attr, el) -> {
             boolean isTrue = el.asBoolean();
             String resultText = el.asString();
@@ -163,6 +309,19 @@ public class ElementTag implements AbstractTag {
             return new ElementTag(resultText);
         }).test("This is true", "ifFalse[This is false!]");
 
+        /* @doc tag
+         *
+         * @Name repeat[]
+         * @RawName <ElementTag.repeat[<#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns a copy of the element, repeated the specified number of times.
+         * For example, "hello" .repeat[3] returns "hellohellohello"
+         * An input value or zero or a negative number will result in an empty element.
+         *
+         * @Implements ElementTag.repeat
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "repeat", (attribute, elementTag) -> {
             if (!attribute.hasParam()) return null;
             return new ElementTag(elementTag.element.repeat(new ElementTag(attribute.getParam()).asInt()));
