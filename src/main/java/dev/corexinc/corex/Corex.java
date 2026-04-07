@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.utils.commands.RunCommand;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -42,13 +43,19 @@ public class Corex extends JavaPlugin {
         int pluginId = 30505;
         new Metrics(this, pluginId);
 
-        try {
-            registerCommand("run", new RunCommand());
+        if (!isTest()) {
+            try {
+                getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+                    event.registrar().register(
+                            "run",
+                            new RunCommand()
+                    );
+                });
+            }
+            catch (NoClassDefFoundError | Exception | NoSuchMethodError e) {
+                CorexLogger.warn("Failed to register Brigadier commands. Possibly an outdated version of Paper?");
+            }
         }
-        catch (NoClassDefFoundError | NoSuchMethodError e) {
-            CorexLogger.warn("Failed to register Brigadier commands. Possibly an outdated version of Paper?");
-        }
-
 
         ScriptManager.loadScripts(new File(getDataFolder().toURI()));
     }
@@ -76,6 +83,6 @@ public class Corex extends JavaPlugin {
     }
 
     public static boolean isTest() {
-        return Bukkit.getName().equalsIgnoreCase("MockBukkit");
+        return Bukkit.getName().equalsIgnoreCase("ServerMock");
     }
 }
