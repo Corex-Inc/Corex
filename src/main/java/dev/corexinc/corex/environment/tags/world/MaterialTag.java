@@ -14,6 +14,32 @@ import org.jspecify.annotations.NonNull;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
+/* @doc object
+ *
+ * @Name MaterialTag
+ * @Prefix m
+ *
+ * @Description
+ * A MaterialTag encapsulates a specific material, which can be either a block or an item type.
+ * For block materials, it can also hold specific property data, such as the growth stage of a crop or the direction a stair block is facing.
+ * The names of materials correspond to Bukkit's official Material enum names.
+ *
+ * MaterialTags can be matched using several patterns:
+ * `block`: Matches if the material is a placeable block.
+ * `item`: Matches if the material is an item.
+ * `material_flagged:<flag_name>`: Matches if the material has the specified flag.
+ * `vanilla_tagged:<tag_name>`: Matches if the material is part of a specific vanilla Minecraft tag group (e.g., `wool`, `planks`).
+ * If no specific matcher is used, it performs a wildcard match on the material's name (e.g., `*_log`).
+ *
+ * @Usage
+ * // Places a stone block beneath the player.
+ * - setblock <player.location.below> <material[stone]>
+ *
+ * @Usage
+ * // Checks if the player is holding any type of sword.
+ * - if <player.itemInHand.material> matches "*_sword":
+ *   - narrate "You are holding a sword!"
+ */
 public class MaterialTag implements AbstractTag {
 
     private static final String prefix = "m";
@@ -27,10 +53,75 @@ public class MaterialTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(prefix, MaterialTag::new);
 
+        /* @doc tag
+         *
+         * @Name name
+         * @RawName <MaterialTag.name>
+         * @Object MaterialTag
+         * @ReturnType ElementTag
+         * @Description
+         * Retrieves the common name of this material as a text string.
+         * For example, "STONE" or "DIRT".
+         *
+         * @Implements MaterialTag.name
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) -> new ElementTag(obj.material.name().toLowerCase()));
+
+        /* @doc tag
+         *
+         * @Name isBlock
+         * @RawName <MaterialTag.isBlock>
+         * @Object MaterialTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Checks if this material represents a placeable block within the game world.
+         * Returns 'true' if it can be placed as a block, otherwise 'false'.
+         *
+         * @Implements MaterialTag.is_block
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isBlock", (attr, obj) -> new ElementTag(obj.material.isBlock()));
+
+        /* @doc tag
+         *
+         * @Name isItem
+         * @RawName <MaterialTag.isItem>
+         * @Object MaterialTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Determines if this material can be held as an item.
+         * Most block materials are also holdable items.
+         * This tag returns 'false' only for specific non-holdable block types, such as "Fire".
+         *
+         * @Implements MaterialTag.is_item
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isItem", (attr, obj) -> new ElementTag(obj.material.isItem()));
+
+        /* @doc tag
+         *
+         * @Name isEdible
+         * @RawName <MaterialTag.isEdible>
+         * @Object MaterialTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Checks if this material is an edible item that can be consumed by players.
+         * Returns 'true' if the material is edible, otherwise 'false'.
+         *
+         * @Implements MaterialTag.is_edible
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isEdible", (attr, obj) -> new ElementTag(obj.material.isEdible()));
+
+        /* @doc tag
+         *
+         * @Name maxStackSize
+         * @RawName <MaterialTag.maxStackSize>
+         * @Object MaterialTag
+         * @ReturnType ElementTag(Number)
+         * @Mechanism MaterialTag.maxStackSize
+         * @Description
+         * Retrieves the maximum quantity of this material that can be present in a single inventory stack.
+         *
+         * @Implements MaterialTag.max_stack_size
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "maxStackSize", (attr, obj) -> new ElementTag(obj.material.getMaxStackSize()));
     }
 

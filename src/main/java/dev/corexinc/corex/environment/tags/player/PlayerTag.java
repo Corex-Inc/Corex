@@ -21,6 +21,16 @@ import org.jspecify.annotations.NonNull;
 import java.util.Objects;
 import java.util.UUID;
 
+/* @doc object
+ *
+ * @Name PlayerTag
+ * @Prefix p
+ * @Format
+ * The identity format for players is the UUID of the relevant player.
+ *
+ * @Description
+ * A PlayerTag represents a player in the game.
+ */
 public class PlayerTag implements AbstractTag {
 
     private static final String prefix = "p";
@@ -42,34 +52,148 @@ public class PlayerTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new PlayerTag(UUID.fromString(uuidStr)));
 
-
+        /* @doc tag
+         *
+         * @Name name
+         * @RawName <PlayerTag.name>
+         * @Object PlayerTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the name of the player.
+         *
+         * @Implements EntityTag.name
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> {
             String name = object.offlinePlayer.getName();
             return new ElementTag(name != null ? name : "Unknown");
         });
 
+        /* @doc tag
+         *
+         * @Name isOnline
+         * @RawName <PlayerTag.isOnline>
+         * @Object PlayerTag
+         * @ReturnType ElementTag(Boolean)
+         * @Description
+         * Returns whether the player is currently online.
+         * Works with offline players (returns false in that case).
+         *
+         * @Implements PlayerTag.is_online
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) -> new ElementTag(String.valueOf(object.offlinePlayer.isOnline())));
 
+        /* @doc tag
+         *
+         * @Name uuid
+         * @RawName <PlayerTag.uuid>
+         * @Object PlayerTag
+         * @ReturnType ElementTag
+         * @Description
+         * Returns the permanent unique ID of the player.
+         *
+         * @Implements EntityTag.uuid
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new ElementTag(object.offlinePlayer.getUniqueId().toString()));
 
+        /* @doc tag
+         *
+         * @Name location
+         * @RawName <PlayerTag.location>
+         * @Object PlayerTag
+         * @ReturnType LocationTag
+         * @Description
+         * For players, this is at the center of their feet.
+         *
+         * @Implements EntityTag.location
+         */
         TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.getPlayer().getLocation()));
 
+        /* @doc tag
+         *
+         * @Name health
+         * @RawName <PlayerTag.health>
+         * @Object PlayerTag
+         * @ReturnType ElementTag(Decimal)
+         * @Mechanism PlayerTag.health
+         * @Description
+         * Returns the current health of the entity.
+         *
+         * @Implements EntityTag.health
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "health", ((attribute, object) -> new ElementTag(object.getPlayer().getHealth())));
 
+        /* @doc tag
+         *
+         * @Name food
+         * @RawName <PlayerTag.food>
+         * @Object PlayerTag
+         * @ReturnType ElementTag(Number)
+         * @Mechanism PlayerTag.food
+         * @Description
+         * Returns the current food level (aka hunger) of the player.
+         *
+         * @Implements PlayerTag.food_level
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "food", ((attribute, object) -> new ElementTag(object.getPlayer().getFoodLevel())));
 
+        /* @doc tag
+         *
+         * @Name target
+         * @RawName <PlayerTag.target[(<matcher>)]>
+         * @Object PlayerTag
+         * @ReturnType EntityTag
+         * @Description
+         * Returns the entity that the player is looking at, within a maximum range of 50 blocks,
+         * or null if the player is not looking at an entity.
+         * Optionally, specify an entity type matcher to only count matches as possible targets.
+         *
+         * @Implements PlayerTag.target
+         */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "target", ((attribute, object) -> {
             Entity entity = object.getPlayer().getTargetEntity(50, false);
             if (entity == null) return null;
             return new EntityTag(entity);
         })).ignoreTest();
 
+        /* @doc tag
+         *
+         * @Name itemInHand
+         * @RawName <PlayerTag.itemInHand>
+         * @Object PlayerTag
+         * @ReturnType ItemTag
+         * @Description
+         * Returns the item the player is holding, or air if none.
+         *
+         * @Implements EntityTag.item_in_hand
+         */
         TAG_PROCESSOR.registerTag(ItemTag.class, "itemInHand", ((attribute, object) -> new ItemTag(object.getPlayer().getInventory().getItemInMainHand())));
 
+        /* @doc tag
+         *
+         * @Name maxHealth
+         * @RawName <PlayerTag.maxHealth>
+         * @Object PlayerTag
+         * @ReturnType ElementTag(Decimal)
+         * @Mechanism PlayerTag.maxHealth
+         * @Description
+         * Returns the maximum health of the entity.
+         *
+         * @Implements EntityTag.health_max
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "maxHealth", ((attribute, object) ->
                 new ElementTag(Objects.requireNonNull(object.getPlayer().getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue()))).ignoreTest();
 
 
+        /* @doc mechanism
+         *
+         * @Name health
+         * @Object PlayerTag
+         * @Input ElementTag(Decimal)
+         * @Description
+         * Sets the amount of health the player has.
+         *
+         * @Implements EntityTag.health
+         */
         MECHANISM_PROCESSOR.registerMechanism("health", (playerTag, value) -> {
             if (value instanceof ElementTag el && el.isDouble()) {
                 Player player = playerTag.getPlayer();
@@ -81,6 +205,16 @@ public class PlayerTag implements AbstractTag {
             return playerTag;
         });
 
+        /* @doc mechanism
+         *
+         * @Name maxHealth
+         * @Object PlayerTag
+         * @Input ElementTag(Decimal)
+         * @Description
+         * Sets the maximum health the player may have.
+         *
+         * @Implements EntityTag.max_health
+         */
         MECHANISM_PROCESSOR.registerMechanism("maxHealth", (playerTag, value) -> {
             Player player = playerTag.getPlayer();
             if (player == null) return playerTag;
@@ -100,6 +234,17 @@ public class PlayerTag implements AbstractTag {
             return playerTag;
         });
 
+        /* @doc mechanism
+         *
+         * @Name food
+         * @Input ElementTag(Number)
+         * @Object PlayerTag
+         * @Description
+         * Modifies the current food level of the player.
+         * A value of '20' typically represents a full hunger bar.
+         *
+         * @Implements PlayerTag.food_level
+         */
         MECHANISM_PROCESSOR.registerMechanism("food", (playerTag, value) -> {
             if (value instanceof ElementTag el && el.isInt()) {
                 Player player = playerTag.getPlayer();

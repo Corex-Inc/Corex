@@ -49,6 +49,8 @@ public class EntityTag implements AbstractTag {
          * @ReturnType ElementTag
          * @Description
          * Returns the permanent unique ID of the entity.
+         *
+         * @Implements EntityTag.uuid
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new  ElementTag(object.entity.getUniqueId().toString()));
 
@@ -61,6 +63,8 @@ public class EntityTag implements AbstractTag {
          * @Description
          * Returns the name of the entity.
          * This can be a custom_name or the entity type.
+         *
+         * @Implements EntityTag.name
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> new ElementTag(object.entity.getName()));
 
@@ -72,6 +76,8 @@ public class EntityTag implements AbstractTag {
          * @ReturnType ElementTag
          * @Description
          * Returns the type of the entity.
+         *
+         * @Implements EntityTag.type
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.entity.getType().name()));
 
@@ -94,6 +100,8 @@ public class EntityTag implements AbstractTag {
          * @ReturnType LocationTag
          * @Description
          * For living entities, this is at the center of their feet.
+         *
+         * @Implements EntityTag.location
          */
         TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.entity.getLocation()));
     }

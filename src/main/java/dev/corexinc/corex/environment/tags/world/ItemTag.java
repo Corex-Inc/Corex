@@ -40,10 +40,48 @@ public class ItemTag implements AbstractTag {
         BaseTagProcessor.registerBaseTag("item", attr -> new ItemTag(attr.getParam()));
         ObjectFetcher.registerFetcher(prefix, ItemTag::new);
 
+        /* @doc tag
+         *
+         * @Name material
+         * @RawName <ItemTag.material>
+         * @Object ItemTag
+         * @ReturnType MaterialTag
+         * @Mechanism ItemTag.material
+         * @Description
+         * Returns the MaterialTag that is the basis of the item.
+         * EG, a stone with lore and a display name, etc. will return only "m@stone".
+         *
+         * @Implements ItemTag.material
+         */
         TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> new MaterialTag(obj.item.getType()));
 
+        /* @doc tag
+         *
+         * @Name amount
+         * @RawName <ItemTag.amount>
+         * @Object ItemTag
+         * @ReturnType ElementTag(Number)
+         * @Mechanism ItemTag.amount
+         * @Description
+         * Returns the number of items in the ItemTag's itemstack.
+         *
+         * @Implements ItemTag.quantity
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "amount", (attr, obj) -> new ElementTag(obj.item.getAmount()));
 
+        /* @doc tag
+         *
+         * @Name customModelData
+         * @RawName <ItemTag.customModelData>
+         * @Object ItemTag
+         * @ReturnType ElementTag(Number)
+         * @Mechanism ItemTag.customModelData
+         * @Description
+         * Controls the custom model data ID number of the item.
+         * Use with no input to remove the custom model data.
+         *
+         * @Implements ItemTag.custom_model_data
+         */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "customModelData", (attr, obj) -> {
             Object data = VersionController.getCustomModelDataAdapter().getCustomModelData(obj.item);
             if (data instanceof Map<?, ?> map) {
@@ -54,17 +92,50 @@ public class ItemTag implements AbstractTag {
             return null;
         });
 
+        /* @doc mechanism
+         *
+         * @Name material
+         * @Object ItemTag
+         * @Input MaterialTag
+         * @Description
+         * Changes the item's material to the given material.
+         * Only copies the base material type, not any advanced block-data material properties.
+         * Note that this may cause some properties of the item to be lost.
+         *
+         * @Implements ItemTag.material
+         */
         MECHANISM_PROCESSOR.registerMechanism("material", (obj, val) -> {
             Material targetMaterial = Material.matchMaterial(val.identify().toUpperCase());
             if (targetMaterial != null) obj.item = obj.item.withType(targetMaterial);
             return obj;
         });
 
+        /* @doc mechanism
+         *
+         * @Name amount
+         * @Object ItemTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Changes the number of items in this stack.
+         *
+         * @Implements ItemTag.quantity
+         */
         MECHANISM_PROCESSOR.registerMechanism("amount", (obj, val) -> {
             if (val instanceof ElementTag el) obj.item.setAmount(Math.max(1, el.asInt()));
             return obj;
         });
 
+        /* @doc mechanism
+         *
+         * @Name displayName
+         * @Object ItemTag
+         * @Input ElementTag
+         * @Description
+         * Changes the item's display name.
+         * Give no input to remove the item's display name.
+         *
+         * @Implements ItemTag.display
+         */
         MECHANISM_PROCESSOR.registerMechanism("displayName", (obj, val) -> {
             ItemMeta meta = obj.item.getItemMeta();
             if (meta != null) {
@@ -77,6 +148,16 @@ public class ItemTag implements AbstractTag {
             return obj;
         });
 
+        /* @doc mechanism
+         *
+         * @Name lore
+         * @Object ItemTag
+         * @Input ListTag
+         * @Description
+         * Sets the item's lore.
+         *
+         * @Implements ItemTag.lore
+         */
         MECHANISM_PROCESSOR.registerMechanism("lore", (obj, val) -> {
             ItemMeta meta = obj.item.getItemMeta();
             if (meta != null) {
@@ -98,11 +179,33 @@ public class ItemTag implements AbstractTag {
             return obj;
         });
 
+        /* @doc mechanism
+         *
+         * @Name customModelData
+         * @object ItemTag
+         * @input ElementTag(Number)
+         * @description
+         * Controls the custom model data ID number of the item.
+         * Use with no input to remove the custom model data.
+         *
+         * @Implements ItemTag.custom_model_data
+         */
         MECHANISM_PROCESSOR.registerMechanism("customModelData", (obj, val) -> {
             VersionController.getCustomModelDataAdapter().applyCustomModelData(obj.item, val);
             return obj;
         });
 
+        /* @doc mechanism
+         *
+         * @Name customModel
+         * @object ItemTag
+         * @input ElementTag
+         * @description
+         * Sets the custom model for the item using a NamespacedKey.
+         * This is an alternative to custom_model_data, and generally preferred.
+         *
+         * @Implements ItemTag.customModel
+         */
         MECHANISM_PROCESSOR.registerMechanism("customModel", (obj, val) -> {
             ItemMeta meta = obj.item.getItemMeta();
             if (meta != null) {
