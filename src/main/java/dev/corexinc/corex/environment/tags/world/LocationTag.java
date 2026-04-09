@@ -13,7 +13,7 @@ import org.jspecify.annotations.NonNull;
 
 /* @doc object
  *
- * @Name Location
+ * @Name LocationTag
  * @Prefix l
  *
  * @Format
