@@ -12,6 +12,30 @@ import org.jspecify.annotations.NonNull;
 
 import java.nio.charset.Charset;
 
+/* @doc object
+ *
+ * @Name Util
+ * @Prefix util
+ *
+ * @Format
+ * The basic format for a UtilTag is simply `util@`.
+ * It serves as a container for various utility tags and functions.
+ *
+ * @Description
+ * The UtilTag provides a collection of miscellaneous utility functions and system information.
+ * It offers tags for server metrics, time, system properties, and mathematical constants.
+ * This object does not represent a specific in-game entity or concept but rather a global access point for helpful tools.
+ *
+ * @Usage
+ * // Retrieve the current server tick count.
+ * - narrate "Current server tick: <util.serverTick>"
+ *
+ * // Get the current time in milliseconds since the Unix epoch.
+ * - narrate "Current time in millis: <util.timeMillis>"
+ *
+ * // Output the value of Pi.
+ * - narrate "Pi is approximately: <util.pi>"
+ */
 public class UtilTag implements AbstractTag {
 
     private static final String PREFIX = "util";

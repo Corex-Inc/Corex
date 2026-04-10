@@ -9,6 +9,32 @@ import org.jspecify.annotations.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 
+/* @doc object
+ *
+ * @Name Context
+ * @Prefix context
+ *
+ * @Format
+ * The ContextTag is accessed implicitly as `context@` within a script.
+ * Individual context values are then accessed using dot notation: `context.keyName`.
+ *
+ * @Description
+ * A ContextTag provides dynamic access to data relevant to the current script execution context,
+ * typically within an event or a script queue. It acts as a temporary store for information
+ * passed into or generated during an event, allowing various pieces of data to be accessed using simple keys.
+ * This is especially useful for event scripts to retrieve details about the event that triggered them.
+ *
+ * @Usage
+ * // Access a value 'targetEntity' provided by an event context, displaying its name.
+ * - narrate "The target is: <context.targetEntity.name>"
+ *
+ * // Use a numerical value 'cooldownTime' from the context as an argument for another script.
+ * - run MyCooldownScript def.cooldownDuration:<context.cooldownTime>
+ *
+ * // Check if a specific context key 'myFlag' exists and is true.
+ * - if <context.myFlag>:
+ *   - narrate "My flag is set in this context!"
+ */
 public class ContextTag implements AbstractTag {
 
     private final String prefix = "context";
