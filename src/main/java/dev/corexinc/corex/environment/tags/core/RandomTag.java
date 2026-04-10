@@ -53,6 +53,7 @@ public class RandomTag implements AbstractTag {
          * @RawName <RandomTag.uuid>
          * @Object RandomTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns a random unique ID.
          *
@@ -86,6 +87,7 @@ public class RandomTag implements AbstractTag {
              * @RawName <RandomTag.int[<#>].to[<#>]>
              * @Object RandomTag
              * @ReturnType ElementTag(Decimal)
+             * @ArgRequired
              * @Description
              * Returns a random decimal number between the 2 specified decimal numbers, inclusive.
              * @Usage
@@ -115,6 +117,7 @@ public class RandomTag implements AbstractTag {
          * @RawName <RandomTag.decimal>
          * @Object RandomTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Returns a random decimal number from 0 to 1.
          *
@@ -135,6 +138,7 @@ public class RandomTag implements AbstractTag {
              * @RawName <RandomTag.decimal[<#.#>].to[<#.#>]>
              * @Object RandomTag
              * @ReturnType ElementTag(Decimal)
+             * @ArgRequired
              * @Description
              * Returns a random decimal number between the 2 specified decimal numbers, inclusive.
              * @Usage
@@ -159,6 +163,7 @@ public class RandomTag implements AbstractTag {
          * @RawName <RandomTag.boolean>
          * @Object RandomTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns a random boolean (true or false). Essentially a coin flip.
          *
@@ -173,6 +178,7 @@ public class RandomTag implements AbstractTag {
          * @RawName <util.random_simplex[x=<#.#>;(y=<#.#>);(z=<#.#>)]>
          * @Object util
          * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
          * @Description
          * Returns a pseudo-random decimal number from -1 to 1, based on a Simplex Noise algorithm. See {@link url https://en.wikipedia.org/wiki/Simplex_noise}
          * Input map is like "x=1.0", or "x=1.0;y=2.0", or "x=1.0;y=2.0;z=3" or "x=1;y=2;z=3"

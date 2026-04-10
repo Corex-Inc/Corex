@@ -59,6 +59,7 @@ public class MaterialTag implements AbstractTag {
          * @RawName <MaterialTag.name>
          * @Object MaterialTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Retrieves the common name of this material as a text string.
          * For example, "STONE" or "DIRT".
@@ -73,6 +74,7 @@ public class MaterialTag implements AbstractTag {
          * @RawName <MaterialTag.isBlock>
          * @Object MaterialTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Checks if this material represents a placeable block within the game world.
          * Returns 'true' if it can be placed as a block, otherwise 'false'.
@@ -87,6 +89,7 @@ public class MaterialTag implements AbstractTag {
          * @RawName <MaterialTag.isItem>
          * @Object MaterialTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Determines if this material can be held as an item.
          * Most block materials are also holdable items.
@@ -102,6 +105,7 @@ public class MaterialTag implements AbstractTag {
          * @RawName <MaterialTag.isEdible>
          * @Object MaterialTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Checks if this material is an edible item that can be consumed by players.
          * Returns 'true' if the material is edible, otherwise 'false'.
@@ -117,6 +121,7 @@ public class MaterialTag implements AbstractTag {
          * @Object MaterialTag
          * @ReturnType ElementTag(Number)
          * @Mechanism MaterialTag.maxStackSize
+         * @NoArg
          * @Description
          * Retrieves the maximum quantity of this material that can be present in a single inventory stack.
          *

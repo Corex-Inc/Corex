@@ -56,6 +56,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.name>
          * @Object WorldTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the display name of the world.
          *
@@ -70,6 +71,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.uuid>
          * @Object WorldTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the uuid of the world.
          */
@@ -82,6 +84,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.environment>
          * @Object WorldTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the environment type of the world, which can be NORMAL, NETHER, or THE_END.
          *
@@ -97,6 +100,7 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag(Number)
          * @Mechanism WorldTag.time
+         * @NoArg
          * @Description
          * Returns the current in-game time of this world.
          *
@@ -111,6 +115,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.fullTime>
          * @Object WorldTag
          * @ReturnType DurationTag
+         * @NoArg
          * @Description
          * Returns the in-game time of this world as a duration.
          *
@@ -125,6 +130,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.players>
          * @Object WorldTag
          * @ReturnType ListTag(PlayerTag)
+         * @NoArg
          * @Description
          * Returns a list of all online players currently in this world.
          *
@@ -144,6 +150,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.seed>
          * @Object WorldTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the seed used for world generation.
          *
@@ -159,6 +166,7 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag
          * @Mechanism WorldTag.difficulty
+         * @NoArg
          * @Description
          * Returns the current difficulty level name.
          *
@@ -173,6 +181,7 @@ public class WorldTag implements AbstractTag {
          * @RawName <WorldTag.isStorming>
          * @Object WorldTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether it is currently storming in this world.
          */
@@ -186,6 +195,7 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag(Boolean)
          * @Mechanism WorldTag.isThundering
+         * @NoArg
          * @Description
          * Returns whether the world is currently experiencing thunder.
          *
@@ -201,6 +211,7 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType LocationTag
          * @Mechanism WorldTag.spawn
+         * @NoArg
          * @Description
          * Returns the world's spawn location.
          *

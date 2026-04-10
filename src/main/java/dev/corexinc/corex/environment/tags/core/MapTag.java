@@ -46,6 +46,7 @@ public class MapTag implements AbstractTag {
          * @RawName <MapTag.size>
          * @Object MapTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the size of the map - that is, how many key/value pairs are within it.
          * @Usage
@@ -62,6 +63,7 @@ public class MapTag implements AbstractTag {
          * @RawName <MapTag.keys>
          * @Object MapTag
          * @ReturnType ListTag
+         * @NoArg
          * @Description
          * Returns a list of all keys in this map.
          * @example
@@ -78,6 +80,7 @@ public class MapTag implements AbstractTag {
          * @RawName <MapTag.get[<key>|...]>
          * @Object MapTag
          * @ReturnType ObjectTag
+         * @ArgRequired
          * @Description
          * Returns the object value at the specified key, using deep key paths separated by the '.' symbol.
          * If a list is given as input, returns a list of values.

@@ -47,6 +47,7 @@ public class EntityTag implements AbstractTag {
          * @RawName <EntityTag.uuid>
          * @Object EntityTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the permanent unique ID of the entity.
          *
@@ -60,6 +61,7 @@ public class EntityTag implements AbstractTag {
          * @RawName <EntityTag.name>
          * @Object EntityTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the name of the entity.
          * This can be a custom_name or the entity type.
@@ -74,6 +76,7 @@ public class EntityTag implements AbstractTag {
          * @RawName <EntityTag.type>
          * @Object EntityTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the type of the entity.
          *
@@ -87,6 +90,7 @@ public class EntityTag implements AbstractTag {
          * @RawName <EntityTag.isAlive>
          * @Object EntityTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns 'true' whether the entity is alive.
          */
@@ -98,6 +102,7 @@ public class EntityTag implements AbstractTag {
          * @RawName <EntityTag.location>
          * @Object EntityTag
          * @ReturnType LocationTag
+         * @NoArg
          * @Description
          * For living entities, this is at the center of their feet.
          *

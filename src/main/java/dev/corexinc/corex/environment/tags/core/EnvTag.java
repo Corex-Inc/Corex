@@ -59,6 +59,7 @@ public class EnvTag implements AbstractTag {
          * @RawName <EnvTag.key>
          * @Object EnvTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the env key for this env object.
          *

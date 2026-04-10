@@ -47,6 +47,7 @@ public class ItemTag implements AbstractTag {
          * @Object ItemTag
          * @ReturnType MaterialTag
          * @Mechanism ItemTag.material
+         * @NoArg
          * @Description
          * Returns the MaterialTag that is the basis of the item.
          * EG, a stone with lore and a display name, etc. will return only "m@stone".
@@ -61,6 +62,7 @@ public class ItemTag implements AbstractTag {
          * @RawName <ItemTag.amount>
          * @Object ItemTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Mechanism ItemTag.amount
          * @Description
          * Returns the number of items in the ItemTag's itemstack.
@@ -74,7 +76,8 @@ public class ItemTag implements AbstractTag {
          * @Name customModelData
          * @RawName <ItemTag.customModelData>
          * @Object ItemTag
-         * @ReturnType ElementTag(Number)
+         * @ReturnType ElementTag(Number), MapTag
+         * @NoArg
          * @Mechanism ItemTag.customModelData
          * @Description
          * Controls the custom model data ID number of the item.

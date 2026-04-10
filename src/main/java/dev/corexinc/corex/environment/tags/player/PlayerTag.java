@@ -65,6 +65,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.name>
          * @Object PlayerTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the name of the player.
          *
@@ -81,6 +82,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.isOnline>
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether the player is currently online.
          * Works with offline players (returns false in that case).
@@ -96,6 +98,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.uuid>
          * @Object PlayerTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the permanent unique ID of the player.
          *
@@ -110,6 +113,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.location>
          * @Object PlayerTag
          * @ReturnType LocationTag
+         * @NoArg
          * @Description
          * For players, this is at the center of their feet.
          *
@@ -125,6 +129,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
          * @Mechanism PlayerTag.health
+         * @NoArg
          * @Description
          * Returns the current health of the entity.
          *
@@ -140,6 +145,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
          * @Mechanism PlayerTag.food
+         * @NoArg
          * @Description
          * Returns the current food level (aka hunger) of the player.
          *
@@ -153,7 +159,8 @@ public class PlayerTag implements AbstractTag {
          * @Name target
          * @RawName <PlayerTag.target[(<matcher>)]>
          * @Object PlayerTag
-         * @ReturnType EntityTag
+         * @ReturnType EntityTag, PlayerTag
+         * @NoArg
          * @Description
          * Returns the entity that the player is looking at, within a maximum range of 50 blocks,
          * or null if the player is not looking at an entity.
@@ -173,6 +180,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.itemInHand>
          * @Object PlayerTag
          * @ReturnType ItemTag
+         * @NoArg
          * @Description
          * Returns the item the player is holding, or air if none.
          *
@@ -188,6 +196,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
          * @Mechanism PlayerTag.maxHealth
+         * @NoArg
          * @Description
          * Returns the maximum health of the entity.
          *
@@ -203,6 +212,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.isBanned>
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether this player's profile is banned from the server.
          * Works with offline players.
@@ -219,6 +229,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @Mechanism PlayerTag.whitelisted
+         * @NoArg
          * @Description
          * Returns whether the player is on the server whitelist.
          * Works with offline players.
@@ -235,6 +246,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @Mechanism PlayerTag.op
+         * @NoArg
          * @Description
          * Returns whether this player has operator (OP) status on the server.
          * Works with offline players.
@@ -250,6 +262,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.hasPlayedBefore>
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether this player has ever joined this server before.
          * Works with offline players.
@@ -265,6 +278,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.firstPlayed>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the Unix timestamp (in milliseconds) of the first time this player
          * joined the server, or 0 if they have never played.
@@ -281,6 +295,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.lastLogin>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the Unix timestamp (in milliseconds) of the last time this player
          * logged into the server, or 0 if they have never played.
@@ -297,6 +312,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.lastSeen>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the Unix timestamp (in milliseconds) of the last time this player
          * was seen on the server. If the player is currently online, returns the
@@ -314,6 +330,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.lastDeathLocation>
          * @Object PlayerTag
          * @ReturnType LocationTag
+         * @NoArg
          * @Description
          * Returns the location where this player last died, or null if unavailable.
          * Works with offline players.
@@ -336,6 +353,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.respawnLocation>
          * @Object PlayerTag
          * @ReturnType LocationTag
+         * @NoArg
          * @Description
          * Returns the location where this player will respawn (bed or respawn anchor),
          * or null if they have no valid respawn point.
@@ -354,6 +372,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.statistic[<name>]>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the value of the given statistic for this player.
          * Input must be a valid Bukkit Statistic enum name, e.g. PLAY_ONE_MINUTE, DEATHS, JUMP.
@@ -379,6 +398,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag
          * @Mechanism PlayerTag.gameMode
+         * @NoArg
          * @Description
          * Returns the current game mode of the player.
          * Possible values: SURVIVAL, CREATIVE, ADVENTURE, SPECTATOR.
@@ -394,6 +414,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.previousGameMode>
          * @Object PlayerTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the previous game mode of the player, or null if there is none.
          * Possible values: SURVIVAL, CREATIVE, ADVENTURE, SPECTATOR.
@@ -411,6 +432,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.level>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Mechanism PlayerTag.level
          * @Description
          * Returns the current XP level of the player.
@@ -426,6 +448,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.exp>
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Mechanism PlayerTag.exp
          * @Description
          * Returns the player's progress towards the next XP level as a decimal between 0.0 and 1.0.
@@ -442,6 +465,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
          * @Mechanism PlayerTag.totalExperience
+         * @NoArg
          * @Description
          * Returns the total amount of experience points this player has collected.
          *
@@ -457,6 +481,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @Mechanism PlayerTag.flying
+         * @NoArg
          * @Description
          * Returns whether the player is currently flying.
          *
@@ -471,6 +496,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.isSneaking>
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether the player is currently sneaking (holding shift).
          *
@@ -485,6 +511,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.isSprinting>
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether the player is currently sprinting.
          *
@@ -500,6 +527,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @Mechanism PlayerTag.allowFlight
+         * @NoArg
          * @Description
          * Returns whether this player is allowed to fly (like in creative mode).
          *
@@ -515,6 +543,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
          * @Mechanism PlayerTag.flySpeed
+         * @NoArg
          * @Description
          * Returns the current fly speed of the player as a decimal.
          * The default value is 0.1, and the range is -1.0 to 1.0.
@@ -531,6 +560,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
          * @Mechanism PlayerTag.walkSpeed
+         * @NoArg
          * @Description
          * Returns the current walk speed of the player as a decimal.
          * The default value is 0.2, and the range is -1.0 to 1.0.
@@ -546,6 +576,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.ping>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the player's estimated ping in milliseconds.
          *
@@ -561,6 +592,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag
          * @Mechanism PlayerTag.displayName
+         * @NoArg
          * @Description
          * Returns the display name of the player as a MiniMessage string.
          * This is the "friendly" name shown in chat, which may include formatting.
@@ -577,6 +609,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
          * @Mechanism PlayerTag.saturation
+         * @NoArg
          * @Description
          * Returns the current food saturation of the player.
          * Saturation acts as a buffer for food level — it drains before the food bar does.
@@ -593,6 +626,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
          * @Mechanism PlayerTag.exhaustion
+         * @NoArg
          * @Description
          * Returns the current exhaustion level of the player.
          * Exhaustion controls how quickly the saturation and food bars deplete.
@@ -608,6 +642,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.locale>
          * @Object PlayerTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the locale (language) set in the player's client settings, e.g. "en_us" or "ru_ru".
          *
@@ -623,6 +658,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType LocationTag
          * @Mechanism PlayerTag.compassTarget
+         * @NoArg
          * @Description
          * Returns the location the player's compass is currently pointing at.
          *
@@ -638,6 +674,7 @@ public class PlayerTag implements AbstractTag {
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
          * @Mechanism PlayerTag.wardenWarningLevel
+         * @NoArg
          * @Description
          * Returns the player's current Warden warning level (0–4).
          * Reaching level 4 causes the Warden to spawn.
@@ -653,6 +690,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.wardenWarningCooldown>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the player's cooldown in ticks until the next Warden warning can be triggered.
          *
@@ -667,6 +705,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.wardenTimeSinceLastWarning>
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the time in ticks since the player last triggered a Warden warning.
          *
@@ -681,6 +720,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.attackCooldown>
          * @Object PlayerTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Returns the percentage of the player's attack cooldown that has recharged, from 0.0 (empty) to 1.0 (full).
          *
@@ -695,6 +735,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.itemOnCursor>
          * @Object PlayerTag
          * @ReturnType ItemTag
+         * @NoArg
          * @Description
          * Returns the item the player is currently holding on their cursor (e.g. dragging in inventory), or air if none.
          *
@@ -709,6 +750,7 @@ public class PlayerTag implements AbstractTag {
          * @RawName <PlayerTag.itemInOffHand>
          * @Object PlayerTag
          * @ReturnType ItemTag
+         * @NoArg
          * @Description
          * Returns the item the player is holding in their off hand, or air if none.
          *
@@ -716,6 +758,11 @@ public class PlayerTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ItemTag.class, "itemInOffHand", (attribute, object) ->
                 new ItemTag(object.getPlayer().getInventory().getItemInOffHand()));
+
+
+
+
+
 
         /* @doc mechanism
          *

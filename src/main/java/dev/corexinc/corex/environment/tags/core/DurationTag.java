@@ -57,6 +57,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.ticks>
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the number of ticks in the duration.
          *
@@ -71,6 +72,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.seconds>
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the number of seconds in the duration.
          *
@@ -85,6 +87,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.minutes>
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the number of minutes in the duration.
          *
@@ -99,6 +102,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.hours>
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the number of hours in the duration.
          *
@@ -113,6 +117,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.milliseconds>
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the number of milliseconds in the duration.
          *
@@ -127,6 +132,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.formatted>
          * @Object DurationTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the value of the duration in an easily readable format like 2h 30m.
          * Will show seconds, minutes, hours, days, and/or years.
@@ -142,6 +148,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.add[<duration>]>
          * @Object DurationTag
          * @ReturnType DurationTag
+         * @ArgRequired
          * @Description
          * Returns this duration + another.
          *
@@ -156,6 +163,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.sub[<duration>]>
          * @Object DurationTag
          * @ReturnType DurationTag
+         * @ArgRequired
          * @Description
          * Returns this duration - another.
          *
@@ -170,6 +178,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.mul[<duration>]>
          * @Object DurationTag
          * @ReturnType DurationTag
+         * @ArgRequired
          * @Description
          * Returns this duration * another.
          */
@@ -185,6 +194,7 @@ public class DurationTag implements AbstractTag {
          * @RawName <DurationTag.div[<duration>]>
          * @Object DurationTag
          * @ReturnType DurationTag
+         * @ArgRequired
          * @Description
          * Returns this duration / another.
          */

@@ -144,6 +144,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.toUppercase>
          * @Object ElementTag
          * @ReturnType ElementTag
+         * @ArgRequired
          * @Description
          * Returns the value of an element in all uppercase letters.
          *
@@ -157,6 +158,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.toLowercase>
          * @Object ElementTag
          * @ReturnType ElementTag
+         * @NoArg
          * @Description
          * Returns the value of an element in all lowercase letters.
          *
@@ -170,6 +172,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.length>
          * @Object ElementTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the length of the element.
          *
@@ -183,6 +186,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.isInteger>
          * @Object ElementTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether the element is an integer number (a number without a decimal point), within the limits of a Java "long" (64-bit signed integer).
          *
@@ -196,6 +200,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.isDecimal>
          * @Object ElementTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether the element is a valid decimal number (the decimal point is optional).
          *
@@ -209,6 +214,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.isBoolean>
          * @Object ElementTag
          * @ReturnType ElementTag(Boolean)
+         * @NoArg
          * @Description
          * Returns whether the element is a boolean ("true" or "false").
          *
@@ -222,6 +228,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.add[<#.#>]>
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
          * @Description
          * Returns the element + number.
          *
@@ -241,6 +248,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.root[<#.#>]>
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
          * @Description
          * Returns the root of the element.
          * If no number is specified, returns the square root.
@@ -263,6 +271,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.pow[<#.#>]>
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
          * @Description
          * Returns the element to the power of a number.
          *
@@ -283,6 +292,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ObjectTag
          * @Group element checking
+         * @ArgRequired
          * @Description
          * If this element is "true", returns the first given object. If it isn't "true", returns the second given object.
          * If the input objects are tags, only the matching tag will be parsed.
@@ -315,6 +325,7 @@ public class ElementTag implements AbstractTag {
          * @RawName <ElementTag.repeat[<#>]>
          * @Object ElementTag
          * @ReturnType ElementTag
+         * @ArgRequired
          * @Description
          * Returns a copy of the element, repeated the specified number of times.
          * For example, "hello" .repeat[3] returns "hellohellohello"

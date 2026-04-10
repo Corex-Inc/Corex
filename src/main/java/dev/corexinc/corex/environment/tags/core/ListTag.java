@@ -50,8 +50,10 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.size>
          * @Object ListTag
          * @ReturnType ElementTag(Number)
+         * @NoArg
          * @Description
          * Returns the size of the list.
+         *
          * @Usage
          * // Narrates "3"
          * - narrate <list[one|two|three].size>
@@ -66,8 +68,10 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.separated_by[<text>]>
          * @Object ListTag
          * @ReturnType ElementTag
+         * @ArgRequired
          * @Description
          * Returns the list formatted, with each item separated by the defined text.
+         *
          * @Usege
          * // Narrates "bob and joe and john"
          * - narrate "<list[bob|joe|john].separated_by[ and ]>"
@@ -86,6 +90,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.get[<number>|...]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @ArgRequired
          * @Description
          * Returns an element of the value specified by the supplied context.
          * Specify more than one index to get a list of results.
@@ -116,6 +121,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.random[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @ArgRequired
          * @Description
          * Gets a random item in the list and returns it.
          * Optionally, add [<#>] to instead get a list of multiple randomly chosen list entries.
@@ -158,6 +164,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.shuffled>
          * @Object ListTag
          * @ReturnType ListTag
+         * @NoArg
          * @Description
          * Returns a new list with the items in a randomized order.
          */

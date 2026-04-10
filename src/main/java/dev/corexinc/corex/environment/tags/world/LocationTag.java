@@ -48,6 +48,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.x>
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Retrieves the X-coordinate component of this location object.
          * This value represents the horizontal position along the X-axis in a 3D space.
@@ -62,6 +63,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.y>
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Retrieves the Y-coordinate component of this location object.
          * This value represents the vertical position in a 3D space.
@@ -76,6 +78,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.z>
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Retrieves the Z-coordinate component of this location object.
          * This value represents the horizontal position along the Z-axis in a 3D space.
@@ -90,6 +93,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.yaw>
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Retrieves the normalized yaw rotation value of an object positioned at this location.
          * Yaw represents the horizontal rotation around the Y-axis.
@@ -104,6 +108,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.pitch>
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
+         * @NoArg
          * @Description
          * Retrieves the pitch rotation value of an object positioned at this location.
          * Pitch represents the vertical rotation around the X-axis.
@@ -118,6 +123,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.world>
          * @Object LocationTag
          * @ReturnType WorldTag
+         * @NoArg
          * @Description
          * Retrieves the WorldTag representing the game world where this location is situated.
          *
@@ -134,6 +140,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.add[<location/x,y,z>]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @ArgRequired
          * @Description
          * Creates and returns a new LocationTag by adding the specified coordinates or another vector/location to this object.
          * This operation does not modify the original LocationTag, but provides a new one with the combined values.
@@ -164,6 +171,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.withWorld[<world>]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @ArgRequired
          * @Description
          * Creates and returns a new LocationTag with its world set to the specified WorldTag.
          * The X, Y, Z, yaw, and pitch coordinates of the original location are preserved.
@@ -190,6 +198,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.block>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @NoArg
          * @Description
          * Retrieves a new LocationTag representing the block coordinates of the current location by rounding down its X, Y, and Z values.
          * This tag effectively removes decimal components, yielding integer block coordinates.
@@ -210,6 +219,7 @@ public class LocationTag implements AbstractTag {
          * @RawName <LocationTag.material>
          * @Object LocationTag
          * @ReturnType MaterialTag
+         * @NoArg
          * @Description
          * Retrieves the MaterialTag representing the type of block present at this location in the world.
          *
