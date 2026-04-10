@@ -21,6 +21,9 @@ import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.*;
 import dev.corexinc.corex.environment.tags.world.*;
+// DataActions
+import dev.corexinc.corex.environment.data.actions.*;
+import dev.corexinc.corex.api.data.actions.*;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
@@ -85,7 +88,19 @@ public class EnvironmentLoader {
 
                 // Global Flags
                 IfGlobalFlag.class,
-                PlayerGlobalFlag.class
+                PlayerGlobalFlag.class,
+
+                // Data Actions
+                IncrementAction.class,
+                DecrementAction.class,
+                AddNumberAction.class,
+                SubNumberAction.class,
+                AddToListAction.class,
+                RemoveFromListAction.class,
+                MergeListsAction.class,
+                PutIfAbsentAction.class,
+                UndefineAction.class,
+                AssignAction.class
         );
 
         // Events
