@@ -8,6 +8,228 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+/* @doc formatter
+ *
+ * @Name &color
+ * @Syntax &color[<color>]
+ * @Description
+ * Applies a color or text style to the subsequent text.
+ * This formatter supports hexadecimal color codes (e.g., `#RRGGBB` or `RRGGBB`)
+ * for granular color control, or legacy Minecraft color and formatting codes via its aliases.
+ * When using a hex code, it will be converted to the Minecraft extended format.
+ *
+ * @Implements &color[<color>]
+ */
+
+/* @doc formatter
+ *
+ * @Name &0
+ * @Description
+ * @NoArg
+ * Applies the 'Black' color to the text.
+ *
+ * @Implements &0
+ */
+
+/* @doc formatter
+ *
+ * @Name &1
+ * @Description
+ * @NoArg
+ * Applies the 'Dark Blue' color to the text.
+ *
+ * @Implements &1
+ */
+
+/* @doc formatter
+ *
+ * @Name &2
+ * @Description
+ * @NoArg
+ * Applies the 'Dark Green' color to the text.
+ *
+ * @Implements &2
+ */
+
+/* @doc formatter
+ *
+ * @Name &3
+ * @Description
+ * @NoArg
+ * Applies the 'Dark Aqua' (Cyan) color to the text.
+ *
+ * @Implements &3
+ */
+
+/* @doc formatter
+ *
+ * @Name &4
+ * @Description
+ * @NoArg
+ * Applies the 'Dark Red' color to the text.
+ *
+ * @Implements &4
+ */
+
+/* @doc formatter
+ *
+ * @Name &5
+ * @Description
+ * @NoArg
+ * Applies the 'Dark Purple' (Indigo) color to the text.
+ *
+ * @Implements &5
+ */
+
+/* @doc formatter
+ *
+ * @Name &6
+ * @Description
+ * @NoArg
+ * Applies the 'Gold' color to the text.
+ *
+ * @Implements &6
+ */
+
+/* @doc formatter
+ *
+ * @Name &7
+ * @Description
+ * @NoArg
+ * Applies the 'Gray' color to the text.
+ *
+ * @Implements &7
+ */
+
+/* @doc formatter
+ *
+ * @Name &8
+ * @Description
+ * @NoArg
+ * Applies the 'Dark Gray' color to the text.
+ *
+ * @Implements &8
+ */
+
+/* @doc formatter
+ *
+ * @Name &9
+ * @Description
+ * @NoArg
+ * Applies the 'Blue' color to the text.
+ *
+ * @Implements &9
+ */
+
+/* @doc formatter
+ *
+ * @Name &a
+ * @Description
+ * @NoArg
+ * Applies the 'Green' color to the text.
+ *
+ * @Implements &a
+ */
+
+/* @doc formatter
+ *
+ * @Name &b
+ * @Description
+ * @NoArg
+ * Applies the 'Aqua' (Light Cyan) color to the text.
+ *
+ * @Implements &b
+ */
+
+/* @doc formatter
+ *
+ * @Name &c
+ * @Description
+ * @NoArg
+ * Applies the 'Red' color to the text.
+ *
+ * @Implements &c
+ */
+
+/* @doc formatter
+ *
+ * @Name &d
+ * @Description
+ * @NoArg
+ * Applies the 'Light Purple' (Pink) color to the text.
+ *
+ * @Implements &d
+ */
+
+/* @doc formatter
+ *
+ * @Name &e
+ * @Description
+ * @NoArg
+ * Applies the 'Yellow' color to the text.
+ *
+ * @Implements &e
+ */
+
+/* @doc formatter
+ *
+ * @Name &f
+ * @Description
+ * @NoArg
+ * Applies the 'White' color to the text.
+ *
+ * @Implements &f
+ */
+
+/* @doc formatter
+ *
+ * @Name &l
+ * @Description
+ * @NoArg
+ * Applies 'Bold' formatting to the text.
+ *
+ * @Implements &l
+ */
+
+/* @doc formatter
+ *
+ * @Name &m
+ * @Description
+ * @NoArg
+ * Applies 'Strikethrough' formatting to the text.
+ *
+ * @Implements &m
+ */
+
+/* @doc formatter
+ *
+ * @Name &n
+ * @Description
+ * @NoArg
+ * Applies 'Underline' formatting to the text.
+ *
+ * @Implements &n
+ */
+
+/* @doc formatter
+ *
+ * @Name &o
+ * @Description
+ * @NoArg
+ * Applies 'Italic' formatting to the text.
+ *
+ * @Implements &o
+ */
+
+/* @doc formatter
+ *
+ * @Name &r
+ * @Description
+ * @NoArg
+ * Resets all previous color and formatting styles to default.
+ *
+ * @Implements &r
+ */
 public class ColorFormatter implements AbstractFormatter {
 
     @Override

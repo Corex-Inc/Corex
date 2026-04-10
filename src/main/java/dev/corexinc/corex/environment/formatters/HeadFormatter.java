@@ -8,6 +8,21 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
+/* @doc formatter
+ *
+ * @Name &head
+ * @ArgRequired
+ * @Description
+ * Generates a MiniMessage component that displays a player head icon within text, based on the provided player name or UUID.
+ * This is useful for integrating player heads directly into chat messages or other text displays.
+ *
+ * @Usage
+ * // Displays a player head for 'Notch' followed by their name.
+ * - narrate "<&head[Notch]> Notch"
+ *
+ * // Shows a player head for the player executing the command.
+ * - narrate "Welcome, <&head[<player.name>]> <player.name>!"
+ */
 public class HeadFormatter implements AbstractFormatter {
     @Override public @NonNull String getName() { return "&head"; }
     private static final ElementTag INSTANCE = new ElementTag("");

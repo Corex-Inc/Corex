@@ -8,11 +8,24 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+/* @doc formatter
+ *
+ * @Name n
+ * @Aliases newline, &nl, nl
+ * @NoArg
+ * @Description
+ * Inserts a newline character, effectively creating a line break in text output.
+ * This formatter is useful for formatting messages across multiple lines.
+ *
+ * @Usage
+ * // Narrates "Hello" on one line and "World!" on the next.
+ * - narrate "Hello<n>World!"
+ */
 public class NewLineFormatter implements AbstractFormatter {
     private static final AbstractTag INSTANCE = new ElementTag("\n");
 
     @Override public @NonNull String getName() { return "n"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("n", "newline", "nl", "&nl"); }
+    @Override public @NonNull List<String> getAlias() { return List.of("newline", "nl", "&nl"); }
 
     @Override
     public @NonNull AbstractTag parse(@NonNull Attribute attribute) {

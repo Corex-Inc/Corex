@@ -12,6 +12,27 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.Optional;
 
+/* @doc formatter
+ *
+ * @Name &sprite
+ * @Syntax <&sprite[(atlas=<atlas>);key=<key>]>
+ * @ArgRequired
+ * @Aliases &icon
+ * @Description
+ * Generates a MiniMessage component to display a custom sprite image within text.
+ * Sprites are typically sourced from resource packs and are rendered as small graphical elements inline with text.
+ * You can specify the sprite's name and optionally the atlas it belongs to (defaults to `minecraft:items`).
+ *
+ * @Usage
+ * // Displays a sprite named 'diamond' from the default 'minecraft:items' atlas.
+ * - narrate "You found an <&sprite[diamond]>!"
+ *
+ * // Displays a sprite named 'sword' from a custom atlas 'my_resource_pack:textures/custom_icons'.
+ * - narrate "Wielding the <&sprite[my_resource_pack:textures/custom_icons|sword]> of legend."
+ *
+ * // Uses map-style arguments to specify sprite and atlas.
+ * - narrate "Check out the new <&sprite[name=coin;atlas=currency_pack:coins]>."
+ */
 public class SpriteFormatter implements AbstractFormatter {
 
     private static final String DEFAULT_ATLAS = "minecraft:items";
