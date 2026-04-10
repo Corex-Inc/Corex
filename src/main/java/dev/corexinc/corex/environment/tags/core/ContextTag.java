@@ -11,7 +11,7 @@ import java.util.Map;
 
 /* @doc object
  *
- * @Name Context
+ * @Name ContextTag
  * @Prefix context
  *
  * @Format
