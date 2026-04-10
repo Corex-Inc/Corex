@@ -33,7 +33,7 @@ public class ItemTag implements AbstractTag {
 
     public static final TagProcessor<ItemTag> TAG_PROCESSOR = new TagProcessor<>();
     public static final MechanismProcessor<ItemTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
-    private String scriptName = null;
+    private String scriptName;
 
     @SuppressWarnings("unchecked")
     public static void register() {
@@ -218,15 +218,10 @@ public class ItemTag implements AbstractTag {
     }
 
     public ItemTag(ItemStack item) {
-        this.item = item != null ? item.clone() : new ItemStack(Material.AIR);
+        this.item = item != null ? item.clone() : null;
     }
 
     public ItemTag(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            this.item = new ItemStack(Material.AIR);
-            return;
-        }
-
         String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(2) : raw;
         int bracketStart = cleanRaw.indexOf('[');
 
@@ -257,7 +252,7 @@ public class ItemTag implements AbstractTag {
             this.scriptName = cached.scriptName;
         } else {
             Material parsedMaterial = Material.matchMaterial(name.toUpperCase());
-            this.item = new ItemStack(parsedMaterial != null ? parsedMaterial : Material.AIR);
+            this.item = parsedMaterial != null ? new ItemStack(parsedMaterial) : null;
         }
     }
 

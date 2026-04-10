@@ -190,11 +190,15 @@ public class ListTag implements AbstractTag {
         }
     }
 
-    public <T extends AbstractTag> List<T> filter(Class<T> clazz) {
+    @SafeVarargs
+    public final <T extends AbstractTag> List<T> filter(Class<? extends T>... classes) {
         List<T> results = new ArrayList<>();
         for (AbstractTag item : this.list) {
-            if (clazz.isInstance(item)) {
-                results.add(clazz.cast(item));
+            for (Class<? extends T> clazz : classes) {
+                if (clazz.isInstance(item)) {
+                    results.add(clazz.cast(item));
+                    break;
+                }
             }
         }
         return results;
