@@ -81,7 +81,7 @@ public class ScriptManager {
         if (files == null) return;
         for (File file : files) {
             if (file.isDirectory()) findScriptsRecursively(file, list);
-            else if (file.getName().endsWith(".crx")) list.add(file);
+            else if (file.getName().endsWith(".cx")) list.add(file);
         }
     }
 
