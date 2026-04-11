@@ -1,7 +1,6 @@
 package dev.corexinc.corex.engine.utils.debugging;
 
 import dev.corexinc.corex.Corex;
-import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -16,9 +15,9 @@ public class Debugger {
 
     public enum Mode {
         NONE,
-        ERROR,
+        ERRORS,
         DEFAULT,
-        VERBOSE
+        ALL
     }
 
     private static final List<String> COLORS = List.of(
@@ -33,7 +32,6 @@ public class Debugger {
 
     public static Mode getMode() { return mode; }
     public static void setMode(Mode value) { mode = value; }
-    public static boolean needsEvalCache() { return mode == Mode.VERBOSE; }
 
     public static void updateDebugMode() {
         String raw = Corex.getInstance().getConfig().getString("logger.debug-mode", "default");
@@ -49,7 +47,7 @@ public class Debugger {
     }
 
     public static void queueStart(ScriptQueue queue) {
-        if (mode == Mode.NONE || mode == Mode.ERROR) return;
+        if (mode == Mode.NONE || mode == Mode.ERRORS) return;
         String player = queue.getPlayer() != null
                 ? " <dark_gray>player=<white>" + queue.getPlayer().identify() : "";
         String m = queue.isAsync() ? "<gray>async" : "<gray>sync";
@@ -57,18 +55,18 @@ public class Debugger {
     }
 
     public static void queueStop(ScriptQueue queue, double ms) {
-        if (mode == Mode.NONE || mode == Mode.ERROR) return;
+        if (mode == Mode.NONE || mode == Mode.ERRORS) return;
         CorexLogger.success(styleOf(queue).header + " <gray>done <dark_gray>("
                 + String.format(java.util.Locale.US, "%.4f", ms) + "ms)");
     }
 
     public static void instruction(ScriptQueue queue, Instruction inst, int depth) {
-        if (mode != Mode.VERBOSE) return;
-        CorexLogger.info(indent(depth) + styleOf(queue).bar + " <white>" + inst.command.getName() + formatArgs(inst, queue));
+        if (mode != Mode.ALL) return;
+        CorexLogger.info(indent(depth) + styleOf(queue).bar + " <white>" + inst.command.getName() + formatArgs(inst));
     }
 
     public static void tag(ScriptQueue queue, String original, String filled, int depth) {
-        if (mode != Mode.VERBOSE) return;
+        if (mode != Mode.ALL) return;
         CorexLogger.info(indent(depth + 1) + styleOf(queue).bar
                 + " <dark_gray><<gray>" + original + "<dark_gray>> <dark_gray>= <aqua>" + filled);
     }
@@ -102,6 +100,58 @@ public class Debugger {
                     + cause.getClass().getSimpleName() + ": " + cause.getMessage());
     }
 
+    public static void report(ScriptQueue queue, Instruction inst, Object... keyValues) {
+        flushErrors(queue, inst);
+
+        if (mode != Mode.ALL) return;
+
+        int depth = queue.getDepth();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(indent(depth)).append(styleOf(queue).bar)
+                .append("<yellow> => <white>Executing '<yellow>").append(inst.command.getName().toUpperCase()).append("</yellow>'<gray>:");
+
+        for (int i = 0; i < keyValues.length; i += 2) {
+            if (i + 1 < keyValues.length && keyValues[i + 1] != null) {
+                String key = String.valueOf(keyValues[i]);
+                String val = String.valueOf(keyValues[i + 1]);
+
+                sb.append(" ").append(key).append("='<aqua>").append(val).append("</aqua><gray>'");
+            }
+        }
+
+        CorexLogger.info(sb.toString());
+    }
+
+    public static void echoError(ScriptQueue queue, String message) {
+        if (queue != null) {
+            queue.addError(message);
+        } else {
+            CorexLogger.error(message);
+        }
+    }
+
+    public static void flushErrors(ScriptQueue queue, Instruction inst) {
+        if (queue == null || !queue.hasErrors()) return;
+
+        if (mode == Mode.NONE) return;
+
+        List<String> errors = queue.getAndClearErrors();
+
+        if (!queue.isErrorHeaderPrinted()) {
+            String cmdName = (inst != null && inst.command != null) ? inst.command.getName().toUpperCase() : "UNKNOWN";
+            CorexLogger.error(styleOf(queue).bar + " ERROR while executing command '<yellow>" + cmdName + "</yellow>'!");
+            CorexLogger.error(styleOf(queue).bar + "  <gray>Error Message:</gray> <white>" + errors.getFirst());
+            queue.setErrorHeaderPrinted(true);
+        }
+        if (errors.size() != 1) {
+            for (int i = 1; i < errors.size() - 1; i++) {
+                CorexLogger.error(styleOf(queue).bar + "  <gray>├─> Additional Error Info: <white>" + errors.get(i));
+            }
+            CorexLogger.error(styleOf(queue).bar + "  <gray>└─> Additional Error Info: <white>" + errors.getLast());
+        }
+    }
+
     public static void releaseQueue(String queueId) {
         styles.remove(queueId);
     }
@@ -117,20 +167,19 @@ public class Debugger {
         return depth > 0 ? "  ".repeat(depth) : "";
     }
 
-    private static String formatArgs(Instruction inst, ScriptQueue queue) {
+    private static String formatArgs(Instruction inst) {
         StringBuilder sb = new StringBuilder();
+
         for (CompiledArgument arg : inst.linearArgs) {
-            AbstractTag cached = queue.getCached(arg);
-            sb.append(" <gray>").append(cached != null ? cached.identify() : arg.getRaw());
+            sb.append(" <gray>").append(arg.getRaw());
         }
         for (Map.Entry<String, CompiledArgument> entry : inst.prefixArgs.entrySet()) {
-            AbstractTag cached = queue.getCached(entry.getValue());
             sb.append(" <gray>").append(entry.getKey())
-                    .append("<dark_gray>:<gray>")
-                    .append(cached != null ? cached.identify() : entry.getValue().getRaw());
+                    .append("<dark_gray>:<gray>").append(entry.getValue().getRaw());
         }
-        for (String flag : inst.flags)
+        for (String flag : inst.flags) {
             sb.append(" <dark_gray>--<gray>").append(flag);
+        }
         return sb.toString();
     }
 

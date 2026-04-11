@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 
 import javax.annotation.Nullable;
 import java.util.Map;

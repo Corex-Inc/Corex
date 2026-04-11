@@ -2,6 +2,7 @@ package dev.corexinc.corex.api.tags;
 
 import dev.corexinc.corex.engine.compiler.TagNode;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 
 public class Attribute {
 
@@ -18,12 +19,19 @@ public class Attribute {
         return currentIndex < components.length;
     }
 
+    // БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ИМЕНИ
     public String getName() {
-        return components[currentIndex].name;
+        // Если мы вышли за границы, возвращаем имя последнего успешного компонента
+        int index = Math.min(currentIndex, components.length - 1);
+        if (index < 0) return "null";
+        return components[index].name;
     }
 
+    // БЕЗОПАСНАЯ ПРОВЕРКА ПАРАМЕТРА
     public boolean hasParam() {
-        return components[currentIndex].param != null;
+        int index = Math.min(currentIndex, components.length - 1);
+        if (index < 0) return false;
+        return components[index].param != null;
     }
 
     public String getParam() {
@@ -32,8 +40,9 @@ public class Attribute {
     }
 
     public AbstractTag getParamObject() {
-        if (components[currentIndex].param == null) return null;
-        return components[currentIndex].param.evaluate(queue);
+        int index = Math.min(currentIndex, components.length - 1);
+        if (index < 0 || components[index].param == null) return null;
+        return components[index].param.evaluate(queue);
     }
 
     public boolean matchesNext(String expectedName) {

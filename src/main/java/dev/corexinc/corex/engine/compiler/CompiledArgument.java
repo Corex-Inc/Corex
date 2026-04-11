@@ -10,6 +10,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.TagManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import net.kyori.adventure.text.Component;
@@ -23,12 +24,6 @@ public interface CompiledArgument {
     AbstractTag evaluate(ScriptQueue queue);
 
     String getRaw();
-
-    default AbstractTag evaluateCached(ScriptQueue queue) {
-        AbstractTag cached = queue.getCached(this);
-        if (cached != null) return cached;
-        return evaluate(queue);
-    }
 
     class Static implements CompiledArgument {
         private final AbstractTag tag;
@@ -58,7 +53,7 @@ public interface CompiledArgument {
             net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
 
             for (CompiledArgument part : parts) {
-                AbstractTag tag = part.evaluateCached(queue);
+                AbstractTag tag = part.evaluate(queue);
                 builder.append(tag.asComponent());
             }
 
@@ -120,6 +115,11 @@ public interface CompiledArgument {
 
             if (currentObj == null) {
                 if (fallback != null) return fallback.evaluate(queue);
+
+                Debugger.echoError(queue, "Tag-base '" + attr.getName() + "' returned null.");
+                Debugger.echoError(queue, "Tag <" + rawFullTag + "> is invalid!");
+                Debugger.echoError(queue, "Unfilled or unrecognized sub-tag(s) '" + attr.getName() + "' for tag <" + rawFullTag + ">!");
+
                 return new ElementTag(rawFullTag);
             }
 

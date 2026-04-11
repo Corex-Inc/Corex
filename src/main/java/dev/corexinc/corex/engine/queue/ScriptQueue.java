@@ -39,7 +39,11 @@ public class ScriptQueue {
 
     private long startNanos;
 
-    private IdentityHashMap<CompiledArgument, AbstractTag> evalCache;
+    private final List<String> currentErrors = new ArrayList<>();
+    private boolean errorHeaderPrinted = false;
+    public boolean isErrorHeaderPrinted() { return errorHeaderPrinted; }
+    public void setErrorHeaderPrinted(boolean value) { this.errorHeaderPrinted = value; }
+
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
         this.id = id;
@@ -61,18 +65,6 @@ public class ScriptQueue {
 
     public void setCancelled(boolean cancelled) {
         isCancelled = cancelled;
-    }
-
-    public AbstractTag getCached(CompiledArgument arg) {
-        return evalCache != null ? evalCache.get(arg) : null;
-    }
-
-    public void setEvalCache(IdentityHashMap<CompiledArgument, AbstractTag> cache) {
-        this.evalCache = cache;
-    }
-
-    public void clearEvalCache() {
-        this.evalCache = null;
     }
 
     public void executeNext() {
@@ -104,11 +96,16 @@ public class ScriptQueue {
                         }
 
                         if (!skipCommand) {
-                            if (Debugger.needsEvalCache()) {
-                                handleDebugExecution(inst);
-                            } else {
-                                inst.command.run(this, inst);
+                            this.setErrorHeaderPrinted(false);
+                            if (inst.command != null) {
+                                try {
+                                    inst.command.run(this, inst);
+                                } catch (Exception e) {
+                                    this.addError("Internal Java Exception: " + e.getMessage());
+                                    e.printStackTrace();
+                                }
                             }
+                            Debugger.flushErrors(this, inst);
                         }
                     } catch (Exception e) {
                         String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
@@ -141,26 +138,23 @@ public class ScriptQueue {
                 }
             }
         } catch (Throwable t) {
-            clearEvalCache();
             Debugger.error(this, "Fatal queue execution crash: " + t.getMessage(), t, callStack.size());
             stopEntireQueue();
         }
     }
 
-    private void handleDebugExecution(Instruction instruction) {
-        if (Debugger.needsEvalCache()) {
-            IdentityHashMap<CompiledArgument, AbstractTag> cache = new IdentityHashMap<>();
-            for (CompiledArgument argument : instruction.linearArgs) {
-                cache.put(argument, argument.evaluate(this));
-            }
-            for (CompiledArgument argument : instruction.prefixArgs.values()) {
-                cache.put(argument, argument.evaluate(this));
-            }
-            this.evalCache = cache;
-        }
-        Debugger.instruction(this, instruction, callStack.size());
-        instruction.command.run(this, instruction);
-        this.evalCache = null;
+    public void addError(String message) {
+        currentErrors.add(message);
+    }
+
+    public boolean hasErrors() {
+        return !currentErrors.isEmpty();
+    }
+
+    public List<String> getAndClearErrors() {
+        List<String> copy = new ArrayList<>(currentErrors);
+        currentErrors.clear();
+        return copy;
     }
 
     public void pushFrame(String calledScriptName, Instruction[] newBytecode, Runnable newOnFinish) {
