@@ -28,7 +28,7 @@ public class GiveCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         AbstractTag targetsRaw = instruction.getLinearObject(0, queue);
-        List<PlayerTag> targets = new ListTag(targetsRaw.identify()).filter(PlayerTag.class);
+        List<PlayerTag> targets = new ListTag(targetsRaw.identify()).filter(PlayerTag.class, queue);
 
         if (targets.isEmpty()) {
             Debugger.error(queue, "no valid targets found!", queue.getDepth());
@@ -38,9 +38,9 @@ public class GiveCommand implements AbstractCommand {
         AbstractTag itemsRaw = instruction.getLinearObject(1, queue);
         ListTag itemListTag = new ListTag(itemsRaw.identify());
 
-        List<ItemTag> items = new ArrayList<>(itemListTag.filter(ItemTag.class));
+        List<ItemTag> items = new ArrayList<>(itemListTag.filter(ItemTag.class, queue));
 
-        for (AbstractTag tag : itemListTag.filter(ElementTag.class)) {
+        for (AbstractTag tag : itemListTag.filter(ElementTag.class, queue)) {
             ItemTag resolved = new ItemTag(tag.identify());
             if (resolved.getItemStack() != null) items.add(resolved);
         }

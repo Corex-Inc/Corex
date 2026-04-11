@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
 
@@ -117,11 +118,9 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name random[]
-         * @OptionalArg true
          * @RawName <ListTag.random[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
-         * @ArgRequired
          * @Description
          * Gets a random item in the list and returns it.
          * Optionally, add [<#>] to instead get a list of multiple randomly chosen list entries.
@@ -197,14 +196,16 @@ public class ListTag implements AbstractTag {
         }
     }
 
-    @SafeVarargs
-    public final <T extends AbstractTag> List<T> filter(Class<? extends T>... classes) {
-        List<T> results = new ArrayList<>();
+    public <T extends AbstractTag> java.util.List<T> filter(Class<T> clazz, ScriptQueue queue) {
+        java.util.List<T> results = new java.util.ArrayList<>();
         for (AbstractTag item : this.list) {
-            for (Class<? extends T> clazz : classes) {
-                if (clazz.isInstance(item)) {
-                    results.add(clazz.cast(item));
-                    break;
+            if (clazz.isInstance(item)) {
+                results.add(clazz.cast(item));
+            } else {
+                // ГЕНЕРИРУЕМ ОШИБКУ, ЕСЛИ ТИП НЕ СОВПАЛ!
+                if (queue != null) {
+                    dev.corexinc.corex.engine.utils.debugging.Debugger.echoError(queue,
+                            "Cannot process list-entry '" + item.identify() + "' as type '" + clazz.getSimpleName() + "' (does not match expected type).");
                 }
             }
         }

@@ -70,7 +70,7 @@ public class KickCommand implements AbstractCommand {
         final Component reason = (secondArg == null ? null : MiniMessage.miniMessage().deserialize(secondArg));
 
         ListTag targetList = new ListTag(firstArg);
-        List<PlayerTag> players = targetList.filter(PlayerTag.class);
+        List<PlayerTag> players = targetList.filter(PlayerTag.class, queue);
 
         if (players.isEmpty()) {
             Debugger.error(queue, getName() + ": no players found in '" + firstArg + "'", 0);

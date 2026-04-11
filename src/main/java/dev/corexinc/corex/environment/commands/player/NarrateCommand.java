@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import net.kyori.adventure.text.Component;
@@ -68,11 +69,15 @@ public class NarrateCommand implements AbstractCommand {
 
         String targets = entry.getPrefix("targets", queue);
 
+        ListTag targetList = new ListTag(targets);
+        List<PlayerTag> players = targetList.filter(PlayerTag.class, queue);
+
+        Debugger.report(queue, entry,
+                "Narrating", text.identify(),
+                "Targets", targets
+        );
+
         if (targets != null) {
-            ListTag targetList = new ListTag(targets);
-            List<PlayerTag> players = targetList.filter(PlayerTag.class);
-
-
             for (PlayerTag pTag : players) {
                 Player player = pTag.getPlayer();
                 if (player != null && player.isOnline()) {
