@@ -59,8 +59,8 @@ public class MapTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name is_empty
-         * @RawName <MapTag.is_empty>
+         * @Name isEmpty
+         * @RawName <MapTag.isEmpty>
          * @Object MapTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
@@ -68,11 +68,11 @@ public class MapTag implements AbstractTag {
          * Returns true if the map contains no entries, false otherwise.
          * @Usage
          * // Narrates "true"
-         * - narrate <map[].is_empty>
+         * - narrate <map[].isEmpty>
          *
          * @Implements MapTag.is_empty
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "is_empty", (attr, obj) -> new ElementTag(obj.map.isEmpty()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isEmpty", (attr, obj) -> new ElementTag(obj.map.isEmpty()));
 
         /* @doc tag
          *
@@ -134,7 +134,7 @@ public class MapTag implements AbstractTag {
                         .ifPresent(e -> result.addString(e.getKey()));
             }
             return result;
-        });
+        }).test("2");
 
         /* @doc tag
          *
@@ -158,7 +158,7 @@ public class MapTag implements AbstractTag {
             result.map.putAll(obj.map);
             result.map.putAll(new MapTag(attr.getParam()).map);
             return result;
-        });
+        }).test("<map[testKey=testValue]>");
 
         /* @doc tag
          *
@@ -185,8 +185,8 @@ public class MapTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name to_list[]
-         * @RawName <MapTag.to_list[(<separator>)]>
+         * @Name toList[]
+         * @RawName <MapTag.toList[(<separator>)]>
          * @Object MapTag
          * @ReturnType ListTag
          * @Description
@@ -195,14 +195,14 @@ public class MapTag implements AbstractTag {
          * Optionally specify a separator to use instead of '='.
          * @Usage
          * // Narrates "a=1|b=2|c=3"
-         * - narrate <map[a=1;b=2;c=3].to_list>
+         * - narrate <map[a=1;b=2;c=3].toList>
          * @Usage
          * // Narrates "a: 1|b: 2|c: 3"
-         * - narrate <map[a=1;b=2;c=3].to_list[: ]>
+         * - narrate <map[a=1;b=2;c=3].toList[: ]>
          *
          * @Implements MapTag.to_list
          */
-        TAG_PROCESSOR.registerTag(ListTag.class, "to_list", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "toList", (attr, obj) -> {
             String sep = attr.hasParam() ? attr.getParam() : "=";
             ListTag result = new ListTag();
             obj.map.forEach((k, v) -> result.addString(k + sep + v));
@@ -211,8 +211,8 @@ public class MapTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name to_pair_lists
-         * @RawName <MapTag.to_pair_lists>
+         * @Name toPairLists
+         * @RawName <MapTag.toPairLists>
          * @Object MapTag
          * @ReturnType ListTag(ListTag)
          * @NoArg
@@ -221,12 +221,12 @@ public class MapTag implements AbstractTag {
          * Useful for foreach loops where both the key and value are needed.
          * @Usage
          * // Narrates "a is set to 1", then "b is set to 2", then "c is set to 3"
-         * - foreach <map[a=1;b=2;c=3].to_pair_lists> as:pair:
+         * - foreach <map[a=1;b=2;c=3].toPairLists> as:pair:
          *     - narrate "<[pair].get[1]> is set to <[pair].get[2]>"
          *
          * @Implements MapTag.to_pair_lists
          */
-        TAG_PROCESSOR.registerTag(ListTag.class, "to_pair_lists", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "toPairLists", (attr, obj) -> {
             ListTag result = new ListTag();
             obj.map.forEach((k, v) -> {
                 ListTag pair = new ListTag();
@@ -283,7 +283,7 @@ public class MapTag implements AbstractTag {
                 if (!obj.map.containsKey(key.identify())) return new ElementTag(false);
             }
             return new ElementTag(true);
-        });
+        }).test("a");
 
         /* @doc tag
          *
@@ -333,8 +333,8 @@ public class MapTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name get_subset[]
-         * @RawName <MapTag.get_subset[<key>|...]>
+         * @Name getSubset[]
+         * @RawName <MapTag.getSubset[<key>|...]>
          * @Object MapTag
          * @ReturnType MapTag
          * @ArgRequired
@@ -343,11 +343,11 @@ public class MapTag implements AbstractTag {
          * Keys not present in the map are silently skipped.
          * @Usage
          * // Narrates "map@[b=2;a=1]"
-         * - narrate <map[a=1;b=2;c=3].get_subset[b|a]>
+         * - narrate <map[a=1;b=2;c=3].getSubset[b|a]>
          *
          * @Implements MapTag.get_subset[<key>|...]
          */
-        TAG_PROCESSOR.registerTag(MapTag.class, "get_subset", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(MapTag.class, "getSubset", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             MapTag result = new MapTag();
             for (AbstractTag key : new ListTag(attr.getParam()).getList()) {
@@ -356,7 +356,7 @@ public class MapTag implements AbstractTag {
                 if (val != null) result.map.put(k, val);
             }
             return result;
-        });
+        }).test("a");
 
         /* @doc tag
          *
@@ -384,7 +384,7 @@ public class MapTag implements AbstractTag {
             result.map.putAll(obj.map);
             param.map.forEach((k, v) -> result.putDeepObject(k, ObjectFetcher.pickObject(v)));
             return result;
-        });
+        }).test("c=3");
 
         /* @doc tag
          *
@@ -413,7 +413,7 @@ public class MapTag implements AbstractTag {
                 result.map.remove(key.identify());
             }
             return result;
-        });
+        }).test("b");
 
         /* @doc tag
          *
@@ -439,8 +439,8 @@ public class MapTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name sort_by_value
-         * @RawName <MapTag.sort_by_value>
+         * @Name sortValue
+         * @RawName <MapTag.sortValue>
          * @Object MapTag
          * @ReturnType MapTag
          * @NoArg
@@ -448,11 +448,11 @@ public class MapTag implements AbstractTag {
          * Returns a copy of the map sorted lexicographically by its values.
          * @Usage
          * // Narrates "map@[a=1;b=2;c=3]"
-         * - narrate <map[c=3;a=1;b=2].sort_by_value>
+         * - narrate <map[c=3;a=1;b=2].sortValue>
          *
          * @Implements MapTag.sort_by_value
          */
-        TAG_PROCESSOR.registerTag(MapTag.class, "sort_by_value", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(MapTag.class, "sortValue", (attr, obj) -> {
             List<Map.Entry<String, String>> entries = new ArrayList<>(obj.map.entrySet());
             entries.sort(Map.Entry.comparingByValue());
             MapTag result = new MapTag();
