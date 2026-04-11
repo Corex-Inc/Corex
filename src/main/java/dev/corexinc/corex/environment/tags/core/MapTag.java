@@ -20,13 +20,13 @@ import java.util.*;
  *
  * @Description
  * A MapTag represents a mapping of keys to values.
- * Keys are plain text, case-insensitive.
+ * Keys are plain text, case-sensitive.
  * Values can be anything, even lists or maps themselves.
  *
  * Any given key can only appear in a map once (ie, no duplicate keys).
- * Values can be duplicated into multiple keys without issue.
+ * Values can be duplicated into multiple keys exclude issue.
  *
- * Order of keys is preserved. Casing in keys is preserved in the object but ignored for map lookups.
+ * Order of keys is preserved.
  */
 public class MapTag implements AbstractTag {
 
@@ -59,6 +59,23 @@ public class MapTag implements AbstractTag {
 
         /* @doc tag
          *
+         * @Name is_empty
+         * @RawName <MapTag.is_empty>
+         * @Object MapTag
+         * @ReturnType ElementTag(Boolean)
+         * @NoArg
+         * @Description
+         * Returns true if the map contains no entries, false otherwise.
+         * @Usage
+         * // Narrates "true"
+         * - narrate <map[].is_empty>
+         *
+         * @Implements MapTag.is_empty
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "is_empty", (attr, obj) -> new ElementTag(obj.map.isEmpty()));
+
+        /* @doc tag
+         *
          * @Name keys
          * @RawName <MapTag.keys>
          * @Object MapTag
@@ -66,13 +83,207 @@ public class MapTag implements AbstractTag {
          * @NoArg
          * @Description
          * Returns a list of all keys in this map.
-         * @example
-         * // Narrates a list of 'a|b|c'
+         * @Usage
+         * // Narrates 'a|b|c'
          * - narrate <map[a=1;b=2;c=3].keys>
          *
          * @Implements MapTag.keys
          */
-        TAG_PROCESSOR.registerTag(ListTag.class, "keys", (attr, obj) -> new ListTag(String.join("|", obj.map.keySet())));
+        TAG_PROCESSOR.registerTag(ListTag.class, "keys", (attr, obj) -> {
+            ListTag result = new ListTag();
+            obj.map.keySet().forEach(result::addString);
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name find[]
+         * @RawName <MapTag.find[<value>|...]>
+         * @Object MapTag
+         * @ReturnType ElementTag, ListTag
+         * @ArgRequired
+         * @Description
+         * Returns the first key whose value matches the given value.
+         * If a list of values is given, returns a list of matching keys (skipping values not found).
+         * @Usage
+         * // Narrates "b"
+         * - narrate <map[a=1;b=2;c=3].find[2]>
+         * @Usage
+         * // Narrates "a|c"
+         * - narrate <map[a=1;b=2;c=3].find[1|3]>
+         *
+         * @Implements MapTag.find[<value>|...]
+         */
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "find", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ListTag values = new ListTag(attr.getParam());
+            if (values.size() == 1) {
+                String target = values.get(0);
+                return obj.map.entrySet().stream()
+                        .filter(e -> e.getValue().equals(target))
+                        .findFirst()
+                        .map(e -> (AbstractTag) new ElementTag(e.getKey()))
+                        .orElse(null);
+            }
+            ListTag result = new ListTag();
+            for (AbstractTag value : values.getList()) {
+                String target = value.identify();
+                obj.map.entrySet().stream()
+                        .filter(e -> e.getValue().equals(target))
+                        .findFirst()
+                        .ifPresent(e -> result.addString(e.getKey()));
+            }
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name include[]
+         * @RawName <MapTag.include[<map>]>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @ArgRequired
+         * @Description
+         * Returns a copy of the map merged with the given map.
+         * Keys from the input map overwrite existing keys on conflict.
+         * @Usage
+         * // Narrates "map@[a=1;b=99;c=3]"
+         * - narrate <map[a=1;b=2].include[b=99;c=3]>
+         *
+         * @Implements MapTag.include[<map>]
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "include", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            MapTag result = new MapTag();
+            result.map.putAll(obj.map);
+            result.map.putAll(new MapTag(attr.getParam()).map);
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name reverse
+         * @RawName <MapTag.reverse>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @NoArg
+         * @Description
+         * Returns a copy of the map with the entry order reversed.
+         * @Usage
+         * // Narrates "map@[c=3;b=2;a=1]"
+         * - narrate <map[a=1;b=2;c=3].reverse>
+         *
+         * @Implements MapTag.reverse
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "reverse", (attr, obj) -> {
+            List<Map.Entry<String, String>> entries = new ArrayList<>(obj.map.entrySet());
+            Collections.reverse(entries);
+            MapTag result = new MapTag();
+            entries.forEach(e -> result.map.put(e.getKey(), e.getValue()));
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name to_list[]
+         * @RawName <MapTag.to_list[(<separator>)]>
+         * @Object MapTag
+         * @ReturnType ListTag
+         * @Description
+         * Converts the map into a ListTag of entries.
+         * By default each entry is formatted as "key=value".
+         * Optionally specify a separator to use instead of '='.
+         * @Usage
+         * // Narrates "a=1|b=2|c=3"
+         * - narrate <map[a=1;b=2;c=3].to_list>
+         * @Usage
+         * // Narrates "a: 1|b: 2|c: 3"
+         * - narrate <map[a=1;b=2;c=3].to_list[: ]>
+         *
+         * @Implements MapTag.to_list
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "to_list", (attr, obj) -> {
+            String sep = attr.hasParam() ? attr.getParam() : "=";
+            ListTag result = new ListTag();
+            obj.map.forEach((k, v) -> result.addString(k + sep + v));
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name to_pair_lists
+         * @RawName <MapTag.to_pair_lists>
+         * @Object MapTag
+         * @ReturnType ListTag(ListTag)
+         * @NoArg
+         * @Description
+         * Converts the map into a list of two-element lists, each containing [key, value].
+         * Useful for foreach loops where both the key and value are needed.
+         * @Usage
+         * // Narrates "a is set to 1", then "b is set to 2", then "c is set to 3"
+         * - foreach <map[a=1;b=2;c=3].to_pair_lists> as:pair:
+         *     - narrate "<[pair].get[1]> is set to <[pair].get[2]>"
+         *
+         * @Implements MapTag.to_pair_lists
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "to_pair_lists", (attr, obj) -> {
+            ListTag result = new ListTag();
+            obj.map.forEach((k, v) -> {
+                ListTag pair = new ListTag();
+                pair.addString(k);
+                pair.addObject(ObjectFetcher.pickObject(v));
+                result.addObject(pair);
+            });
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name values
+         * @RawName <MapTag.values>
+         * @Object MapTag
+         * @ReturnType ListTag
+         * @NoArg
+         * @Description
+         * Returns a list of all values in this map, in insertion order.
+         * @Usage
+         * // Narrates "1|2|3"
+         * - narrate <map[a=1;b=2;c=3].values>
+         *
+         * @Implements MapTag.values
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "values", (attr, obj) -> {
+            ListTag result = new ListTag();
+            obj.map.values().forEach(v -> result.addObject(ObjectFetcher.pickObject(v)));
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name contains[]
+         * @RawName <MapTag.contains[<key>|...]>
+         * @Object MapTag
+         * @ReturnType ElementTag(Boolean)
+         * @ArgRequired
+         * @Description
+         * Returns whether the map contains the specified key.
+         * If a list is given as input, returns true only if ALL specified keys are present.
+         * @Usage
+         * // Narrates "true"
+         * - narrate <map[a=1;b=2].contains[a]>
+         * @Usage
+         * // Narrates "false" (c is missing)
+         * - narrate <map[a=1;b=2].contains[a|b|c]>
+         *
+         * @Implements MapTag.contains[<key>|...]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "contains", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            for (AbstractTag key : new ListTag(attr.getParam()).getList()) {
+                if (!obj.map.containsKey(key.identify())) return new ElementTag(false);
+            }
+            return new ElementTag(true);
+        });
 
         /* @doc tag
          *
@@ -86,21 +297,31 @@ public class MapTag implements AbstractTag {
          * If a list is given as input, returns a list of values.
          * @Usage
          * // Narrates 'myvalue'
-         * - narrate <map.with[root].as[<map[leaf=myvalue]>].get[root.leaf]>
+         * - narrate <map.with[root.leaf=myvalue].get[root.leaf]>
          * @Usage
          * // Narrates 'myvalue'
          * - definemap mymap:
          *     root:
          *         leaf: myvalue
          * - narrate <[mymap].get[root.leaf]>
-         * // The below will also get the same result ('myvalue') using the definition tag's special automatic deep get syntax:
-         * - narrate <[mymap.root.leaf]>
          *
          * @Implements MapTag.deep_get[<key>|...], MapTag.get[<key>|...]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
-
+            ListTag keys = new ListTag(attr.getParam());
+            if (keys.size() > 1) {
+                ListTag result = new ListTag();
+                for (AbstractTag keyTag : keys.getList()) {
+                    AbstractTag current = obj;
+                    for (String part : keyTag.identify().split("\\.", -1)) {
+                        if (!(current instanceof MapTag mapTag)) { current = null; break; }
+                        current = mapTag.getObject(part);
+                    }
+                    if (current != null) result.addObject(current);
+                }
+                return result;
+            }
             AbstractTag current = obj;
             for (String key : attr.getParam().split("\\.", -1)) {
                 if (!(current instanceof MapTag mapTag)) return null;
@@ -110,6 +331,134 @@ public class MapTag implements AbstractTag {
 
         }).test("a");
 
+        /* @doc tag
+         *
+         * @Name get_subset[]
+         * @RawName <MapTag.get_subset[<key>|...]>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @ArgRequired
+         * @Description
+         * Returns a sub-map containing only the specified keys, ordered by the input list.
+         * Keys not present in the map are silently skipped.
+         * @Usage
+         * // Narrates "map@[b=2;a=1]"
+         * - narrate <map[a=1;b=2;c=3].get_subset[b|a]>
+         *
+         * @Implements MapTag.get_subset[<key>|...]
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "get_subset", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            MapTag result = new MapTag();
+            for (AbstractTag key : new ListTag(attr.getParam()).getList()) {
+                String k = key.identify();
+                String val = obj.map.get(k);
+                if (val != null) result.map.put(k, val);
+            }
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name with[]
+         * @RawName <MapTag.with[<map>]>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @ArgRequired
+         * @Description
+         * Returns a copy of the map with the specified key set to the given value.
+         * Supports deep key paths separated by '.' - no separate deep_with needed.
+         * @Usage
+         * // Narrates "map@[a=1;b=99;c=3]"
+         * - narrate <map[a=1;b=2;c=3].with[b=99]>
+         * @Usage
+         * // Deep path - sets root.leaf = myvalue inside a nested map
+         * - narrate <map[].with[root.leaf=myvalue]>
+         *
+         * @Implements MapTag.with[<key>].as[<value>], MapTag.deep_with[<key>].as[<value>]
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "with", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            MapTag param = new MapTag(attr.getParam());
+            MapTag result = new MapTag();
+            result.map.putAll(obj.map);
+            param.map.forEach((k, v) -> result.putDeepObject(k, ObjectFetcher.pickObject(v)));
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name exclude[]
+         * @RawName <MapTag.exclude[<key>|...]>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @ArgRequired
+         * @Description
+         * Returns a copy of the map with the specified key(s) removed.
+         * Accepts a list to remove multiple keys at once.
+         * @Usage
+         * // Narrates "map@[a=1;c=3]"
+         * - narrate <map[a=1;b=2;c=3].exclude[b]>
+         * @Usage
+         * // Narrates "map@[b=2]"
+         * - narrate <map[a=1;b=2;c=3].exclude[a|c]>
+         *
+         * @Implements MapTag.exclude[<key>|...]
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "exclude", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            MapTag result = new MapTag();
+            result.map.putAll(obj.map);
+            for (AbstractTag key : new ListTag(attr.getParam()).getList()) {
+                result.map.remove(key.identify());
+            }
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name invert
+         * @RawName <MapTag.invert>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @NoArg
+         * @Description
+         * Returns an inverted copy of the map - keys become values and values become keys.
+         * If multiple original values are identical, the last matching key wins.
+         * @Usage
+         * // Narrates "map@[food=taco;drink=water]"
+         * - narrate <map[taco=food;water=drink].invert>
+         *
+         * @Implements MapTag.invert
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "invert", (attr, obj) -> {
+            MapTag result = new MapTag();
+            obj.map.forEach((k, v) -> result.putObject(v, new ElementTag(k)));
+            return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name sort_by_value
+         * @RawName <MapTag.sort_by_value>
+         * @Object MapTag
+         * @ReturnType MapTag
+         * @NoArg
+         * @Description
+         * Returns a copy of the map sorted lexicographically by its values.
+         * @Usage
+         * // Narrates "map@[a=1;b=2;c=3]"
+         * - narrate <map[c=3;a=1;b=2].sort_by_value>
+         *
+         * @Implements MapTag.sort_by_value
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "sort_by_value", (attr, obj) -> {
+            List<Map.Entry<String, String>> entries = new ArrayList<>(obj.map.entrySet());
+            entries.sort(Map.Entry.comparingByValue());
+            MapTag result = new MapTag();
+            entries.forEach(e -> result.map.put(e.getKey(), e.getValue()));
+            return result;
+        });
     }
 
     public MapTag() {}
@@ -152,12 +501,23 @@ public class MapTag implements AbstractTag {
         return val != null ? ObjectFetcher.pickObject(val) : null;
     }
 
+    public void putDeepObject(String key, AbstractTag tag) {
+        if (!key.contains(".")) {
+            putObject(key, tag);
+            return;
+        }
+        String[] parts = key.split("\\.", 2);
+        AbstractTag existing = getObject(parts[0]);
+        MapTag nested = existing instanceof MapTag m ? new MapTag(m.map) : new MapTag();
+        nested.putDeepObject(parts[1], tag);
+        putObject(parts[0], nested);
+    }
 
     @Override public @NonNull String getPrefix() { return prefix; }
 
     @Override
     public @NonNull String identify() {
-        List<String> pairs = new java.util.ArrayList<>();
+        List<String> pairs = new ArrayList<>();
         map.forEach((k, v) -> pairs.add(k + "=" + v));
         return prefix + "@[" + String.join(";", pairs) + "]";
     }
