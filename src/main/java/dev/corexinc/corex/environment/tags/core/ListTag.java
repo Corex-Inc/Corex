@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * Inputs that accept list indices will generally accept:
  * - 'first' to mean index 1
  * - 'last'  to mean the final entry in the list
- * - Negative numbers to select from the end — 'get[-1]' is the last entry, 'get[-2]' is the second-to-last, etc.
+ * - Negative numbers to select from the end - 'get[-1]' is the last entry, 'get[-2]' is the second-to-last, etc.
  */
 public class ListTag implements AbstractTag {
 
@@ -140,7 +140,6 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.first[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
-         * @OptionalArg
          * @Description
          * Returns the first element, equivalent to get[1].
          * Optionally specify a count to receive the first N elements as a ListTag.
@@ -172,7 +171,6 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.last[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
-         * @OptionalArg
          * @Description
          * Returns the last element, equivalent to get[-1].
          * Optionally specify a count to receive the last N elements in original order.
@@ -215,17 +213,28 @@ public class ListTag implements AbstractTag {
          * - narrate <list[one|two|three].contains[two]>
          *
          * @Usage
-         * // Narrates "false" — requires both two AND four
-         * - narrate <list[one|two|three].contains[two|four]>
+         * // Narrates "false" - requires both two AND four
          *
-         * @Usage
-         * // Narrates "true" — at least one of these is present
-         * - narrate <list[one|two|three].contains[two|four].any>
-         *
-         * @Implements ListTag.contains[<element>|...], ListTag.contains_any[<element>|...]
+         * @Implements ListTag.contains[<element>|...]
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "contains", (attr, obj) -> {
             if (!attr.hasParam()) return new ElementTag(false);
+
+            /* @doc tag
+             *
+             * @Name contains[].any
+             * @RawName <ListTag.contains[<element>|...].any>
+             * @Object ListTag
+             * @ReturnType ElementTag(Boolean)
+             * @ArgRequired 1
+             * @Description
+             * Returns true if at least ONE of the elements is present.
+             * @Usage
+             * // Narrates "true" - at least one of these is present
+             * - narrate <list[one|two|three].contains[two|four].any>
+             *
+             * @Implements ListTag.contains_any[<element>|...]
+             */
             boolean matchAny = attr.matchesNext("any");
             if (matchAny) attr.fulfill(1);
             List<String> identities = obj.list.stream().map(AbstractTag::identify).toList();
@@ -242,39 +251,86 @@ public class ListTag implements AbstractTag {
          * @Name find[]
          * @RawName <ListTag.find[<element>]>
          * @Object ListTag
-         * @ReturnType ElementTag(Number), ListTag
+         * @ReturnType ElementTag(Number)
          * @ArgRequired
          * @Description
          * Returns the 1-based index of the first exact match in the list, or -1 if not found.
-         * Append {@code .all} to receive a ListTag of ALL matching indices instead.
-         * Append {@code .partial} to match any element that CONTAINS the given text (not requiring an exact match).
-         * {@code .partial} and {@code .all} can be combined in either order.
          *
          * @Usage
          * // Narrates "2"
          * - narrate <list[one|two|three].find[two]>
          *
-         * @Usage
-         * // Narrates "2|4"
-         * - narrate <list[one|two|three|two].find[two].all>
-         *
-         * @Usage
-         * // Narrates "2"
-         * - narrate <list[one|two|three].find[tw].partial>
-         *
-         * @Usage
-         * // Narrates "2|4"
-         * - narrate <list[one|two|three|twenty].find[tw].partial.all>
-         *
-         * @Implements ListTag.find[<element>], ListTag.find_all[<element>], ListTag.find_partial[<element>], ListTag.find_all_partial[<element>]
+         * @Implements ListTag.find[<element>]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "find", (attr, obj) -> {
             if (!attr.hasParam()) return new ElementTag(-1);
             String needle = attr.getParam().toLowerCase();
             boolean returnAll = false, partial = false;
-            if (attr.matchesNext("all"))     { returnAll = true; attr.fulfill(1); }
-            if (attr.matchesNext("partial")) { partial   = true; attr.fulfill(1); }
-            if (attr.matchesNext("all"))     { returnAll = true; attr.fulfill(1); } // handles .partial.all order
+
+            /* @doc tag
+             *
+             * @Name find[].all
+             * @RawName <ListTag.find[<element>].all>
+             * @Object ListTag
+             * @ReturnType ListTag(Number)
+             * @ArgRequired 1
+             * @Description
+             * Returns the ListTag of 1-based index of ALL matching indices, or empty list if not found.
+             *
+             * @Usage
+             * // Narrates "2|4"
+             * - narrate <list[one|two|three|two].find[two].all>
+             *
+             * @Implements ListTag.find_all[<element>]
+             */
+            if (attr.matchesNext("all")) {
+                returnAll = true;
+                attr.fulfill(1);
+            }
+
+            /* @doc tag
+             *
+             * @Name find[].partial
+             * @RawName <ListTag.find[<element>].partial>
+             * @Object ListTag
+             * @ReturnType ElementTag(Number)
+             * @ArgRequired 1
+             * @Description
+             * Returns the 1-based index of match any element that CONTAINS the given text (not requiring an exact match), or -1 if not found.
+             *
+             * @Usage
+             * // Narrates "2"
+             * - narrate <list[one|two|three].find[tw].partial>
+             *
+             * @Implements ListTag.find_partial[<element>]
+             */
+            if (attr.matchesNext("partial")) {
+                partial = true;
+                attr.fulfill(1);
+            }
+
+            /* @doc tag
+             *
+             * @Name find[].partialAll
+             * @RawName <ListTag.find[<element>].partialAll>
+             * @Object ListTag
+             * @ReturnType ListTag(Number)
+             * @ArgRequired 1
+             * @Description
+             * Returns the ListTag of 1-based index of match any element that CONTAINS the given text (not requiring an exact match), or empty list if not found.
+             *
+             * @Usage
+             * // Narrates "2|4"
+             * - narrate <list[one|two|three|twenty].find[tw].partialAll>
+             *
+             * @Implements ListTag.find_all_partial[<element>]
+             */
+            if (attr.matchesNext("partialAll")) {
+                returnAll = true;
+                partial = true;
+                attr.fulfill(1);
+            }
+
             if (returnAll) {
                 ListTag result = new ListTag();
                 for (int index = 0; index < obj.list.size(); index++) {
@@ -283,6 +339,7 @@ public class ListTag implements AbstractTag {
                 }
                 return result;
             }
+
             for (int index = 0; index < obj.list.size(); index++) {
                 String value = obj.list.get(index).identify().toLowerCase();
                 if (partial ? value.contains(needle) : value.equals(needle)) return new ElementTag(index + 1);
@@ -319,7 +376,6 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.join[(<text>)]>
          * @Object ListTag
          * @ReturnType ElementTag
-         * @OptionalArg
          * @Description
          * Returns the list as a single string with items separated by the given text.
          * Defaults to ", " when no separator is provided.
@@ -381,7 +437,7 @@ public class ListTag implements AbstractTag {
          * - narrate <list[one|two|three|two].exclude[two]>
          *
          * @Usage
-         * // Narrates "taco|taco|potato" — only removes two 'potato' entries
+         * // Narrates "taco|taco|potato" - only removes two 'potato' entries
          * - narrate <list[taco|potato|taco|potato|potato].exclude[potato].max[2]>
          *
          * @Implements ListTag.exclude[...|...], ListTag.exclude[...|...].max[<#>]
@@ -742,13 +798,12 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.sort[(<mode>)]>
          * @Object ListTag
          * @ReturnType ListTag
-         * @OptionalArg
          * @Description
          * Returns a sorted copy of the list. Mode controls the sort strategy:
          * <ul>
-         *   <li>{@code alphabetical} (default) — case-insensitive lexicographic order.</li>
-         *   <li>{@code natural} / {@code alphanumeric} — mixed letter/number natural order (e.g. "a2" before "a10").</li>
-         *   <li>{@code numerical} — ascending numeric order; non-numbers sort as 0.</li>
+         *   <li>{@code alphabetical} (default) - case-insensitive lexicographic order.</li>
+         *   <li>{@code natural} / {@code alphanumeric} - mixed letter/number natural order (e.g. "a2" before "a10").</li>
+         *   <li>{@code numerical} - ascending numeric order; non-numbers sort as 0.</li>
          * </ul>
          *
          * @Usage
@@ -803,14 +858,13 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.random[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
-         * @OptionalArg
          * @Description
          * Returns a randomly chosen item from the list.
          * Optionally specify a count to return that many distinct random items as a ListTag.
          * For shuffling the whole list, prefer {@link tag ListTag.shuffled}.
          *
          * @Usage
-         * // Narrates either "one" or "two" — different each time
+         * // Narrates either "one" or "two" - different each time
          * - narrate <list[one|two].random>
          *
          * @Usage
@@ -1074,7 +1128,6 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.toMap[(<separator>)]>
          * @Object ListTag
          * @ReturnType MapTag
-         * @OptionalArg
          * @Description
          * Interprets each list entry as a "key/value" pair and builds a MapTag.
          * The separator defaults to '/' but can be customised.
@@ -1121,15 +1174,15 @@ public class ListTag implements AbstractTag {
         }
     }
 
-    public <T extends AbstractTag> java.util.List<T> filter(Class<T> clazz, ScriptQueue queue) {
-        java.util.List<T> results = new java.util.ArrayList<>();
+    public <T extends AbstractTag> List<T> filter(Class<T> clazz, ScriptQueue queue) {
+        List<T> results = new ArrayList<>();
         for (AbstractTag item : this.list) {
             if (clazz.isInstance(item)) {
                 results.add(clazz.cast(item));
             } else {
+                // ГЕНЕРИРУЕМ ОШИБКУ, ЕСЛИ ТИП НЕ СОВПАЛ!
                 if (queue != null) {
-                    Debugger.echoError(queue,
-                            "Cannot process list-entry '" + item.identify() + "' as type '" + clazz.getSimpleName() + "' (does not match expected type).");
+                    Debugger.echoError(queue, "Cannot process list-entry '" + item.identify() + "' as type '" + clazz.getSimpleName() + "' (does not match expected type).");
                 }
             }
         }
