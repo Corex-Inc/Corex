@@ -191,7 +191,7 @@ public class MapTag implements AbstractTag {
          * @ReturnType ListTag
          * @Description
          * Converts the map into a ListTag of entries.
-         * By default each entry is formatted as "key=value".
+         * By default, each entry is formatted as "key=value".
          * Optionally specify a separator to use instead of '='.
          * @Usage
          * // Narrates "a=1|b=2|c=3"
