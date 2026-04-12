@@ -116,9 +116,9 @@ public interface CompiledArgument {
             if (currentObj == null) {
                 if (fallback != null) return fallback.evaluate(queue);
 
-                Debugger.echoError(queue, "Tag-base '" + attr.getName() + "' returned null.");
-                Debugger.echoError(queue, "Tag <" + rawFullTag + "> is invalid!");
-                Debugger.echoError(queue, "Unfilled or unrecognized sub-tag(s) '" + attr.getName() + "' for tag <" + rawFullTag + ">!");
+                Debugger.echoError(queue, "Tag-base '<red>" + attr.getName() + "</red>' returned null.");
+                Debugger.echoError(queue, "Tag <<yellow>" + rawFullTag + "</yellow>> is invalid!");
+                Debugger.echoError(queue, "Unfilled or unrecognized sub-tag(s) '<red>" + attr.getName() + "</red>' for tag <<aqua>" + rawFullTag + "</aqua>>!");
 
                 return new ElementTag(rawFullTag);
             }
