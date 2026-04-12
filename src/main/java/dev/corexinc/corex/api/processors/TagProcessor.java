@@ -76,7 +76,7 @@ public final class TagProcessor<T extends AbstractTag> {
     ) {
         @SuppressWarnings("unchecked")
         TagData<T> data = new TagData<>(returnType, (BiFunction<Attribute, T, AbstractTag>) action);
-        return new TagRegistration<>(data, name, registeredTags); // без toLowerCase()
+        return new TagRegistration<>(data, name, registeredTags);
     }
 
     /**
@@ -196,10 +196,7 @@ public final class TagProcessor<T extends AbstractTag> {
             if (data.availableSince != null && !VersionController.isAtLeast(data.availableSince)) {
                 return false;
             }
-            if (data.availableBefore != null && VersionController.isAtLeast(data.availableBefore)) {
-                return false;
-            }
-            return true;
+            return data.availableBefore == null || !VersionController.isAtLeast(data.availableBefore);
         }
 
         /**

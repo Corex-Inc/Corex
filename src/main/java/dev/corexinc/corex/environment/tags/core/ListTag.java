@@ -200,25 +200,21 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name contains[]
-         * @RawName <ListTag.contains[<element>|...]>
+         * @RawName <ListTag.contains[<object>|...]>
          * @Object ListTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
          * @Description
          * Returns whether the list contains ALL the given elements.
-         * Append {@code .any} to instead return true if at least ONE of the elements is present.
          *
          * @Usage
          * // Narrates "true"
          * - narrate <list[one|two|three].contains[two]>
          *
-         * @Usage
-         * // Narrates "false" - requires both two AND four
-         *
          * @Implements ListTag.contains[<element>|...]
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "contains", (attr, obj) -> {
-            if (!attr.hasParam()) return new ElementTag(false);
+            if (!attr.hasParam()) return null;
 
             /* @doc tag
              *
@@ -249,7 +245,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name find[]
-         * @RawName <ListTag.find[<element>]>
+         * @RawName <ListTag.find[<object>]>
          * @Object ListTag
          * @ReturnType ElementTag(Number)
          * @ArgRequired
@@ -263,7 +259,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.find[<element>]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "find", (attr, obj) -> {
-            if (!attr.hasParam()) return new ElementTag(-1);
+            if (!attr.hasParam()) return null;
             String needle = attr.getParam().toLowerCase();
             boolean returnAll = false, partial = false;
 
@@ -350,7 +346,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name count[]
-         * @RawName <ListTag.count[<element>]>
+         * @RawName <ListTag.count[<object>]>
          * @Object ListTag
          * @ReturnType ElementTag(Number)
          * @ArgRequired
@@ -364,7 +360,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.count[<element>]
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "count", (attr, obj) -> {
-            if (!attr.hasParam()) return new ElementTag(0);
+            if (!attr.hasParam()) return null;
             String needle = attr.getParam();
             long matches = obj.list.stream().filter(tag -> tag.identify().equals(needle)).count();
             return new ElementTag((int) matches);
@@ -391,7 +387,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.separated_by[<element>], ListTag.comma_separated
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) -> {
-            String separator = attr.hasParam() ? attr.getParam() : ", ";
+            String separator = attr.hasParam() ? attr.getParam() : "";
             List<String> strings = new ArrayList<>();
             for (AbstractTag tag : obj.list) strings.add(tag.identify());
             return new ElementTag(String.join(separator, strings));
@@ -400,7 +396,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name include[]
-         * @RawName <ListTag.include[<element>|...]>
+         * @RawName <ListTag.include[...|...]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
@@ -414,7 +410,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.include[...|...]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "include", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam()) return null;
             ListTag result = new ListTag();
             for (AbstractTag tag : obj.list) result.addObject(tag);
             for (AbstractTag tag : new ListTag(attr.getParam()).getList()) result.addObject(tag);
@@ -424,31 +420,44 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name exclude[]
-         * @RawName <ListTag.exclude[<element>|...]>
+         * @RawName <ListTag.exclude[...|...]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
          * @Description
          * Returns a new list with all matching items removed.
-         * Append {@code .max[<#>]} to limit how many occurrences are removed.
          *
          * @Usage
          * // Narrates "one|three"
          * - narrate <list[one|two|three|two].exclude[two]>
          *
-         * @Usage
-         * // Narrates "taco|taco|potato" - only removes two 'potato' entries
-         * - narrate <list[taco|potato|taco|potato|potato].exclude[potato].max[2]>
-         *
-         * @Implements ListTag.exclude[...|...], ListTag.exclude[...|...].max[<#>]
+         * @Implements ListTag.exclude[...|...]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "exclude", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam()) return null;
             int maxRemovals = Integer.MAX_VALUE;
+
+            /* @doc tag
+             *
+             * @Name exclude[].max[]
+             * @RawName <ListTag.exclude[...|...].max[<#>]>
+             * @Object ListTag
+             * @ReturnType ListTag
+             * @ArgRequired
+             * @Description
+             * Returns a new list with all matching items removed with limit how many occurrences are removed.
+             *
+             * @Usage
+             * // Narrates "taco|taco|potato" - only removes two 'potato' entries
+             * - narrate <list[taco|potato|taco|potato|potato].exclude[potato].max[2]>
+             *
+             * @Implements ListTag.exclude[...|...].max[<#>]
+             */
             if (attr.matchesNext("max") && attr.hasNextParam()) {
                 maxRemovals = new ElementTag(attr.getNextParam()).asInt();
                 attr.fulfill(1);
             }
+
             Set<String> excluded = new ListTag(attr.getParam()).getList().stream()
                     .map(AbstractTag::identify).collect(Collectors.toSet());
             Map<String, Integer> removalCount = new HashMap<>();
@@ -467,7 +476,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name insert[].at[]
-         * @RawName <ListTag.insert[<element>|...].at[<index>]>
+         * @RawName <ListTag.insert[...|...].at[<#>]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
@@ -500,7 +509,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name set[].at[]
-         * @RawName <ListTag.set[<element>|...].at[<index>]>
+         * @RawName <ListTag.set[...|...].at[<#>]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
@@ -523,7 +532,7 @@ public class ListTag implements AbstractTag {
             List<AbstractTag> replacements = new ListTag(attr.getParam()).getList();
             int target = resolveIndex(attr.getNextParam(), obj.list.size());
             attr.fulfill(1);
-            if (target < 0) return obj;
+            if (target < 0) return null;
             ListTag result = new ListTag();
             for (int index = 0; index < obj.list.size(); index++) {
                 if (index == target) for (AbstractTag tag : replacements) result.addObject(tag);
@@ -535,7 +544,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name overwrite[].at[]
-         * @RawName <ListTag.overwrite[<element>|...].at[<index>]>
+         * @RawName <ListTag.overwrite[...|...].at[<#>]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
@@ -554,7 +563,7 @@ public class ListTag implements AbstractTag {
             List<AbstractTag> replacements = new ListTag(attr.getParam()).getList();
             int target = resolveIndex(attr.getNextParam(), obj.list.size());
             attr.fulfill(1);
-            if (target < 0) return obj;
+            if (target < 0) return null;
             List<AbstractTag> copy = new ArrayList<>(obj.list);
             for (int offset = 0; offset < replacements.size(); offset++) {
                 int position = target + offset;
@@ -569,7 +578,7 @@ public class ListTag implements AbstractTag {
         /* @doc tag
          *
          * @Name remove[]
-         * @RawName <ListTag.remove[<index>|...]>
+         * @RawName <ListTag.remove[<#>|...]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
@@ -586,11 +595,29 @@ public class ListTag implements AbstractTag {
          * // Narrates "one|five"
          * - narrate <list[one|two|three|four|five].remove[2].to[4]>
          *
-         * @Implements ListTag.remove[<#>|...], ListTag.remove[<#>].to[<#>]
+         * @Implements ListTag.remove[<#>|...]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "remove", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam()) return null;
             Set<Integer> toRemove = new HashSet<>();
+
+            /* @doc tag
+             *
+             * @Name remove[].to[]
+             * @RawName <ListTag.remove[<#>|...].to[<#>]>
+             * @Object ListTag
+             * @ReturnType ListTag
+             * @ArgRequired
+             * @Description
+             * Returns a new list with the item(s) at the specified index contiguous range removed.
+             * Accepts 'first', 'last', and negative indices.
+             *
+             * @Usage
+             * // Narrates "one|five"
+             * - narrate <list[one|two|three|four|five].remove[2].to[4]>
+             *
+             * @Implements ListTag.remove[<#>].to[<#>]
+             */
             if (attr.matchesNext("to") && attr.hasNextParam()) {
                 int from = resolveIndex(attr.getParam(), obj.list.size());
                 int to   = resolveIndex(attr.getNextParam(), obj.list.size());
@@ -611,14 +638,13 @@ public class ListTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name replace[]
-         * @RawName <ListTag.replace[<element>]>
+         * @Name replace[].with[]
+         * @RawName <ListTag.replace[<object>].with[<object>]>
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
          * @Description
-         * Returns a new list with all occurrences of the given element removed.
-         * Append {@code .with[<element>]} to replace matches with a different value instead.
+         * Returns a new list with all occurrences of the given element replaced matches with a different value.
          *
          * @Usage
          * // Narrates "one|three"
@@ -628,26 +654,23 @@ public class ListTag implements AbstractTag {
          * // Narrates "one|potato|three"
          * - narrate <list[one|two|three].replace[two].with[potato]>
          *
-         * @Implements ListTag.replace[<element>], ListTag.replace[<element>].with[<element>]
+         * @Implements ListTag.replace[<element>].with[<element>]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "replace", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam() || !attr.matchesNext("with") || !attr.hasNextParam()) return null;
             String target = attr.getParam();
-            String replacement = null;
-            if (attr.matchesNext("with") && attr.hasNextParam()) {
-                replacement = attr.getNextParam();
-                attr.fulfill(1);
-            }
+            AbstractTag replacement = ObjectFetcher.pickObject(attr.getNextParam());
+            attr.fulfill(1);
             ListTag result = new ListTag();
             for (AbstractTag tag : obj.list) {
                 if (tag.identify().equals(target)) {
-                    if (replacement != null) result.addString(replacement);
+                    result.addObject(replacement);
                 } else {
                     result.addObject(tag);
                 }
             }
             return result;
-        }).test("b");
+        }).test("b", "with[lol]");
 
         /* @doc tag
          *
@@ -692,7 +715,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.shared_contents[...|...]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "sharedContents", (attr, obj) -> {
-            if (!attr.hasParam()) return new ListTag();
+            if (!attr.hasParam()) return null;
             Set<String> other = new ListTag(attr.getParam()).getList().stream()
                     .map(AbstractTag::identify).collect(Collectors.toSet());
             LinkedHashSet<String> seen = new LinkedHashSet<>();
@@ -713,7 +736,6 @@ public class ListTag implements AbstractTag {
          * @ArgRequired
          * @Description
          * Returns the list extended to the specified minimum length by prepending entries.
-         * Append {@code .with[<element>]} to use a custom fill value instead of an empty string.
          *
          * @Usage
          * // Narrates "|one|two" (padded to 3 entries with empty strings)
@@ -723,12 +745,29 @@ public class ListTag implements AbstractTag {
          * // Narrates "0|one|two"
          * - narrate <list[one|two].padLeft[3].with[0]>
          *
-         * @Implements ListTag.pad_left[<#>], ListTag.pad_left[<#>].with[<element>]
+         * @Implements ListTag.pad_left[<#>]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "padLeft", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam()) return null;
             int targetSize = new ElementTag(attr.getParam()).asInt();
             String fill = "";
+
+            /* @doc tag
+             *
+             * @Name padLeft[].with[]
+             * @RawName <ListTag.padLeft[<#>].with[<#>]>
+             * @Object ListTag
+             * @ReturnType ListTag
+             * @ArgRequired
+             * @Description
+             * Returns the list extended to the specified minimum length by prepending entries uses a custom fill value instead of an empty string.
+             *
+             * @Usage
+             * // Narrates "0|one|two"
+             * - narrate <list[one|two].padLeft[3].with[0]>
+             *
+             * @Implements ListTag.pad_left[<#>].with[<element>]
+             */
             if (attr.matchesNext("with") && attr.hasNextParam()) { fill = attr.getNextParam(); attr.fulfill(1); }
             ListTag result = new ListTag();
             for (int padding = obj.list.size(); padding < targetSize; padding++) result.addString(fill);
@@ -745,22 +784,34 @@ public class ListTag implements AbstractTag {
          * @ArgRequired
          * @Description
          * Returns the list extended to the specified minimum length by appending entries.
-         * Append {@code .with[<element>]} to use a custom fill value instead of an empty string.
          *
          * @Usage
          * // Narrates "one|two|" (padded to 3 entries with empty strings)
          * - narrate <list[one|two].padRight[3]>
          *
-         * @Usage
-         * // Narrates "one|two|0"
-         * - narrate <list[one|two].padRight[3].with[0]>
-         *
          * @Implements ListTag.pad_right[<#>], ListTag.pad_right[<#>].with[<element>]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "padRight", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam()) return null;
             int targetSize = new ElementTag(attr.getParam()).asInt();
             String fill = "";
+
+            /* @doc tag
+             *
+             * @Name padRight[]
+             * @RawName <ListTag.padRight[<#>].with[<#>]>
+             * @Object ListTag
+             * @ReturnType ListTag
+             * @ArgRequired
+             * @Description
+             * Returns the list extended to the specified minimum length by appending entries uses a custom fill value instead of an empty string.
+             *
+             * @Usage
+             * // Narrates "one|two|0"
+             * - narrate <list[one|two].padRight[3].with[0]>
+             *
+             * @Implements ListTag.pad_right[<#>], ListTag.pad_right[<#>].with[<element>]
+             */
             if (attr.matchesNext("with") && attr.hasNextParam()) { fill = attr.getNextParam(); attr.fulfill(1); }
             ListTag result = new ListTag();
             for (AbstractTag tag : obj.list) result.addObject(tag);
@@ -801,9 +852,9 @@ public class ListTag implements AbstractTag {
          * @Description
          * Returns a sorted copy of the list. Mode controls the sort strategy:
          * <ul>
-         *   <li>{@code alphabetical} (default) - case-insensitive lexicographic order.</li>
-         *   <li>{@code natural} / {@code alphanumeric} - mixed letter/number natural order (e.g. "a2" before "a10").</li>
-         *   <li>{@code numerical} - ascending numeric order; non-numbers sort as 0.</li>
+         *   <li>alph (alphabetical) - case-insensitive lexicographic order.</li>
+         *   <li>nat (natural) - mixed letter/number natural order (e.g. "a2" before "a10").</li>
+         *   <li>num (numerical) - ascending numeric order; non-numbers sort as 0.</li>
          * </ul>
          *
          * @Usage
@@ -821,12 +872,16 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.alphabetical, ListTag.alphanumeric, ListTag.numerical
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "sort", (attr, obj) -> {
-            String mode = attr.hasParam() ? attr.getParam().toLowerCase() : "alphabetical";
+            String mode = attr.hasParam() ? attr.getParam().toLowerCase() : "alph";
             List<AbstractTag> copy = new ArrayList<>(obj.list);
             switch (mode) {
-                case "numerical" -> copy.sort(Comparator.comparingDouble(ListTag::numericValue));
-                case "natural", "alphanumeric" -> copy.sort((a, b) -> naturalCompare(a.identify(), b.identify()));
-                default -> copy.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.identify(), b.identify()));
+                case "num", "numerical" -> copy.sort(Comparator.comparingDouble(ListTag::numericValue));
+                case "nat", "natural" -> copy.sort((a, b) -> naturalCompare(a.identify(), b.identify()));
+                case "alph", "alphabetical" -> copy.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.identify(), b.identify()));
+                default -> {
+                    Debugger.echoError(attr.getQueue(), "Sorting type '<red>" + mode + "</red>' is unknown!");
+                    return null;
+                }
             }
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
@@ -842,7 +897,7 @@ public class ListTag implements AbstractTag {
          * @NoArg
          * @Description
          * Returns a copy of the list in a random order.
-         * Prefer this over random[9999] when you need the entire list shuffled.
+         * Do NOT use .random[9999] for shuffle the list!
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
             List<AbstractTag> copy = new ArrayList<>(obj.list);
@@ -964,14 +1019,13 @@ public class ListTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name highest
-         * @RawName <ListTag.highest>
+         * @Name highest[]
+         * @RawName <ListTag.highest[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
-         * @NoArg
          * @Description
          * Returns the item with the highest numeric value.
-         * Append {@code .count[<#>]} to return the top N items as a ListTag, in descending order.
+         * Optionally specify a count to return the top N items as a ListTag, in descending order.
          *
          * @Usage
          * // Narrates "10"
@@ -979,36 +1033,34 @@ public class ListTag implements AbstractTag {
          *
          * @Usage
          * // Narrates "10|3"
-         * - narrate <list[3|2|1|10].highest.count[2]>
+         * - narrate <list[3|2|1|10].highest[2]>
          *
          * @Implements ListTag.highest, ListTag.highest.count[<#>]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "highest", (attr, obj) -> {
             if (obj.list.isEmpty()) return null;
-            int count = 1;
-            if (attr.matchesNext("count") && attr.hasNextParam()) {
-                count = new ElementTag(attr.getNextParam()).asInt();
-                attr.fulfill(1);
-            }
+            int count = attr.hasParam() ? new ElementTag(attr.getParam()).asInt() : 1;
+
             List<AbstractTag> copy = new ArrayList<>(obj.list);
             copy.sort(Comparator.comparingDouble(ListTag::numericValue).reversed());
+
             if (count == 1) return copy.getFirst();
             int limit = Math.min(count, copy.size());
             ListTag result = new ListTag();
             for (int index = 0; index < limit; index++) result.addObject(copy.get(index));
+
             return result;
         });
 
         /* @doc tag
          *
-         * @Name lowest
-         * @RawName <ListTag.lowest>
+         * @Name lowest[]
+         * @RawName <ListTag.lowest[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
-         * @NoArg
          * @Description
          * Returns the item with the lowest numeric value.
-         * Append {@code .count[<#>]} to return the N smallest items as a ListTag, in ascending order.
+         * Optionally specify a count to return the N smallest items as a ListTag, in ascending order.
          *
          * @Usage
          * // Narrates "1"
@@ -1016,23 +1068,22 @@ public class ListTag implements AbstractTag {
          *
          * @Usage
          * // Narrates "1|2"
-         * - narrate <list[3|2|1|10].lowest.count[2]>
+         * - narrate <list[3|2|1|10].lowest[2]>
          *
          * @Implements ListTag.lowest, ListTag.lowest.count[<#>]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "lowest", (attr, obj) -> {
             if (obj.list.isEmpty()) return null;
-            int count = 1;
-            if (attr.matchesNext("count") && attr.hasNextParam()) {
-                count = new ElementTag(attr.getNextParam()).asInt();
-                attr.fulfill(1);
-            }
+            int count = attr.hasParam() ? new ElementTag(attr.getParam()).asInt() : 1;
+
             List<AbstractTag> copy = new ArrayList<>(obj.list);
             copy.sort(Comparator.comparingDouble(ListTag::numericValue));
+
             if (count == 1) return copy.getFirst();
             int limit = Math.min(count, copy.size());
             ListTag result = new ListTag();
             for (int index = 0; index < limit; index++) result.addObject(copy.get(index));
+
             return result;
         });
 
@@ -1080,7 +1131,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.sub_lists[<#>]
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "subLists", (attr, obj) -> {
-            if (!attr.hasParam()) return obj;
+            if (!attr.hasParam()) return null;
             int chunkSize = new ElementTag(attr.getParam()).asInt();
             if (chunkSize <= 0) return new ListTag();
             ListTag result = new ListTag();
@@ -1180,7 +1231,6 @@ public class ListTag implements AbstractTag {
             if (clazz.isInstance(item)) {
                 results.add(clazz.cast(item));
             } else {
-                // ГЕНЕРИРУЕМ ОШИБКУ, ЕСЛИ ТИП НЕ СОВПАЛ!
                 if (queue != null) {
                     Debugger.echoError(queue, "Cannot process list-entry '" + item.identify() + "' as type '" + clazz.getSimpleName() + "' (does not match expected type).");
                 }
