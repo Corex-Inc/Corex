@@ -24,6 +24,9 @@ import dev.corexinc.corex.environment.tags.world.*;
 // DataActions
 import dev.corexinc.corex.environment.data.actions.*;
 import dev.corexinc.corex.api.data.actions.*;
+import dev.corexinc.corex.environment.tags.world.area.CuboidTag;
+import dev.corexinc.corex.environment.tags.world.area.EllipsoidTag;
+import dev.corexinc.corex.environment.tags.world.area.PolygonTag;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
@@ -72,6 +75,9 @@ public class EnvironmentLoader {
                 UtilTag.class,
                 RandomTag.class,
                 ItemTag.class,
+                CuboidTag.class,
+                EllipsoidTag.class,
+                PolygonTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
