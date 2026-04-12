@@ -36,7 +36,7 @@ public class IfElseCommand implements AbstractCommand {
         Object lastIfObj = queue.getTempData("corex_if_result");
 
         if (!(lastIfObj instanceof Boolean)) {
-            Debugger.error(queue, "Command '" + getName() +"' cannot be called without a preceding '- if'!", 0);
+            Debugger.echoError(queue, "Command '" + getName() +"' cannot be called without a preceding '- if'!");
             return;
         }
 

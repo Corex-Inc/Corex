@@ -3,6 +3,7 @@ package dev.corexinc.corex.environment.commands.core;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 import java.util.List;
@@ -89,11 +90,17 @@ public class RepeatCommand implements AbstractCommand {
         String action = instruction.getLinear(0, queue);
 
         if (action != null && action.equals("break")) {
+            Debugger.report(queue, instruction,
+                    "Action", action
+            );
             queue.skipFrame(true);
             return;
         }
 
         if (action != null && action.equals("continue")) {
+            Debugger.report(queue, instruction,
+                    "Action", action
+            );
             queue.skipFrame(false);
             return;
         }
@@ -115,6 +122,11 @@ public class RepeatCommand implements AbstractCommand {
 
         final String finalVar = asVar;
         queue.define(finalVar, new ElementTag(from));
+
+        Debugger.report(queue, instruction,
+            "From", from,
+                "AsDefinition", asVar
+        );
 
         queue.pushFrame("repeat_loop", instruction.innerBlock,
                 () -> {

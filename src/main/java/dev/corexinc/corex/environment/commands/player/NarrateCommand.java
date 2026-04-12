@@ -63,7 +63,11 @@ public class NarrateCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
         AbstractTag text = entry.getLinearObject(0, queue);
-        if (text == null) return;
+        boolean failed = false;
+        if (text == null) {
+            Debugger.echoError(queue, "Empty text argument are not allowed");
+            failed = true;
+        };
 
         Component message = text.asComponent();
 
@@ -76,6 +80,8 @@ public class NarrateCommand implements AbstractCommand {
                 "Narrating", text.identify(),
                 "Targets", targets
         );
+
+        if (failed) return;
 
         if (targets != null) {
             for (PlayerTag pTag : players) {

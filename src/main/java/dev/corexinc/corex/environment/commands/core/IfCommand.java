@@ -3,8 +3,11 @@ package dev.corexinc.corex.environment.commands.core;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.ConditionCompiler;
 import org.jspecify.annotations.NonNull;
+
+import java.util.Arrays;
 
 /* @doc command
  *
@@ -109,6 +112,11 @@ public class IfCommand implements AbstractCommand {
         boolean result = condition.evaluate(queue);
 
         queue.setTempData("corex_if_result", result);
+
+        Debugger.report(queue, instruction,
+                "Condition", Arrays.toString(instruction.linearArgs),
+                "Result", String.valueOf(result)
+        );
 
         if (result && instruction.innerBlock != null) {
             queue.pushFrame(getName(), instruction.innerBlock, null);

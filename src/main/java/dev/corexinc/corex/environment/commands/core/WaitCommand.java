@@ -69,10 +69,13 @@ public class WaitCommand implements AbstractCommand {
             String raw = instruction.getLinear(0, queue);
             if (raw != null && !raw.isBlank()) {
                 DurationTag parsed = new DurationTag(raw);
+                Debugger.report(queue, instruction,
+                        "Duration", parsed.identify()
+                );
                 if (parsed.getTicks() > 0) {
                     queue.delay(parsed.getTicksLong());
                 } else {
-                    Debugger.error(queue, getName() + " could not parse duration '" + raw + "'", 0);
+                    Debugger.echoError(queue, getName() + " could not parse duration '" + raw + "'");
                 }
             }
         }

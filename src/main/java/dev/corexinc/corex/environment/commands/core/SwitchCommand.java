@@ -92,9 +92,20 @@ public class SwitchCommand implements AbstractCommand {
     @SuppressWarnings("unchecked")
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
         String switchValue = instruction.getLinear(0, queue);
-        if (switchValue == null || instruction.innerBlock == null) return;
+        boolean failed = false;
+        if (switchValue == null || instruction.innerBlock == null) {
+            Debugger.echoError(queue, "Empty 'switch' block are not allowed!");
+            Debugger.echoError(queue, "It seems 'switch' block is empty! Or argument not provided.");
+            failed = true;
+        };
 
         Map<String, Instruction[]> lookupTable;
+
+        Debugger.report(queue, instruction,
+                "Value", switchValue
+        );
+
+        if (failed) return;
 
         if (instruction.customData instanceof Map) {
             lookupTable = (Map<String, Instruction[]>) instruction.customData;
@@ -107,7 +118,12 @@ public class SwitchCommand implements AbstractCommand {
                     for (int i = 0; i < child.linearArgs.length; i++) {
                         String caseVal = child.getLinear(i, null);
                         if (caseVal != null) {
-                            lookupTable.put(caseVal.toLowerCase(), child.innerBlock);
+                            String key = caseVal.toLowerCase();
+                            if (lookupTable.containsKey(key)) {
+                                Debugger.echoError(queue, "Duplicate case value '" + key + "' detected in switch block!");
+                            } else {
+                                lookupTable.put(key, child.innerBlock);
+                            }
                         }
                     }
                 } else if (child.command instanceof SwitchDefaultCommand) {
@@ -115,7 +131,7 @@ public class SwitchCommand implements AbstractCommand {
                         lookupTable.put("\0DEFAULT", child.innerBlock);
                     }
                 } else {
-                    Debugger.error(queue, "Unknown command inside switch block: " + child.command.getName(), 0);
+                    Debugger.echoError(queue, "Unknown command inside switch block: " + child.command.getName());
                 }
             }
             instruction.customData = lookupTable;
@@ -129,7 +145,6 @@ public class SwitchCommand implements AbstractCommand {
 
         if (targetBlock != null) {
             queue.pushFrame(getName(), targetBlock, null);
-
         }
     }
 }

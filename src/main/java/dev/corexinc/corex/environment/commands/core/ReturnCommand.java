@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -76,6 +77,12 @@ public class ReturnCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, Instruction instruction) {
         String value = instruction.getLinear(0, queue);
+
+        Debugger.report(queue, instruction,
+                "Value", value,
+                "IsCancelled", instruction.hasFlag("cancelled"),
+                "Passive", instruction.hasFlag("passive")
+        );
 
         if (value != null) {
             queue.addReturn(ObjectFetcher.pickObject(value));

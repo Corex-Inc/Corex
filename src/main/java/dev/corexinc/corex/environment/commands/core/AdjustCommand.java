@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
@@ -69,7 +70,14 @@ public class AdjustCommand implements AbstractCommand {
         String targetsRaw = instruction.getLinear(0, queue);
         AbstractTag mechInput = instruction.getLinearObject(1, queue);
 
-        if (targetsRaw == null || mechInput == null) return;
+        if (targetsRaw == null) {
+            Debugger.echoError(queue, "Targets cannot be null!");
+            return;
+        }
+        if (mechInput == null) {
+            Debugger.echoError(queue, "Mechanism input cannot be null!");
+            return;
+        }
 
         ListTag targets = new ListTag(targetsRaw);
         Map<String, AbstractTag> mechanisms = new HashMap<>();
@@ -92,12 +100,26 @@ public class AdjustCommand implements AbstractCommand {
             }
         }
 
-
         for (AbstractTag target : targets.getList()) {
+
+            if (target == null) {
+                Debugger.echoError(queue, "Encountered null target!");
+                continue;
+            }
+
             AbstractTag current = target;
+
             for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) {
-                current = current.applyMechanism(entry.getKey(), entry.getValue());
+                String mech = entry.getKey();
+                AbstractTag value = entry.getValue();
+
+                current = current.applyMechanism(mech, value);
             }
         }
+
+        Debugger.report(queue, instruction,
+                "Targets", targets.identify(),
+                "Mechanisms", mechInput.identify()
+        );
     }
 }

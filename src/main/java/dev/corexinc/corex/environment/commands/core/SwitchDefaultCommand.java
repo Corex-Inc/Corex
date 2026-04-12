@@ -30,6 +30,6 @@ public class SwitchDefaultCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        Debugger.error(queue, "Command '" + getName() + "' can ONLY be used inside 'switch'!", 0);
+        Debugger.echoError(queue, "Command '" + getName() + "' can ONLY be used inside 'switch'!");
     }
 }

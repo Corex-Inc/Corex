@@ -56,12 +56,15 @@ public class ReloadCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         try {
+            Debugger.report(queue, instruction,
+                "TestFallback", null
+            );
             Corex.getInstance().reloadConfig();
             Debugger.updateDebugMode();
             EventRegistry.resetAll();
             ScriptManager.reloadScripts();
         } catch (Exception e) {
-            Debugger.error("ERROR while reloading scripts. See console logs above this message.");
+            Debugger.echoError(queue, "ERROR while reloading scripts. See console logs above this message.");
         }
     }
 }

@@ -14,7 +14,7 @@ import java.util.*;
  * @Name MapTag
  * @Prefix map
  * @Format
- * The identity format for MapTags is a replica of property syntax - square brackets surrounded a semi-colon separated list of key=value pairs.
+ * The identity format for MapTags is a replica of property syntax - square brackets surrounded a semicolon separated list of key=value pairs.
  * For example, a map of "taco" to "food", "chicken" to "animal", and "bob" to "person" would be "map@[taco=food;chicken=animal;bob=person]"
  * A map with zero items in it is simply 'map@[]'.
  *

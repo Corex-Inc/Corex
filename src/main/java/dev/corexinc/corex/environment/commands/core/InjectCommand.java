@@ -68,15 +68,20 @@ public class InjectCommand implements AbstractCommand {
 
         AbstractContainer container = ScriptManager.getContainer(scriptName);
         if (container == null) {
-            Debugger.error(queue, getName() + " container '" + scriptName + "' not found!", 0);
+            Debugger.echoError(queue, getName() + " container '" + scriptName + "' not found!");
             return;
         }
 
         Instruction[] bytecode = container.getScript(path);
         if (bytecode == null) {
-            Debugger.error(queue, getName() + " path '" + path + "' in script '" + scriptName + "' has no commands!", 0);
+            Debugger.echoError(queue, getName() + " path '" + path + "' in script '" + scriptName + "' has no commands!");
             return;
         }
+
+        Debugger.report(queue, instruction,
+                "Script", scriptName,
+                "Path", path    
+        );
 
         queue.pushFrame(getName(), bytecode, null);
     }

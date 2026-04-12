@@ -33,17 +33,17 @@ public class ScriptPreprocessor {
                     || (trimmed.contains(": ") && !trimmed.startsWith("<"));
 
             if (isNewYamlLine) {
-                flushLine(result, currentLine);
+                flushLine(result, currentLine, line);
                 currentLine.append(line);
             } else {
                 currentLine.append(trimmed);
             }
         }
-        flushLine(result, currentLine);
+        flushLine(result, currentLine, null);
         return result.toString();
     }
 
-    private static void flushLine(StringBuilder result, StringBuilder currentLine) {
+    private static void flushLine(StringBuilder result, StringBuilder currentLine, String nextLine) {
         if (currentLine.isEmpty()) return;
 
         String line = currentLine.toString();
@@ -55,7 +55,22 @@ public class ScriptPreprocessor {
             String trimmedContent = content.trim();
 
             if (trimmedContent.endsWith(":")) {
-                result.append(line).append("\n");
+                boolean hasOffset = false;
+
+                if (nextLine != null) {
+                    int currentIndent = getIndent(line);
+                    int nextIndent = getIndent(nextLine);
+
+                    if (nextIndent > currentIndent) {
+                        hasOffset = true;
+                    }
+                }
+
+                if (hasOffset) {
+                    result.append(line).append("\n");
+                } else {
+                    result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
+                }
             }
             else if ((trimmedContent.startsWith("\"") && trimmedContent.endsWith("\"")) ||
                     (trimmedContent.startsWith("'") && trimmedContent.endsWith("'"))) {
@@ -68,5 +83,18 @@ public class ScriptPreprocessor {
             result.append(line).append("\n");
         }
         currentLine.setLength(0);
+    }
+
+    private static int getIndent(String s) {
+        int count = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == ' ' || c == '\t') {
+                count++;
+            } else {
+                break;
+            }
+        }
+        return count;
     }
 }

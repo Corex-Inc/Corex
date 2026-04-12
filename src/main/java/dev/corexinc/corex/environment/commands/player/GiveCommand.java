@@ -28,11 +28,12 @@ public class GiveCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         AbstractTag targetsRaw = instruction.getLinearObject(0, queue);
+        boolean failed = false;
         List<PlayerTag> targets = new ListTag(targetsRaw.identify()).filter(PlayerTag.class, queue);
 
         if (targets.isEmpty()) {
-            Debugger.error(queue, "no valid targets found!", queue.getDepth());
-            return;
+            Debugger.echoError(queue, "No valid targets found!");
+            failed = true;
         }
 
         AbstractTag itemsRaw = instruction.getLinearObject(1, queue);
@@ -46,8 +47,8 @@ public class GiveCommand implements AbstractCommand {
         }
 
         if (items.isEmpty()) {
-            Debugger.error(queue, "no valid items found!", queue.getDepth());
-            return;
+            Debugger.echoError(queue, "No valid items found!");
+            failed = true;
         }
 
         int quantity = 1;
@@ -55,6 +56,13 @@ public class GiveCommand implements AbstractCommand {
         if (qTag instanceof ElementTag el) {
             quantity = Math.max(1, el.asInt());
         }
+
+        Debugger.report(queue, instruction,
+                "Amount", quantity,
+                "Items", itemsRaw.identify(),
+                "Targets", targetsRaw.identify()
+        );
+        if (failed) return;
 
         for (PlayerTag playerTag : targets) {
             Player player = playerTag.getPlayer();

@@ -75,7 +75,7 @@ public class DoCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<script>] (def.<key>:<value>) (def:<map/list>) (path:<path>)";
+        return "[<script>] (def.<key>:<value>) (def:<map/list>) (path:<path>) (id:<name>)";
     }
 
     @Override
@@ -112,23 +112,27 @@ public class DoCommand implements AbstractCommand {
 
         AbstractContainer container = ScriptManager.getContainer(scriptName);
         if (container == null) {
-            Debugger.error(queue, "Container '" + scriptName + "' not found!", 0);
+            Debugger.echoError(queue, "Container '" + scriptName + "' not found!");
             return;
         }
 
         Instruction[] bytecode = container.getScript(path);
         if (bytecode == null) {
-            Debugger.error(queue, "Path '" + path + "' doesn't contain any commands in " + scriptName, 0);
+            Debugger.echoError(queue, "Path '" + path + "' doesn't contain any commands in " + scriptName);
             return;
         }
 
-        ScriptQueue newQueue = new ScriptQueue(scriptName + "_" + System.currentTimeMillis(), bytecode, false, queue.getPlayer());
+        String queueId = instruction.getPrefix("id", queue);
+        ScriptQueue newQueue = new ScriptQueue(queueId != null ? queueId : scriptName + "_" + System.currentTimeMillis(), bytecode, false, queue.getPlayer());
+
+        MapTag defsMap = new MapTag();
 
         for (Map.Entry<String, CompiledArgument> entry : instruction.prefixArgs.entrySet()) {
             if (entry.getKey().startsWith("def.")) {
                 String defName = entry.getKey().substring(4);
                 AbstractTag defValue = entry.getValue().evaluate(queue);
                 newQueue.define(defName, defValue);
+                defsMap.putObject(defName, defValue);
             }
         }
 
@@ -138,7 +142,10 @@ public class DoCommand implements AbstractCommand {
 
             if (defTag instanceof MapTag map) {
                 for (String key : map.keySet()) {
-                    newQueue.define(key, map.getObject(key));
+                    AbstractTag val = map.getObject(key);
+
+                    newQueue.define(key, val);
+                    defsMap.putObject(key, val);
                 }
             } else {
                 ListTag list = (defTag instanceof ListTag) ? (ListTag) defTag : new ListTag(defTag.identify());
@@ -146,7 +153,10 @@ public class DoCommand implements AbstractCommand {
                 List<String> keys = container.getDefinitions();
 
                 for (int i = 0; i < list.size() && i < keys.size(); i++) {
-                    newQueue.define(keys.get(i), ObjectFetcher.pickObject(list.get(i)));
+                    AbstractTag val = ObjectFetcher.pickObject(list.get(i));
+
+                    newQueue.define(keys.get(i), val);
+                    defsMap.putObject(keys.get(i), val);
                 }
             }
         }
@@ -156,6 +166,12 @@ public class DoCommand implements AbstractCommand {
             newQueue.setOnFinish(queue::resume);
         }
 
+        Debugger.report(queue, instruction,
+                "Script", scriptName,
+                "Path", path,
+                "Definitions", defsMap.identify(),
+                "Queue", newQueue.getId()
+        );
         newQueue.start();
     }
 }

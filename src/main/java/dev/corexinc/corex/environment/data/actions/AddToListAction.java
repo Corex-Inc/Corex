@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.data.actions.AbstractDataAction;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

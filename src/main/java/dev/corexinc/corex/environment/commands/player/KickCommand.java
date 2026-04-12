@@ -63,9 +63,10 @@ public class KickCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
-        String firstArg = entry.getLinear(0, queue);
-        String secondArg = entry.getPrefix("reason", queue);
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
+        String firstArg = instruction.getLinear(0, queue);
+        String secondArg = instruction.getPrefix("reason", queue);
+        boolean failed = false;
 
         final Component reason = (secondArg == null ? null : MiniMessage.miniMessage().deserialize(secondArg));
 
@@ -73,16 +74,23 @@ public class KickCommand implements AbstractCommand {
         List<PlayerTag> players = targetList.filter(PlayerTag.class, queue);
 
         if (players.isEmpty()) {
-            Debugger.error(queue, getName() + ": no players found in '" + firstArg + "'", 0);
-            return;
+            Debugger.echoError(queue, getName() + ": no players found in '" + firstArg + "'");
+            failed = true;
         }
+
+        Debugger.report(queue, instruction,
+            "Players", targetList.identify(),
+                "Reason", reason
+        );
+
+        if (failed) return;
 
         for (PlayerTag pTag : players) {
             Player player = pTag.getPlayer();
             if (player != null && player.isOnline()) {
                 SchedulerAdapter.runEntity(player, () -> player.kick(reason));
             } else {
-                Debugger.error(queue, getName() + ": player '" + pTag.getPlayer().getName() + "' is offline or not found", 0);
+                Debugger.echoError(queue, getName() + ": player '" + pTag.getPlayer().getName() + "' is offline or not found");
             }
         }
     }

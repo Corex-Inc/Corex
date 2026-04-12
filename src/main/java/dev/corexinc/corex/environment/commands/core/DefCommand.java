@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import org.jspecify.annotations.NonNull;
 
@@ -19,7 +20,7 @@ public class DefCommand implements AbstractCommand {
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
 
     @Override public @NonNull String getName() { return "def"; }
-    @Override public @NonNull List<String> getAlias() { return List.of(getName()); }
+    @Override public @NonNull List<String> getAlias() { return List.of("define"); }
     @Override public @NonNull String getSyntax() { return "[<key>] [<value>]"; }
     @Override public int getMinArgs() { return 1; }
     @Override public int getMaxArgs() { return 2; }
@@ -27,13 +28,24 @@ public class DefCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String rawArg = instruction.getLinear(0, queue);
-        if (rawArg == null) return;
+        if (rawArg == null) {
+            Debugger.echoError(queue, "Definition name cannot be null!");
+            Debugger.echoError(queue, "Definition name returned <red>null</red>.");
+            rawArg = "";
+        }
 
         int colonIndex = findColonOutsideBrackets(rawArg);
 
         if (colonIndex < 0) {
             String value = instruction.getLinear(1, queue);
+
             queue.define(rawArg, value == null ? null : ObjectFetcher.pickObject(value));
+
+            Debugger.report(queue, instruction,
+                    "Definition", rawArg,
+                    "Value", value,
+                    "Action", ":"
+            );
             return;
         }
 
@@ -41,18 +53,32 @@ public class DefCommand implements AbstractCommand {
         String actionStr = rawArg.substring(colonIndex + 1);
 
         AbstractDataAction action = Corex.getInstance().getRegistry().findAction(actionStr);
-        if (action == null) return;
+        if (action == null) {
+            Debugger.echoError(queue, "DataAction cannot be null!");
+            Debugger.echoError(queue, "It seems DataAction is <red>null</red>.");
+            return;
+        }
 
         String param = action.extractParam(actionStr);
         AbstractTag secondArg = instruction.getLinearObject(1, queue);
 
         String[] parts = DOT_SPLIT.split(keyPath, -1);
 
-        if (parts.length > 1) {
-            applyToMap(queue, parts, action, param, secondArg);
-        } else {
-            AbstractTag current = queue.getDefinition(keyPath);
-            queue.define(keyPath, action.apply(current, param, secondArg, queue));
+        try {
+            if (parts.length > 1) {
+                applyToMap(queue, parts, action, param, secondArg);
+            } else {
+                AbstractTag current = queue.getDefinition(keyPath);
+                AbstractTag result = action.apply(current, param, secondArg, queue);
+                queue.define(keyPath, result);
+            }
+        }
+        finally {
+            Debugger.report(queue, instruction,
+                    "Definition", keyPath,
+                    "Value", param,
+                    "Action", ":" + action.getSymbol()
+            );
         }
     }
 
