@@ -60,7 +60,7 @@ public class RunsCommand implements BasicCommand {
             queue.setKeepAlive(true);
             activeQueues.put(senderId, queue);
             queue.start();
-            sender.sendMessage("§b[Corex] §7Создана новая сессия очереди. Используйте §f/runs exit§7 чтобы закрыть её.");
+            sender.sendMessage("§b[Corex] §7New queue session created. Use §f/runs stop§7 to kill it.");
         }
 
         queue.injectInstructions(instruction);

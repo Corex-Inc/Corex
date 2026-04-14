@@ -8,13 +8,12 @@ import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.utils.commands.RunCommand;
-import dev.corexinc.corex.environment.utils.network.WebSocketManager;
+import dev.corexinc.corex.environment.utils.WebSocketManager;
+import dev.corexinc.corex.environment.utils.commands.RunsCommand;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
 
 public class Corex extends JavaPlugin {
 
@@ -75,6 +74,12 @@ public class Corex extends JavaPlugin {
                     event.registrar().register(
                             "run",
                             new RunCommand()
+                    );
+                });
+                getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+                    event.registrar().register(
+                            "runs",
+                            new RunsCommand()
                     );
                 });
             }
