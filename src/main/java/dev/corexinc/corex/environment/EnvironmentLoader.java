@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment;
 
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // Commands
@@ -30,7 +31,23 @@ public class EnvironmentLoader {
         // DefinitionTag
         BaseTagProcessor.registerBaseTag("", (attribute) -> {
             if (attribute.hasParam() && attribute.getQueue() != null) {
-                return attribute.getQueue().getDefinition(attribute.getParam());
+                String fullPath = attribute.getParam();
+
+                if (!fullPath.contains(".")) {
+                    return attribute.getQueue().getDefinition(fullPath);
+                }
+
+                String[] parts = fullPath.split("\\.", -1);
+                AbstractTag current = attribute.getQueue().getDefinition(parts[0]);
+
+                for (int i = 1; i < parts.length; i++) {
+                    if (!(current instanceof dev.corexinc.corex.environment.tags.core.MapTag map)) {
+                        return null;
+                    }
+                    current = map.getObject(parts[i]);
+                }
+
+                return current;
             }
             return null;
         });
