@@ -1,4 +1,4 @@
-package dev.corexinc.corex.environment.utils.network;
+package dev.corexinc.corex.environment.utils;
 
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
