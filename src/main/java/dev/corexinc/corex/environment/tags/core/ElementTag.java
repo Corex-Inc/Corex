@@ -1,11 +1,14 @@
 package dev.corexinc.corex.environment.tags.core;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.utils.JsonHelper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.Debug;
@@ -423,6 +426,30 @@ public class ElementTag implements AbstractTag {
             if (!attribute.hasParam()) return null;
             return new ElementTag(elementTag.element.repeat(new ElementTag(attribute.getParam()).asInt()));
         }).test("2");
+
+        /* @doc tag
+         *
+         * @Name parseJson
+         * @RawName <ElementTag.parseJson>
+         * @Object ElementTag
+         * @ReturnType MapTag, ListTag
+         * @NoArg
+         *
+         * @Description
+         * Parses a JSON formatted string and returns it as a MapTag or ListTag depending on its structure.
+         * @Usage
+         * // Narrates "bob"
+         * - narrate <element[{"name":"bob","age":25}].parseJson.get[name]>
+         */
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "parseJson", (attr, obj) -> {
+            try {
+                JsonElement parsed = JsonParser.parseString(obj.asString());
+                return JsonHelper.fromJson(parsed);
+            } catch (Exception e) {
+                Debugger.echoError(attr.getQueue(), "Failed to parse JSON: " + e.getMessage());
+                return null;
+            }
+        });
     }
 
     @Override

@@ -236,15 +236,19 @@ public class ScriptCompiler {
                 continue;
             }
 
-            if (c == '"') {
-                inQuotes = !inQuotes;
-                continue;
-            }
-
             if (c == '<') tagDepth++;
             if (c == '>') tagDepth--;
             if (c == '(' && tagDepth == 0) mathDepth++;
             if (c == ')' && tagDepth == 0) mathDepth--;
+
+            if (c == '"') {
+                if (tagDepth > 0 || mathDepth > 0) {
+                    current.append(c);
+                } else {
+                    inQuotes = !inQuotes;
+                }
+                continue;
+            }
 
             if (c == ' ' && !inQuotes && tagDepth == 0 && mathDepth == 0) {
                 if (!current.isEmpty()) {

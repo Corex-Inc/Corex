@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.tags.core;
 
+import com.google.gson.JsonElement;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -7,6 +8,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.utils.JsonHelper;
 import org.jspecify.annotations.NonNull;
 
 import java.util.*;
@@ -1205,6 +1207,38 @@ public class ListTag implements AbstractTag {
                 );
             }
             return result;
+        });
+
+        /* @doc tag
+         *
+         * @Name toJson
+         * @RawName <ListTag.toJson>
+         * @Object ListTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Converts the ListTag into a strict JSON string.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toJson", (attr, obj) -> {
+            JsonElement json = JsonHelper.toJson(obj);
+
+            /* @doc tag
+             *
+             * @Name toJson.pretty
+             * @RawName <ListTag.toJson.pretty>
+             * @Object ListTag
+             * @ReturnType ElementTag
+             * @NoArg
+             *
+             * @Description
+             * Converts the ListTag into an element with nicely formatted multiline JSON.
+             */
+            if (attr.matchesNext("pretty")) {
+                attr.fulfill(1);
+                return new ElementTag(JsonHelper.toPrettyString(json));
+            }
+            return new ElementTag(json.toString());
         });
     }
 
