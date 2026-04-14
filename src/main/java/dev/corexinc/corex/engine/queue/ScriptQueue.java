@@ -37,13 +37,15 @@ public class ScriptQueue {
     private boolean isBroken = false;
     private boolean isCancelled = false;
 
+    private boolean keepAlive = false;
+    private boolean isWaitingForInstructions = false;
+
     private long startNanos;
 
     private final List<String> currentErrors = new ArrayList<>();
     private boolean errorHeaderPrinted = false;
     public boolean isErrorHeaderPrinted() { return errorHeaderPrinted; }
     public void setErrorHeaderPrinted(boolean value) { this.errorHeaderPrinted = value; }
-
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
         this.id = id;
@@ -57,6 +59,36 @@ public class ScriptQueue {
         startNanos = System.nanoTime();
         Debugger.queueStart(this);
         executeNext();
+    }
+
+    public boolean isStopped() {
+        return isStopped;
+    }
+
+    public void setKeepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+
+    public boolean isKeepAlive() {
+        return keepAlive;
+    }
+
+    public void injectInstructions(Instruction... insts) {
+        if (this.bytecode == null || this.pointer >= this.bytecode.length) {
+            this.bytecode = insts;
+        } else {
+            int remaining = this.bytecode.length - this.pointer;
+            Instruction[] combined = new Instruction[remaining + insts.length];
+            System.arraycopy(this.bytecode, this.pointer, combined, 0, remaining);
+            System.arraycopy(insts, 0, combined, remaining, insts.length);
+            this.bytecode = combined;
+        }
+        this.pointer = 0;
+
+        if (isWaitingForInstructions) {
+            isWaitingForInstructions = false;
+            executeNext();
+        }
     }
 
     public boolean isCancelled() {
@@ -120,6 +152,16 @@ public class ScriptQueue {
                     Runnable callback = this.onFinish;
 
                     if (callStack.isEmpty()) {
+
+                        if (keepAlive) {
+                            isWaitingForInstructions = true;
+                            if (callback != null) {
+                                callback.run();
+                                this.onFinish = null;
+                            }
+                            break;
+                        }
+
                         isStopped = true;
                         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
                         Debugger.queueStop(this, elapsedMs);
@@ -239,8 +281,8 @@ public class ScriptQueue {
 
     public void setContext(ContextTag context) {
         this.context = context;
-
     }
+
     public ContextTag getContext() {
         return context;
     }

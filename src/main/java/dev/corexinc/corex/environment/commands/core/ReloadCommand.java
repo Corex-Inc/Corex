@@ -56,9 +56,7 @@ public class ReloadCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         try {
-            Debugger.report(queue, instruction,
-                "TestFallback", null
-            );
+            Debugger.report(queue, instruction);
             Corex.getInstance().reloadConfig();
             Debugger.updateDebugMode();
             EventRegistry.resetAll();

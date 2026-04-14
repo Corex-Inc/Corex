@@ -5,8 +5,10 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.jetbrains.annotations.Debug;
 import org.jspecify.annotations.NonNull;
 
 /* @doc object
@@ -238,6 +240,90 @@ public class ElementTag implements AbstractTag {
             if (!attr.hasParam()) return null;
             if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
                 return new ElementTag(obj.asDouble() + new ElementTag(attr.getParam()).asDouble());
+            }
+            return null;
+        }).test("5");
+
+        /* @doc tag
+         *
+         * @Name sub[]
+         * @RawName <ElementTag.sub[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the element - number.
+         *
+         * @Implements ElementTag.sub
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "sub", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
+                return new ElementTag(obj.asDouble() - new ElementTag(attr.getParam()).asDouble());
+            }
+            return null;
+        }).test("5");
+
+        /* @doc tag
+         *
+         * @Name mul[]
+         * @RawName <ElementTag.mul[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the element * number.
+         *
+         * @Implements ElementTag.mul
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "mul", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
+                return new ElementTag(obj.asDouble() * new ElementTag(attr.getParam()).asDouble());
+            }
+            return null;
+        }).test("5");
+
+        /* @doc tag
+         *
+         * @Name mod[]
+         * @RawName <ElementTag.mod[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the element % number. (Remainder of the element / number)
+         *
+         * @Implements ElementTag.mod
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "mod", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
+                return new ElementTag(obj.asDouble() % new ElementTag(attr.getParam()).asDouble());
+            } else {
+                Debugger.error("Element '" + obj + "' or '" + attr.getParam() + "is not a valid decimal number!");
+            }
+            return null;
+        }).test("5");
+
+        /* @doc tag
+         *
+         * @Name div[]
+         * @RawName <ElementTag.div[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the element / number.
+         *
+         * @Implements ElementTag.div
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "div", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
+                return new ElementTag(obj.asDouble() / new ElementTag(attr.getParam()).asDouble());
+            } else {
+                Debugger.error("Element '" + obj + "' or '" + attr.getParam() + "is not a valid decimal number!");
             }
             return null;
         }).test("5");

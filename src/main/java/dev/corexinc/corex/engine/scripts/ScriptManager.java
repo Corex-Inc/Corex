@@ -7,6 +7,7 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -20,9 +21,14 @@ public class ScriptManager {
     private static final Map<String, AbstractContainer> containers = new HashMap<>();
     public static long lastReloadTime = System.currentTimeMillis();
 
-    public static void loadScripts(File scriptsFolder) {
+    public static void loadScripts() {
         containers.clear();
-        if (!scriptsFolder.exists()) scriptsFolder.mkdirs();
+        JavaPlugin plugin = Corex.getInstance();
+        File scriptsFolder = new File(plugin.getDataFolder(), "scripts");
+        if (!scriptsFolder.exists()) {
+            scriptsFolder.mkdirs();
+            plugin.saveResource("scripts/readme.txt", true);
+        }
 
         List<File> files = new ArrayList<>();
         findScriptsRecursively(scriptsFolder, files);
@@ -86,9 +92,8 @@ public class ScriptManager {
     }
 
     public static void reloadScripts() {
-        File scriptsFolder = new File(Corex.getInstance().getDataFolder(), "scripts");
         lastReloadTime = System.currentTimeMillis();
-        loadScripts(scriptsFolder);
+        loadScripts();
     }
 
     public static AbstractContainer getContainer(String name) {

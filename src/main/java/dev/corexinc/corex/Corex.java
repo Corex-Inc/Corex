@@ -21,6 +21,9 @@ public class Corex extends JavaPlugin {
 
     private CorexRegistry registry;
 
+    private static boolean IS_FOLIA = false;
+    private static boolean IS_TEST = false;
+
     public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
             .character('§')
             .hexColors()
@@ -30,19 +33,40 @@ public class Corex extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        if (!getDataFolder().exists()) CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
+        CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
 
         getConfig().options().copyDefaults();
         saveDefaultConfig();
         Debugger.updateDebugMode();
 
+        setupRuntimeFlags();
+
         this.registry = new CorexRegistry();
         EnvironmentLoader.registerDefaults(this.registry);
-        EnvManager.load(getDataFolder());
+        EnvManager.load();
 
         int pluginId = 30505;
         new Metrics(this, pluginId);
 
+        registerCommands();
+
+        ScriptManager.loadScripts();
+    }
+
+    @Override
+    public void onDisable() {
+        CorexLogger.info("<#ffaa00>Corex is shutting down...</#ffaa00>");
+    }
+
+    public static Corex getInstance() {
+        return instance;
+    }
+
+    public CorexRegistry getRegistry() {
+        return registry;
+    }
+
+    public void registerCommands() {
         if (!isTest()) {
             try {
                 getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -56,33 +80,24 @@ public class Corex extends JavaPlugin {
                 CorexLogger.warn("Failed to register Brigadier commands. Possibly an outdated version of Paper?");
             }
         }
-
-        ScriptManager.loadScripts(new File(getDataFolder().toURI()));
     }
 
-    @Override
-    public void onDisable() {
-        CorexLogger.info("<#ffaa00>Corex shutting down...</#ffaa00>");
-    }
+    public void setupRuntimeFlags() {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            IS_FOLIA = true;
+        } catch (ClassNotFoundException e) {
+            IS_FOLIA = false;
+        }
 
-    public static Corex getInstance() {
-        return instance;
-    }
-
-    public CorexRegistry getRegistry() {
-        return registry;
+        IS_TEST = Bukkit.getName().equalsIgnoreCase("ServerMock");
     }
 
     public static boolean isFolia() {
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
+        return IS_FOLIA;
     }
 
     public static boolean isTest() {
-        return Bukkit.getName().equalsIgnoreCase("ServerMock");
+        return IS_TEST;
     }
 }

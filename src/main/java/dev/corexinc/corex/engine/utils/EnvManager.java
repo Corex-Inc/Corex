@@ -1,5 +1,9 @@
 package dev.corexinc.corex.engine.utils;
 
+import dev.corexinc.corex.Corex;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -10,19 +14,31 @@ public class EnvManager {
 
     private static final Map<String, String> secrets = new HashMap<>();
 
-    public static void load(File dataFolder) {
+    // Теперь принимаем инстанс плагина
+    public static void load() {
+        JavaPlugin plugin = Corex.getInstance();
         secrets.clear();
-        File envFile = new File(dataFolder, "secrets.env");
+        File envFile = new File(plugin.getDataFolder(), "secrets.env");
 
+        // Если файла нет в папке плагина
         if (!envFile.exists()) {
-            try { envFile.createNewFile(); } catch (Exception ignored) {}
-            return;
+            try {
+                plugin.saveResource("secrets.env", false);
+            } catch (IllegalArgumentException e) {
+                try {
+                    if (!plugin.getDataFolder().exists()) {
+                        plugin.getDataFolder().mkdirs();
+                    }
+                    envFile.createNewFile();
+                } catch (Exception ignored) {}
+            }
         }
 
         try {
             List<String> lines = Files.readAllLines(envFile.toPath());
             for (String line : lines) {
                 String trimmed = line.trim();
+                // Пропускаем пустые строки и комментарии
                 if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
 
                 int eqIndex = trimmed.indexOf('=');
@@ -36,7 +52,6 @@ public class EnvManager {
                     secrets.put(key, value);
                 }
             }
-            CorexLogger.success("Loaded <aqua>" + secrets.size() + "</aqua> secrets from secrets.env");
         } catch (Exception e) {
             CorexLogger.error("Error while reading secrets.env: " + e.getMessage());
         }
