@@ -59,6 +59,7 @@ public class EnvironmentLoader {
                 ReturnCommand.class,
                 AdjustCommand.class,
                 GiveCommand.class,
+                WebsocketCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -113,7 +114,8 @@ public class EnvironmentLoader {
         EventRegistry.register(
                 DeltaTimeEvent.class,
                 PlayerJoinEvent.class,
-                PlayerBreakBlockEvent.class
+                PlayerBreakBlockEvent.class,
+                WebsocketScriptEvent.class
         );
     }
 }

@@ -16,6 +16,9 @@ dependencies {
     compileOnly("dev.folia:folia-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:24.1.0")
 
+    // Other Libs
+    implementation("org.java-websocket:Java-WebSocket:1.5.6")
+
 
     // Tests
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
