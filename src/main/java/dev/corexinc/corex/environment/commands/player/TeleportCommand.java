@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
@@ -11,6 +12,7 @@ import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import it.unimi.dsi.fastutil.objects.ObjectHeaps;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.jspecify.annotations.NonNull;
 
@@ -77,49 +79,45 @@ public class TeleportCommand implements AbstractCommand {
 
     @Override
     public int getMaxArgs() {
-        return 3;
+        return 2;
     }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         int argCount = instruction.linearArgs.length;
 
-        List<Location> targets = new ArrayList<>();
-        String rawLocation;
+        List<Entity> entitiesToTeleport = new ArrayList<>();
+        String rawLocationInput;
 
         if (argCount >= 2) {
-            String rawTarget = instruction.getLinear(0, queue);
-            Object resolved = ObjectFetcher.pickObject(rawTarget);
+            AbstractTag targetTag = instruction.getLinearObject(0, queue);
+            rawLocationInput = instruction.getLinear(1, queue);
 
-            switch (resolved) {
-                case PlayerTag playerTag -> targets.add(playerTag.getPlayer().getLocation());
-                case EntityTag entityTag -> targets.add(entityTag.getEntity().getLocation());
-                case ListTag listTag -> {
-                    for (var tag : listTag.getList()) {
-                        if (tag instanceof EntityTag entityTag) {
-                            targets.add(entityTag.getEntity().getLocation());
-                        } else if (tag instanceof PlayerTag playerTag) {
-                            targets.add(playerTag.getPlayer().getLocation());
-                        }
-                    }
-                }
-                case null, default -> targets.add(queue.getPlayer().getPlayer().getLocation());
+            if (targetTag instanceof ListTag list) {
+                entitiesToTeleport.addAll(list.filter(PlayerTag.class, queue).stream().map(PlayerTag::getPlayer).toList());
+                entitiesToTeleport.addAll(list.filter(EntityTag.class, queue).stream().map(EntityTag::getEntity).toList());
+            } else if (targetTag instanceof PlayerTag p) {
+                entitiesToTeleport.add(p.getPlayer());
+            } else if (targetTag instanceof EntityTag e) {
+                entitiesToTeleport.add(e.getEntity());
             }
-
-            rawLocation = instruction.getLinear(1, queue);
         } else {
-            targets.add(queue.getPlayer().getPlayer().getLocation());
-            rawLocation = instruction.getLinear(0, queue);
+            if (queue.getPlayer() != null) {
+                entitiesToTeleport.add(queue.getPlayer().getPlayer());
+            }
+            rawLocationInput = instruction.getLinear(0, queue);
         }
 
-        if (targets.isEmpty()) {
+        if (entitiesToTeleport.isEmpty()) {
             Debugger.echoError(queue, getName() + " could not resolve any target entities.");
             return;
         }
 
-        LocationTag location = new LocationTag(rawLocation);
-        if (location.getLocation().getWorld() == null) {
-            Debugger.echoError(queue, getName() + " invalid or world-less location: " + rawLocation);
+        LocationTag locationTag = new LocationTag(rawLocationInput);
+        Location destination = locationTag.getLocation();
+
+        if (destination.getWorld() == null) {
+            Debugger.echoError(queue, getName() + " invalid or world-less location: " + rawLocationInput);
             return;
         }
 
@@ -129,23 +127,20 @@ public class TeleportCommand implements AbstractCommand {
             try {
                 cause = TeleportCause.valueOf(rawCause.toUpperCase());
             } catch (IllegalArgumentException e) {
-                Debugger.echoError(queue, getName() + " unknown TeleportCause '" + rawCause + "', defaulting to PLUGIN.");
+                Debugger.echoError(queue, getName() + " unknown TeleportCause '" + rawCause + "', using PLUGIN.");
             }
         }
 
-        final TeleportCause finalCause = cause;
-        final Location destination = location.getLocation();
-
         Debugger.report(queue, instruction,
-                "Destination", location.identify(),
-                "Cause", rawCause.toUpperCase(),
-                "Targets", ObjectFetcher.pickObject(instruction.getLinear(0, queue)).identify()
+                "Destination", locationTag.identify(),
+                "Cause", cause.name(),
+                "Targets_Count", entitiesToTeleport.size()
         );
 
-        for (Location target : targets) {
-            target.getWorld().getEntities().stream()
-                    .filter(e -> e.getLocation().equals(target))
-                    .forEach(e -> e.teleportAsync(destination, finalCause));
+        for (Entity entity : entitiesToTeleport) {
+            if (entity != null && entity.isValid()) {
+                entity.teleportAsync(destination, cause);
+            }
         }
     }
 }
