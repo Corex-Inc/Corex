@@ -10,23 +10,19 @@ import dev.corexinc.corex.environment.commands.player.*;
 import dev.corexinc.corex.environment.containers.*;
 // Events
 import dev.corexinc.corex.environment.events.implementation.core.*;
+import dev.corexinc.corex.environment.events.implementation.player.*;
 // Formatters
-import dev.corexinc.corex.environment.events.implementation.player.PlayerBreakBlockEvent;
-import dev.corexinc.corex.environment.events.implementation.player.PlayerJoinEvent;
-import dev.corexinc.corex.environment.flags.IfGlobalFlag;
-import dev.corexinc.corex.environment.flags.PlayerGlobalFlag;
 import dev.corexinc.corex.environment.formatters.*;
 // BaseTags
 import dev.corexinc.corex.environment.tags.core.*;
-import dev.corexinc.corex.environment.tags.entity.EntityTag;
+import dev.corexinc.corex.environment.tags.entity.*;
 import dev.corexinc.corex.environment.tags.player.*;
 import dev.corexinc.corex.environment.tags.world.*;
+import dev.corexinc.corex.environment.tags.world.area.*;
 // DataActions
 import dev.corexinc.corex.environment.data.actions.*;
-import dev.corexinc.corex.api.data.actions.*;
-import dev.corexinc.corex.environment.tags.world.area.CuboidTag;
-import dev.corexinc.corex.environment.tags.world.area.EllipsoidTag;
-import dev.corexinc.corex.environment.tags.world.area.PolygonTag;
+// GlobalFlags
+import dev.corexinc.corex.environment.flags.*;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
@@ -60,6 +56,7 @@ public class EnvironmentLoader {
                 AdjustCommand.class,
                 GiveCommand.class,
                 WebsocketCommand.class,
+                FetchCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -96,6 +93,7 @@ public class EnvironmentLoader {
                 // Global Flags
                 IfGlobalFlag.class,
                 PlayerGlobalFlag.class,
+                SaveGlobalFlag.class,
 
                 // Data Actions
                 IncrementAction.class,
