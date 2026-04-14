@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.containers.ItemContainer;
@@ -26,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class ItemTag implements AbstractTag {
+public class ItemTag implements AbstractTag, Adjustable {
 
     private static final String prefix = "i";
     private ItemStack item;
@@ -222,6 +223,11 @@ public class ItemTag implements AbstractTag {
 
     public ItemTag(ItemStack item) {
         this.item = item != null ? item.clone() : null;
+    }
+
+    @Override
+    public Adjustable duplicate() {
+        return new ItemTag(this.item.clone());
     }
 
     public ItemTag(String raw) {

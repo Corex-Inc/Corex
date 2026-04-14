@@ -12,9 +12,17 @@ import java.util.function.Function;
 public class ObjectFetcher {
 
     private static final Map<String, Function<String, AbstractTag>> fetchers = new HashMap<>();
+    private static final Map<String, String> typeNamesToPrefixes = new HashMap<>();
 
     public static void registerFetcher(String prefix, Function<String, AbstractTag> constructor) {
         fetchers.put(prefix.toLowerCase(), constructor);
+        String defaultName = constructor.getClass().getSimpleName().toLowerCase().replace("tag", "");
+        typeNamesToPrefixes.put(defaultName, prefix.toLowerCase());
+    }
+
+    public static String getPrefixForName(String name) {
+        if (fetchers.containsKey(name.toLowerCase())) return name.toLowerCase();
+        return typeNamesToPrefixes.get(name.toLowerCase());
     }
 
     public static AbstractTag pickObject(String value) {

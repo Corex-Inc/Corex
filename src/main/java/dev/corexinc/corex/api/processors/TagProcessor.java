@@ -48,6 +48,13 @@ public final class TagProcessor<T extends AbstractTag> {
      */
     private final Map<String, TagData<T>> registeredTags = new HashMap<>();
 
+    private boolean useGlobalTags = true;
+
+    public TagProcessor<T> disableGlobalTags() {
+        this.useGlobalTags = false;
+        return this;
+    }
+
     /**
      * Default constructor for the TagProcessor.
      */
@@ -108,6 +115,9 @@ public final class TagProcessor<T extends AbstractTag> {
         final TagData<T> data = registeredTags.get(attribute.getName());
         if (data != null) {
             return data.action.apply(attribute, object);
+        }
+        if (useGlobalTags && this != GlobalTagProcessor.PROCESSOR) {
+            return GlobalTagProcessor.PROCESSOR.process(object, attribute);
         }
         return null;
     }

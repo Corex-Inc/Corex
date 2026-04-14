@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.utils.commands.RunCommand;
+import dev.corexinc.corex.environment.utils.network.WebSocketManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -56,6 +57,7 @@ public class Corex extends JavaPlugin {
     @Override
     public void onDisable() {
         CorexLogger.info("<#ffaa00>Corex is shutting down...</#ffaa00>");
+        WebSocketManager.disconnectAll();
     }
 
     public static Corex getInstance() {

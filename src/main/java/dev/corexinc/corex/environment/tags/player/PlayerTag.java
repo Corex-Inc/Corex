@@ -3,6 +3,7 @@ package dev.corexinc.corex.environment.tags.player;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
@@ -37,7 +38,7 @@ import java.util.UUID;
  * @Description
  * A PlayerTag represents a player in the game.
  */
-public class PlayerTag implements AbstractTag {
+public class PlayerTag implements AbstractTag, Adjustable {
 
     private static final String prefix = "p";
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
@@ -1201,6 +1202,11 @@ public class PlayerTag implements AbstractTag {
 
     public Player getPlayer() {
         return offlinePlayer.getPlayer();
+    }
+
+    @Override
+    public Adjustable duplicate() {
+        return this;
     }
 
     public PlayerTag(String raw) {
