@@ -14,6 +14,10 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.Debug;
 import org.jspecify.annotations.NonNull;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 /* @doc object
  *
  * @Name ElementTag
@@ -448,6 +452,42 @@ public class ElementTag implements AbstractTag {
             } catch (Exception e) {
                 Debugger.echoError(attr.getQueue(), "Failed to parse JSON: " + e.getMessage());
                 return null;
+            }
+        });
+
+        /* @doc tag
+         * @Name urlEncode
+         * @RawName <ElementTag.urlEncode>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Encodes the text to be safely used inside a URL.
+         * Converts spaces to %20, '#' to %23, '&' to %26, etc.
+         *
+         * @Usage
+         * - define search_query <context.message.urlEncode>
+         * - ~fetch "https://api.com/search?q=<[search_query]>"
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "urlEncode", (attr, obj) ->
+                new ElementTag(URLEncoder.encode(obj.asString(), StandardCharsets.UTF_8).replace("+", "%20")));
+
+        /* @doc tag
+         * @Name urlDecode
+         * @RawName <ElementTag.urlDecode>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Decodes a URL-encoded string back to normal text.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "urlDecode", (attr, obj) -> {
+            try {
+                return new ElementTag(URLDecoder.decode(obj.asString(), StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                return obj;
             }
         });
     }
