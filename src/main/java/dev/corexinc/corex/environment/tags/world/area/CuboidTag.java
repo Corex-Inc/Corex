@@ -39,7 +39,7 @@ import java.util.Set;
  * Coordinates are inclusive - a cuboid from "5,5,5" to "5,5,5" contains
  * one full block and has a size of "1,1,1".
  */
-public class CuboidTag implements AbstractTag, AbstarctAreaObject {
+public class CuboidTag implements AbstractTag, AbstractAreaObject {
 
     private static final String PREFIX = "cu";
 

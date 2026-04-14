@@ -46,7 +46,7 @@ import java.util.List;
  * Note: forming invalid polygons (duplicate corners, self-intersecting shapes, etc.)
  * will not raise any errors, but may cause incorrect results.
  */
-public class PolygonTag implements AbstractTag, AbstarctAreaObject {
+public class PolygonTag implements AbstractTag, AbstractAreaObject {
 
     private static final String PREFIX = "polygon";
 

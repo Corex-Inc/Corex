@@ -34,7 +34,7 @@ import java.util.List;
  * Containment is determined by the standard ellipsoid equation:
  * (dx/rx)² + (dy/ry)² + (dz/rz)² ≤ 1
  */
-public class EllipsoidTag implements AbstractTag, AbstarctAreaObject {
+public class EllipsoidTag implements AbstractTag, AbstractAreaObject {
 
     private static final String PREFIX = "ellipsoid";
 
