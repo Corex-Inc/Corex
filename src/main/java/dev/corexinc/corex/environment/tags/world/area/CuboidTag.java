@@ -4,6 +4,9 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -13,6 +16,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.jspecify.annotations.NonNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -39,7 +43,7 @@ import java.util.Set;
  * Coordinates are inclusive - a cuboid from "5,5,5" to "5,5,5" contains
  * one full block and has a size of "1,1,1".
  */
-public class CuboidTag implements AbstractTag, AbstractAreaObject {
+public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
 
     private static final String PREFIX = "cu";
 
@@ -227,6 +231,12 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject {
         return blocks;
     }
 
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        File dbFile = new File(world.getWorldFolder(), "__flags.db");
+        return new SqlFlagTracker(dbFile, identify());
+    }
+
     public World getWorld() { return world; }
     public List<double[][]> getMembers() { return members; }
 
@@ -261,5 +271,5 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject {
     public @NonNull TagProcessor<CuboidTag> getProcessor() { return TAG_PROCESSOR; }
 
     @Override
-    public @NonNull String getTestValue() { return "cu@world,0,0,0,10,10,10"; }
+    public @NonNull String getTestValue() { return "cu@world,0,0,0,5,5,5"; }
 }

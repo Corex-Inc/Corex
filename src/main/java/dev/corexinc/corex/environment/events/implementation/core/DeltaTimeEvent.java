@@ -24,8 +24,15 @@ public class DeltaTimeEvent implements AbstractEvent {
     private final Set<EventData> minutely = new LinkedHashSet<>();
     private final Set<EventData> hourly   = new LinkedHashSet<>();
 
-    @Override public @NonNull String getName() { return "DeltaTime"; }
-    @Override public @NonNull String getSyntax() { return "delta time"; }
+    @Override
+    public @NonNull String getName() {
+        return "DeltaTime";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "delta time";
+    }
 
     @Override
     public void addScript(@NonNull EventData data) {

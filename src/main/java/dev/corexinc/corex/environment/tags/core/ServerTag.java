@@ -1,46 +1,46 @@
 package dev.corexinc.corex.environment.tags.core;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
+import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
-import dev.corexinc.corex.api.processors.TagProcessor;
-import dev.corexinc.corex.environment.tags.world.MaterialTag;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
+import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
 
-public class ServerTag implements AbstractTag {
+import java.io.File;
 
-    private final String prefix = "server";
+public class ServerTag implements AbstractTag, Flaggable {
 
-    public static final TagProcessor<ServerTag> TAG_PROCESSOR = new TagProcessor<>();
+    private static final String PREFIX = "server";
+    public static final TagProcessor<ServerTag> PROCESSOR = new TagProcessor<>();
 
-    @Override
-    public @NonNull String getPrefix() {
-        return prefix;
-    }
+    private static final ServerTag INSTANCE = new ServerTag();
 
-
-
-    @Override
-    public @NonNull String identify() {
-        return prefix + "@";
-    }
-
-    @Override
-    public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return TAG_PROCESSOR.process(this, attribute);
-    }
+    private static SqlFlagTracker serverTracker;
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag("server", (attribute) -> new ServerTag());
+        BaseTagProcessor.registerBaseTag("server", attr -> INSTANCE);
+        ObjectFetcher.registerFetcher(PREFIX, s -> INSTANCE);
+
+        File dbFile = new File(Corex.getInstance().getDataFolder(), "serverFlags.db");
+        serverTracker = new SqlFlagTracker(dbFile, "serverGlobal");
+
+        PROCESSOR.registerTag(ElementTag.class, "ram", (attribute, serverTag) -> new ElementTag(Runtime.getRuntime().maxMemory()));
     }
 
-    @Override
-    public @NonNull TagProcessor<MaterialTag> getProcessor() {
-        return null;
-    }
+    public ServerTag() {}
 
     @Override
-    public @NonNull String getTestValue() {
-        return null;
+    public SqlFlagTracker getFlagTracker() {
+        return serverTracker;
     }
+
+    @Override public @NonNull String getPrefix() { return PREFIX; }
+    @Override public @NonNull String identify() { return PREFIX + "@"; }
+    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
+    @Override public @NonNull TagProcessor<ServerTag> getProcessor() { return PROCESSOR; }
+    @Override public @NonNull String getTestValue() { return "server@"; }
 }

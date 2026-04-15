@@ -564,6 +564,12 @@ public class MapTag implements AbstractTag {
         }
     }
 
+    public void remove(String key) {
+        if (key != null) {
+            map.remove(key.toLowerCase());
+        }
+    }
+
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
 

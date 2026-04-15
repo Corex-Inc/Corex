@@ -6,6 +6,9 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -38,7 +41,7 @@ import java.util.UUID;
  * @Description
  * A PlayerTag represents a player in the game.
  */
-public class PlayerTag implements AbstractTag, Adjustable {
+public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
 
     private static final String prefix = "p";
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
@@ -1253,6 +1256,13 @@ public class PlayerTag implements AbstractTag, Adjustable {
     @Override
     public @Nullable MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
         return MECHANISM_PROCESSOR;
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        Player p = getPlayer();
+        if (p == null) return null;
+        return new PdcFlagTracker(p, identify());
     }
 
     @Override

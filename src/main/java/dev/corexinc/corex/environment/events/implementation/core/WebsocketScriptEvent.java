@@ -16,8 +16,15 @@ public class WebsocketScriptEvent implements AbstractEvent {
     private static final Set<EventData> messageScripts = new LinkedHashSet<>();
     private static final Set<EventData> closeScripts = new LinkedHashSet<>();
 
-    @Override public @NonNull String getName() { return "Websocket"; }
-    @Override public @NonNull String getSyntax() { return "websocket"; }
+    @Override
+    public @NonNull String getName() {
+        return "Websocket";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "websocket";
+    }
 
     @Override
     public void addScript(@NonNull EventData data) {

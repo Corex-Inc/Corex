@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment;
 
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
+import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.environment.events.EventRegistry;
@@ -27,6 +28,8 @@ import dev.corexinc.corex.environment.flags.*;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
+        // Global Tags
+        GlobalTagProcessor.register();
 
         // DefinitionTag
         BaseTagProcessor.registerBaseTag("", (attribute) -> {
@@ -41,7 +44,7 @@ public class EnvironmentLoader {
                 AbstractTag current = attribute.getQueue().getDefinition(parts[0]);
 
                 for (int i = 1; i < parts.length; i++) {
-                    if (!(current instanceof dev.corexinc.corex.environment.tags.core.MapTag map)) {
+                    if (!(current instanceof MapTag map)) {
                         return null;
                     }
                     current = map.getObject(parts[i]);
@@ -74,6 +77,7 @@ public class EnvironmentLoader {
                 GiveCommand.class,
                 WebsocketCommand.class,
                 FetchCommand.class,
+                FlagCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -93,6 +97,7 @@ public class EnvironmentLoader {
                 CuboidTag.class,
                 EllipsoidTag.class,
                 PolygonTag.class,
+                ServerTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
@@ -130,7 +135,8 @@ public class EnvironmentLoader {
                 DeltaTimeEvent.class,
                 PlayerJoinEvent.class,
                 PlayerBreakBlockEvent.class,
-                WebsocketScriptEvent.class
+                WebsocketScriptEvent.class,
+                FlagExpireEvent.class
         );
     }
 }

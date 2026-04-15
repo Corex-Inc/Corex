@@ -4,6 +4,9 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -13,6 +16,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.jspecify.annotations.NonNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +38,7 @@ import java.util.List;
  * Containment is determined by the standard ellipsoid equation:
  * (dx/rx)² + (dy/ry)² + (dz/rz)² ≤ 1
  */
-public class EllipsoidTag implements AbstractTag, AbstractAreaObject {
+public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable {
 
     private static final String PREFIX = "ellipsoid";
 
@@ -221,6 +225,12 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject {
     }
 
     @Override
+    public AbstractFlagTracker getFlagTracker() {
+        File dbFile = new File(world.getWorldFolder(), "__flags.db");
+        return new SqlFlagTracker(dbFile, identify());
+    }
+
+    @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {
         return TAG_PROCESSOR.process(this, attribute);
     }
@@ -229,5 +239,5 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject {
     public @NonNull TagProcessor<EllipsoidTag> getProcessor() { return TAG_PROCESSOR; }
 
     @Override
-    public @NonNull String getTestValue() { return "ellipsoid@1,2,3,space,7,7,7"; }
+    public @NonNull String getTestValue() { return "ellipsoid@1,2,3,space,5,5,5"; }
 }

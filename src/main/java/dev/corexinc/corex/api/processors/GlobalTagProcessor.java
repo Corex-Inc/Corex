@@ -2,8 +2,9 @@ package dev.corexinc.corex.api.processors;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
@@ -63,6 +64,26 @@ public class GlobalTagProcessor {
             }
 
             return instance;
+        });
+
+        PROCESSOR.registerTag(AbstractTag.class, "flag", (attr, obj) -> {
+            if (!(obj instanceof Flaggable flaggable)) return null;
+            if (!attr.hasParam()) return null;
+
+            AbstractFlagTracker tracker = flaggable.getFlagTracker();
+            if (tracker == null) return null;
+
+            return tracker.getFlag(attr.getParam());
+        });
+
+        PROCESSOR.registerTag(ElementTag.class, "hasFlag", (attr, obj) -> {
+            if (!(obj instanceof Flaggable flaggable)) return null;
+            if (!attr.hasParam()) return null;
+
+            AbstractFlagTracker tracker = flaggable.getFlagTracker();
+            if (tracker == null) return new ElementTag(false);
+
+            return new ElementTag(tracker.getFlag(attr.getParam()) != null);
         });
     }
 }

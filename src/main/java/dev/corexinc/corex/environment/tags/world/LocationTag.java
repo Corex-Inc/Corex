@@ -4,6 +4,9 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Bukkit;
@@ -30,7 +33,7 @@ import org.jspecify.annotations.NonNull;
  *
  * This object type supports custom flags, which are persisted within the corresponding chunk file in the world's directory.
  */
-public class LocationTag implements AbstractTag {
+public class LocationTag implements AbstractTag, Flaggable {
 
     private static final String prefix = "l";
     private final Location location;
@@ -312,6 +315,12 @@ public class LocationTag implements AbstractTag {
     @Override
     public @NonNull TagProcessor<LocationTag> getProcessor() {
         return TAG_PROCESSOR;
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        if (location.getWorld() == null) return null;
+        return new LocationPdcFlagTracker(location, identify());
     }
 
     @Override

@@ -1,6 +1,8 @@
 package dev.corexinc.corex;
 
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.engine.flags.DatabaseManager;
+import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.EnvManager;
@@ -33,10 +35,12 @@ public class Corex extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        silenceHikariLogs();
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
 
         getConfig().options().copyDefaults();
         saveDefaultConfig();
+        FlagManager.init();
         Debugger.updateDebugMode();
 
         setupRuntimeFlags();
@@ -56,7 +60,11 @@ public class Corex extends JavaPlugin {
     @Override
     public void onDisable() {
         CorexLogger.info("<#ffaa00>Corex is shutting down...</#ffaa00>");
-        WebSocketManager.disconnectAll();
+        try {
+            WebSocketManager.disconnectAll();
+        } catch (Throwable ignored) {}
+
+        DatabaseManager.closeAll();
     }
 
     public static Corex getInstance() {
@@ -87,6 +95,20 @@ public class Corex extends JavaPlugin {
                 CorexLogger.warn("Failed to register Brigadier commands. Possibly an outdated version of Paper?");
             }
         }
+    }
+
+    private void silenceHikariLogs() {
+        try {
+            Class<?> levelClass = Class.forName("org.apache.logging.log4j.Level");
+            Object warnLevel = levelClass.getField("WARN").get(null);
+
+            Class<?> configuratorClass = Class.forName("org.apache.logging.log4j.core.config.Configurator");
+            java.lang.reflect.Method setLevel = configuratorClass.getMethod("setLevel", String.class, levelClass);
+
+            setLevel.invoke(null, "com.zaxxer.hikari", warnLevel);
+            setLevel.invoke(null, "com.zaxxer.hikari.pool.HikariPool", warnLevel);
+            setLevel.invoke(null, "com.zaxxer.hikari.HikariDataSource", warnLevel);
+        } catch (Exception ignored) {}
     }
 
     public void setupRuntimeFlags() {

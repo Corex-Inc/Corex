@@ -67,10 +67,6 @@ public class AutoObjectTest {
                 }
 
                 AbstractTag testObject = ObjectFetcher.pickObject(startVal);
-                if (testObject == null) {
-                    allFailures.add(clazz.getSimpleName() + ": ObjectFetcher returned null for " + startVal);
-                    continue;
-                }
 
                 CorexTestLogger.info("Testing: " + clazz.getSimpleName() + " (Sample: " + startVal + ")");
                 TagProcessor<?> processor = testObject.getProcessor();

@@ -18,6 +18,8 @@ dependencies {
 
     // Other Libs
     implementation("org.java-websocket:Java-WebSocket:1.5.6")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation("org.xerial:sqlite-jdbc:3.45.1.0")
 
 
     // Tests

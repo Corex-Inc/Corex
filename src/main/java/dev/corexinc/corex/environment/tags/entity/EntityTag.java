@@ -4,6 +4,9 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
@@ -26,7 +29,7 @@ import java.util.UUID;
  * @Description
  * An EntityTag represents a spawned entity, or a generic entity type.
  */
-public class EntityTag implements AbstractTag {
+public class EntityTag implements AbstractTag, Flaggable {
 
     private static final String prefix = "e";
     private final Entity entity;
@@ -152,6 +155,12 @@ public class EntityTag implements AbstractTag {
     @Override
     public @Nullable AbstractTag getAttribute(@NotNull Attribute attribute) {
         return TAG_PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        if (entity == null) return null;
+        return new PdcFlagTracker(entity, identify());
     }
 
     @Override
