@@ -11,7 +11,6 @@ import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
-
 import java.util.ArrayList;
 import java.util.List;
 
