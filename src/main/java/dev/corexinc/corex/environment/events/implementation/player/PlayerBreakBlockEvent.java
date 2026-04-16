@@ -32,7 +32,7 @@ public class PlayerBreakBlockEvent implements AbstractEvent {
 
     @Override
     public @NotNull String getSyntax() {
-        return "player breaks block";
+        return "player breaks <block>";
     }
 
     @Override
@@ -64,7 +64,7 @@ public class PlayerBreakBlockEvent implements AbstractEvent {
             if (queue.isCancelled()) event.setCancelled(true);
 
             for (AbstractTag tag : queue.getReturns()) {
-                if (tag instanceof ListTag listTag) {
+                if (tag instanceof ListTag) {
                     event.setDropItems(false);
                 } else if (tag instanceof ElementTag elementTag && elementTag.isInt()) {
                     event.setExpToDrop(elementTag.asInt());
