@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.tags.world;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -235,7 +236,22 @@ public class LocationTag implements AbstractTag, Flaggable {
             return new MaterialTag(loc.getBlock());
         });
 
-
+        /* @doc tag
+         *
+         * @Name region
+         * @RawName <LocationTag.region>
+         * @Object LocationTag
+         * @ReturnType RegionTag
+         * @NoArg
+         * @Description
+         * Returns the region (tick-thread) that manages this location.
+         */
+        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attribute, locationTag) ->
+                new RegionTag(
+                locationTag.getLocation().getWorld(),
+                locationTag.getLocation().getBlockX() >> 4,
+                locationTag.getLocation().getBlockZ() >> 4
+        ));
     }
 
     public LocationTag(Location location) {

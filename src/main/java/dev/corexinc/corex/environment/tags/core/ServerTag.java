@@ -8,6 +8,9 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.environment.tags.world.RegionTag;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
@@ -29,6 +32,37 @@ public class ServerTag implements AbstractTag, Flaggable {
         serverTracker = new SqlFlagTracker(dbFile, "serverGlobal");
 
         PROCESSOR.registerTag(ElementTag.class, "ram", (attribute, serverTag) -> new ElementTag(Runtime.getRuntime().maxMemory()));
+
+        /* @doc tag
+         *
+         * @Name regions
+         * @RawName <server.regions>
+         * @Object ServerTag
+         * @ReturnType ListTag(RegionTag)
+         * @NoArg
+         * @Description
+         * Returns a list of all unique tick-regions currently active across the entire server.
+         * This includes all individual world threads and the global region pool.
+         *
+         * @Usage
+         * // Calculate the average TPS across all active threads
+         * - narrate "Average Server TPS: <server.regions.parse[tps].average>"
+         */
+        PROCESSOR.registerTag(ListTag.class, "regions", (attr, obj) -> {
+            ListTag list = new ListTag();
+            list.addObject(new RegionTag("global"));
+
+            for (World w : Bukkit.getWorlds()) {
+                if (!Corex.isFolia()) {
+                    list.addObject(new RegionTag(w, 0, 0));
+                } else {
+                    for (RegionTag rt : RegionTag.FoliaSupport.getAllRegions(w)) {
+                        list.addObject(rt);
+                    }
+                }
+            }
+            return list;
+        });
     }
 
     public ServerTag() {}

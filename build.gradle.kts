@@ -8,12 +8,13 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://maven.canvasmc.io/snapshots")
     maven("https://maven.pulsemc.dev/snapshots")
 }
 
 dependencies {
     @SuppressWarnings("deprecation")
-    compileOnly("dev.folia:folia-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.canvasmc.canvas:canvas-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:24.1.0")
 
     // Other Libs
@@ -23,10 +24,10 @@ dependencies {
 
 
     // Tests
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     @SuppressWarnings("deprecation")
     testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
 }

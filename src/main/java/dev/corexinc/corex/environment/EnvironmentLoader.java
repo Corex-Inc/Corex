@@ -4,11 +4,11 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
-import dev.corexinc.corex.environment.commands.world.SetBlockCommand;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // Commands
 import dev.corexinc.corex.environment.commands.core.*;
 import dev.corexinc.corex.environment.commands.player.*;
+import dev.corexinc.corex.environment.commands.world.*;
 // Containers
 import dev.corexinc.corex.environment.containers.*;
 // Events
@@ -80,6 +80,7 @@ public class EnvironmentLoader {
                 FetchCommand.class,
                 FlagCommand.class,
                 SetBlockCommand.class,
+                StopCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -100,6 +101,8 @@ public class EnvironmentLoader {
                 EllipsoidTag.class,
                 PolygonTag.class,
                 ServerTag.class,
+                QueueTag.class,
+                RegionTag.class,
 
                 // Formatters
                 NewLineFormatter.class,

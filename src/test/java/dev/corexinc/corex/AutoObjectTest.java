@@ -1,22 +1,30 @@
 package dev.corexinc.corex;
 
+import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.compiler.TagNode;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.utils.CorexTestLogger;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
+import org.mockbukkit.mockbukkit.entity.ItemDisplayMock;
+import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,18 +36,25 @@ public class AutoObjectTest {
     public static void setup() {
         ServerMock server = MockBukkit.mock();
 
-        server.addSimpleWorld("world");
-        Objects.requireNonNull(server.getWorld("world")).getBlockAt(1, 1, 1).setType(org.bukkit.Material.STONE);
-        java.util.UUID testUUID = java.util.UUID.fromString("465876c1-2a15-4fc0-9f0b-97de13aa46f1");
-        org.mockbukkit.mockbukkit.entity.PlayerMock mockPlayer =
-                new org.mockbukkit.mockbukkit.entity.PlayerMock(server, "TestPlayer", testUUID);
-        server.addPlayer(mockPlayer);
-        mockPlayer.setLocation(new org.bukkit.Location(server.getWorld("world"), 10.5, 64.0, 10.5, 90f, 0f));
+        // -------------- SETUP YOUR SERVER ENVIRONMENT HERE --------------
 
-        java.util.UUID entityUUID = java.util.UUID.fromString("cf5d1e35-fb92-476e-9c96-bc932ca0b0cb");
-        org.mockbukkit.mockbukkit.entity.ItemDisplayMock itemDisplay =
-                new org.mockbukkit.mockbukkit.entity.ItemDisplayMock(server, entityUUID);
+        server.addSimpleWorld("world");
+        Objects.requireNonNull(server.getWorld("world")).getBlockAt(1, 1, 1).setType(Material.STONE);
+        UUID testUUID = UUID.fromString("465876c1-2a15-4fc0-9f0b-97de13aa46f1");
+        PlayerMock mockPlayer = new PlayerMock(server, "TestPlayer", testUUID);
+        server.addPlayer(mockPlayer);
+        mockPlayer.setLocation(new Location(server.getWorld("world"), 10.5, 64.0, 10.5, 90f, 0f));
+
+        UUID entityUUID = UUID.fromString("cf5d1e35-fb92-476e-9c96-bc932ca0b0cb");
+        ItemDisplayMock itemDisplay = new ItemDisplayMock(server, entityUUID);
         server.registerEntity(itemDisplay);
+
+        ScriptQueue queue = new ScriptQueue("test_queue", new Instruction[0], false, null, null);
+        queue.setKeepAlive(true);
+        queue.define("testDef", new ElementTag("Yeah!"));
+        queue.start();
+
+        // -------------- SETUP YOUR SERVER ENVIRONMENT HERE --------------
 
         Corex plugin = MockBukkit.load(Corex.class);
         registry = plugin.getRegistry();

@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.tags.world;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -13,7 +14,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
-
+import dev.corexinc.corex.environment.tags.world.RegionTag;
 import java.util.UUID;
 
 /* @doc object
@@ -219,6 +220,33 @@ public class WorldTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(LocationTag.class, "spawn", (attr, obj) ->
                 new LocationTag(obj.world.getSpawnLocation()));
+
+        /* @doc tag
+         *
+         * @Name regions
+         * @RawName <WorldTag.regions>
+         * @Object WorldTag
+         * @ReturnType ListTag(RegionTag)
+         * @NoArg
+         * @Description
+         * Returns a list of all unique tick-regions (processing threads) currently active in this world.
+         * On Folia/Canvas servers, this shows how the world is split into concurrent threads.
+         *
+         * @Usage
+         * // Count how many threads are currently processing the world
+         * - narrate "World <player.world.name> is currently split into <player.world.regions.size> threads."
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "regions", (attr, obj) -> {
+            ListTag list = new ListTag();
+            if (!Corex.isFolia()) {
+                list.addObject(new RegionTag(obj.getWorld(), 0, 0));
+            } else {
+                for (RegionTag rt : RegionTag.FoliaSupport.getAllRegions(obj.getWorld())) {
+                    list.addObject(rt);
+                }
+            }
+            return list;
+        });
     }
 
     public WorldTag(World world) {

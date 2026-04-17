@@ -24,6 +24,7 @@ public class Corex extends JavaPlugin {
     private CorexRegistry registry;
 
     private static boolean IS_FOLIA = false;
+    private static boolean IS_CANVAS = false;
     private static boolean IS_TEST = false;
 
     public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
@@ -119,6 +120,13 @@ public class Corex extends JavaPlugin {
             IS_FOLIA = false;
         }
 
+        try {
+            Class.forName("io.canvasmc.canvas.region.WorldRegionizer");
+            IS_CANVAS = true;
+        } catch (ClassNotFoundException e) {
+            IS_CANVAS = false;
+        }
+
         IS_TEST = Bukkit.getName().equalsIgnoreCase("ServerMock");
     }
 
@@ -128,5 +136,9 @@ public class Corex extends JavaPlugin {
 
     public static boolean isTest() {
         return IS_TEST;
+    }
+
+    public static boolean isCanvas() {
+        return IS_CANVAS;
     }
 }

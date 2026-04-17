@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import org.bukkit.Location;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +48,18 @@ public class ScriptQueue {
     public boolean isErrorHeaderPrinted() { return errorHeaderPrinted; }
     public void setErrorHeaderPrinted(boolean value) { this.errorHeaderPrinted = value; }
 
+    private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
+    private Location anchorLocation = null;
+
+    public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, Location anchorLocation) {
+        this.id = id;
+        this.bytecode = bytecode;
+        this.isAsync = isAsync;
+        this.linkedPlayer = linkedPlayer;
+        this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+        this.anchorLocation = anchorLocation;
+    }
+
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
         this.id = id;
         this.bytecode = bytecode;
@@ -58,6 +71,7 @@ public class ScriptQueue {
     public void start() {
         startNanos = System.nanoTime();
         Debugger.queueStart(this);
+        activeQueues.put(id, this);
         executeNext();
     }
 
@@ -237,6 +251,7 @@ public class ScriptQueue {
         this.isStopped = true;
         this.callStack.clear();
         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
+        activeQueues.remove(id);
         Debugger.queueStop(this, elapsedMs);
         Debugger.releaseQueue(id);
     }
@@ -301,5 +316,24 @@ public class ScriptQueue {
 
     public int getDepth() {
         return callStack.size();
+    }
+
+    public static ScriptQueue getQueueById(String id) {
+        return activeQueues.get(id);
+    }
+
+    public static Collection<ScriptQueue> getAllQueues() {
+        return activeQueues.values();
+    }
+
+    public Map<String, AbstractTag> getDefinitionsMap() {
+        return definitions;
+    }
+
+    public org.bukkit.Location getAnchorLocation() {
+        if (linkedPlayer != null && linkedPlayer.getPlayer() != null && linkedPlayer.getPlayer().isOnline()) {
+            return linkedPlayer.getPlayer().getLocation();
+        }
+        return anchorLocation;
     }
 }
