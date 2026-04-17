@@ -28,7 +28,7 @@ public class DeltaTimeEvent implements AbstractEvent {
 
     @Override
     public @NonNull String getSyntax() {
-        return "delta time";
+        return "delta time secondly|minutely|hourly";
     }
 
     @Override

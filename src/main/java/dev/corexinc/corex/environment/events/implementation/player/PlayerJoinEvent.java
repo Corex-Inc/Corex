@@ -30,7 +30,7 @@ public class PlayerJoinEvent implements AbstractEvent {
 
     @Override
     public @NotNull String getSyntax() {
-        return "player join";
+        return "player join|joins";
     }
 
     @Override

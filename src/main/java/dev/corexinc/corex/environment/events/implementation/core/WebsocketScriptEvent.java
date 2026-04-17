@@ -22,7 +22,7 @@ public class WebsocketScriptEvent implements AbstractEvent {
 
     @Override
     public @NonNull String getSyntax() {
-        return "websocket";
+        return "websocket opens|message|closes";
     }
 
     @Override

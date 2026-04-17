@@ -25,7 +25,7 @@ public class FlagExpireEvent implements AbstractEvent, FlagExpirationHandler {
 
     @Override
     public @NonNull String getSyntax() {
-        return "flag expires";
+        return "<flag> expires";
     }
 
     @Override
@@ -49,8 +49,9 @@ public class FlagExpireEvent implements AbstractEvent, FlagExpirationHandler {
         ElementTag isCancelled = new ElementTag(false);
 
         for (EventData data : scripts) {
-            String[] words = data.rawLine.split(" ");
-            if (words.length > 2 && !words[2].equals("flag") && !words[2].equalsIgnoreCase(path)) continue;
+            if (!data.isGenericMatch("flag", 0, path)) {
+                continue;
+            }
 
             ContextTag context = new ContextTag();
             context.put("object", ObjectFetcher.pickObject(trackerId));

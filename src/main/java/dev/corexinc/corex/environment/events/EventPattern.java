@@ -16,7 +16,6 @@ public class EventPattern {
         String regex = syntax.trim();
 
         StringBuilder alternationsFixed = new StringBuilder();
-
         for (String word : regex.split("\\s+")) {
             if (word.contains("|") && !word.contains("<")) {
                 alternationsFixed.append("(?:").append(word).append(") ");
@@ -24,8 +23,15 @@ public class EventPattern {
                 alternationsFixed.append(word).append(" ");
             }
         }
-
         regex = alternationsFixed.toString().trim();
+
+        Matcher optMatcher = Pattern.compile("\\s*\\((?!\\?:)([^)]+)\\)").matcher(regex);
+        StringBuilder optSb = new StringBuilder();
+        while (optMatcher.find()) {
+            optMatcher.appendReplacement(optSb, "(?:\\\\s+" + optMatcher.group(1) + ")?");
+        }
+        optMatcher.appendTail(optSb);
+        regex = optSb.toString();
 
         Matcher m = Pattern.compile("<([a-zA-Z0-9_]+)>").matcher(regex);
         StringBuilder sb = new StringBuilder();
@@ -37,16 +43,6 @@ public class EventPattern {
 
         m.appendTail(sb);
         regex = sb.toString();
-
-        Matcher optMatcher = Pattern.compile("\\s*\\(([^)]+)\\)").matcher(regex);
-        StringBuilder optSb = new StringBuilder();
-
-        while (optMatcher.find()) {
-            optMatcher.appendReplacement(optSb, "(?:\\\\s+" + optMatcher.group(1) + ")?");
-        }
-
-        optMatcher.appendTail(optSb);
-        regex = optSb.toString();
 
         regex = regex.replace(" ", "\\s+");
         regex = regex.replace("\\s+\\s+", "\\s+");
