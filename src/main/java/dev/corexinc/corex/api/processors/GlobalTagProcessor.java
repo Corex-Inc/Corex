@@ -50,22 +50,6 @@ public class GlobalTagProcessor {
             return instance;
         });
 
-        PROCESSOR.registerTag(AbstractTag.class, "withMap", (attr, obj) -> {
-            if (!(obj instanceof Adjustable adj)) return null;
-            if (!attr.hasParam()) return null;
-
-            AbstractTag mapObj = ObjectFetcher.pickObject(attr.getParam());
-            if (!(mapObj instanceof MapTag map)) return null;
-
-            Adjustable instance = adj.duplicate();
-
-            for (String key : map.keySet()) {
-                instance = (Adjustable) instance.applyMechanism(key, map.getObject(key));
-            }
-
-            return instance;
-        });
-
         PROCESSOR.registerTag(AbstractTag.class, "flag", (attr, obj) -> {
             if (!(obj instanceof Flaggable flaggable)) return null;
             if (!attr.hasParam()) return null;

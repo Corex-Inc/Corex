@@ -2,9 +2,11 @@ package dev.corexinc.corex.engine.flags;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
+
 import java.util.PriorityQueue;
 
 public class FlagManager {
@@ -69,21 +71,6 @@ public class FlagManager {
         }
     }
 
-    private static void cleanUpPhysicalFlag(FlagTask task) {
-        AbstractFlagTracker tracker = AbstractFlagTracker.getTracker(task.trackerId);
-
-        if (tracker != null && tracker.isAsyncSafeCleanup()) {
-
-            SchedulerAdapter.runAsync(() -> {
-                try {
-                    tracker.cleanUpExpiredFlag(task.flagPath);
-                } catch (Exception e) {
-                    CorexLogger.error("Error clearing flag in background " + task.flagPath + ": " + e.getMessage());
-                }
-            });
-        }
-    }
-
     private static void handleExpiration(FlagTask task) {
         AbstractFlagTracker tracker = AbstractFlagTracker.getTracker(task.trackerId);
         if (tracker == null) return;
@@ -111,7 +98,17 @@ public class FlagManager {
         }
 
         if (tracker.isAsyncSafeCleanup()) {
-            tracker.deleteFlagPhysically(task.flagPath);
+            SchedulerAdapter.runAsync(() -> {
+                try {
+                    tracker.deleteFlagPhysically(task.flagPath);
+                } catch (Exception e) {
+                    CorexLogger.error("Error clearing flag in background " + task.flagPath + ": " + e.getMessage());
+                }
+            });
+        } else if (tracker instanceof LocationPdcFlagTracker locTracker) {
+            SchedulerAdapter.runAt(locTracker.getLocation(), () -> {
+                tracker.deleteFlagPhysically(task.flagPath);
+            });
         } else {
             SchedulerAdapter.run(() -> {
                 tracker.deleteFlagPhysically(task.flagPath);

@@ -27,6 +27,10 @@ public class LocationPdcFlagTracker extends AbstractFlagTracker {
         return trackerId;
     }
 
+    public Location getLocation() {
+        return loc;
+    }
+
     private NamespacedKey getKey(String rootKey) {
         String coordPrefix = "loc_" + loc.getBlockX() + "_" + loc.getBlockY() + "_" + loc.getBlockZ() + "_";
         return new NamespacedKey(Corex.getInstance(), coordPrefix + rootKey.toLowerCase());
