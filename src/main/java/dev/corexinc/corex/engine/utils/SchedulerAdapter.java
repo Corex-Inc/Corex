@@ -27,6 +27,20 @@ public class SchedulerAdapter {
         }
     }
 
+    // Runs a task after a delay on the region that owns the given location
+    public static void runLaterAt(Location location, Runnable task, long delayTicks) {
+        if (Corex.isFolia()) {
+            Bukkit.getRegionScheduler().runDelayed(
+                    Corex.getInstance(),
+                    location,
+                    scheduledTask -> task.run(),
+                    Math.max(1, delayTicks)
+            );
+        } else {
+            Bukkit.getScheduler().runTaskLater(Corex.getInstance(), task, delayTicks);
+        }
+    }
+
     // Runs a task after a delay (in ticks)
     public static void runLater(Runnable task, long delayTicks) {
         if (Corex.isFolia()) {

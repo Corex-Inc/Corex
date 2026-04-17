@@ -212,6 +212,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
         ));
     }
 
+    @Override
     public List<LocationTag> getBlocks() {
         if (points.size() < 3) return Collections.emptyList();
 

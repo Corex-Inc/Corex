@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.environment.commands.world.SetBlockCommand;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // Commands
 import dev.corexinc.corex.environment.commands.core.*;
@@ -78,6 +79,7 @@ public class EnvironmentLoader {
                 WebsocketCommand.class,
                 FetchCommand.class,
                 FlagCommand.class,
+                SetBlockCommand.class,
 
                 // Tags
                 ElementTag.class,

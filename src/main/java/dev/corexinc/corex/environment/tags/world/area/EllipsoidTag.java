@@ -174,6 +174,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
         return new LocationTag(new Location(world, x, y, z));
     }
 
+    @Override
     public List<LocationTag> getBlocks() {
         List<LocationTag> blocks = new ArrayList<>();
 

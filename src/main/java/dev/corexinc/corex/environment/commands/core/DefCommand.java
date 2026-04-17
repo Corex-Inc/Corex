@@ -4,7 +4,6 @@ import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.data.actions.AbstractDataAction;
 import dev.corexinc.corex.api.tags.AbstractTag;
-import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;

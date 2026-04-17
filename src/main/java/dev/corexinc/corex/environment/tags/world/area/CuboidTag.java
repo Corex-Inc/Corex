@@ -200,9 +200,8 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
                 (minZ + maxZ) / 2.0));
     }
 
+    @Override
     public List<LocationTag> getBlocks() {
-        // Use a Set to deduplicate blocks from overlapping members.
-        // Key format: "x,y,z" - cheap and avoids needing LocationTag.equals/hashCode.
         Set<String> seen = new HashSet<>();
         List<LocationTag> blocks = new ArrayList<>();
 
