@@ -1,10 +1,9 @@
 package dev.corexinc.corex.environment.utils.commands;
 
-import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.registry.ScriptCommandRegistry;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.CommandParser;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.command.CommandSender;
@@ -12,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RunsCommand implements BasicCommand {
@@ -21,10 +19,7 @@ public class RunsCommand implements BasicCommand {
 
     @Override
     public @NonNull Collection<String> suggest(@NonNull CommandSourceStack commandSourceStack, String @NonNull[] args) {
-        if (args.length <= 1) {
-            return ScriptCommandRegistry.getCommands().keySet();
-        }
-        return List.of();
+        return TabCompleter.getSuggestions(args);
     }
 
     @Override
@@ -37,14 +32,18 @@ public class RunsCommand implements BasicCommand {
         CommandSender sender = commandSourceStack.getSender();
 
         if (args.length == 0) {
-            sender.sendMessage("§b[Corex] §fUsage: /runs <command> <args> §7или §f/runs exit");
+            sender.sendMessage("§b[Corex] §fUsage: /runs <command> <args>");
             return;
         }
 
         String senderId = (sender instanceof Player) ? ((Player) sender).getUniqueId().toString() : "CONSOLE";
-
         String rawLine = String.join(" ", args);
-        Instruction instruction = ScriptCompiler.compile(rawLine);
+
+        Instruction[] instructions = CommandParser.compileScript(rawLine);
+
+        if (instructions.length == 0) {
+            return;
+        }
 
         ScriptQueue queue = activeQueues.get(senderId);
 
@@ -60,9 +59,11 @@ public class RunsCommand implements BasicCommand {
             queue.setKeepAlive(true);
             activeQueues.put(senderId, queue);
             queue.start();
-            sender.sendMessage("§b[Corex] §7New queue session created. Use §f/runs stop§7 to kill it.");
+            sender.sendMessage("§b[Corex] §7New queue session created. Use §f- stop§7 to kill it.");
         }
 
-        queue.injectInstructions(instruction);
+        for (Instruction inst : instructions) {
+            queue.injectInstructions(inst);
+        }
     }
 }

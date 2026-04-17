@@ -12,11 +12,7 @@ import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CorexRegistry {
 
@@ -106,10 +102,31 @@ public class CorexRegistry {
         return fallbackAction;
     }
 
-    public ScriptCommandRegistry getScriptCommands() { return scriptCommandRegistry; }
-    public FormatRegistry getFormats() { return formatRegistry; }
-    public List<Class<? extends AbstractTag>> getRegisteredTagClasses() { return registeredTagClasses; }
-    public List<Class<? extends AbstractFormatter>> getRegisteredFormatterClasses() { return registeredFormatterClasses; }
-    public Class<? extends AbstractContainer> getContainerClass(String type) { return registeredContainerClasses.get(type.toLowerCase()); }
-    public AbstractGlobalFlag getGlobalFlag(String name) { return globalFlags.get(name.toLowerCase()); }
+    public ScriptCommandRegistry getScriptCommands() {
+        return scriptCommandRegistry;
+    }
+
+    public FormatRegistry getFormats() {
+        return formatRegistry;
+    }
+
+    public List<Class<? extends AbstractTag>> getRegisteredTagClasses() {
+        return registeredTagClasses;
+    }
+
+    public List<Class<? extends AbstractFormatter>> getRegisteredFormatterClasses() {
+        return registeredFormatterClasses;
+    }
+
+    public Class<? extends AbstractContainer> getContainerClass(String type) {
+        return registeredContainerClasses.get(type.toLowerCase());
+    }
+
+    public AbstractGlobalFlag getGlobalFlag(String name) {
+        return globalFlags.get(name.toLowerCase());
+    }
+
+    public Set<String> getGlobalFlagsNames() {
+        return globalFlags.keySet();
+    }
 }

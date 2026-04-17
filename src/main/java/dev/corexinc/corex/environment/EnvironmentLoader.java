@@ -136,7 +136,9 @@ public class EnvironmentLoader {
                 PlayerJoinEvent.class,
                 PlayerBreakBlockEvent.class,
                 WebsocketScriptEvent.class,
-                FlagExpireEvent.class
+                FlagExpireEvent.class,
+                PlayerPlaceBlockEvent.class,
+                PlayerInputEvent.class
         );
     }
 }

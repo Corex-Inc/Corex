@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public class TagManager {
@@ -25,5 +26,9 @@ public class TagManager {
         }
 
         return null;
+    }
+
+    public static Set<String> getBaseTagNames() {
+        return baseTags.keySet();
     }
 }

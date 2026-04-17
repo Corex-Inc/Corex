@@ -3,10 +3,7 @@ package dev.corexinc.corex.engine.tags;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 public class ObjectFetcher {
@@ -62,5 +59,9 @@ public class ObjectFetcher {
 
         result.add(str.substring(start));
         return result;
+    }
+
+    public static Set<String> getPrefixes() {
+        return fetchers.keySet();
     }
 }

@@ -3,6 +3,7 @@ package dev.corexinc.corex.engine.registry;
 import dev.corexinc.corex.api.tags.AbstractFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class FormatRegistry {
 
@@ -22,5 +23,9 @@ public class FormatRegistry {
 
     public boolean isFormat(String tag) {
         return formats.containsKey(tag);
+    }
+
+    public Set<String> getAllFormatNames() {
+        return formats.keySet();
     }
 }
