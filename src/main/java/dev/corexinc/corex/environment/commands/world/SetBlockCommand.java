@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.commands.world;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
@@ -17,8 +18,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /* @doc command
  *
@@ -73,6 +77,16 @@ public class SetBlockCommand implements AbstractCommand {
 
     private static final int DEFAULT_MAX_DELAY_MS = 50;
 
+    private record PlacementContext(
+            List<Location> allBlocks,
+            List<List<Location>> chunkGroups,
+            List<MaterialTag> materials,
+            List<Double> chances,
+            boolean noPhysics,
+            ItemStack tool,
+            int maxMs
+    ) {}
+
     @Override
     public @NonNull String getName() { return "setblock"; }
 
@@ -92,42 +106,26 @@ public class SetBlockCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String locationsRaw = instruction.getLinear(0, queue);
-        String materialsRaw = instruction.getLinear(1, queue);
-        String naturallyRaw = instruction.getPrefix("naturally", queue);
+        String locationsRaw  = instruction.getLinear(0, queue);
+        String materialsRaw  = instruction.getLinear(1, queue);
+        String naturallyRaw  = instruction.getPrefix("naturally", queue);
         String maxDelayMsRaw = instruction.getPrefix("max_delay_ms", queue);
-        String chanceRaw = instruction.getPrefix("chance", queue);
-        boolean noPhysics = instruction.getPrefix("no_physics", queue) != null;
-        boolean delayed = instruction.getPrefix("delayed", queue) != null;
+        String chanceRaw     = instruction.getPrefix("chance", queue);
+        boolean noPhysics    = instruction.getPrefix("no_physics", queue) != null;
+        boolean delayed      = instruction.getPrefix("delayed", queue) != null;
 
-        if (locationsRaw == null) {
-            Debugger.echoError(queue, "Locations cannot be null!");
-            return;
-        }
-        if (materialsRaw == null) {
-            Debugger.echoError(queue, "Materials cannot be null!");
-            return;
-        }
+        if (locationsRaw == null) { Debugger.echoError(queue, "Locations cannot be null!"); return; }
+        if (materialsRaw == null) { Debugger.echoError(queue, "Materials cannot be null!"); return; }
 
         List<Location> blocks = resolveLocations(locationsRaw);
-        if (blocks.isEmpty()) {
-            Debugger.echoError(queue, "No valid locations resolved for setblock!");
-            return;
-        }
+        if (blocks.isEmpty()) { Debugger.echoError(queue, "No valid locations resolved for setblock!"); return; }
 
         List<MaterialTag> materials = resolveMaterials(materialsRaw);
-        if (materials.isEmpty()) {
-            Debugger.echoError(queue, "No valid materials resolved for setblock!");
-            return;
-        }
+        if (materials.isEmpty()) { Debugger.echoError(queue, "No valid materials resolved for setblock!"); return; }
 
-        List<Double> chances = chanceRaw != null ? resolveChances(chanceRaw, materials.size()) : null;
-
-        ItemStack naturalTool = null;
-        if (naturallyRaw != null) {
-            MaterialTag toolMaterial = new MaterialTag(naturallyRaw);
-            naturalTool = new ItemStack(toolMaterial.getMaterial());
-        }
+        ItemStack naturalTool = naturallyRaw != null
+                ? new ItemStack(new MaterialTag(naturallyRaw).getMaterial())
+                : null;
 
         int maxDelayMs = DEFAULT_MAX_DELAY_MS;
         if (maxDelayMsRaw != null) {
@@ -139,69 +137,116 @@ public class SetBlockCommand implements AbstractCommand {
         }
 
         Debugger.report(queue, instruction,
-                "Blocks", String.valueOf(blocks.size()),
-                "Materials", materialsRaw,
-                "NoPhysics", String.valueOf(noPhysics),
-                "Naturally", naturallyRaw != null ? naturallyRaw : "None",
-                "Delayed", String.valueOf(delayed),
+                "Blocks",     String.valueOf(blocks.size()),
+                "Materials",  materialsRaw,
+                "NoPhysics",  String.valueOf(noPhysics),
+                "Naturally",  naturallyRaw != null ? naturallyRaw : "None",
+                "Delayed",    String.valueOf(delayed),
                 "IsWaitable", instruction.isWaitable
         );
 
-        final ItemStack finalTool = naturalTool;
-        final int finalMaxMs = maxDelayMs;
+        PlacementContext ctx = new PlacementContext(
+                blocks,
+                Corex.isFolia() ? groupByChunk(blocks) : List.of(),
+                materials,
+                chanceRaw != null ? resolveChances(chanceRaw, materials.size()) : null,
+                noPhysics,
+                naturalTool,
+                maxDelayMs
+        );
 
         if (delayed) {
             if (instruction.isWaitable) queue.pause();
-            applyDelayed(queue, instruction, blocks, materials, chances, noPhysics, finalTool, finalMaxMs, 0);
-        } else {
-            for (Location loc : blocks) {
-                placeBlock(loc, materials, chances, noPhysics, finalTool);
+            if (Corex.isFolia()) {
+                applyDelayedFolia(queue, instruction, ctx, 0, 0);
+            } else {
+                applyDelayedPaper(queue, instruction, ctx, 0);
             }
-            if (instruction.isWaitable) queue.resume();
+        } else {
+            if (Corex.isFolia()) {
+                applyImmediateFolia(queue, instruction, ctx);
+            } else {
+                applyImmediatePaper(queue, instruction, ctx);
+            }
         }
     }
 
-    private void applyDelayed(ScriptQueue queue, Instruction instruction,
-                              List<Location> blocks, List<MaterialTag> materials,
-                              List<Double> chances, boolean noPhysics,
-                              ItemStack tool, int maxMs, int fromIndex) {
-        Location anchor = blocks.get(fromIndex);
+    private void applyImmediatePaper(ScriptQueue queue, Instruction instruction, PlacementContext ctx) {
+        ctx.allBlocks().forEach(loc -> placeBlock(loc, ctx));
+        if (instruction.isWaitable) queue.resume();
+    }
 
-        SchedulerAdapter.runAt(anchor, () -> {
+    private void applyImmediateFolia(ScriptQueue queue, Instruction instruction, PlacementContext ctx) {
+        if (instruction.isWaitable) queue.pause();
+        AtomicInteger remaining = new AtomicInteger(ctx.chunkGroups().size());
+        for (List<Location> group : ctx.chunkGroups()) {
+            SchedulerAdapter.runAt(group.getFirst(), () -> {
+                group.forEach(loc -> placeBlock(loc, ctx));
+                if (instruction.isWaitable && remaining.decrementAndGet() == 0) queue.resume();
+            });
+        }
+    }
+
+    private void applyDelayedPaper(ScriptQueue queue, Instruction instruction,
+                                   PlacementContext ctx, int fromIndex) {
+        SchedulerAdapter.runLater(() -> {
             long tickStart = System.currentTimeMillis();
-            int i = fromIndex;
+            int next = fromIndex;
+            List<Location> blocks = ctx.allBlocks();
 
-            while (i < blocks.size()) {
-                placeBlock(blocks.get(i), materials, chances, noPhysics, tool);
-                i++;
-                if (System.currentTimeMillis() - tickStart >= maxMs) break;
+            while (next < blocks.size()) {
+                placeBlock(blocks.get(next++), ctx);
+                if (System.currentTimeMillis() - tickStart >= ctx.maxMs()) break;
             }
 
-            if (i < blocks.size()) {
-                final int next = i;
-                SchedulerAdapter.runLaterAt(blocks.get(next),
-                        () -> applyDelayed(queue, instruction, blocks, materials, chances, noPhysics, tool, maxMs, next),
-                        1L);
+            if (next < blocks.size()) {
+                applyDelayedPaper(queue, instruction, ctx, next);
             } else if (instruction.isWaitable) {
                 queue.resume();
+            }
+        }, 1L);
+    }
+
+    private void applyDelayedFolia(ScriptQueue queue, Instruction instruction,
+                                   PlacementContext ctx, int groupIndex, int blockIndex) {
+        if (groupIndex >= ctx.chunkGroups().size()) {
+            if (instruction.isWaitable) queue.resume();
+            return;
+        }
+
+        List<Location> group = ctx.chunkGroups().get(groupIndex);
+        SchedulerAdapter.runAt(group.get(blockIndex), () -> {
+            long tickStart = System.currentTimeMillis();
+            int i = blockIndex;
+
+            while (i < group.size()) {
+                placeBlock(group.get(i++), ctx);
+                if (System.currentTimeMillis() - tickStart >= ctx.maxMs()) break;
+            }
+
+            if (i < group.size()) {
+                final int nextBlock = i;
+                SchedulerAdapter.runLaterAt(group.get(nextBlock),
+                        () -> applyDelayedFolia(queue, instruction, ctx, groupIndex, nextBlock), 1L);
+            } else {
+                final int nextGroup = groupIndex + 1;
+                if (nextGroup < ctx.chunkGroups().size()) {
+                    SchedulerAdapter.runLaterAt(ctx.chunkGroups().get(nextGroup).getFirst(),
+                            () -> applyDelayedFolia(queue, instruction, ctx, nextGroup, 0), 1L);
+                } else if (instruction.isWaitable) {
+                    queue.resume();
+                }
             }
         });
     }
 
-    private void placeBlock(Location loc, List<MaterialTag> materials, List<Double> chances,
-                            boolean noPhysics, ItemStack tool) {
+    private void placeBlock(Location loc, PlacementContext ctx) {
         if (loc.getWorld() == null) return;
-
-        MaterialTag chosen = pickMaterial(materials, chances);
+        MaterialTag chosen = pickMaterial(ctx.materials(), ctx.chances());
         if (chosen == null) return;
-
         Block block = loc.getBlock();
-
-        if (tool != null) {
-            block.breakNaturally(tool);
-        }
-
-        if (noPhysics) {
+        if (ctx.tool() != null) block.breakNaturally(ctx.tool());
+        if (ctx.noPhysics()) {
             block.setBlockData(chosen.getBlockData(), false);
         } else {
             block.setType(chosen.getMaterial());
@@ -214,63 +259,55 @@ public class SetBlockCommand implements AbstractCommand {
                     ? materials.getFirst()
                     : materials.get(ThreadLocalRandom.current().nextInt(materials.size()));
         }
-
         double roll = ThreadLocalRandom.current().nextDouble(100.0);
         double cumulative = 0.0;
-
         for (int i = 0; i < materials.size(); i++) {
             cumulative += chances.get(i);
             if (roll < cumulative) return materials.get(i);
         }
-
         return null;
     }
 
-    private List<Location> resolveLocations(String raw) {
-        List<Location> result = new ArrayList<>();
+    private List<List<Location>> groupByChunk(List<Location> blocks) {
+        return new ArrayList<>(blocks.stream().collect(Collectors.groupingBy(
+                loc -> ((long)(loc.getBlockX() >> 4) << 32) | ((loc.getBlockZ() >> 4) & 0xFFFFFFFFL),
+                LinkedHashMap::new,
+                Collectors.toList()
+        )).values());
+    }
 
+    private List<Location> resolveLocations(String raw) {
         Object fetched = ObjectFetcher.pickObject(raw);
         if (fetched instanceof AbstractAreaObject area) {
-            for (LocationTag lt : area.getBlocks()) result.add(lt.getLocation());
-            return result;
+            return area.getBlocks().stream()
+                    .map(LocationTag::getLocation)
+                    .collect(Collectors.toList());
         }
-
-        for (AbstractTag entry : new ListTag(raw).getList()) {
-            Object obj = entry instanceof LocationTag lt ? lt : ObjectFetcher.pickObject(entry.identify());
-            if (obj instanceof LocationTag lt) result.add(lt.getLocation());
-        }
-
-        return result;
+        return new ListTag(raw).getList().stream()
+                .map(entry -> entry instanceof LocationTag lt ? lt : ObjectFetcher.pickObject(entry.identify()))
+                .filter(LocationTag.class::isInstance)
+                .map(LocationTag.class::cast)
+                .map(LocationTag::getLocation)
+                .collect(Collectors.toList());
     }
 
     private List<MaterialTag> resolveMaterials(String raw) {
-        List<MaterialTag> result = new ArrayList<>();
-
-        for (AbstractTag entry : new ListTag(raw).getList()) {
-            Object obj = entry instanceof MaterialTag mt ? mt : ObjectFetcher.pickObject(entry.identify());
-            if (obj instanceof MaterialTag mt) {
-                result.add(mt);
-            } else {
-                result.add(new MaterialTag(entry.identify()));
-            }
-        }
-
-        return result;
+        return new ListTag(raw).getList().stream()
+                .map(entry -> {
+                    Object obj = entry instanceof MaterialTag mt ? mt : ObjectFetcher.pickObject(entry.identify());
+                    return obj instanceof MaterialTag mt ? mt : new MaterialTag(entry.identify());
+                })
+                .collect(Collectors.toList());
     }
 
     private List<Double> resolveChances(String raw, int materialCount) {
-        List<Double> chances = new ArrayList<>();
-
-        for (AbstractTag entry : new ListTag(raw).getList()) {
-            try {
-                chances.add(Double.parseDouble(entry.identify()));
-            } catch (NumberFormatException ignored) {
-                chances.add(0.0);
-            }
-        }
-
+        List<Double> chances = new ListTag(raw).getList().stream()
+                .map(entry -> {
+                    try { return Double.parseDouble(entry.identify()); }
+                    catch (NumberFormatException ignored) { return 0.0; }
+                })
+                .collect(Collectors.toCollection(ArrayList::new));
         while (chances.size() < materialCount) chances.add(0.0);
-
         return chances;
     }
 }

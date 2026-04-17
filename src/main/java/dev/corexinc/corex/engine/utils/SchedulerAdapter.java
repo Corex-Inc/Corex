@@ -119,6 +119,14 @@ public class SchedulerAdapter {
         }
     }
 
+    // Returns true if the current thread owns the region for the given location.
+    // On Paper (non-Folia) this is simply a primary thread check.
+    // Use this before any world-read that must be region-safe on Folia.
+    public static boolean isRegionOwner(Location location) {
+        if (!Corex.isFolia()) return Bukkit.isPrimaryThread();
+        return Bukkit.isOwnedByCurrentRegion(location);
+    }
+
     // Runs a delayed task tied to a specific entity
     public static void runEntityLater(Entity entity, Runnable task, long delayTicks) {
         if (Corex.isFolia()) {

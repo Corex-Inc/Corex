@@ -8,6 +8,7 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -229,10 +230,9 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Implements LocationTag.material
          */
         TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> {
-            if (obj.getLocation().getWorld() != null) {
-                return new MaterialTag(obj.getLocation().getBlock());
-            }
-            return null;
+            Location loc = obj.getLocation();
+            if (loc.getWorld() == null) return null;
+            return new MaterialTag(loc.getBlock());
         });
 
 
