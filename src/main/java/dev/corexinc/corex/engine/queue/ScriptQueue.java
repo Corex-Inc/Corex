@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
@@ -50,6 +51,11 @@ public class ScriptQueue {
 
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
     private Location anchorLocation = null;
+
+    // Explicit target region for Folia. When set, executeNext() dispatches to this
+    // region's thread before running any instruction, instead of waiting for a
+    // RegionRelocateException to trigger a reactive relocation.
+    private Location targetRegionLocation = null;
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, Location anchorLocation) {
         this.id = id;
@@ -117,6 +123,20 @@ public class ScriptQueue {
         try {
             while (!isPaused && !isStopped) {
 
+                // Proactive Folia region check. If a target region is set and the current
+                // thread doesn't own it, pause and dispatch to the correct region.
+                // This avoids the reactive RegionRelocateException path for queues that
+                // know their target region upfront.
+                if (targetRegionLocation != null && !SchedulerAdapter.isRegionOwner(targetRegionLocation)) {
+                    isPaused = true;
+                    Location target = targetRegionLocation;
+                    SchedulerAdapter.runAt(target, () -> {
+                        isPaused = false;
+                        executeNext();
+                    });
+                    return;
+                }
+
                 if (bytecode == null) this.bytecode = new Instruction[0];
 
                 if (pointer < bytecode.length) {
@@ -146,6 +166,8 @@ public class ScriptQueue {
                             if (inst.command != null) {
                                 try {
                                     inst.command.run(this, inst);
+                                } catch (RegionRelocateException rre) {
+                                    throw rre;
                                 } catch (Exception e) {
                                     this.addError("Internal Java Exception: " + e.getMessage());
                                     e.printStackTrace();
@@ -153,6 +175,8 @@ public class ScriptQueue {
                             }
                             Debugger.flushErrors(this, inst);
                         }
+                    } catch (RegionRelocateException rre) {
+                        throw rre;
                     } catch (Exception e) {
                         String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
                         Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, depth);
@@ -193,6 +217,16 @@ public class ScriptQueue {
                     if (callback != null) callback.run();
                 }
             }
+        } catch (RegionRelocateException rre) {
+            // Reactive fallback: a tag discovered a region mismatch mid-instruction.
+            // Back up the pointer so the instruction re-runs, then dispatch to the
+            // region that owns the target location.
+            pointer--;
+            isPaused = true;
+            SchedulerAdapter.runAt(rre.getLocation(), () -> {
+                isPaused = false;
+                executeNext();
+            });
         } catch (Throwable t) {
             Debugger.error(this, "Fatal queue execution crash: " + t.getMessage(), t, callStack.size());
             stopEntireQueue();
@@ -335,5 +369,13 @@ public class ScriptQueue {
             return linkedPlayer.getPlayer().getLocation();
         }
         return anchorLocation;
+    }
+
+    public void setTargetRegion(Location location) {
+        this.targetRegionLocation = location;
+    }
+
+    public Location getTargetRegion() {
+        return targetRegionLocation;
     }
 }

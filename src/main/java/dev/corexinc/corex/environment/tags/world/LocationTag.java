@@ -10,6 +10,7 @@ import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
+import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -233,6 +234,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
+            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
             return new MaterialTag(loc.getBlock());
         });
 
@@ -248,10 +250,10 @@ public class LocationTag implements AbstractTag, Flaggable {
          */
         TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attribute, locationTag) ->
                 new RegionTag(
-                locationTag.getLocation().getWorld(),
-                locationTag.getLocation().getBlockX() >> 4,
-                locationTag.getLocation().getBlockZ() >> 4
-        ));
+                        locationTag.getLocation().getWorld(),
+                        locationTag.getLocation().getBlockX() >> 4,
+                        locationTag.getLocation().getBlockZ() >> 4
+                ));
     }
 
     public LocationTag(Location location) {
