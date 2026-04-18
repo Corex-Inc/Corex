@@ -27,7 +27,7 @@ import java.util.List;
  * player places <block>
  *
  * @Switches
- * using:<hand> (Matches the hand used to place the block. Can be HAND or OFFHAND)
+ * using:<hand> - Matches the hand used to place the block. Can be HAND or OFFHAND
  *
  * @Cancellable
  *

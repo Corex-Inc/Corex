@@ -21,12 +21,12 @@ import java.util.List;
  * player inputs
  *
  * @Switches
- * forward:<boolean> (Matches if the player is inputting forward movement)
- * backward:<boolean> (Matches if the player is inputting backward movement)
- * left:<boolean> (Matches if the player is inputting left movement)
- * right:<boolean> (Matches if the player is inputting right movement)
- * jump:<boolean> (Matches if the player is inputting jump)
- * sneak:<boolean> (Matches if the player is inputting sneak)
+ * forward:<boolean> - Matches if the player is inputting forward movement
+ * backward:<boolean> - Matches if the player is inputting backward movement
+ * left:<boolean> - Matches if the player is inputting left movement
+ * right:<boolean> - Matches if the player is inputting right movement
+ * jump:<boolean> - Matches if the player is inputting jump
+ * sneak:<boolean> - Matches if the player is inputting sneak
  *
  * @Description
  * Fires when a player sends updated movement or control inputs to the server.

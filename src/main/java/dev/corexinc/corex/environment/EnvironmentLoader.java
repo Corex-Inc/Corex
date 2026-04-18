@@ -12,6 +12,7 @@ import dev.corexinc.corex.environment.commands.world.*;
 // Containers
 import dev.corexinc.corex.environment.containers.*;
 // Events
+import dev.corexinc.corex.environment.events.implementation.block.*;
 import dev.corexinc.corex.environment.events.implementation.core.*;
 import dev.corexinc.corex.environment.events.implementation.player.*;
 // Formatters
@@ -138,13 +139,35 @@ public class EnvironmentLoader {
 
         // Events
         EventRegistry.register(
+
+                // Core
                 DeltaTimeEvent.class,
-                PlayerJoinEvent.class,
-                PlayerBreakBlockEvent.class,
                 WebsocketScriptEvent.class,
                 FlagExpireEvent.class,
+
+                // Player
+                PlayerBreakBlockEvent.class,
+                PlayerJoinEvent.class,
                 PlayerPlaceBlockEvent.class,
-                PlayerInputEvent.class
+                PlayerInputEvent.class,
+
+                // Block
+                BellRingEvent.class,
+                BlockAttemptBuildEvent.class,
+                BlockBrewEvent.class,
+                BlockBurnEvent.class,
+                BlockCookItemEvent.class,
+                BlockDisappearEvent.class,
+                BlockDispenseEvent.class,
+                BlockExplodeEvent.class,
+                BlockFallEvent.class,
+                BlockFormEvent.class,
+                BlockFueledEvent.class,
+                BlockGrowEvent.class,
+                BlockIgniteEvent.class,
+                BlockPreDispenseEvent.class,
+                BlockShearEntityEvent.class,
+                BlockSpreadEvent.class
         );
     }
 }

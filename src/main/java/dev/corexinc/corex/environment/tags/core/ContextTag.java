@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class ContextTag implements AbstractTag {
     }
 
     @Override
-    public @NonNull String getTestValue() {
+    public @Nullable String getTestValue() {
         return null;
     }
 

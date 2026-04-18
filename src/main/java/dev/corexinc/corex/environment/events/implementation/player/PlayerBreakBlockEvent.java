@@ -29,7 +29,7 @@ import java.util.List;
  * player breaks <block>
  *
  * @Switches
- * with:<item> (Matches the item the player is holding in their main hand)
+ * with:<item> - Matches the item the player is holding in their main hand
  *
  * @Cancellable
  *
