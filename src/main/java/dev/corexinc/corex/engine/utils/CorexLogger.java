@@ -32,7 +32,7 @@ public class CorexLogger {
     private static void send(String format) {
         ConsoleCommandSender console = Bukkit.getConsoleSender();
         try {
-            Component component = MINI_MESSAGE.deserialize(format);
+            Component component = MINI_MESSAGE.deserialize(format.replace("§", "&"));
             console.sendMessage(component);
         } catch (Exception e) {
             console.sendMessage("§b+> §3[Corex] §f(Raw) " + format);

@@ -52,9 +52,6 @@ public class ScriptQueue {
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
     private Location anchorLocation = null;
 
-    // Explicit target region for Folia. When set, executeNext() dispatches to this
-    // region's thread before running any instruction, instead of waiting for a
-    // RegionRelocateException to trigger a reactive relocation.
     private Location targetRegionLocation = null;
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, Location anchorLocation) {
@@ -123,10 +120,6 @@ public class ScriptQueue {
         try {
             while (!isPaused && !isStopped) {
 
-                // Proactive Folia region check. If a target region is set and the current
-                // thread doesn't own it, pause and dispatch to the correct region.
-                // This avoids the reactive RegionRelocateException path for queues that
-                // know their target region upfront.
                 if (targetRegionLocation != null && !SchedulerAdapter.isRegionOwner(targetRegionLocation)) {
                     isPaused = true;
                     Location target = targetRegionLocation;
@@ -218,9 +211,6 @@ public class ScriptQueue {
                 }
             }
         } catch (RegionRelocateException rre) {
-            // Reactive fallback: a tag discovered a region mismatch mid-instruction.
-            // Back up the pointer so the instruction re-runs, then dispatch to the
-            // region that owns the target location.
             pointer--;
             isPaused = true;
             SchedulerAdapter.runAt(rre.getLocation(), () -> {

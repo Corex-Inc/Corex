@@ -49,13 +49,11 @@ public class ElementTag implements AbstractTag {
     private final String prefix;
     private final String element;
 
-    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
     public static final TagProcessor<ElementTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public ElementTag(String string) {
         this.prefix = "el";
         if (string == null) {
-            new ElementTag(String.valueOf(true));
             this.element = "";
         } else {
             this.element = string.toLowerCase().startsWith(prefix + "@") ? string.substring(3) : string;
@@ -64,7 +62,7 @@ public class ElementTag implements AbstractTag {
 
     public ElementTag(Component component) {
         this.prefix = "el";
-        this.element = MINI_MESSAGE.serialize(component);
+        this.element = Corex.SERIALIZER.serialize(component);
     }
 
     public ElementTag(boolean bool) {
