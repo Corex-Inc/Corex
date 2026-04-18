@@ -1,13 +1,12 @@
-package dev.corexinc.corex.environment.utils.versions.v1_21_3;
+package dev.corexinc.corex.nms;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.utils.versions.adapters.CustomModelDataAdapter;
+import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-@SuppressWarnings("deprecation")
-public class CustomModelData implements CustomModelDataAdapter {
+public class ItemAdapterImpl implements ItemAdapter {
 
     @Override
     public Object getCustomModelData(ItemStack item) {

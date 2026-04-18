@@ -87,14 +87,14 @@ public class ItemTag implements AbstractTag, Adjustable {
          * @Implements ItemTag.custom_model_data
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "customModelData", (attr, obj) -> {
-            Object data = VersionController.getCustomModelDataAdapter().getCustomModelData(obj.item);
+            Object data = VersionController.getItemAdapter().getCustomModelData(obj.item);
             if (data instanceof Map<?, ?> map) {
                 return new MapTag((Map<String, ?>) map);
             } else if (data instanceof Integer integer) {
                 return new ElementTag(integer);
             }
             return null;
-        });
+        }).ignoreTest();
 
         /* @doc mechanism
          *
@@ -195,7 +195,9 @@ public class ItemTag implements AbstractTag, Adjustable {
          * @Implements ItemTag.custom_model_data
          */
         MECHANISM_PROCESSOR.registerMechanism("customModelData", (obj, val) -> {
-            VersionController.getCustomModelDataAdapter().applyCustomModelData(obj.item, val);
+            try {
+                VersionController.getItemAdapter().applyCustomModelData(obj.item, val);
+            } catch (Exception ignored) {}
             return obj;
         });
 

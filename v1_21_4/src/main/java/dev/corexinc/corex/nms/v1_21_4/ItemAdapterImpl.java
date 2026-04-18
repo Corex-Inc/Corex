@@ -1,10 +1,10 @@
-package dev.corexinc.corex.environment.utils.versions.v1_21_4;
+package dev.corexinc.corex.nms.v1_21_4;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
-import dev.corexinc.corex.environment.utils.versions.adapters.CustomModelDataAdapter;
+import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.bukkit.inventory.ItemStack;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("UnstableApiUsage")
-public class CustomModelData implements CustomModelDataAdapter {
+public class ItemAdapterImpl implements ItemAdapter {
 
     @Override
     public Object getCustomModelData(ItemStack item) {
