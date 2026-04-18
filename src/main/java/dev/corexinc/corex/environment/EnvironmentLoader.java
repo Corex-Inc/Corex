@@ -103,6 +103,7 @@ public class EnvironmentLoader {
                 ServerTag.class,
                 QueueTag.class,
                 RegionTag.class,
+                ChunkTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
