@@ -18,7 +18,7 @@ public class TabCompleter {
     private static final Map<Class<? extends AbstractTag>, TagProcessor<?>> PROCESSOR_CACHE = new HashMap<>();
 
     public static List<String> getSuggestions(String[] args) {
-        if (args.length == 0) return new ArrayList<>();
+        if (args.length == 0) return filterCommands("");
 
         String input = String.join(" ", args);
         boolean trailingSpace = input.endsWith(" ");
@@ -39,12 +39,21 @@ public class TabCompleter {
         List<String> suggestions = new ArrayList<>();
 
         if (!rawToken.contains("<")) {
-            for (String prefix : meta.command.getSyntax().split(" ")) {
-                int colonIndex = prefix.indexOf(':');
+            for (String token : meta.command.getSyntax().split(" ")) {
+                String clean = token.replaceAll("[]\\[(){}<>]", "");
+                if (clean.isEmpty()) continue;
+
+                int colonIndex = clean.indexOf(':');
                 if (colonIndex > 0) {
-                    String cleanPrefix = prefix.substring(0, colonIndex + 1).replaceAll("[\\[\\]\\(\\)\\{\\}<>]", "");
+                    // keyed arg like "naturally:" or "max_delay_ms:"
+                    String cleanPrefix = clean.substring(0, colonIndex + 1);
                     if (cleanPrefix.toLowerCase().startsWith(rawToken.toLowerCase())) {
                         suggestions.add(cleanPrefix);
+                    }
+                } else if (!clean.startsWith("<") && !clean.contains("|")) {
+                    // bare flag like "delayed" or "no_physics"
+                    if (clean.toLowerCase().startsWith(rawToken.toLowerCase())) {
+                        suggestions.add(clean);
                     }
                 }
             }
