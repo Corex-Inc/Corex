@@ -9,7 +9,6 @@ import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
-import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.jetbrains.annotations.NotNull;

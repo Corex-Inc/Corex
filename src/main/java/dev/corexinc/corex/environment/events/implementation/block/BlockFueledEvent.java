@@ -1,7 +1,6 @@
 package dev.corexinc.corex.environment.events.implementation.block;
 
 import dev.corexinc.corex.Corex;
-import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.events.AbstractEvent;
 import dev.corexinc.corex.environment.events.EventData;
