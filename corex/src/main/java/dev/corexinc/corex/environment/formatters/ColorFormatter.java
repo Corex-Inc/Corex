@@ -3,6 +3,7 @@ package dev.corexinc.corex.environment.formatters;
 import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.environment.tags.core.ColorTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
@@ -256,7 +257,13 @@ public class ColorFormatter implements AbstractFormatter {
         }
 
         if (attribute.hasParam()) {
-            String hex = attribute.getParam();
+            AbstractTag object = attribute.getParamObject();
+            String hex;
+            if (object instanceof ColorTag colorTag) {
+                hex = colorTag.getHex(false);
+            } else {
+                hex = object.identify();
+            }
             if (hex.startsWith("#")) hex = hex.substring(1);
 
             if (hex.length() == 6) {
