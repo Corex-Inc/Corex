@@ -5,14 +5,14 @@ import org.bukkit.Bukkit;
 
 public class VersionController {
 
-    private static ItemAdapter itemAdapter;
+    private static CustomModelDataAdapter customModelDataAdapter;
 
     static {
         init();
     }
 
     public static void init() {
-        if (itemAdapter != null) return;
+        if (customModelDataAdapter != null) return;
 
         String versionString = Bukkit.getBukkitVersion().split("-")[0];
         String[] parts = versionString.split("\\.");
@@ -32,11 +32,11 @@ public class VersionController {
         String basePackage = VersionController.class.getPackage().getName();
 
         for (int p = patch; p >= 0; p--) {
-            String className = basePackage + ".v" + major + "_" + minor + "_" + p + ".ItemAdapterImpl";
+            String className = basePackage + ".v" + major + "_" + minor + "_" + p + ".CustomModelDataAdapterImpl";
 
             try {
                 Class<?> clazz = Class.forName(className);
-                itemAdapter = (ItemAdapter) clazz.getDeclaredConstructor().newInstance();
+                customModelDataAdapter = (CustomModelDataAdapter) clazz.getDeclaredConstructor().newInstance();
                 CorexLogger.info("NMS Adapter loaded successfully: <aqua>" + className + "</aqua>");
                 return;
             } catch (ClassNotFoundException ignored) {
@@ -47,8 +47,8 @@ public class VersionController {
         }
 
         try {
-            Class<?> clazz = Class.forName(basePackage + ".v1_21_3.ItemAdapterImpl");
-            itemAdapter = (ItemAdapter) clazz.getDeclaredConstructor().newInstance();
+            Class<?> clazz = Class.forName(basePackage + ".v1_21_3.CustomModelDataAdapterImpl");
+            customModelDataAdapter = (CustomModelDataAdapter) clazz.getDeclaredConstructor().newInstance();
             CorexLogger.warn("Exact NMS adapter not found for " + versionString + ". Using v1_21_3 fallback.");
             return;
         } catch (Exception ignored) {}
@@ -56,9 +56,9 @@ public class VersionController {
         CorexLogger.warn("No NMS adapters found! Using No-Op Mock Adapter (Safe for tests).");
     }
 
-    public static ItemAdapter getItemAdapter() {
-        if (itemAdapter == null) init();
-        return itemAdapter;
+    public static CustomModelDataAdapter getCustomModelDataAdapter() {
+        if (customModelDataAdapter == null) init();
+        return customModelDataAdapter;
     }
 
     public static boolean isAtLeast(String required) {

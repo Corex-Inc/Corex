@@ -2,11 +2,11 @@ package dev.corexinc.corex.nms;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
+import dev.corexinc.corex.environment.utils.adapters.CustomModelDataAdapter;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-public class ItemAdapterImpl implements ItemAdapter {
+public class CustomModelDataAdapterImpl implements CustomModelDataAdapter {
 
     @Override
     public Object getCustomModelData(ItemStack item) {

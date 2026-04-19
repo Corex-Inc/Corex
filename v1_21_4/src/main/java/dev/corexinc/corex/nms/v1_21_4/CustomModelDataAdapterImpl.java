@@ -4,7 +4,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
-import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
+import dev.corexinc.corex.environment.utils.adapters.CustomModelDataAdapter;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.bukkit.inventory.ItemStack;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("UnstableApiUsage")
-public class ItemAdapterImpl implements ItemAdapter {
+public class CustomModelDataAdapterImpl implements CustomModelDataAdapter {
 
     @Override
     public Object getCustomModelData(ItemStack item) {
