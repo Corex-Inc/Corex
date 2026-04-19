@@ -1,6 +1,5 @@
-package dev.corexinc.corex.environment.utils.versions;
+package dev.corexinc.corex.environment.utils.adapters;
 
-import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import org.bukkit.Bukkit;
 

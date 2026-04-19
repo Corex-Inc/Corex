@@ -11,7 +11,7 @@ import dev.corexinc.corex.environment.containers.ItemContainer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
-import dev.corexinc.corex.environment.utils.versions.VersionController;
+import dev.corexinc.corex.environment.utils.adapters.VersionController;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
