@@ -5,6 +5,9 @@ import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.environment.events.EventRegistry;
+// NMS
+import dev.corexinc.corex.environment.utils.adapters.*;
+import dev.corexinc.corex.environment.utils.nms.*;
 // Commands
 import dev.corexinc.corex.environment.commands.core.*;
 import dev.corexinc.corex.environment.commands.player.*;
@@ -30,6 +33,24 @@ import dev.corexinc.corex.environment.flags.*;
 
 public class EnvironmentLoader {
     public static void registerDefaults(CorexRegistry registry) {
+
+        // ---------- NMS (Net.Minecraft.Server) ----------
+
+        NMSRegistry nms = NMSHandler.get();
+        nms.register(ItemAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.ItemAdapterImpl");
+        nms.register(ItemAdapter.class, "1.21.4", "dev.corexinc.corex.nms.v1_21_4.ItemAdapterImpl");
+
+        nms.register(BiomeAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.BiomeAdapterImpl");
+        nms.register(BiomeAdapter.class, "1.21.5", "dev.corexinc.corex.nms.v1_21_5.BiomeAdapterImpl");
+        nms.register(BiomeAdapter.class, "1.21.9", "dev.corexinc.corex.nms.v1_21_9.BiomeAdapterImpl");
+        nms.register(BiomeAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.BiomeAdapterImpl");
+
+        nms.register(PlayerAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.PlayerAdapterImpl");
+
+        // ---------- NMS (Net.Minecraft.Server) ----------
+
+
+
         // Global Tags
         GlobalTagProcessor.register();
 
@@ -106,6 +127,7 @@ public class EnvironmentLoader {
                 RegionTag.class,
                 ChunkTag.class,
                 ColorTag.class,
+                BiomeTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
@@ -138,6 +160,7 @@ public class EnvironmentLoader {
                 AssignAction.class
         );
 
+
         // Events
         EventRegistry.register(
 
@@ -151,6 +174,7 @@ public class EnvironmentLoader {
                 PlayerJoinEvent.class,
                 PlayerPlaceBlockEvent.class,
                 PlayerInputEvent.class,
+                PlayerChatEvent.class,
 
                 // Block
                 BellRingEvent.class,

@@ -1,4 +1,4 @@
-package dev.corexinc.corex.environment.utils;
+package dev.corexinc.corex.environment.utils.commands;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;

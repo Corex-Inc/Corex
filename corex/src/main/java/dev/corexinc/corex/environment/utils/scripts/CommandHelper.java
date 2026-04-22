@@ -1,4 +1,4 @@
-package dev.corexinc.corex.environment.utils;
+package dev.corexinc.corex.environment.utils.scripts;
 
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;

@@ -2,7 +2,7 @@ package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
-import dev.corexinc.corex.environment.utils.WebSocketManager;
+import dev.corexinc.corex.environment.utils.scripts.WebSocketManager;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;

@@ -394,6 +394,10 @@ public class ColorTag implements AbstractTag {
         return String.format("#%02X%02X%02X", red, green, blue);
     }
 
+    public int asRGB() {
+        return red << 16 | green << 8 | blue;
+    }
+
     private static int clamp(int value) {
         return Math.max(0, Math.min(255, value));
     }
