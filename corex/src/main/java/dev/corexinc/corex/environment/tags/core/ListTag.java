@@ -1255,7 +1255,11 @@ public class ListTag implements AbstractTag {
     public ListTag(List<?> list) {
         for (Object element : list) {
             if (element == null) continue;
-            this.list.add(ObjectFetcher.pickObject(element.toString()));
+            if (element instanceof AbstractTag tag) {
+                this.list.add(tag);
+            } else {
+                this.list.add(ObjectFetcher.pickObject(element.toString()));
+            }
         }
     }
 

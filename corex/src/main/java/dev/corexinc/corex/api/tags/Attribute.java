@@ -2,7 +2,8 @@ package dev.corexinc.corex.api.tags;
 
 import dev.corexinc.corex.engine.compiler.TagNode;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.utils.debugging.Debugger;
+
+import java.util.function.Function;
 
 public class Attribute {
 
@@ -19,15 +20,12 @@ public class Attribute {
         return currentIndex < components.length;
     }
 
-    // БЕЗОПАСНОЕ ПОЛУЧЕНИЕ ИМЕНИ
     public String getName() {
-        // Если мы вышли за границы, возвращаем имя последнего успешного компонента
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0) return "null";
         return components[index].name;
     }
 
-    // БЕЗОПАСНАЯ ПРОВЕРКА ПАРАМЕТРА
     public boolean hasParam() {
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0) return false;
@@ -45,13 +43,54 @@ public class Attribute {
         return components[index].param.evaluate(queue);
     }
 
+    public <T extends AbstractTag> T getParamObject(Class<T> type) {
+        AbstractTag obj = getParamObject();
+
+        if (obj == null) {
+            return null;
+        }
+
+        if (type.isInstance(obj)) {
+            return type.cast(obj);
+        }
+
+        return null;
+    }
+
+    public <T extends AbstractTag> T getParamObject(Class<T> type, Function<String, T> parser) {
+        T typed = getParamObject(type);
+
+        if (typed != null) {
+            return typed;
+        }
+
+        String raw = getParam();
+
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        try {
+            return parser.apply(raw);
+        }
+        catch (Exception ignored) {
+            return null;
+        }
+    }
+
     public boolean matchesNext(String expectedName) {
-        if (currentIndex + 1 >= components.length) return false;
+        if (currentIndex + 1 >= components.length) {
+            return false;
+        }
+
         return components[currentIndex + 1].name.equalsIgnoreCase(expectedName);
     }
 
     public boolean hasNextParam() {
-        if (currentIndex + 1 >= components.length) return false;
+        if (currentIndex + 1 >= components.length) {
+            return false;
+        }
+
         return components[currentIndex + 1].param != null;
     }
 
@@ -61,8 +100,46 @@ public class Attribute {
     }
 
     public AbstractTag getNextParamObject() {
-        if (currentIndex + 1 >= components.length || components[currentIndex + 1].param == null) return null;
+        if (currentIndex + 1 >= components.length || components[currentIndex + 1].param == null) {
+            return null;
+        }
+
         return components[currentIndex + 1].param.evaluate(queue);
+    }
+
+    public <T extends AbstractTag> T getNextParamObject(Class<T> type) {
+        AbstractTag obj = getNextParamObject();
+
+        if (obj == null) {
+            return null;
+        }
+
+        if (type.isInstance(obj)) {
+            return type.cast(obj);
+        }
+
+        return null;
+    }
+
+    public <T extends AbstractTag> T getNextParamObject(Class<T> type, Function<String, T> parser) {
+        T typed = getNextParamObject(type);
+
+        if (typed != null) {
+            return typed;
+        }
+
+        String raw = getNextParam();
+
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+
+        try {
+            return parser.apply(raw);
+        }
+        catch (Exception ignored) {
+            return null;
+        }
     }
 
     public void fulfill(int steps) {

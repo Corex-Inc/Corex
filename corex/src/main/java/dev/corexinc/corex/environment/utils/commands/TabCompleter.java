@@ -45,15 +45,21 @@ public class TabCompleter {
 
                 int colonIndex = clean.indexOf(':');
                 if (colonIndex > 0) {
-                    // keyed arg like "naturally:" or "max_delay_ms:"
                     String cleanPrefix = clean.substring(0, colonIndex + 1);
                     if (cleanPrefix.toLowerCase().startsWith(rawToken.toLowerCase())) {
                         suggestions.add(cleanPrefix);
                     }
                 } else if (!clean.startsWith("<") && !clean.contains("|")) {
-                    // bare flag like "delayed" or "no_physics"
-                    if (clean.toLowerCase().startsWith(rawToken.toLowerCase())) {
-                        suggestions.add(clean);
+                    if (clean.contains("/")) {
+                        for (String option : clean.split("/")) {
+                            if (option.toLowerCase().startsWith(rawToken.toLowerCase())) {
+                                suggestions.add(option);
+                            }
+                        }
+                    } else {
+                        if (clean.toLowerCase().startsWith(rawToken.toLowerCase())) {
+                            suggestions.add(clean);
+                        }
                     }
                 }
             }

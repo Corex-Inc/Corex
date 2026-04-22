@@ -12,6 +12,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.world.area.CuboidTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -123,6 +124,12 @@ public class LocationTag implements AbstractTag, Flaggable {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "pitch", (attr, obj) -> new ElementTag(obj.location.getPitch()));
 
+
+        TAG_PROCESSOR.registerTag(CuboidTag.class, "toCuboid", (attr, obj) -> {
+            LocationTag other = attr.getParamObject(LocationTag.class, LocationTag::new);
+            if (other == null) return null;
+            return new CuboidTag(obj.location, other.getLocation());
+        }).test("l@1,1,1,world");
         /* @doc tag
          *
          * @Name world
@@ -154,22 +161,15 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Implements VectorObject.add
          */
         TAG_PROCESSOR.registerTag(LocationTag.class, "add", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
+            LocationTag other = attr.getParamObject(LocationTag.class, LocationTag::new);
 
-            String param = attr.getParam();
-            LocationTag other;
-
-            Object fetched = ObjectFetcher.pickObject(param);
-            if (fetched instanceof LocationTag) {
-                other = (LocationTag) fetched;
-            } else {
-                other = new LocationTag(param);
-            }
+            if (other == null) return null;
 
             Location loc = obj.location.clone();
             loc.add(other.getLocation().getX(), other.getLocation().getY(), other.getLocation().getZ());
+
             return new LocationTag(loc);
-        }).test("1, 2, 3");
+        }).test("l@1,1,1");
 
         /* @doc tag
          *
