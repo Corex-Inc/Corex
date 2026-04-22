@@ -9,8 +9,11 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
+import dev.corexinc.corex.environment.tags.world.StructureTag;
 import org.bukkit.Bukkit;
+import org.bukkit.Registry;
 import org.bukkit.World;
+import org.bukkit.generator.structure.StructureType;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
@@ -60,6 +63,55 @@ public class ServerTag implements AbstractTag, Flaggable {
                         list.addObject(rt);
                     }
                 }
+            }
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name loadedStructures
+         * @RawName <server.loadedStructures>
+         * @Object ServerTag
+         * @ReturnType ListTag(StructureTag)
+         * @NoArg
+         * @Description
+         * Returns a list of all structures currently registered with the server's StructureManager.
+         * This includes vanilla structures, DataPack structures, and any structures registered at runtime.
+         *
+         * @Usage
+         * // List all registered structure keys
+         * - narrate <server.loadedStructures.parse[key]>
+         */
+        PROCESSOR.registerTag(ListTag.class, "loadedStructures", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (var entry : Bukkit.getStructureManager().getStructures().entrySet()) {
+                list.addObject(new StructureTag(entry.getValue(), entry.getKey()));
+            }
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name structureTypes
+         * @RawName <server.structureTypes>
+         * @Object ServerTag
+         * @ReturnType ListTag(ElementTag)
+         * @NoArg
+         * @Description
+         * Returns a list of all structure type keys known to the server, including
+         * custom structures added by DataPacks.
+         * These correspond to game-level structure types (e.g. `minecraft:village`,
+         * `minecraft:stronghold`) from the structure registry — not NBT templates.
+         *
+         * @Usage
+         * // Check if a custom datapack structure exists
+         * - if <server.structureTypes.contains[myplugin:my_dungeon]>:
+         *   - narrate "Dungeon structure type is registered!"
+         */
+        PROCESSOR.registerTag(ListTag.class, "structureTypes", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (StructureType type : Registry.STRUCTURE_TYPE) {
+                list.addObject(new ElementTag(type.getKey().toString()));
             }
             return list;
         });

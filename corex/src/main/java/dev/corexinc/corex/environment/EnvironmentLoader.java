@@ -82,6 +82,7 @@ public class EnvironmentLoader {
                 FlagCommand.class,
                 SetBlockCommand.class,
                 StopCommand.class,
+                StructureCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -106,6 +107,7 @@ public class EnvironmentLoader {
                 RegionTag.class,
                 ChunkTag.class,
                 ColorTag.class,
+                StructureTag.class,
 
                 // Formatters
                 NewLineFormatter.class,
