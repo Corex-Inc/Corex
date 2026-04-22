@@ -227,7 +227,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(CuboidTag.class, "cuboid", (attr, obj) -> {
             int minX = obj.chunk.getX() << 4;
             int minZ = obj.chunk.getZ() << 4;
-            double[][] bounds = {{minX, -64, minZ}, {minX + 15, 319, minZ + 15}};
+            double[][] bounds = {{minX, -64, minZ}, {minX + 16, 320, minZ + 16}};
             return new CuboidTag(obj.chunk.getWorld(), java.util.Collections.singletonList(bounds));
         });
     }

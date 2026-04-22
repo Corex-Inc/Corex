@@ -40,8 +40,8 @@ import java.util.Set;
  * A CuboidTag can contain as many cuboids within itself as needed,
  * allowing complex shapes to be formed from a single CuboidTag.
  *
- * Coordinates are inclusive - a cuboid from "5,5,5" to "5,5,5" contains
- * one full block and has a size of "1,1,1".
+ * Bounds are inclusive on the minimum side and exclusive on the maximum side.
+ * A cuboid from "0,0,0" to "3,3,3" contains 3x3x3 blocks (0, 1, 2 on each axis).
  */
 public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
 
@@ -66,7 +66,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @ArgRequired
          * @Description
          * Returns whether the given location is inside any member of this cuboid region.
-         * Bounds are inclusive on both sides.
+         * Minimum bound is inclusive, maximum bound is exclusive.
          *
          * @Implements AreaObject.contains
          */
@@ -116,6 +116,26 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
         this.members = List.copyOf(members);
     }
 
+    public CuboidTag(@NonNull Location first, @NonNull Location second) {
+        if (first.getWorld() == null || second.getWorld() == null) {
+            throw new IllegalArgumentException("Locations must have a world.");
+        }
+
+        if (!first.getWorld().equals(second.getWorld())) {
+            throw new IllegalArgumentException("Locations must be in the same world.");
+        }
+
+        this.world = first.getWorld();
+
+        List<double[][]> builtMembers = new ArrayList<>();
+        builtMembers.add(new double[][]{
+                {first.getX(), first.getY(), first.getZ()},
+                {second.getX(), second.getY(), second.getZ()}
+        });
+
+        this.members = List.copyOf(builtMembers);
+    }
+
     public CuboidTag(String raw) {
         if (raw == null || raw.isBlank()) {
             this.world = null;
@@ -127,7 +147,6 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
             raw = raw.substring(PREFIX.length() + 1);
         }
 
-        // Format: world,x1,y1,z1,x2,y2,z2[,x3,y3,z3,x4,y4,z4,...]
         String[] parts = raw.trim().split("\\s*,\\s*");
 
         World resolvedWorld = null;
@@ -138,7 +157,6 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
                 resolvedWorld = Bukkit.getWorld(parts[0]);
             }
 
-            // Parse coordinate triples starting at index 1
             List<double[]> points = new ArrayList<>();
             for (int i = 1; i + 2 < parts.length; i += 3) {
                 double x = Double.parseDouble(parts[i]);
@@ -167,9 +185,14 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
         for (double[][] member : members) {
             double[] a = member[0], b = member[1];
 
-            if (location.getX() >= Math.min(a[0], b[0]) && location.getX() <= Math.max(a[0], b[0])
-                    && location.getY() >= Math.min(a[1], b[1]) && location.getY() <= Math.max(a[1], b[1])
-                    && location.getZ() >= Math.min(a[2], b[2]) && location.getZ() <= Math.max(a[2], b[2])) {
+            double minX = Math.min(a[0], b[0]), minY = Math.min(a[1], b[1]), minZ = Math.min(a[2], b[2]);
+            double maxX = Math.max(Math.max(a[0], b[0]), minX + 1.0);
+            double maxY = Math.max(Math.max(a[1], b[1]), minY + 1.0);
+            double maxZ = Math.max(Math.max(a[2], b[2]), minZ + 1.0);
+
+            if (location.getX() >= minX && location.getX() < maxX
+                    && location.getY() >= minY && location.getY() < maxY
+                    && location.getZ() >= minZ && location.getZ() < maxZ) {
                 return true;
             }
         }
@@ -211,15 +234,15 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
             int minX = (int) Math.floor(Math.min(a[0], b[0]));
             int minY = (int) Math.floor(Math.min(a[1], b[1]));
             int minZ = (int) Math.floor(Math.min(a[2], b[2]));
-            int maxX = (int) Math.floor(Math.max(a[0], b[0]));
-            int maxY = (int) Math.floor(Math.max(a[1], b[1]));
-            int maxZ = (int) Math.floor(Math.max(a[2], b[2]));
+            int maxX = Math.max(minX, (int) Math.ceil(Math.max(a[0], b[0])) - 1);
+            int maxY = Math.max(minY, (int) Math.ceil(Math.max(a[1], b[1])) - 1);
+            int maxZ = Math.max(minZ, (int) Math.ceil(Math.max(a[2], b[2])) - 1);
 
             for (int bx = minX; bx <= maxX; bx++) {
                 for (int by = minY; by <= maxY; by++) {
                     for (int bz = minZ; bz <= maxZ; bz++) {
-                        String key = bx + "," + by + "," + bz;
-                        if (seen.add(key)) {
+                        String blockKey = bx + "," + by + "," + bz;
+                        if (seen.add(blockKey)) {
                             blocks.add(new LocationTag(new Location(world, bx, by, bz)));
                         }
                     }
@@ -248,7 +271,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
     @Override
     public @NonNull String identify() {
         StringBuilder sb = new StringBuilder(PREFIX).append("@")
-                .append(world != null ? world.getName() : "null");
+                .append(world != null ? world.getName() : "");
 
         for (double[][] member : members) {
             for (double[] point : member) {
@@ -270,5 +293,5 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
     public @NonNull TagProcessor<CuboidTag> getProcessor() { return TAG_PROCESSOR; }
 
     @Override
-    public @NonNull String getTestValue() { return "cu@world,0,0,0,5,5,5"; }
+    public @NonNull String getTestValue() { return "cu@world,0,0,0,3,3,3"; }
 }
