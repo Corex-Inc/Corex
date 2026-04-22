@@ -8,9 +8,13 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.environment.tags.world.BiomeTag;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
+import dev.corexinc.corex.environment.utils.adapters.BiomeAdapter;
+import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import dev.corexinc.corex.environment.tags.world.StructureTag;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.generator.structure.StructureType;
@@ -112,6 +116,40 @@ public class ServerTag implements AbstractTag, Flaggable {
             ListTag list = new ListTag();
             for (StructureType type : Registry.STRUCTURE_TYPE) {
                 list.addObject(new ElementTag(type.getKey().toString()));
+            }
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name availableBiomes
+         * @Syntax <server.availableBiomes>
+         * @Returns ListTag(BiomeTag)
+         *
+         * @Implements WorldTag.biomes
+         *
+         * @Description
+         * This tag returns a list of all recognized biome types currently available on the server.
+         * Each item in the list is a BiomeTag, representing a distinct biome definition in the game world.
+         * This is useful for iterating through all possible biomes or checking for specific biome types.
+         *
+         * @Usage
+         * // Displays a list of all biomes registered on the server.
+         * - narrate "All available biomes: <server.availableBiomes.parse[name].join[, ]>."
+         *
+         * @Usage
+         * // Iterates through all available biomes and prints each biome's name.
+         * - foreach <server.availableBiomes> as:biome:
+         *   - narrate "Biome name: <[biome].name>"
+         */
+        PROCESSOR.registerTag(ListTag.class, "availableBiomes", (attr, obj) -> {
+            BiomeAdapter adapter = NMSHandler.get().get(BiomeAdapter.class);
+            ListTag list = new ListTag();
+
+            World world = Bukkit.getWorlds().getFirst();
+
+            for (NamespacedKey key : adapter.getAllBiomeKeys(world)) {
+                list.addObject(new BiomeTag(world.getName() + "," + key.toString()));
             }
             return list;
         });

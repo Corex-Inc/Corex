@@ -1,4 +1,4 @@
-package dev.corexinc.corex.environment.utils;
+package dev.corexinc.corex.environment.utils.scripts;
 
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.queue.ScriptQueue;

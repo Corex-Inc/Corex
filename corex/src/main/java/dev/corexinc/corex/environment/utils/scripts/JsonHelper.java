@@ -1,4 +1,4 @@
-package dev.corexinc.corex.environment.utils;
+package dev.corexinc.corex.environment.utils.scripts;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

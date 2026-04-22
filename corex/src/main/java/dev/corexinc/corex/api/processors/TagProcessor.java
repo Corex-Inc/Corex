@@ -2,7 +2,7 @@ package dev.corexinc.corex.api.processors;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
-import dev.corexinc.corex.environment.utils.adapters.VersionController;
+import dev.corexinc.corex.environment.utils.ServerVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -203,10 +203,10 @@ public final class TagProcessor<T extends AbstractTag> {
          * @return {@code true} if version constraints are satisfied.
          */
         private boolean isVersionCompatible() {
-            if (data.availableSince != null && !VersionController.isAtLeast(data.availableSince)) {
+            if (data.availableSince != null && !ServerVersion.isAtLeast(data.availableSince)) {
                 return false;
             }
-            return data.availableBefore == null || !VersionController.isAtLeast(data.availableBefore);
+            return data.availableBefore == null || !ServerVersion.isAtLeast(data.availableBefore);
         }
 
         /**
@@ -237,7 +237,7 @@ public final class TagProcessor<T extends AbstractTag> {
          *
          * <p>Example:</p>
          * <pre>{@code
-         * PROCESSOR.registerTag(ElementTag.class, "custom_model_data", (attr, obj) -> ...)
+         * PROCESSOR.registerTag(ElementTag.class, "customModelData", (attr, obj) -> ...)
          *          .setAvailableSince("1.21.4");
          * // Not registered on 1.21.3 and below.
          * }</pre>
@@ -257,7 +257,7 @@ public final class TagProcessor<T extends AbstractTag> {
          *
          * <p>Example:</p>
          * <pre>{@code
-         * PROCESSOR.registerTag(ElementTag.class, "legacy_color", (attr, obj) -> ...)
+         * PROCESSOR.registerTag(ElementTag.class, "legacyColor", (attr, obj) -> ...)
          *          .setAvailableBefore("1.21.4");
          * // Not registered on 1.21.4 and above.
          * }</pre>

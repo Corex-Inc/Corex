@@ -8,10 +8,8 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.utils.JsonHelper;
+import dev.corexinc.corex.environment.utils.scripts.JsonHelper;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.jetbrains.annotations.Debug;
 import org.jspecify.annotations.NonNull;
 
 import java.net.URLDecoder;

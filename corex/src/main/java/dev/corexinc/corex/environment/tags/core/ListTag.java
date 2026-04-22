@@ -8,7 +8,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.utils.JsonHelper;
+import dev.corexinc.corex.environment.utils.scripts.JsonHelper;
 import org.jspecify.annotations.NonNull;
 
 import java.util.*;

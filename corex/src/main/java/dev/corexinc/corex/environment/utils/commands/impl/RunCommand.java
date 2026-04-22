@@ -1,9 +1,10 @@
-package dev.corexinc.corex.environment.utils.commands;
+package dev.corexinc.corex.environment.utils.commands.impl;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
-import dev.corexinc.corex.environment.utils.CommandParser;
+import dev.corexinc.corex.environment.utils.commands.CommandParser;
+import dev.corexinc.corex.environment.utils.commands.TabCompleter;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.entity.Player;

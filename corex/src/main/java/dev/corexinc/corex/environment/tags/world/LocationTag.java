@@ -249,11 +249,42 @@ public class LocationTag implements AbstractTag, Flaggable {
          * Returns the region (tick-thread) that manages this location.
          */
         TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attribute, locationTag) ->
-                new RegionTag(
-                        locationTag.getLocation().getWorld(),
-                        locationTag.getLocation().getBlockX() >> 4,
-                        locationTag.getLocation().getBlockZ() >> 4
-                ));
+            new RegionTag(
+                    locationTag.getLocation().getWorld(),
+                    locationTag.getLocation().getBlockX() >> 4,
+                    locationTag.getLocation().getBlockZ() >> 4
+            )
+        );
+
+        /* @doc tag
+         *
+         * @Name biome
+         * @RawName <LocationTag.biome>
+         * @Object LocationTag
+         * @ReturnType BiomeTag
+         * @NoArg
+         * @Description
+         * Возвращает BiomeTag, представляющий биом в этой конкретной точке (X, Y, Z).
+         * Учитывает высоту, что важно для пещерных или вертикальных биомов.
+         *
+         * @Usage
+         * - narrate "Вы находитесь в биоме: <player.location.biome.name>"
+         */
+        TAG_PROCESSOR.registerTag(BiomeTag.class, "biome", (attr, obj) -> {
+            Location loc = obj.getLocation();
+            if (loc.getWorld() == null) return null;
+
+            // В Bukkit 1.21 метод getBiome возвращает объект Biome, который является Keyed.
+            // Это позволяет нам получить NamespacedKey даже для биомов из датапаков.
+            org.bukkit.NamespacedKey key = loc.getWorld().getBiome(
+                    loc.getBlockX(),
+                    loc.getBlockY(),
+                    loc.getBlockZ()
+            ).getKey();
+
+            // Создаем BiomeTag через конструктор, который принимает строку в формате "world,namespace:key"
+            return new BiomeTag(loc.getWorld().getName() + "," + key.toString());
+        }).ignoreTest();
     }
 
     public LocationTag(Location location) {

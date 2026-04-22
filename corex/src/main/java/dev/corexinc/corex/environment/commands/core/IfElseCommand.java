@@ -2,7 +2,7 @@ package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
-import dev.corexinc.corex.environment.utils.ConditionCompiler;
+import dev.corexinc.corex.environment.utils.scripts.ConditionCompiler;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;

@@ -11,7 +11,8 @@ import dev.corexinc.corex.environment.containers.ItemContainer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
-import dev.corexinc.corex.environment.utils.adapters.VersionController;
+import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
+import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
@@ -31,6 +32,7 @@ public class ItemTag implements AbstractTag, Adjustable {
 
     private static final String prefix = "i";
     private ItemStack item;
+    private static final ItemAdapter nms = NMSHandler.get().get(ItemAdapter.class);
 
     public static final TagProcessor<ItemTag> TAG_PROCESSOR = new TagProcessor<>();
     public static final MechanismProcessor<ItemTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
@@ -87,7 +89,7 @@ public class ItemTag implements AbstractTag, Adjustable {
          * @Implements ItemTag.custom_model_data
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "customModelData", (attr, obj) -> {
-            Object data = VersionController.getCustomModelDataAdapter().getCustomModelData(obj.item);
+            Object data = nms.getCustomModelData(obj.item);
             if (data instanceof Map<?, ?> map) {
                 return new MapTag((Map<String, ?>) map);
             } else if (data instanceof Integer integer) {
@@ -196,7 +198,7 @@ public class ItemTag implements AbstractTag, Adjustable {
          */
         MECHANISM_PROCESSOR.registerMechanism("customModelData", (obj, val) -> {
             try {
-                VersionController.getCustomModelDataAdapter().applyCustomModelData(obj.item, val);
+                nms.applyCustomModelData(obj.item, val);
             } catch (Exception ignored) {}
             return obj;
         });

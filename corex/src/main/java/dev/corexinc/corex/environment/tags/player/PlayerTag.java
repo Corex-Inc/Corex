@@ -17,6 +17,8 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
+import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
+import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -1185,6 +1187,28 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 if (player != null) {
                     int level = Math.max(0, Math.min(4, el.asInt()));
                     SchedulerAdapter.runEntity(player, () -> player.setWardenWarningLevel(level));
+                }
+            }
+            return playerTag;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name reconfigure
+         * @Object PlayerTag
+         * @Description
+         * Instantly sends the player into the configuration phase without disconnecting them from the server.
+         * The player's client will forcibly reload all registries (biome colors, custom recipes, datapacks).
+         * During the process, the player will see a "Loading terrain..." screen for a few seconds.
+         * In essence, the player will leave the server and rejoin within a split second.
+         * This will trigger login/logout events.
+         */
+        MECHANISM_PROCESSOR.registerMechanism("reconfigure", (playerTag, value) -> {
+            Player player = playerTag.getPlayer();
+            if (player != null) {
+                PlayerAdapter nms = NMSHandler.get().get(PlayerAdapter.class);
+                if (nms != null) {
+                    nms.sendReconfiguration(player);
                 }
             }
             return playerTag;
