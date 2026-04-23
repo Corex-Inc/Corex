@@ -23,8 +23,44 @@ import org.bukkit.generator.structure.StructureType;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
-import java.util.Collections;
 
+/* @doc object
+ *
+ * @Name ServerTag
+ * @Prefix server
+ * @IdentifyFormat server@
+ * @Implements Flaggable
+ *
+ * @Description
+ * Represents the Minecraft server itself.
+ * Access it via the base tag "server" from anywhere in a script.
+ *
+ * ServerTag implements Flaggable, so you store persistent server-wide
+ * data using the flag command with "server@" as the target.
+ * Server flags persist to disk across restarts (SQLite).
+ *
+ * @Tags
+ * <server.onlinePlayers>       - returns a ListTag(PlayerTag) of all currently online players.
+ * <server.regions>             - returns a ListTag(RegionTag) of all active tick-regions on the server.
+ * <server.loadedStructures>    - returns a ListTag(StructureTag) of all structures registered with the StructureManager.
+ * <server.structureTypes>      - returns a ListTag(ElementTag) of all structure type keys known to the server.
+ * <server.availableBiomes>     - returns a ListTag(BiomeTag) of all biome types available on the server.
+ * <server.flag[name]>          - returns the value of a server flag.
+ * <server.hasFlag[name]>       - returns an ElementTag(Boolean) indicating if the flag exists.
+ * <server.flagExpiry[name]>    - returns a DurationTag of remaining time before the flag expires.
+ *
+ * @Usage
+ * // Send a message to every online player.
+ * - narrate targets:<server.onlinePlayers> "Server is restarting soon." per_player
+ *
+ * @Usage
+ * // Store a server-wide value that persists across restarts.
+ * - flag <server> maintenanceMode true
+ *
+ * @Usage
+ * // Get average TPS across all active regions.
+ * - narrate "Average TPS: <server.regions.parse[tps].average>"
+ */
 public class ServerTag implements AbstractTag, Flaggable {
 
     private static final String PREFIX = "server";

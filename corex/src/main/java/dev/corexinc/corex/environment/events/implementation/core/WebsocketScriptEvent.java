@@ -9,6 +9,52 @@ import org.jspecify.annotations.NonNull;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+
+/* @doc event
+ *
+ * @Name Websocket
+ *
+ * @Events
+ * websocket opens
+ * websocket message
+ * websocket closes
+ *
+ * @Switches
+ * id:<name> - Matches only events from the websocket connection with the given ID.
+ *
+ * @Description
+ * Fires when a managed websocket connection changes state or receives a message.
+ *
+ * Use "websocket opens" to react when a connection is first established.
+ * Use "websocket message" to process incoming data from the remote server.
+ * Use "websocket closes" to clean up state or reconnect after the connection drops.
+ *
+ * Each script line must contain exactly one of the three keywords.
+ * The optional "id:" switch filters events to a single named connection.
+ * Without it, the script fires for all connections.
+ *
+ * @Context
+ * <context.id>      - returns an ElementTag of the connection ID. Available in all three variants.
+ * <context.message> - returns an ElementTag of the received message. Available in "message" only.
+ * <context.code>    - returns an ElementTag(Number) of the close code. Available in "closes" only.
+ * <context.reason>  - returns an ElementTag of the close reason string. Available in "closes" only.
+ *
+ * @Usage
+ * // Log when any websocket opens.
+ * on websocket opens:
+ * - narrate "Connection <context.id> opened."
+ *
+ * @Usage
+ * // Handle incoming messages from a specific connection.
+ * on websocket message id:mySocket:
+ * - narrate "Received: <context.message>"
+ *
+ * @Usage
+ * // Reconnect automatically when the connection closes unexpectedly.
+ * on websocket closes id:mySocket:
+ * - if <context.code> != 1000:
+ *   - websocket connect mySocket wss://example.com/ws
+ */
 public class WebsocketScriptEvent implements AbstractEvent {
 
     private static final Set<EventData> openScripts = new LinkedHashSet<>();
