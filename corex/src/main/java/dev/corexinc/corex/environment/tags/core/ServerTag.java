@@ -8,6 +8,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.BiomeTag;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
 import dev.corexinc.corex.environment.utils.adapters.BiomeAdapter;
@@ -17,10 +18,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.StructureType;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
+import java.util.Collections;
 
 public class ServerTag implements AbstractTag, Flaggable {
 
@@ -118,6 +121,28 @@ public class ServerTag implements AbstractTag, Flaggable {
                 list.addObject(new ElementTag(type.getKey().toString()));
             }
             return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name onlinePlayers
+         * @RawName <server.onlinePlayers>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Description
+         * Returns a list of online players
+         *
+         * @Usage
+         * // Sends a message to all online players on the server
+         * - narrate targets:<server.onlinePlayers> "Hello <player.name>!" per_player
+         */
+        PROCESSOR.registerTag(ListTag.class, "onlinePlayers", (attr, obj) -> {
+            ListTag listTag = new ListTag();
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                listTag.addObject(new PlayerTag(player));
+            }
+            return listTag;
         });
 
         /* @doc tag
