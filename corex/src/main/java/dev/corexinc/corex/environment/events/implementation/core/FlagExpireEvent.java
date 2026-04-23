@@ -14,6 +14,42 @@ import org.jspecify.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/* @doc event
+ *
+ * @Name FlagExpire
+ *
+ * @Events
+ * <flag> expires
+ *
+ * @Description
+ * Fires when a flag reaches its expiration time.
+ *
+ * The first word in the event line is matched against the flag's path.
+ * Use "*" or "flag" as a wildcard to match any flag.
+ *
+ * If the queue returns a value, that value replaces the expired flag's value and
+ * the flag is kept alive. If the queue returns "cancelled", the flag is removed
+ * without firing any further logic. If nothing is returned, the flag expires normally.
+ *
+ * @Context
+ * <context.object> - returns the object the flag belongs to (player, server, entity, etc).
+ * <context.name>   - returns an ElementTag of the full flag path that expired.
+ * <context.value>  - returns the value the flag held before expiring.
+ *
+ * @Returns
+ * AbstractTag - Any returned value replaces the expired flag and keeps it alive.
+ * ElementTag(cancelled) - Cancels the expiration and removes the flag silently.
+ *
+ * @Usage
+ * // Log every flag expiration.
+ * on flag expires:
+ * - narrate "Flag <context.name> expired on <context.object>."
+ *
+ * @Usage
+ * // Renew a specific flag automatically on expiry.
+ * on myFlag expires:
+ * - return <context.value>
+ */
 public class FlagExpireEvent implements AbstractEvent, FlagExpirationHandler {
 
     private static final List<EventData> scripts = new ArrayList<>();

@@ -14,6 +14,49 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+/* @doc command
+ *
+ * @Name Flag
+ * @Syntax flag [<object>] [<name>(:action)] [<value>] (expire:<duration>)
+ * @RequiredArgs 2
+ * @MaxArgs 4
+ * @ShortDescription Sets a persistent flag on an object.
+ *
+ * @Description
+ * Stores a named value on the given object (player, server, entity, etc).
+ * Flags persist across script queues and, depending on the object type, across server restarts.
+ *
+ * Append a data action after a colon to modify the existing value instead of replacing it
+ * (e.g. "flag <player> score:++").
+ *
+ * Use dot-notation to store nested data inside a map flag (e.g. "flag <player> stats.kills 5").
+ *
+ * Optionally specify "expire:<duration>" to automatically remove the flag after the given time.
+ * When a flag expires, the FlagExpireEvent fires and scripts listening to it can intercept removal.
+ *
+ * To remove a flag, provide no value and use the "!" action or set it to null.
+ *
+ * @Tags
+ * <object.flag[name]>          - returns the flag value.
+ * <object.hasFlag[name]>       - returns an ElementTag(Boolean).
+ * <object.flagExpiry[name]>    - returns a DurationTag of time remaining.
+ *
+ * @Usage
+ * // Set a flag on the player.
+ * - flag <player> isVip true
+ *
+ * @Usage
+ * // Increment a numeric flag.
+ * - flag <player> kills:++
+ *
+ * @Usage
+ * // Set a flag that expires after 1 hour.
+ * - flag <player> boost true expire:1h
+ *
+ * @Usage
+ * // Remove a flag.
+ * - flag <player> isVip!
+ */
 public class FlagCommand implements AbstractCommand {
 
     @Override public @NonNull String getName() { return "flag"; }

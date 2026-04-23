@@ -8,11 +8,34 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 
 /* @doc command
+ *
  * @Name Websocket
  * @Syntax websocket [connect/send/disconnect] [<id>] (<url>/<message>)
  * @RequiredArgs 2
  * @MaxArgs 3
- * @ShortDescription Connects, sends messages, or disconnects a websocket.
+ * @ShortDescription Manages a persistent websocket connection.
+ *
+ * @Description
+ * Opens, communicates with, or closes a websocket connection identified by a custom ID.
+ *
+ * Use "connect" with a URL to open a new connection.
+ * Use "send" with a message string to transmit data over an open connection.
+ * Use "disconnect" or "close" to terminate the connection.
+ *
+ * The ID you provide is reused across all three actions and is also passed to
+ * the WebsocketScriptEvent so you can route events per connection.
+ *
+ * @Usage
+ * // Open a connection to a remote server.
+ * - websocket connect mySocket wss://example.com/ws
+ *
+ * @Usage
+ * // Send a message over an open connection.
+ * - websocket send mySocket Hello World
+ *
+ * @Usage
+ * // Close the connection.
+ * - websocket disconnect mySocket
  */
 public class WebsocketCommand implements AbstractCommand {
 

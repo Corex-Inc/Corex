@@ -14,6 +14,43 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/* @doc command
+ *
+ * @Name Def
+ * @Syntax def [<key>(:action)] [<value>]
+ * @RequiredArgs 1
+ * @MaxArgs 2
+ * @Aliases define
+ * @ShortDescription Defines or modifies a variable in the current queue.
+ *
+ * @Description
+ * Stores a value in the current script queue under the given key.
+ *
+ * Use dot-notation to target nested keys inside a MapTag (e.g. "player.stats.level").
+ * If the map or any intermediate key does not exist, it will be created automatically.
+ *
+ * Optionally append a data action after a colon to modify the existing value instead of replacing it
+ * (e.g. "def count:++" to increment, "def items:->:sword" to add to a list).
+ * Available actions are registered by the engine.
+ *
+ * If no value argument is provided, the definition is set to null.
+ *
+ * @Usage
+ * // Store a simple string.
+ * - def name John
+ *
+ * @Usage
+ * // Increment a numeric definition.
+ * - def score:++
+ *
+ * @Usage
+ * // Set a nested key inside a map definition.
+ * - def player.stats.level 10
+ *
+ * @Usage
+ * // Clear a definition.
+ * - def tempValue
+ */
 public class DefCommand implements AbstractCommand {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
