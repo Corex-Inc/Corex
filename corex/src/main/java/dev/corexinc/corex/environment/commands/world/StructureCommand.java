@@ -52,7 +52,7 @@ public class StructureCommand implements AbstractCommand, Listener {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[place/delete/create] [structure:<structure>] (location:<location>) (offset:<location>) (centered) (rotation:<rotation>) (mirror:<mirror>) (palette:<#>) (integrity:<#>) (save_to_disk) (include_entities) (no_physics) (area:<area>)";
+        return "[place/delete/create] [structure:<structure>] (location:<location>) (offset:<location>) (centered) (rotation:<rotation>) (mirror:<mirror>) (palette:<#>) (integrity:<#>) (saveToDisk) (includeEntities) (noPhysics) (area:<area>)";
     }
 
     @Override

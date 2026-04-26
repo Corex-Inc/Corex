@@ -9,12 +9,15 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /* @doc command
@@ -63,38 +66,59 @@ public class NarrateCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
         AbstractTag text = entry.getLinearObject(0, queue);
-        boolean failed = false;
         if (text == null) {
             Debugger.echoError(queue, "Empty text argument are not allowed");
-            failed = true;
-        };
+            return;
+        }
 
-        Component message = text.asComponent();
+        Component message = buildComponent(text);
 
         String targets = entry.getPrefix("targets", queue);
-
-        ListTag targetList = new ListTag(targets);
-        List<PlayerTag> players = targetList.filter(PlayerTag.class, queue);
 
         Debugger.report(queue, entry,
                 "Narrating", text.identify(),
                 "Targets", targets
         );
 
-        if (failed) return;
-
         if (targets != null) {
-            for (PlayerTag pTag : players) {
-                Player player = pTag.getPlayer();
-                if (player != null && player.isOnline()) {
-                    SchedulerAdapter.runEntity(player, () -> player.sendMessage(message));
-                }
-            }
-        } else if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
-            Player player = queue.getPlayer().getPlayer();
-            SchedulerAdapter.runEntity(player, () -> player.sendMessage(message));
+            sendToTargets(queue, entry, targets, message);
+        } else {
+            sendToQueuePlayerOrConsole(queue, message);
         }
-        else {
+    }
+
+    private Component buildComponent(@NonNull AbstractTag text) {
+        Component component = text.asComponent();
+        return component != null ? component : Component.text(text.identify());
+    }
+
+    private void sendToTargets(@NonNull ScriptQueue queue, @NonNull Instruction entry,
+                               @NonNull String targets, @NonNull Component message) {
+        List<PlayerTag> playerTags = new ListTag(targets).filter(PlayerTag.class, queue);
+
+        List<Player> onlinePlayers = new ArrayList<>(playerTags.size());
+        for (PlayerTag pTag : playerTags) {
+            Player player = pTag.getPlayer();
+            if (player != null && player.isOnline()) {
+                onlinePlayers.add(player);
+            }
+        }
+
+        if (onlinePlayers.isEmpty()) return;
+
+        SchedulerAdapter.run(() -> {
+            for (Player player : onlinePlayers) {
+                player.sendMessage(message);
+            }
+        });
+    }
+
+    private void sendToQueuePlayerOrConsole(@NonNull ScriptQueue queue, @NonNull Component message) {
+        PlayerTag queuePlayer = queue.getPlayer();
+        if (queuePlayer != null && queuePlayer.getOfflinePlayer().isOnline()) {
+            Player player = queuePlayer.getPlayer();
+            SchedulerAdapter.runEntity(player, () -> player.sendMessage(message));
+        } else {
             Bukkit.getServer().getConsoleSender().sendMessage(message);
         }
     }

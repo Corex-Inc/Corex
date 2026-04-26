@@ -29,7 +29,7 @@ import java.io.File;
  * @Name ServerTag
  * @Prefix server
  * @IdentifyFormat server@
- * @Implements Flaggable
+ * @Implements server
  *
  * @Description
  * Represents the Minecraft server itself.

@@ -264,26 +264,23 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @ReturnType BiomeTag
          * @NoArg
          * @Description
-         * Возвращает BiomeTag, представляющий биом в этой конкретной точке (X, Y, Z).
-         * Учитывает высоту, что важно для пещерных или вертикальных биомов.
+         * Returns a BiomeTag representing the biome at this specific point (X, Y, Z).
+         * Takes height into account, which is important for cave or vertical biomes.
          *
          * @Usage
-         * - narrate "Вы находитесь в биоме: <player.location.biome.name>"
+         * - narrate "You are in biome: <player.location.biome.name>"
          */
         TAG_PROCESSOR.registerTag(BiomeTag.class, "biome", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
 
-            // В Bukkit 1.21 метод getBiome возвращает объект Biome, который является Keyed.
-            // Это позволяет нам получить NamespacedKey даже для биомов из датапаков.
             org.bukkit.NamespacedKey key = loc.getWorld().getBiome(
                     loc.getBlockX(),
                     loc.getBlockY(),
                     loc.getBlockZ()
             ).getKey();
 
-            // Создаем BiomeTag через конструктор, который принимает строку в формате "world,namespace:key"
-            return new BiomeTag(loc.getWorld().getName() + "," + key.toString());
+            return new BiomeTag(loc.getWorld().getName() + "," + key);
         }).ignoreTest();
     }
 
