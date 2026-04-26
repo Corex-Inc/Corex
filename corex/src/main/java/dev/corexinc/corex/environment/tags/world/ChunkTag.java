@@ -36,14 +36,16 @@ import org.jspecify.annotations.Nullable;
  *
  * @Description
  * A ChunkTag represents a 16x16 column of blocks within a world.
- * Chunk coordinates differ from block coordinates — to get the chunk coordinate
+ * Chunk coordinates differ from block coordinates - to get the chunk coordinate
  * of a block, divide its X or Z by 16 (rounding down).
  */
 public class ChunkTag implements AbstractTag, Flaggable {
 
     private static final String PREFIX = "ch";
 
-    private final Chunk chunk;
+    private final World world;
+    private final int x;
+    private final int z;
 
     public static final TagProcessor<ChunkTag> TAG_PROCESSOR = new TagProcessor<>();
 
@@ -53,120 +55,40 @@ public class ChunkTag implements AbstractTag, Flaggable {
             Object fetched = ObjectFetcher.pickObject(attr.getParam());
             if (fetched instanceof LocationTag locationTag) {
                 Location loc = locationTag.getLocation();
-                if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
-                return new ChunkTag(loc.getChunk());
+                return new ChunkTag(loc.getWorld(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
             }
-            Location chunkCenter = parseChunkCenter(attr.getParam());
-            if (chunkCenter != null && !SchedulerAdapter.isRegionOwner(chunkCenter)) throw new RegionRelocateException(chunkCenter);
             ChunkTag tag = new ChunkTag(attr.getParam());
-            return tag.getChunk() != null ? tag : null;
+            return tag.getWorld() != null ? tag : null;
         });
 
         ObjectFetcher.registerFetcher(PREFIX, raw -> {
-            Location chunkCenter = parseChunkCenter(raw);
-            if (chunkCenter != null && !SchedulerAdapter.isRegionOwner(chunkCenter)) throw new RegionRelocateException(chunkCenter);
             ChunkTag tag = new ChunkTag(raw);
-            return tag.getChunk() != null ? tag : null;
+            return tag.getWorld() != null ? tag : null;
         });
 
-        /* @doc tag
-         *
-         * @Name x
-         * @RawName <ChunkTag.x>
-         * @Object ChunkTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the X coordinate of this chunk in chunk-space (not block-space).
-         *
-         * @Implements ChunkTag.x
-         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) ->
-                new ElementTag(obj.chunk.getX()));
+                new ElementTag(obj.x));
 
-        /* @doc tag
-         *
-         * @Name z
-         * @RawName <ChunkTag.z>
-         * @Object ChunkTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the Z coordinate of this chunk in chunk-space (not block-space).
-         *
-         * @Implements ChunkTag.z
-         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) ->
-                new ElementTag(obj.chunk.getZ()));
+                new ElementTag(obj.z));
 
-        /* @doc tag
-         *
-         * @Name world
-         * @RawName <ChunkTag.world>
-         * @Object ChunkTag
-         * @ReturnType WorldTag
-         * @NoArg
-         * @Description
-         * Returns the world this chunk belongs to.
-         *
-         * @Implements ChunkTag.world
-         */
         TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) ->
-                new WorldTag(obj.chunk.getWorld()));
+                new WorldTag(obj.world));
 
-        /* @doc tag
-         *
-         * @Name isLoaded
-         * @RawName <ChunkTag.isLoaded>
-         * @Object ChunkTag
-         * @ReturnType ElementTag(Boolean)
-         * @NoArg
-         * @Description
-         * Returns whether this chunk is currently loaded into memory.
-         * Unloaded chunks are not being ticked and their entities are inactive.
-         *
-         * @Implements ChunkTag.is_loaded
-         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLoaded", (attr, obj) ->
-                new ElementTag(obj.chunk.isLoaded()));
+                new ElementTag(obj.world != null && obj.world.isChunkLoaded(obj.x, obj.z)));
 
-        /* @doc tag
-         *
-         * @Name center
-         * @RawName <ChunkTag.center>
-         * @Object ChunkTag
-         * @ReturnType LocationTag
-         * @NoArg
-         * @Description
-         * Returns the location of the center of this chunk at Y=0.
-         * The center is at block offset +8 on both X and Z axes within the chunk.
-         *
-         * @Implements ChunkTag.cuboid.center
-         */
         TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) ->
-                new LocationTag(new Location(
-                        obj.chunk.getWorld(),
-                        (obj.chunk.getX() << 4) + 8,
-                        0,
-                        (obj.chunk.getZ() << 4) + 8
-                )));
+                new LocationTag(new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8)));
 
-        /* @doc tag
-         *
-         * @Name players
-         * @RawName <ChunkTag.players>
-         * @Object ChunkTag
-         * @ReturnType ListTag(PlayerTag)
-         * @NoArg
-         * @Description
-         * Returns a list of all online players currently standing inside this chunk.
-         *
-         * @Implements ChunkTag.players
-         */
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attr, obj) -> {
             ListTag listTag = new ListTag();
-            if (!obj.chunk.isLoaded()) return listTag;
-            for (Entity entity : obj.chunk.getEntities()) {
+            if (obj.world == null || !obj.world.isChunkLoaded(obj.x, obj.z)) return listTag;
+
+            Location center = new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8);
+            if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);
+
+            for (Entity entity : obj.getChunk().getEntities()) {
                 if (entity instanceof Player player) {
                     listTag.addObject(new PlayerTag(player));
                 }
@@ -174,114 +96,80 @@ public class ChunkTag implements AbstractTag, Flaggable {
             return listTag;
         });
 
-        /* @doc tag
-         *
-         * @Name entities
-         * @RawName <ChunkTag.entities>
-         * @Object ChunkTag
-         * @ReturnType ListTag(EntityTag)
-         * @NoArg
-         * @Description
-         * Returns a list of all entities currently inside this chunk.
-         * The chunk must be loaded — if it is not, an empty list is returned.
-         *
-         * @Implements ChunkTag.entities
-         */
         TAG_PROCESSOR.registerTag(ListTag.class, "entities", (attr, obj) -> {
             ListTag listTag = new ListTag();
-            if (!obj.chunk.isLoaded()) return listTag;
-            for (Entity entity : obj.chunk.getEntities()) {
+            if (obj.world == null || !obj.world.isChunkLoaded(obj.x, obj.z)) return listTag;
+
+            Location center = new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8);
+            if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);
+
+            for (Entity entity : obj.getChunk().getEntities()) {
                 listTag.addObject(new EntityTag(entity));
             }
             return listTag;
         });
 
-        /* @doc tag
-         *
-         * @Name region
-         * @RawName <ChunkTag.region>
-         * @Object ChunkTag
-         * @ReturnType RegionTag
-         * @NoArg
-         * @Description
-         * Returns the tick-region (processing thread) that manages this chunk.
-         * On Folia/Canvas servers this may differ per chunk.
-         */
         TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) ->
-                new RegionTag(obj.chunk.getWorld(), obj.chunk.getX(), obj.chunk.getZ()));
+                new RegionTag(obj.world, obj.x, obj.z));
 
-        /* @doc tag
-         *
-         * @Name cuboid
-         * @RawName <ChunkTag.cuboid>
-         * @Object ChunkTag
-         * @ReturnType CuboidTag
-         * @NoArg
-         * @Description
-         * Returns a CuboidTag representing the exact bounding box of this chunk.
-         * Spans from the minimum corner (x*16, -64, z*16) to the maximum corner (x*16+15, 319, z*16+15).
-         * Y bounds use standard overworld limits and may not match custom world heights.
-         *
-         * @Implements ChunkTag.cuboid
-         */
         TAG_PROCESSOR.registerTag(CuboidTag.class, "cuboid", (attr, obj) -> {
-            int minX = obj.chunk.getX() << 4;
-            int minZ = obj.chunk.getZ() << 4;
-            double[][] bounds = {{minX, -64, minZ}, {minX + 16, 320, minZ + 16}};
-            return new CuboidTag(obj.chunk.getWorld(), java.util.Collections.singletonList(bounds));
+            if (obj.world == null) return null;
+            int minX = obj.x << 4;
+            int minZ = obj.z << 4;
+            return new CuboidTag(
+                    new Location(obj.world, minX, obj.world.getMinHeight(), minZ),
+                    new Location(obj.world, minX + 16, obj.world.getMaxHeight(), minZ + 16)
+            );
         });
     }
 
-    private static @Nullable Location parseChunkCenter(String raw) {
-        if (raw == null || raw.isBlank()) return null;
-        String clean = raw.toLowerCase().startsWith(PREFIX + "@") ? raw.substring(PREFIX.length() + 1) : raw;
-        String[] parts = clean.trim().split("\\s*,\\s*");
-        if (parts.length < 3) return null;
-        try {
-            World world = Bukkit.getWorld(parts[0]);
-            if (world == null) return null;
-            int cx = Integer.parseInt(parts[1]);
-            int cz = Integer.parseInt(parts[2]);
-            return new Location(world, (cx << 4) + 8, 0, (cz << 4) + 8);
-        } catch (Exception ignored) {
-            return null;
-        }
+    public ChunkTag(@NonNull Chunk chunk) {
+        this.world = chunk.getWorld();
+        this.x = chunk.getX();
+        this.z = chunk.getZ();
     }
 
-    public ChunkTag(@NonNull Chunk chunk) {
-        this.chunk = chunk;
+    public ChunkTag(@NonNull World world, int x, int z) {
+        this.world = world;
+        this.x = x;
+        this.z = z;
     }
 
     public ChunkTag(String raw) {
         if (raw == null || raw.isBlank()) {
-            this.chunk = null;
+            this.world = null;
+            this.x = 0;
+            this.z = 0;
             return;
         }
 
         String clean = raw.toLowerCase().startsWith(PREFIX + "@") ? raw.substring(PREFIX.length() + 1) : raw;
         String[] parts = clean.trim().split("\\s*,\\s*");
 
-        Chunk resolved = null;
-        try {
-            if (parts.length >= 3) {
-                World world = Bukkit.getWorld(parts[0]);
-                if (world != null) {
-                    resolved = world.getChunkAt(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
-                }
-            }
-        } catch (Exception ignored) {}
-
-        this.chunk = resolved;
+        if (parts.length >= 3) {
+            this.world = Bukkit.getWorld(parts[0]);
+            this.x = Integer.parseInt(parts[1]);
+            this.z = Integer.parseInt(parts[2]);
+        } else {
+            this.world = null;
+            this.x = 0;
+            this.z = 0;
+        }
     }
 
-    public @Nullable Chunk getChunk() { return chunk; }
+    public @Nullable Chunk getChunk() {
+        return world != null ? world.getChunkAt(x, z) : null;
+    }
+
+    public @Nullable World getWorld() { return world; }
 
     @Override
     public @NonNull String getPrefix() { return PREFIX; }
 
     @Override
     public @NonNull String identify() {
-        return PREFIX + "@" + chunk.getWorld().getName() + "," + chunk.getX() + "," + chunk.getZ();
+        if (world == null) return PREFIX + "@null,0,0";
+        return PREFIX + "@" + world.getName() + "," + x + "," + z;
     }
 
     @Override
@@ -297,6 +185,10 @@ public class ChunkTag implements AbstractTag, Flaggable {
 
     @Override
     public AbstractFlagTracker getFlagTracker() {
-        return new PdcFlagTracker(chunk, identify());
+        if (world == null) throw new IllegalStateException("Cannot get flags for invalid chunk");
+        Location center = new Location(world, (x << 4) + 8, 0, (z << 4) + 8);
+        if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);
+
+        return new PdcFlagTracker(getChunk(), identify());
     }
 }

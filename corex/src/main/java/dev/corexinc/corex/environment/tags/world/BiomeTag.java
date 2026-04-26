@@ -45,9 +45,8 @@ import java.util.List;
 public class BiomeTag implements AbstractTag, Adjustable {
 
     private static final String prefix = "biome";
-
-    private final World world;
     private final NamespacedKey biomeKey;
+    private final World world;
 
     public static final TagProcessor<BiomeTag> TAG_PROCESSOR = new TagProcessor<>();
     public static final MechanismProcessor<BiomeTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
@@ -664,5 +663,13 @@ public class BiomeTag implements AbstractTag, Adjustable {
     @Override
     public Adjustable duplicate() {
         return this;
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public NamespacedKey getBiomeKey() {
+        return biomeKey;
     }
 }

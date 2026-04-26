@@ -247,6 +247,36 @@ public class WorldTag implements AbstractTag {
             }
             return list;
         });
+
+        /* @doc tag
+         *
+         * @Name minHeight
+         * @RawName <WorldTag.minHeight>
+         * @Object WorldTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the minimum build height (Y) of this world.
+         *
+         * @Implements WorldTag.min_height
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "minHeight", (attr, obj) ->
+                new ElementTag(obj.world.getMinHeight()));
+
+        /* @doc tag
+         *
+         * @Name maxHeight
+         * @RawName <WorldTag.maxHeight>
+         * @Object WorldTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the maximum build height (Y) of this world.
+         *
+         * @Implements WorldTag.max_height
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "maxHeight", (attr, obj) ->
+                new ElementTag(obj.world.getMaxHeight()));
     }
 
     public WorldTag(World world) {
