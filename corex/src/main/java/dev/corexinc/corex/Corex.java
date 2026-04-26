@@ -9,6 +9,8 @@ import dev.corexinc.corex.engine.utils.EnvManager;
 import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
+import dev.corexinc.corex.environment.containers.GeneratorContainer;
+import dev.corexinc.corex.environment.generators.ScriptedChunkGenerator;
 import dev.corexinc.corex.environment.generators.VoidGenerator;
 import dev.corexinc.corex.environment.utils.commands.impl.RunCommand;
 import dev.corexinc.corex.environment.utils.scripts.WebSocketManager;
@@ -67,7 +69,13 @@ public class Corex extends JavaPlugin {
         if ("void".equals(id)) {
             return new VoidGenerator();
         }
-        CorexLogger.warn("Unknown generator id '" + id);
+        if (id != null && !id.isEmpty()) {
+            Object container = ScriptManager.getContainer(id);
+            if (container instanceof GeneratorContainer) {
+                return new ScriptedChunkGenerator(id);
+            }
+            CorexLogger.warn("Unknown generator id '" + id + "'");
+        }
         return null;
     }
 
@@ -89,6 +97,7 @@ public class Corex extends JavaPlugin {
         return registry;
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     public void registerCommands() {
         if (!isTest()) {
             try {

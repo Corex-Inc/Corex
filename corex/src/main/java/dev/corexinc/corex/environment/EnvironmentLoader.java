@@ -143,6 +143,7 @@ public class EnvironmentLoader {
                 TaskContainer.class,
                 EventsContainer.class,
                 ItemContainer.class,
+                GeneratorContainer.class,
 
                 // Global Flags
                 IfGlobalFlag.class,
