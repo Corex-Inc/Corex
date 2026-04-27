@@ -312,25 +312,37 @@ public class MapTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             ListTag keys = new ListTag(attr.getParam());
+
             if (keys.size() > 1) {
                 ListTag result = new ListTag();
                 for (AbstractTag keyTag : keys.getList()) {
-                    AbstractTag current = obj;
-                    for (String part : keyTag.identify().split("\\.", -1)) {
-                        if (!(current instanceof MapTag mapTag)) { current = null; break; }
-                        current = mapTag.getObject(part);
+                    String rawKey = keyTag.identify();
+                    if (rawKey.contains("@") || !rawKey.contains(".")) {
+                        AbstractTag found = obj.getObject(rawKey);
+                        if (found != null) result.addObject(found);
+                    } else {
+                        AbstractTag current = obj;
+                        for (String part : rawKey.split("\\.", -1)) {
+                            if (!(current instanceof MapTag mapTag)) { current = null; break; }
+                            current = mapTag.getObject(part);
+                        }
+                        if (current != null) result.addObject(current);
                     }
-                    if (current != null) result.addObject(current);
                 }
                 return result;
             }
+
+            String rawKey = attr.getParam();
+            if (rawKey.contains("@") || !rawKey.contains(".")) {
+                return obj.getObject(rawKey);
+            }
+
             AbstractTag current = obj;
-            for (String key : attr.getParam().split("\\.", -1)) {
+            for (String key : rawKey.split("\\.", -1)) {
                 if (!(current instanceof MapTag mapTag)) return null;
                 current = mapTag.getObject(key);
             }
             return current;
-
         }).test("a");
 
         /* @doc tag
@@ -536,10 +548,17 @@ public class MapTag implements AbstractTag {
     }
 
     public void putDeepObject(String key, AbstractTag tag) {
-        if (!key.contains(".")) {
+        if (key.contains("@") || !key.contains(".")) {
             putObject(key, tag);
             return;
         }
+
+        try {
+            Double.parseDouble(key);
+            putObject(key, tag);
+            return;
+        } catch (NumberFormatException ignored) {}
+
         String[] parts = key.split("\\.", 2);
         AbstractTag existing = getObject(parts[0]);
         MapTag nested = existing instanceof MapTag m ? new MapTag(m.map) : new MapTag();

@@ -376,6 +376,20 @@ public class ElementTag implements AbstractTag {
 
         /* @doc tag
          *
+         * @Name abs
+         * @RawName <ElementTag.abs>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @NoArg
+         * @Description
+         * Returns the element to the power of a number.
+         *
+         * @Implements ElementTag.abs
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "abs", (attr, obj) -> new ElementTag(Math.abs(obj.asDouble())));
+
+        /* @doc tag
+         *
          * @Name ifTrue[].ifFalse[]
          * @RawName <ElementTag.ifTrue[<object>].ifFalse[<object>]>
          * @Object ElementTag

@@ -5,27 +5,24 @@ import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
+import dev.corexinc.corex.environment.tags.core.MapTag;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class GeneratorContainer implements AbstractContainer {
 
-    public static final String SECTION_BASE_HEIGHT    = "base_height";
+    public static final String SECTION_BASE_HEIGHT    = "baseHeight";
     public static final String SECTION_NOISE          = "noise";
     public static final String SECTION_SURFACE        = "surface";
     public static final String SECTION_BEDROCK        = "bedrock";
     public static final String SECTION_CAVES          = "caves";
     public static final String SECTION_BIOME          = "biome";
     public static final String SECTION_POPULATORS     = "populators";
-    public static final String SECTION_CAN_SPAWN      = "can_spawn";
-    public static final String SECTION_SPAWN_LOCATION = "spawn_location";
+    public static final String SECTION_CAN_SPAWN      = "canSpawn";
+    public static final String SECTION_SPAWN_LOCATION = "spawnLocation";
 
     static final Set<String> KNOWN_SECTIONS = Set.of(
             SECTION_BASE_HEIGHT,
@@ -70,7 +67,7 @@ public class GeneratorContainer implements AbstractContainer {
 
     @Override
     public @NotNull PathType resolvePath(@NotNull String path) {
-        if (path.equals("type") || path.equals("definitions") || path.equals("vanilla_first")) {
+        if (path.equals("type") || path.equals("definitions") || path.equals("vanillaFirst")) {
             return PathType.IGNORE;
         }
         if (KNOWN_SECTIONS.contains(path)) {
@@ -81,12 +78,12 @@ public class GeneratorContainer implements AbstractContainer {
 
     @Override
     public void addCompiledScript(@NotNull String path, @NotNull Instruction[] bytecode) {
-        scripts.put(path.toLowerCase(), bytecode);
+        scripts.put(path, bytecode);
     }
 
     @Override
     public @Nullable Instruction[] getScript(@NotNull String path) {
-        return scripts.get(path.toLowerCase());
+        return scripts.get(path);
     }
 
     @Override
@@ -98,16 +95,21 @@ public class GeneratorContainer implements AbstractContainer {
     }
 
     public boolean hasSection(@NotNull String section) {
-        return scripts.containsKey(section.toLowerCase());
+        return scripts.containsKey(section);
     }
 
     public boolean isVanillaFirst(@NotNull String section) {
-        return vanillaFirst.contains(section.toLowerCase());
+        return vanillaFirst.contains(section);
     }
 
     @Nullable
     public ScriptQueue createQueue(@NotNull String section, @Nullable ContextTag context) {
-        Instruction[] bytecode = scripts.get(section.toLowerCase());
+        return createQueue(section, context, new MapTag());
+    }
+
+    @Nullable
+    public ScriptQueue createQueue(@NotNull String section, @Nullable ContextTag context, @NotNull MapTag instanceDefs) {
+        Instruction[] bytecode = scripts.get(section);
         if (bytecode == null) return null;
 
         ScriptQueue queue = new ScriptQueue(
@@ -121,12 +123,19 @@ public class GeneratorContainer implements AbstractContainer {
             queue.setContext(context);
         }
 
+        instanceDefs.keySet().forEach(k -> queue.define(k, instanceDefs.getObject(k)));
+
         return queue;
     }
 
     @Nullable
     public ScriptQueue runSection(@NotNull String section, @Nullable ContextTag context) {
-        ScriptQueue queue = createQueue(section, context);
+        return runSection(section, context, new MapTag());
+    }
+
+    @Nullable
+    public ScriptQueue runSection(@NotNull String section, @Nullable ContextTag context, @NotNull MapTag instanceDefs) {
+        ScriptQueue queue = createQueue(section, context, instanceDefs);
         if (queue == null) return null;
         queue.start();
         return queue;
@@ -134,11 +143,11 @@ public class GeneratorContainer implements AbstractContainer {
 
 
     private void parseVanillaFirst(@NotNull ConfigurationSection section) {
-        String raw = section.getString("vanilla_first", "");
+        String raw = section.getString("vanillaFirst", "");
         if (raw.isBlank()) return;
 
         for (String entry : raw.replace(" ", "").split("\\|")) {
-            String key = entry.strip().toLowerCase();
+            String key = entry.strip();
             if (!key.isEmpty() && KNOWN_SECTIONS.contains(key)) {
                 vanillaFirst.add(key);
             }

@@ -3,12 +3,9 @@ package dev.corexinc.corex.engine.compiler;
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
-import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.compiler.math.MathCompiler;
-import dev.corexinc.corex.engine.compiler.math.MathNode;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
-import dev.corexinc.corex.engine.registry.FormatRegistry;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 
 import java.util.ArrayList;
@@ -48,11 +45,10 @@ public class ScriptCompiler {
             String token = tokens.get(i);
             int colonIndex = token.indexOf(':');
 
-            if (colonIndex > 0) {
+            if (colonIndex > 0 && !token.contains("<")) {
                 String potentialPrefix = token.substring(0, colonIndex);
 
                 AbstractGlobalFlag gFlag = Corex.getInstance().getRegistry().getGlobalFlag(potentialPrefix);
-
                 if (gFlag != null) {
                     gFlags.put(gFlag, parseArg(token.substring(colonIndex + 1)));
                     continue;
@@ -67,7 +63,10 @@ public class ScriptCompiler {
 
             CompiledArgument compiled = parseArg(token);
             linearArgs.add(compiled);
-            if (compiled instanceof CompiledArgument.Static) flags.add(token.toLowerCase());
+
+            if (compiled instanceof CompiledArgument.Static && token.matches("^[a-zA-Z_]+$")) {
+                flags.add(token.toLowerCase());
+            }
         }
 
         int argsCount = linearArgs.size();
@@ -89,15 +88,14 @@ public class ScriptCompiler {
     public static CompiledArgument parseArg(String text) {
         if (text.startsWith("(") && text.endsWith(")")) {
             try {
-                MathNode node = MathCompiler.compile(text);
-                return new CompiledArgument.MathArg(node, text);
+                return new CompiledArgument.MathArg(MathCompiler.compile(text), text);
             } catch (Exception e) {
                 CorexLogger.error("ERROR: " + e.getMessage() + " in expression: " + text);
                 return null;
             }
         }
 
-        if (!text.contains("<")) return new CompiledArgument.Static(unescape(text));
+        if (!text.contains("<") || !text.contains(">")) return new CompiledArgument.Static(unescape(text));
 
         List<CompiledArgument> parts = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
@@ -106,41 +104,32 @@ public class ScriptCompiler {
 
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-
-            if (escaped) {
-                buffer.append(c);
-                escaped = false;
-                continue;
-            }
-
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            }
+            if (escaped) { buffer.append(c); escaped = false; continue; }
+            if (c == '\\') { escaped = true; continue; }
 
             if (c == '<') {
-                if (tagDepth == 0) {
+                if (tagDepth == 0 && text.indexOf('>', i) != -1) {
                     if (!buffer.isEmpty()) {
                         parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
                         buffer.setLength(0);
                     }
-                } else buffer.append(c);
-                tagDepth++;
-            } else if (c == '>') {
+                    tagDepth++;
+                    continue;
+                } else if (tagDepth > 0) tagDepth++;
+            }
+
+            if (c == '>' && tagDepth > 0) {
                 tagDepth--;
                 if (tagDepth == 0) {
                     parts.add(compileSingleTag(buffer.toString()));
                     buffer.setLength(0);
-                } else buffer.append(c);
-            } else buffer.append(c);
+                    continue;
+                }
+            }
+            buffer.append(c);
         }
-
-        if (!buffer.isEmpty()) {
-            parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
-        }
-
-        if (parts.size() == 1) return parts.getFirst();
-        return new CompiledArgument.Mixed(parts.toArray(new CompiledArgument[0]));
+        if (!buffer.isEmpty()) parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
+        return parts.size() == 1 ? parts.getFirst() : new CompiledArgument.Mixed(parts.toArray(new CompiledArgument[0]));
     }
 
     private static CompiledArgument compileSingleTag(String rawTag) {
@@ -236,8 +225,12 @@ public class ScriptCompiler {
                 continue;
             }
 
-            if (c == '<') tagDepth++;
-            if (c == '>') tagDepth--;
+            if (c == '<' && i + 1 < line.length() && isTagStartChar(line.charAt(i + 1))) {
+                tagDepth++;
+            } else if (c == '>' && tagDepth > 0) {
+                tagDepth--;
+            }
+
             if (c == '(' && tagDepth == 0) mathDepth++;
             if (c == ')' && tagDepth == 0) mathDepth--;
 
@@ -261,6 +254,10 @@ public class ScriptCompiler {
         }
         if (!current.isEmpty()) tokens.add(current.toString());
         return tokens;
+    }
+
+    private static boolean isTagStartChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '[' || c == '_';
     }
 
     public static String unescape(String str) {

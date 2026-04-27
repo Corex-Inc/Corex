@@ -110,7 +110,11 @@ public class ScriptManager {
             }
             else if (obj instanceof Map<?, ?> map) {
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
-                    String cmdLine = entry.getKey().toString().replace(":", "").trim();
+                    String rawKey = entry.getKey().toString().trim();
+
+                    String cmdLine = rawKey.endsWith(":")
+                            ? rawKey.substring(0, rawKey.length() - 1).trim()
+                            : rawKey;
 
                     if (entry.getValue() instanceof List) {
                         Instruction[] inner = compileBlock((List<?>) entry.getValue());

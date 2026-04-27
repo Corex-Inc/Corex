@@ -35,10 +35,12 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     public static final String TEMP_LIMITED_REGION = "__limitedRegion";
 
     private final String containerName;
+    private final MapTag instanceDefs;
     private volatile Boolean cachedCanSpawn = null;
 
-    public ScriptedChunkGenerator(@NotNull String containerName) {
+    public ScriptedChunkGenerator(@NotNull String containerName, @NotNull MapTag instanceDefs) {
         this.containerName = containerName;
+        this.instanceDefs = instanceDefs;
     }
 
     @Nullable
@@ -85,7 +87,8 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
             return true;
         }
 
-        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_CAN_SPAWN, null);
+        ContextTag ctx = new ContextTag();
+        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_CAN_SPAWN, ctx, instanceDefs);
         if (queue == null) {
             cachedCanSpawn = true;
             return true;
@@ -128,7 +131,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     public BiomeProvider getDefaultBiomeProvider(@NotNull WorldInfo worldInfo) {
         GeneratorContainer gc = container();
         if (gc == null || !gc.hasSection(GeneratorContainer.SECTION_BIOME)) return null;
-        return new ScriptedBiomeProvider(containerName);
+        return new ScriptedBiomeProvider(containerName, instanceDefs);
     }
 
     @Override
@@ -138,7 +141,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         if (gc == null || !gc.hasSection(GeneratorContainer.SECTION_POPULATORS)) {
             return Collections.emptyList();
         }
-        return List.of(new ScriptedBlockPopulator(containerName));
+        return List.of(new ScriptedBlockPopulator(containerName, instanceDefs));
     }
 
     @Override
@@ -147,7 +150,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         GeneratorContainer gc = container();
         if (gc == null || !gc.hasSection(GeneratorContainer.SECTION_SPAWN_LOCATION)) return null;
 
-        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_SPAWN_LOCATION, buildSpawnContext(world));
+        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_SPAWN_LOCATION, buildSpawnContext(world), instanceDefs);
         if (queue == null) return null;
 
         List<AbstractTag> returns = queue.getReturns();
@@ -175,7 +178,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         int chunkX = 0;
         int chunkZ = 0;
         ContextTag ctx = new ContextTag()
-                .put("baseHeight", new ElementTag(resolveBaseHeight(containerName, world, chunkX, chunkZ)))
+                .put("baseHeight", new ElementTag(resolveBaseHeight(containerName, world, chunkX, chunkZ, instanceDefs)))
                 .put("worldName", new ElementTag(world.getName()))
                 .put("minHeight", new ElementTag(world.getMinHeight()));
 
@@ -184,10 +187,14 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     }
 
     private int resolveBaseHeight(@NotNull WorldInfo worldInfo, int chunkX, int chunkZ) {
-        return resolveBaseHeight(containerName, worldInfo, chunkX, chunkZ);
+        return resolveBaseHeight(containerName, worldInfo, chunkX, chunkZ, instanceDefs);
     }
 
     private static int resolveBaseHeight(@NotNull String containerName, @NotNull WorldInfo worldInfo, int chunkX, int chunkZ) {
+        return resolveBaseHeight(containerName, worldInfo, chunkX, chunkZ, new MapTag());
+    }
+
+    private static int resolveBaseHeight(@NotNull String containerName, @NotNull WorldInfo worldInfo, int chunkX, int chunkZ, @NotNull MapTag instanceDefs) {
         Object raw = ScriptManager.getContainer(containerName);
         if (!(raw instanceof GeneratorContainer gc)) return 64;
         if (!gc.hasSection(GeneratorContainer.SECTION_BASE_HEIGHT)) return 64;
@@ -196,7 +203,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         ContextTag ctx = new ContextTag();
         addChunkContext(ctx, world, chunkX, chunkZ);
 
-        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BASE_HEIGHT, ctx);
+        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BASE_HEIGHT, ctx, instanceDefs);
         if (queue == null) return 64;
 
         List<AbstractTag> returns = queue.getReturns();
@@ -207,6 +214,10 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     }
 
     private static int resolveBaseHeight(@NotNull String containerName, @NotNull World world, int chunkX, int chunkZ) {
+        return resolveBaseHeight(containerName, world, chunkX, chunkZ, new MapTag());
+    }
+
+    private static int resolveBaseHeight(@NotNull String containerName, @NotNull World world, int chunkX, int chunkZ, @NotNull MapTag instanceDefs) {
         Object raw = ScriptManager.getContainer(containerName);
         if (!(raw instanceof GeneratorContainer gc)) return 64;
         if (!gc.hasSection(GeneratorContainer.SECTION_BASE_HEIGHT)) return 64;
@@ -214,7 +225,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         ContextTag ctx = new ContextTag();
         addChunkContext(ctx, world, chunkX, chunkZ);
 
-        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BASE_HEIGHT, ctx);
+        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BASE_HEIGHT, ctx, instanceDefs);
         if (queue == null) return 64;
 
         List<AbstractTag> returns = queue.getReturns();
@@ -228,7 +239,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         GeneratorContainer gc = container();
         if (gc == null || !gc.hasSection(section)) return;
 
-        ScriptQueue queue = gc.createQueue(section, buildChunkContext(worldInfo, chunkX, chunkZ));
+        ScriptQueue queue = gc.createQueue(section, buildChunkContext(worldInfo, chunkX, chunkZ), instanceDefs);
         if (queue == null) return;
 
         queue.start();
@@ -256,9 +267,11 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     private static class ScriptedBiomeProvider extends BiomeProvider {
 
         private final String containerName;
+        private final MapTag instanceDefs;
 
-        ScriptedBiomeProvider(@NotNull String containerName) {
+        ScriptedBiomeProvider(@NotNull String containerName, @NotNull MapTag instanceDefs) {
             this.containerName = containerName;
+            this.instanceDefs = instanceDefs;
         }
 
         @Override
@@ -272,8 +285,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
             if (world != null) {
                 ctx.put("world", new WorldTag(world));
             }
-
-            ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BIOME, ctx);
+            ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BIOME, ctx, instanceDefs);
             if (queue == null) return Biome.PLAINS;
 
             List<AbstractTag> returns = queue.getReturns();
@@ -296,9 +308,11 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     private static class ScriptedBlockPopulator extends BlockPopulator {
 
         private final String containerName;
+        private final MapTag instanceDefs;
 
-        ScriptedBlockPopulator(@NotNull String containerName) {
+        ScriptedBlockPopulator(@NotNull String containerName, @NotNull MapTag instanceDefs) {
             this.containerName = containerName;
+            this.instanceDefs = instanceDefs;
         }
 
         @Override
@@ -309,11 +323,11 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
 
             World world = Bukkit.getWorld(worldInfo.getName());
             ContextTag ctx = new ContextTag()
-                    .put("baseHeight", new ElementTag(resolveBaseHeight(containerName, worldInfo, chunkX, chunkZ)));
+                    .put("baseHeight", new ElementTag(resolveBaseHeight(containerName, worldInfo, chunkX, chunkZ, instanceDefs)));
 
             addChunkContext(ctx, world, chunkX, chunkZ);
 
-            ScriptQueue queue = gc.createQueue(GeneratorContainer.SECTION_POPULATORS, ctx);
+            ScriptQueue queue = gc.createQueue(GeneratorContainer.SECTION_POPULATORS, ctx, instanceDefs);
             if (queue == null) return;
 
             queue.setTempData(TEMP_LIMITED_REGION, limitedRegion);

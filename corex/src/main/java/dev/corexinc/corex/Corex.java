@@ -1,5 +1,6 @@
 package dev.corexinc.corex;
 
+import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
@@ -22,6 +23,8 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
+
+import dev.corexinc.corex.environment.tags.core.MapTag;
 
 public class Corex extends JavaPlugin {
 
@@ -70,11 +73,20 @@ public class Corex extends JavaPlugin {
             return new VoidGenerator();
         }
         if (id != null && !id.isEmpty()) {
-            Object container = ScriptManager.getContainer(id);
-            if (container instanceof GeneratorContainer) {
-                return new ScriptedChunkGenerator(id);
+            String containerId = id;
+            MapTag instanceDefs = new MapTag();
+
+            int bracket = id.indexOf('[');
+            if (bracket != -1 && id.endsWith("]")) {
+                containerId = id.substring(0, bracket);
+                instanceDefs = new MapTag(id.substring(bracket + 1, id.length() - 1));
             }
-            CorexLogger.warn("Unknown generator id '" + id + "'");
+
+            AbstractContainer container = ScriptManager.getContainer(containerId);
+            if (container instanceof GeneratorContainer) {
+                return new ScriptedChunkGenerator(containerId, instanceDefs);
+            }
+            CorexLogger.warn("Unknown generator id '" + containerId + "'");
         }
         return null;
     }
