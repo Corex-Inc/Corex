@@ -17,7 +17,7 @@ public class DamageCommand implements AbstractCommand {
 
     @Override
     public @NotNull String getSyntax() {
-        return "1312321313213";
+        return "уйня";
     }
 
     @Override
