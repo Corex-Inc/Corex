@@ -1,0 +1,44 @@
+name: Nightly Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    if: |
+      !contains(github.event.head_commit.message, '[nb-skip]') && 
+      !contains(github.event.head_commit.message, '[nightlybuild-skip]') &&
+      !contains(github.event.head_commit.message, '[ci skip]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Downloading code
+        uses: actions/checkout@v4
+
+      - name: Setting up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Building the project
+        run: ./gradlew build
+
+      - name: Removing an old release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete nightly --cleanup-tag -y || true
+
+      - name: Creating a new release and uploading the JAR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create nightly build/libs/*.jar \
+            --title "Nightly Build" \
+            --notes "Automatic build from commit: ${{ github.sha }}" \
+            --prerelease
