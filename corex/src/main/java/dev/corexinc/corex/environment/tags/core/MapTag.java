@@ -219,7 +219,7 @@ public class MapTag implements AbstractTag {
          * @ReturnType ListTag(ListTag)
          * @NoArg
          * @Description
-         * Converts the map into a list of two-element lists, each containing [key, value].
+         * Converts the map into a list of two-element lists, each containing[key, value].
          * Useful for foreach loops where both the key and value are needed.
          * @Usage
          * // Narrates "a is set to 1", then "b is set to 2", then "c is set to 3"
@@ -570,9 +570,9 @@ public class MapTag implements AbstractTag {
 
     @Override
     public @NonNull String identify() {
-        List<String> pairs = new ArrayList<>();
-        map.forEach((k, v) -> pairs.add(k + "=" + v));
-        return prefix + "@[" + String.join(";", pairs) + "]";
+        StringJoiner joiner = new StringJoiner(";");
+        map.forEach((k, v) -> joiner.add(k + "=" + v));
+        return prefix + "@[" + joiner + "]";
     }
 
     public void putObject(String key, AbstractTag tag) {

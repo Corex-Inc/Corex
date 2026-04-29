@@ -382,7 +382,7 @@ public class ElementTag implements AbstractTag {
          * @ReturnType ElementTag(Decimal)
          * @NoArg
          * @Description
-         * Returns the element to the power of a number.
+         * Returns the absolute value of the element.
          *
          * @Implements ElementTag.abs
          */
