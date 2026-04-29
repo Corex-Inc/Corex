@@ -38,6 +38,7 @@ public class ScriptQueue {
     private boolean isStopped = false;
     private boolean isBroken = false;
     private boolean isCancelled = false;
+    private boolean silent = false;
 
     private boolean keepAlive = false;
     private boolean isWaitingForInstructions = false;
@@ -69,6 +70,15 @@ public class ScriptQueue {
         this.isAsync = isAsync;
         this.linkedPlayer = linkedPlayer;
         this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+    }
+
+    public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, boolean silent) {
+        this.id = id;
+        this.bytecode = bytecode;
+        this.isAsync = isAsync;
+        this.linkedPlayer = linkedPlayer;
+        this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+        this.silent = silent;
     }
 
     public void start() {
@@ -196,7 +206,7 @@ public class ScriptQueue {
                         isStopped = true;
                         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
                         Debugger.queueStop(this, elapsedMs);
-                        Debugger.releaseQueue(id);
+                        Debugger.releaseQueue(this);
                         if (callback != null) callback.run();
                         break;
                     } else {
@@ -277,7 +287,7 @@ public class ScriptQueue {
         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
         activeQueues.remove(id);
         Debugger.queueStop(this, elapsedMs);
-        Debugger.releaseQueue(id);
+        Debugger.releaseQueue(this);
     }
 
     public void setOnFinish(Runnable onFinish) {
@@ -367,5 +377,13 @@ public class ScriptQueue {
 
     public Location getTargetRegion() {
         return targetRegionLocation;
+    }
+
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public void setSilent(boolean silent) {
+        this.silent = silent;
     }
 }

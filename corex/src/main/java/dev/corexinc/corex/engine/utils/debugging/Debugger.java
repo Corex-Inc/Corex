@@ -47,7 +47,7 @@ public class Debugger {
     }
 
     public static void queueStart(ScriptQueue queue) {
-        if (mode == Mode.NONE || mode == Mode.ERRORS) return;
+        if (queue.isSilent() || mode == Mode.NONE || mode == Mode.ERRORS) return;
         String player = queue.getPlayer() != null
                 ? " <dark_gray>player=<white>" + queue.getPlayer().identify().replace("<", "\\<").replace("§", "&") : "";
         String m = queue.isAsync() ? "<gray>async" : "<gray>sync";
@@ -55,24 +55,51 @@ public class Debugger {
     }
 
     public static void queueStop(ScriptQueue queue, double ms) {
-        if (mode == Mode.NONE || mode == Mode.ERRORS) return;
+        if (queue.isSilent() || mode == Mode.NONE || mode == Mode.ERRORS) return;
         CorexLogger.success(styleOf(queue).header + " <gray>done <dark_gray>("
                 + String.format(java.util.Locale.US, "%.4f", ms) + "ms)");
     }
 
+    public static void releaseQueue(ScriptQueue queue) {
+        styles.remove(queue.getId());
+    }
+
     public static void instruction(ScriptQueue queue, Instruction inst, int depth) {
-        if (mode != Mode.ALL) return;
+        if (queue.isSilent() || mode != Mode.ALL) return;
         CorexLogger.info(indent(depth) + styleOf(queue).bar + " <white>" + inst.command.getName() + formatArgs(inst));
     }
 
     public static void tag(ScriptQueue queue, String original, String filled, int depth) {
-        if (mode != Mode.ALL) return;
+        if (queue.isSilent() || mode != Mode.ALL) return;
 
         String escapedOriginal = original != null ? original.replace("<", "\\<").replace("§", "&") : "null";
         String escapedFilled = filled != null ? filled.replace("<", "\\<").replace("§", "&") : "null";
 
         CorexLogger.info(indent(depth + 1) + styleOf(queue).bar
                 + " <dark_gray><<gray>" + escapedOriginal + "<dark_gray>> <dark_gray>= <aqua>" + escapedFilled);
+    }
+
+    public static void report(ScriptQueue queue, Instruction inst, Object... keyValues) {
+        flushErrors(queue, inst);
+
+        if (queue.isSilent() || mode != Mode.ALL) return;
+
+        int depth = queue.getDepth();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(indent(depth)).append(styleOf(queue).bar)
+                .append("<yellow> => <white>Executing '<yellow>").append(inst.command.getName().toUpperCase()).append("</yellow>'<gray>:");
+
+        for (int i = 0; i < keyValues.length; i += 2) {
+            if (i + 1 < keyValues.length && keyValues[i + 1] != null) {
+                String key = String.valueOf(keyValues[i]);
+                String val = String.valueOf(keyValues[i + 1])
+                        .replace("<", "\\<").replace("§", "&");
+                sb.append(" ").append(key).append("='<aqua>").append(val).append("</aqua><gray>'");
+            }
+        }
+
+        CorexLogger.info(sb.toString());
     }
 
     public static void error(ScriptQueue queue, String message, int depth) {
@@ -104,31 +131,6 @@ public class Debugger {
                     + cause.getClass().getSimpleName() + ": " + cause.getMessage());
     }
 
-    public static void report(ScriptQueue queue, Instruction inst, Object... keyValues) {
-        flushErrors(queue, inst);
-
-        if (mode != Mode.ALL) return;
-
-        int depth = queue.getDepth();
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(indent(depth)).append(styleOf(queue).bar)
-                .append("<yellow> => <white>Executing '<yellow>").append(inst.command.getName().toUpperCase()).append("</yellow>'<gray>:");
-
-        for (int i = 0; i < keyValues.length; i += 2) {
-            if (i + 1 < keyValues.length && keyValues[i + 1] != null) {
-                String key = String.valueOf(keyValues[i]);
-                String val = String.valueOf(keyValues[i + 1]);
-
-                val = val.replace("<", "\\<").replace("§", "&");
-
-                sb.append(" ").append(key).append("='<aqua>").append(val).append("</aqua><gray>'");
-            }
-        }
-
-        CorexLogger.info(sb.toString());
-    }
-
     public static void echoError(ScriptQueue queue, String message) {
         if (queue != null) {
             queue.addError(message);
@@ -139,7 +141,6 @@ public class Debugger {
 
     public static void flushErrors(ScriptQueue queue, Instruction inst) {
         if (queue == null || !queue.hasErrors()) return;
-
         if (mode == Mode.NONE) return;
 
         List<String> errors = queue.getAndClearErrors();
@@ -156,10 +157,6 @@ public class Debugger {
             }
             CorexLogger.error(styleOf(queue).bar + "  <gray>└─> Additional Error Info: <white>" + errors.getLast().replace("§", "&"));
         }
-    }
-
-    public static void releaseQueue(String queueId) {
-        styles.remove(queueId);
     }
 
     private static QueueStyle styleOf(ScriptQueue queue) {
