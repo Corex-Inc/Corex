@@ -8,12 +8,14 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.generators.ScriptedChunkGenerator;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import dev.corexinc.corex.environment.tags.world.area.AbstractAreaObject;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
 
@@ -56,6 +58,9 @@ import java.util.stream.Collectors;
  * If the total is below 100, the remaining probability results in no change.
  *
  * The setblock command is ~waitable. Refer to Language:~waitable.
+ *
+ * When called from inside a chunk generator section, the command writes directly to the
+ * ChunkData buffer. In that context, no_physics, naturally, and delayed are ignored.
  *
  * @Usage
  * // Set the block at the player's location to stone.
@@ -108,14 +113,22 @@ public class SetBlockCommand implements AbstractCommand {
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String locationsRaw  = instruction.getLinear(0, queue);
         String materialsRaw  = instruction.getLinear(1, queue);
+
+        if (locationsRaw == null) { Debugger.echoError(queue, "Locations cannot be null!"); return; }
+        if (materialsRaw == null) { Debugger.echoError(queue, "Materials cannot be null!"); return; }
+
+        Object rawChunkData = queue.getTempData(ScriptedChunkGenerator.TEMP_CHUNK_DATA);
+        if (rawChunkData instanceof ChunkGenerator.ChunkData chunkData) {
+            runGeneratorSetBlock(queue, instruction, locationsRaw, materialsRaw,
+                    instruction.getPrefix("chance", queue), chunkData);
+            return;
+        }
+
         String naturallyRaw  = instruction.getPrefix("naturally", queue);
         String maxDelayMsRaw = instruction.getPrefix("max_delay_ms", queue);
         String chanceRaw     = instruction.getPrefix("chance", queue);
         boolean noPhysics    = instruction.getPrefix("no_physics", queue) != null;
         boolean delayed      = instruction.getPrefix("delayed", queue) != null;
-
-        if (locationsRaw == null) { Debugger.echoError(queue, "Locations cannot be null!"); return; }
-        if (materialsRaw == null) { Debugger.echoError(queue, "Materials cannot be null!"); return; }
 
         List<Location> blocks = resolveLocations(locationsRaw);
         if (blocks.isEmpty()) { Debugger.echoError(queue, "No valid locations resolved for setblock!"); return; }
@@ -168,6 +181,26 @@ public class SetBlockCommand implements AbstractCommand {
             } else {
                 applyImmediatePaper(queue, instruction, ctx);
             }
+        }
+    }
+
+    private void runGeneratorSetBlock(ScriptQueue queue, Instruction instruction,
+                                      String locationsRaw, String materialsRaw,
+                                      String chanceRaw, ChunkGenerator.ChunkData chunkData) {
+        List<Location> blocks = resolveLocations(locationsRaw);
+        if (blocks.isEmpty()) { Debugger.echoError(queue, "No valid locations resolved!"); return; }
+
+        List<MaterialTag> materials = resolveMaterials(materialsRaw);
+        if (materials.isEmpty()) { Debugger.echoError(queue, "No valid materials resolved!"); return; }
+
+        List<Double> chances = chanceRaw != null ? resolveChances(chanceRaw, materials.size()) : null;
+
+        for (Location loc : blocks) {
+            MaterialTag chosen = pickMaterial(materials, chances);
+            if (chosen == null || !chosen.getMaterial().isBlock()) continue;
+            int relX = loc.getBlockX() & 15;
+            int relZ = loc.getBlockZ() & 15;
+            chunkData.setBlock(relX, loc.getBlockY(), relZ, chosen.getMaterial());
         }
     }
 

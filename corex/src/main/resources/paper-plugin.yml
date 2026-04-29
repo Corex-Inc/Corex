@@ -5,8 +5,13 @@ description: Modern, Paper-exclusive compiled scripting engine
 authors:
   - tizis0
   - Nybik_YT
-  - isnsest
-  - Corex Inc
 api-version: '1.21'
 folia-supported: true
 loader: dev.corexinc.corex.CorexLoader
+
+dependencies:
+  server:
+    Multiverse-Core:
+      load: BEFORE
+      required: false
+      join-classpath: true

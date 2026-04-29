@@ -116,7 +116,8 @@ public class GeneratorContainer implements AbstractContainer {
                 "Generator_" + name + "_" + section + "_" + System.nanoTime(),
                 bytecode,
                 false,
-                null
+                null,
+                true
         );
 
         if (context != null) {
