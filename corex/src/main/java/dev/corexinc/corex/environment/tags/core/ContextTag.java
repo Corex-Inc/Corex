@@ -75,7 +75,11 @@ public class ContextTag implements AbstractTag {
         String key = attribute.getName();
         if (contextData.containsKey(key)) {
             attribute.fulfill(1);
-            return contextData.get(key);
+            AbstractTag value = contextData.get(key);
+            if (attribute.hasNext()) {
+                return value.getAttribute(attribute);
+            }
+            return value;
         }
 
         return null;
