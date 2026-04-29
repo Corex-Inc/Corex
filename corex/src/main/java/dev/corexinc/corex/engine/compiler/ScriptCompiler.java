@@ -27,8 +27,7 @@ public class ScriptCompiler {
             cmdName = cmdName.substring(1);
         }
 
-        CommandMetadata meta =
-                Corex.getInstance().getRegistry().getScriptCommands().getMetadata(cmdName);
+        CommandMetadata meta = Corex.getInstance().getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) {
             CorexLogger.error("SCRIPT ERROR: Unknown script command '<yellow>" + cmdName + "</yellow>'!");
@@ -38,14 +37,13 @@ public class ScriptCompiler {
         List<CompiledArgument> linearArgs = new ArrayList<>();
         Map<String, CompiledArgument> prefixArgs = new HashMap<>();
         List<String> flags = new ArrayList<>();
-
         Map<AbstractGlobalFlag, CompiledArgument> gFlags = new HashMap<>();
 
         for (int i = 1; i < tokens.size(); i++) {
             String token = tokens.get(i);
             int colonIndex = token.indexOf(':');
 
-            if (colonIndex > 0 && !token.contains("<")) {
+            if (colonIndex > 0) {
                 String potentialPrefix = token.substring(0, colonIndex);
 
                 AbstractGlobalFlag gFlag = Corex.getInstance().getRegistry().getGlobalFlag(potentialPrefix);
@@ -55,8 +53,7 @@ public class ScriptCompiler {
                 }
 
                 if (meta.isAllowedPrefix(potentialPrefix)) {
-                    String value = token.substring(colonIndex + 1);
-                    prefixArgs.put(potentialPrefix.toLowerCase(), parseArg(value));
+                    prefixArgs.put(potentialPrefix.toLowerCase(), parseArg(token.substring(colonIndex + 1)));
                     continue;
                 }
             }
@@ -71,9 +68,7 @@ public class ScriptCompiler {
 
         int argsCount = linearArgs.size();
         if (argsCount < meta.command.getMinArgs() || (meta.command.getMaxArgs() != -1 && argsCount > meta.command.getMaxArgs())) {
-            CorexLogger.error("COMPILE ERROR: Command '" + cmdName + "' expect from "
-                    + meta.command.getMinArgs() + " to " + meta.command.getMaxArgs()
-                    + " args, but provided " + argsCount + "!");
+            CorexLogger.error("COMPILE ERROR: Command '" + cmdName + "' expect from " + meta.command.getMinArgs() + " to " + meta.command.getMaxArgs() + " args, but provided " + argsCount + "!");
             CorexLogger.error("-> Line: " + rawLine);
             return null;
         }
@@ -95,7 +90,7 @@ public class ScriptCompiler {
             }
         }
 
-        if (!text.contains("<") || !text.contains(">")) return new CompiledArgument.Static(unescape(text));
+        if (!text.contains("<")) return new CompiledArgument.Static(unescape(text));
 
         List<CompiledArgument> parts = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
@@ -115,7 +110,9 @@ public class ScriptCompiler {
                     }
                     tagDepth++;
                     continue;
-                } else if (tagDepth > 0) tagDepth++;
+                } else if (tagDepth > 0) {
+                    tagDepth++;
+                }
             }
 
             if (c == '>' && tagDepth > 0) {
@@ -167,34 +164,20 @@ public class ScriptCompiler {
 
         for (int i = 0; i < len; i++) {
             char c = rawTag.charAt(i);
-
             if (escaped) {
-                if (bracketDepth > 0) param.append(c);
-                else name.append(c);
-                escaped = false;
-                continue;
+                if (bracketDepth > 0) param.append(c); else name.append(c);
+                escaped = false; continue;
             }
+            if (c == '\\') { escaped = true; continue; }
 
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            }
-
-            if (c == '[') {
-                bracketDepth++;
-                if (bracketDepth == 1) continue;
-            } else if (c == ']') {
-                bracketDepth--;
-                if (bracketDepth == 0) continue;
-            } else if (c == '.' && bracketDepth == 0) {
+            if (c == '[') { bracketDepth++; if (bracketDepth == 1) continue; }
+            else if (c == ']') { bracketDepth--; if (bracketDepth == 0) continue; }
+            else if (c == '.' && bracketDepth == 0) {
                 nodes.add(new TagNode(name.toString(), param.isEmpty() ? null : parseArg(param.toString())));
-                name.setLength(0);
-                param.setLength(0);
-                continue;
+                name.setLength(0); param.setLength(0); continue;
             }
 
-            if (bracketDepth > 0) param.append(c);
-            else name.append(c);
+            if (bracketDepth > 0) param.append(c); else name.append(c);
         }
         nodes.add(new TagNode(name.toString(), param.isEmpty() ? null : parseArg(param.toString())));
         return nodes.toArray(new TagNode[0]);
@@ -212,34 +195,19 @@ public class ScriptCompiler {
             char c = line.charAt(i);
 
             if (escaped) {
-                if (inQuotes && c != '"' && c != '\\') {
-                    current.append('\\');
-                }
-                current.append(c);
-                escaped = false;
-                continue;
+                if (inQuotes && c != '"' && c != '\\') current.append('\\');
+                current.append(c); escaped = false; continue;
             }
+            if (c == '\\') { escaped = true; continue; }
 
-            if (c == '\\') {
-                escaped = true;
-                continue;
-            }
-
-            if (c == '<' && i + 1 < line.length() && isTagStartChar(line.charAt(i + 1))) {
-                tagDepth++;
-            } else if (c == '>' && tagDepth > 0) {
-                tagDepth--;
-            }
+            if (c == '<') tagDepth++;
+            else if (c == '>' && tagDepth > 0) tagDepth--;
 
             if (c == '(' && tagDepth == 0) mathDepth++;
             if (c == ')' && tagDepth == 0) mathDepth--;
 
             if (c == '"') {
-                if (tagDepth > 0 || mathDepth > 0) {
-                    current.append(c);
-                } else {
-                    inQuotes = !inQuotes;
-                }
+                if (tagDepth > 0 || mathDepth > 0) current.append(c); else inQuotes = !inQuotes;
                 continue;
             }
 
@@ -256,20 +224,13 @@ public class ScriptCompiler {
         return tokens;
     }
 
-    private static boolean isTagStartChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '[' || c == '_';
-    }
-
     public static String unescape(String str) {
         if (str == null || !str.contains("\\")) return str;
         StringBuilder sb = new StringBuilder();
         boolean escaped = false;
         for (char c : str.toCharArray()) {
             if (!escaped && c == '\\') escaped = true;
-            else {
-                sb.append(c);
-                escaped = false;
-            }
+            else { sb.append(c); escaped = false; }
         }
         return sb.toString();
     }

@@ -7,11 +7,5 @@ authors:
   - Nybik_YT
 api-version: '1.21'
 folia-supported: true
+load: STARTUP
 loader: dev.corexinc.corex.CorexLoader
-
-dependencies:
-  server:
-    Multiverse-Core:
-      load: BEFORE
-      required: false
-      join-classpath: true
