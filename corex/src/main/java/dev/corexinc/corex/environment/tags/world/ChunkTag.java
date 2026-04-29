@@ -21,6 +21,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.WorldInfo;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -131,6 +132,12 @@ public class ChunkTag implements AbstractTag, Flaggable {
 
     public ChunkTag(@NonNull World world, int x, int z) {
         this.world = world;
+        this.x = x;
+        this.z = z;
+    }
+
+    public ChunkTag(WorldInfo info, int x, int z) {
+        this.world = Bukkit.getWorld(info.getUID());
         this.x = x;
         this.z = z;
     }
