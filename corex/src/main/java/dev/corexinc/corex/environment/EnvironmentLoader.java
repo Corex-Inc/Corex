@@ -46,6 +46,7 @@ public class EnvironmentLoader {
         nms.register(BiomeAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.BiomeAdapterImpl");
 
         nms.register(PlayerAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.PlayerAdapterImpl");
+        nms.register(PlayerAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.PlayerAdapterImpl");
 
         // ---------- NMS (Net.Minecraft.Server) ----------
 
@@ -104,6 +105,12 @@ public class EnvironmentLoader {
                 SetBlockCommand.class,
                 StopCommand.class,
                 StructureCommand.class,
+                TitleCommand.class,
+                ActionBarCommand.class,
+                ItemCooldownCommand.class,
+                ResourcePackCommand.class,
+                ToastCommand.class,
+                ParticleCommand.class,
 
                 // Tags
                 ElementTag.class,

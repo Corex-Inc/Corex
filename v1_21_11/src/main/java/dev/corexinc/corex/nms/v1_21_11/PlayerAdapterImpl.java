@@ -1,16 +1,15 @@
-package dev.corexinc.corex.nms.v1_21;
+package dev.corexinc.corex.nms.v1_21_11;
 
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.*;
-import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.advancements.criterion.ImpossibleTrigger;
 import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
-import net.minecraft.world.item.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -67,7 +66,7 @@ public class PlayerAdapterImpl implements PlayerAdapter {
                 true
         );
 
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("corex", "toast_" + UUID.randomUUID().toString());
+        Identifier id = Identifier.fromNamespaceAndPath("corex", "toast_" + UUID.randomUUID().toString());
 
         Criterion<?> impossibleCrit = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
         Map<String, Criterion<?>> criteria = Map.of(CRITERIA_KEY, impossibleCrit);
@@ -93,14 +92,16 @@ public class PlayerAdapterImpl implements PlayerAdapter {
                 false,
                 List.of(holder),
                 Set.of(),
-                Map.of(id, progress)
+                Map.of(id, progress),
+                true
         );
 
         ClientboundUpdateAdvancementsPacket removePacket = new ClientboundUpdateAdvancementsPacket(
                 false,
                 List.of(),
                 Set.of(id),
-                Map.of()
+                Map.of(),
+                true
         );
 
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
