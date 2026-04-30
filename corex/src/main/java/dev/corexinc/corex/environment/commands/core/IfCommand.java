@@ -114,7 +114,6 @@ public class IfCommand implements AbstractCommand {
         queue.setTempData("corex_if_result", result);
 
         Debugger.report(queue, instruction,
-                "Condition", Arrays.toString(instruction.linearArgs),
                 "Result", String.valueOf(result)
         );
 

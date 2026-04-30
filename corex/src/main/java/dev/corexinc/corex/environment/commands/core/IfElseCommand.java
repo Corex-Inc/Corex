@@ -60,6 +60,10 @@ public class IfElseCommand implements AbstractCommand {
                 boolean result = condition.evaluate(queue);
                 queue.setTempData("corex_if_result", result);
 
+                Debugger.report(queue, instruction,
+                        "Result", String.valueOf(result)
+                );
+
                 if (result && instruction.innerBlock != null) {
                     queue.pushFrame(getName(), instruction.innerBlock, null);
                 }

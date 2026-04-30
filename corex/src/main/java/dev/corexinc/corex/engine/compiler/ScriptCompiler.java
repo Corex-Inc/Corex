@@ -4,9 +4,14 @@ import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.compiler.args.MathArg;
+import dev.corexinc.corex.engine.compiler.args.MixedArg;
+import dev.corexinc.corex.engine.compiler.args.PreSlicedDynamicArg;
+import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.compiler.math.MathCompiler;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +19,13 @@ import java.util.List;
 import java.util.Map;
 
 public class ScriptCompiler {
+
+    private static boolean isTagStart(String str, int index) {
+        if (str.charAt(index) != '<') return false;
+        if (index + 1 >= str.length()) return false;
+        char next = str.charAt(index + 1);
+        return Character.isLetter(next) || next == '_' || next == '[' || next == '#' || next == '&';
+    }
 
     public static Instruction compile(String rawLine, Instruction[] innerBlock) {
         List<String> tokens = tokenize(rawLine.trim());
@@ -61,7 +73,7 @@ public class ScriptCompiler {
             CompiledArgument compiled = parseArg(token);
             linearArgs.add(compiled);
 
-            if (compiled instanceof CompiledArgument.Static && token.matches("^[a-zA-Z_]+$")) {
+            if (compiled instanceof StaticArg && token.matches("^[a-zA-Z_]+$")) {
                 flags.add(token.toLowerCase());
             }
         }
@@ -83,50 +95,60 @@ public class ScriptCompiler {
     public static CompiledArgument parseArg(String text) {
         if (text.startsWith("(") && text.endsWith(")")) {
             try {
-                return new CompiledArgument.MathArg(MathCompiler.compile(text), text);
+                return new MathArg(MathCompiler.compile(text), text);
             } catch (Exception e) {
-                CorexLogger.error("ERROR: " + e.getMessage() + " in expression: " + text);
-                return null;
+                return new StaticArg(new ElementTag(text));
             }
         }
 
-        if (!text.contains("<")) return new CompiledArgument.Static(unescape(text));
+        if (!text.contains("<")) return new StaticArg(unescape(text));
 
         List<CompiledArgument> parts = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
-        int tagDepth = 0;
+
+        List<Integer> scope = new ArrayList<>();
         boolean escaped = false;
 
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-            if (escaped) { buffer.append(c); escaped = false; continue; }
+            if (escaped) {
+                buffer.append('\\').append(c);
+                escaped = false; continue;
+            }
             if (c == '\\') { escaped = true; continue; }
 
-            if (c == '<') {
-                if (tagDepth == 0 && text.indexOf('>', i) != -1) {
+            int top = scope.isEmpty() ? -1 : scope.getLast();
+
+            if (c == '<' && isTagStart(text, i)) {
+                if (scope.isEmpty()) {
                     if (!buffer.isEmpty()) {
-                        parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
+                        parts.add(new StaticArg(unescape(buffer.toString())));
                         buffer.setLength(0);
                     }
-                    tagDepth++;
+                    scope.add(0);
                     continue;
-                } else if (tagDepth > 0) {
-                    tagDepth++;
+                } else {
+                    scope.add(0);
                 }
+            } else if (c == '>') {
+                if (top == 0) {
+                    scope.removeLast();
+                    if (scope.isEmpty()) {
+                        parts.add(compileSingleTag(buffer.toString()));
+                        buffer.setLength(0);
+                        continue;
+                    }
+                }
+            } else if (c == '[') {
+                if (top == 0) scope.add(1);
+            } else if (c == ']') {
+                if (top == 1) scope.removeLast();
             }
 
-            if (c == '>' && tagDepth > 0) {
-                tagDepth--;
-                if (tagDepth == 0) {
-                    parts.add(compileSingleTag(buffer.toString()));
-                    buffer.setLength(0);
-                    continue;
-                }
-            }
             buffer.append(c);
         }
-        if (!buffer.isEmpty()) parts.add(new CompiledArgument.Static(unescape(buffer.toString())));
-        return parts.size() == 1 ? parts.getFirst() : new CompiledArgument.Mixed(parts.toArray(new CompiledArgument[0]));
+        if (!buffer.isEmpty()) parts.add(new StaticArg(unescape(buffer.toString())));
+        return parts.size() == 1 ? parts.getFirst() : new MixedArg(parts.toArray(new CompiledArgument[0]));
     }
 
     private static CompiledArgument compileSingleTag(String rawTag) {
@@ -144,14 +166,14 @@ public class ScriptCompiler {
         if (nodes.length == 1 && fallback == null) {
             var formats = Corex.getInstance().getRegistry().getFormats();
             if (formats.isFormat(nodes[0].name)) {
-                if (nodes[0].param == null || nodes[0].param instanceof CompiledArgument.Static) {
+                if (nodes[0].param == null || nodes[0].param instanceof StaticArg) {
                     Attribute mockAttr = new Attribute(nodes, null);
                     AbstractTag result = formats.get(nodes[0].name).parse(mockAttr);
-                    return new CompiledArgument.Static(result);
+                    return new StaticArg(result);
                 }
             }
         }
-        return new CompiledArgument.PreSlicedDynamic(nodes, fallback, mainTag);
+        return new PreSlicedDynamicArg(nodes, fallback, rawTag);
     }
 
     public static TagNode[] parseTagNodes(String rawTag) {
@@ -165,7 +187,8 @@ public class ScriptCompiler {
         for (int i = 0; i < len; i++) {
             char c = rawTag.charAt(i);
             if (escaped) {
-                if (bracketDepth > 0) param.append(c); else name.append(c);
+                if (bracketDepth > 0) param.append('\\').append(c);
+                else name.append(c);
                 escaped = false; continue;
             }
             if (c == '\\') { escaped = true; continue; }
@@ -187,38 +210,44 @@ public class ScriptCompiler {
         List<String> tokens = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean inQuotes = false;
-        int tagDepth = 0;
-        int mathDepth = 0;
         boolean escaped = false;
+
+        List<Integer> scope = new ArrayList<>();
 
         for (int i = 0; i < line.length(); i++) {
             char c = line.charAt(i);
 
             if (escaped) {
-                if (inQuotes && c != '"' && c != '\\') current.append('\\');
-                current.append(c); escaped = false; continue;
+                current.append('\\').append(c);
+                escaped = false; continue;
             }
             if (c == '\\') { escaped = true; continue; }
 
-            if (c == '<') tagDepth++;
-            else if (c == '>' && tagDepth > 0) tagDepth--;
+            int top = scope.isEmpty() ? -1 : scope.getLast();
 
-            if (c == '(' && tagDepth == 0) mathDepth++;
-            if (c == ')' && tagDepth == 0) mathDepth--;
-
-            if (c == '"') {
-                if (tagDepth > 0 || mathDepth > 0) current.append(c); else inQuotes = !inQuotes;
-                continue;
-            }
-
-            if (c == ' ' && !inQuotes && tagDepth == 0 && mathDepth == 0) {
+            if (c == ' ' && !inQuotes && scope.isEmpty()) {
                 if (!current.isEmpty()) {
                     tokens.add(current.toString());
                     current.setLength(0);
                 }
-            } else {
-                current.append(c);
+                continue;
             }
+
+            if (c == '<' && isTagStart(line, i)) scope.add(0);
+            else if (c == '>') { if (top == 0) scope.removeLast(); }
+            else if (c == '[') { if (top == 0) scope.add(1); }
+            else if (c == ']') { if (top == 1) scope.removeLast(); }
+            else if (c == '(') { if (scope.isEmpty() || top == 2) scope.add(2); }
+            else if (c == ')') { if (top == 2) scope.removeLast(); }
+
+            if (c == '"') {
+                if (scope.isEmpty()) {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+            }
+
+            current.append(c);
         }
         if (!current.isEmpty()) tokens.add(current.toString());
         return tokens;
