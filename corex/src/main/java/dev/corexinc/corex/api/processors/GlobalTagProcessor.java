@@ -21,6 +21,16 @@ public class GlobalTagProcessor {
         PROCESSOR.registerTag(ElementTag.class, "exists", (attr, obj) ->
                 new ElementTag(true));
 
+        PROCESSOR.registerTag(ElementTag.class, "equals", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            return new ElementTag(obj.identify().equals(attr.getParamObject().identify()));
+        });
+
+        PROCESSOR.registerTag(ElementTag.class, "equalsIgnoreCase", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            return new ElementTag(obj.identify().equalsIgnoreCase(attr.getParamObject().identify()));
+        });
+
         PROCESSOR.registerTag(AbstractTag.class, "as", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             String type = attr.getParam().toLowerCase();
