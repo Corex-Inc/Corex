@@ -403,7 +403,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLessThan", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() < param.asDouble());
-        });
+        }).test("22");
 
         /* @doc tag
          *
@@ -420,7 +420,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isMoreThan", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() > param.asDouble());
-        });
+        }).test("22");
 
         /* @doc tag
          *
@@ -437,7 +437,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLessOrEqual", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() <= param.asDouble());
-        });
+        }).test("22");
 
         /* @doc tag
          *
@@ -454,7 +454,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isMoreOrEqual", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() >= param.asDouble());
-        });
+        }).test("22");
 
         /* @doc tag
          *
