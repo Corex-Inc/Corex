@@ -93,7 +93,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
                 && queue.getReturns().getFirst() instanceof ElementTag el
                 && el.asBoolean();
 
-        cachedCanSpawn.compareAndSet(null, result); // первый поток wins, остальные игнорируются
+        cachedCanSpawn.compareAndSet(null, result);
         return cachedCanSpawn.get();
     }
 
