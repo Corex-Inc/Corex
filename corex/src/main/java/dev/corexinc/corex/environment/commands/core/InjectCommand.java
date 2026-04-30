@@ -50,7 +50,7 @@ public class InjectCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(@NonNull ScriptQueue queue, Instruction instruction) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String target = instruction.getLinear(0, queue);
         if (target == null) return;
 

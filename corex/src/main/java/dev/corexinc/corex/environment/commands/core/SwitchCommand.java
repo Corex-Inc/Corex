@@ -90,7 +90,7 @@ public class SwitchCommand implements AbstractCommand {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void run(@NonNull ScriptQueue queue, Instruction instruction) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String switchValue = instruction.getLinear(0, queue);
         boolean failed = false;
         if (switchValue == null || instruction.innerBlock == null) {

@@ -75,7 +75,7 @@ public class ReturnCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(@NonNull ScriptQueue queue, Instruction instruction) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String value = instruction.getLinear(0, queue);
 
         Debugger.report(queue, instruction,
