@@ -64,7 +64,7 @@ public class BlockAttemptBuildEvent implements AbstractEvent {
 
     @Override
     public @NotNull String getSyntax() {
-        return "block attempts to build <block>";
+        return "<block> attempts to build <block>";
     }
 
     @Override
@@ -89,7 +89,11 @@ public class BlockAttemptBuildEvent implements AbstractEvent {
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, newMaterial)) {
+            if (!data.isGenericMatch("block", 0, oldMaterial)) {
+                continue;
+            }
+
+            if (!data.isGenericMatch("block", 1, newMaterial)) {
                 continue;
             }
 

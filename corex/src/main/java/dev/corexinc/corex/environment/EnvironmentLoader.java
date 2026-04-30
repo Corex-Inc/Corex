@@ -195,7 +195,11 @@ public class EnvironmentLoader {
                 BlockIgniteEvent.class,
                 BlockPreDispenseEvent.class,
                 BlockShearEntityEvent.class,
-                BlockSpreadEvent.class
+                BlockSpreadEvent.class,
+                CauldronLevelChangeEvent.class,
+                BlockBrewingStartEvent.class,
+                CrafterCraftEvent.class,
+                DragonEggMoveEvent.class
         );
     }
 }
