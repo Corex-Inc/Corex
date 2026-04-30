@@ -2,7 +2,6 @@ package dev.corexinc.corex.environment.generators;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.environment.containers.GeneratorContainer;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -11,8 +10,10 @@ import dev.corexinc.corex.environment.tags.world.BiomeTag;
 import dev.corexinc.corex.environment.tags.world.ChunkTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.WorldTag;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ScriptedChunkGenerator extends ChunkGenerator {
 
@@ -34,9 +36,9 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     public static final String TEMP_CHUNK_DATA = "__chunkData";
 
     private final String containerName;
-    private final MapTag instanceDefs;
+    final MapTag instanceDefs;
 
-    private volatile Boolean cachedCanSpawn;
+    private final AtomicReference<Boolean> cachedCanSpawn = new AtomicReference<>();
 
     public ScriptedChunkGenerator(@NotNull String containerName, @NotNull MapTag instanceDefs) {
         this.containerName = containerName;
@@ -44,7 +46,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     }
 
     @Nullable
-    private GeneratorContainer container() {
+    GeneratorContainer container() {
         Object raw = ScriptManager.getContainer(containerName);
         return raw instanceof GeneratorContainer gc ? gc : null;
     }
@@ -55,53 +57,83 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     }
 
     @Override
-    public boolean shouldGenerateNoise(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) { return vanillaFirst(GeneratorContainer.SECTION_NOISE, true); }
-
-    @Override
-    public boolean shouldGenerateSurface(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) { return vanillaFirst(GeneratorContainer.SECTION_SURFACE, true); }
-
-    @Override
-    public boolean shouldGenerateCaves(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) { return vanillaFirst(GeneratorContainer.SECTION_CAVES, true); }
-
-    @Override
-    public boolean shouldGenerateDecorations(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) { return vanillaFirst(GeneratorContainer.SECTION_POPULATORS, true); }
-
-    @Override
-    public boolean shouldGenerateMobs(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
-        if (cachedCanSpawn != null) return cachedCanSpawn;
-        GeneratorContainer gc = container();
-        if (gc == null || !gc.hasSection(GeneratorContainer.SECTION_CAN_SPAWN)) return cachedCanSpawn = true;
-
-        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_CAN_SPAWN, buildChunkContext(info, chunkX, chunkZ), instanceDefs);
-        boolean result = queue != null && !queue.getReturns().isEmpty() && queue.getReturns().getFirst() instanceof ElementTag el && el.asBoolean();
-        return cachedCanSpawn = result;
+    public boolean shouldGenerateNoise(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
+        return vanillaFirst(GeneratorContainer.SECTION_NOISE, true);
     }
 
     @Override
-    public boolean shouldGenerateStructures(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) { return false; }
+    public boolean shouldGenerateSurface(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
+        return vanillaFirst(GeneratorContainer.SECTION_SURFACE, true);
+    }
 
     @Override
-    public void generateNoise(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) { runSection(GeneratorContainer.SECTION_NOISE, info, chunkX, chunkZ, chunkData); }
+    public boolean shouldGenerateCaves(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
+        return vanillaFirst(GeneratorContainer.SECTION_CAVES, true);
+    }
 
     @Override
-    public void generateSurface(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) { runSection(GeneratorContainer.SECTION_SURFACE, info, chunkX, chunkZ, chunkData); }
+    public boolean shouldGenerateDecorations(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
+        return vanillaFirst(GeneratorContainer.SECTION_POPULATORS, true);
+    }
 
     @Override
-    public void generateBedrock(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) { runSection(GeneratorContainer.SECTION_BEDROCK, info, chunkX, chunkZ, chunkData); }
+    public boolean shouldGenerateMobs(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
+        Boolean cached = cachedCanSpawn.get();
+        if (cached != null) return cached;
+
+        GeneratorContainer gc = container();
+        if (gc == null || !gc.hasSection(GeneratorContainer.SECTION_CAN_SPAWN)) {
+            cachedCanSpawn.compareAndSet(null, true);
+            return true;
+        }
+
+        ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_CAN_SPAWN, buildChunkContext(info, chunkX, chunkZ), instanceDefs);
+        boolean result = queue != null
+                && !queue.getReturns().isEmpty()
+                && queue.getReturns().getFirst() instanceof ElementTag el
+                && el.asBoolean();
+
+        cachedCanSpawn.compareAndSet(null, result); // первый поток wins, остальные игнорируются
+        return cachedCanSpawn.get();
+    }
 
     @Override
-    public void generateCaves(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) { runSection(GeneratorContainer.SECTION_CAVES, info, chunkX, chunkZ, chunkData); }
+    public boolean shouldGenerateStructures(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ) {
+        return false;
+    }
+
+    @Override
+    public void generateNoise(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
+        runSection(GeneratorContainer.SECTION_NOISE, info, chunkX, chunkZ, chunkData);
+    }
+
+    @Override
+    public void generateSurface(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
+        runSection(GeneratorContainer.SECTION_SURFACE, info, chunkX, chunkZ, chunkData);
+    }
+
+    @Override
+    public void generateBedrock(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
+        runSection(GeneratorContainer.SECTION_BEDROCK, info, chunkX, chunkZ, chunkData);
+    }
+
+    @Override
+    public void generateCaves(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
+        runSection(GeneratorContainer.SECTION_CAVES, info, chunkX, chunkZ, chunkData);
+    }
 
     @Override
     public @Nullable BiomeProvider getDefaultBiomeProvider(@NotNull WorldInfo info) {
         GeneratorContainer gc = container();
-        return (gc == null || !gc.hasSection(GeneratorContainer.SECTION_BIOME)) ? null : new ScriptedBiomeProvider(containerName, instanceDefs);
+        return (gc == null || !gc.hasSection(GeneratorContainer.SECTION_BIOME)) ? null : new ScriptedBiomeProvider(this);
     }
 
     @Override
     public @NotNull List<BlockPopulator> getDefaultPopulators(@NotNull World world) {
         GeneratorContainer gc = container();
-        return (gc == null || !gc.hasSection(GeneratorContainer.SECTION_POPULATORS)) ? Collections.emptyList() : List.of(new ScriptedBlockPopulator(containerName, instanceDefs));
+        return (gc == null || !gc.hasSection(GeneratorContainer.SECTION_POPULATORS))
+                ? Collections.emptyList()
+                : List.of(new ScriptedBlockPopulator(this));
     }
 
     @Override
@@ -118,7 +150,7 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         return loc;
     }
 
-    private static ContextTag buildChunkContext(@NotNull WorldInfo info, int chunkX, int chunkZ) {
+    static ContextTag buildChunkContext(@NotNull WorldInfo info, int chunkX, int chunkZ) {
         return new ContextTag()
                 .put("world", new WorldTag(info))
                 .put("chunk", new ChunkTag(info, chunkX, chunkZ));
@@ -135,10 +167,13 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
         if (gc == null || !gc.hasSection(GeneratorContainer.SECTION_BASE_HEIGHT)) return 64;
 
         ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BASE_HEIGHT, buildChunkContext(info, chunkX, chunkZ), instanceDefs);
-        return (queue != null && !queue.getReturns().isEmpty() && queue.getReturns().getFirst() instanceof ElementTag el && el.isInt()) ? el.asInt() : 64;
+        return (queue != null
+                && !queue.getReturns().isEmpty()
+                && queue.getReturns().getFirst() instanceof ElementTag el
+                && el.isInt())
+                ? el.asInt()
+                : 64;
     }
-
-    private int resolveBaseHeight(@NotNull World world, int chunkX, int chunkZ) { return resolveBaseHeight((WorldInfo) world, chunkX, chunkZ); }
 
     private void runSection(@NotNull String section, @NotNull WorldInfo info, int chunkX, int chunkZ, @NotNull ChunkData chunkData) {
         GeneratorContainer gc = container();
@@ -152,46 +187,65 @@ public class ScriptedChunkGenerator extends ChunkGenerator {
     }
 
     private static class ScriptedBiomeProvider extends BiomeProvider {
-        private final String containerName;
-        private final MapTag instanceDefs;
 
-        public ScriptedBiomeProvider(String containerName, MapTag instanceDefs) {
-            this.containerName = containerName;
-            this.instanceDefs = instanceDefs;
+        private final ScriptedChunkGenerator outer;
+
+        ScriptedBiomeProvider(@NotNull ScriptedChunkGenerator outer) {
+            this.outer = outer;
         }
 
         @Override
         public @NotNull Biome getBiome(@NotNull WorldInfo info, int x, int y, int z) {
-            Object raw = ScriptManager.getContainer(containerName);
-            if (!(raw instanceof GeneratorContainer gc)) return Biome.PLAINS;
+            GeneratorContainer gc = outer.container();
+            if (gc == null) return Biome.PLAINS;
 
-            ScriptQueue queue = gc.runSection(GeneratorContainer.SECTION_BIOME,
-                    new ContextTag().put("world", new WorldTag(info)).put("location", new LocationTag(info.getName() + "," + x + "," + y + "," + z)), instanceDefs);
+            World world = Bukkit.getWorld(info.getUID());
+            LocationTag locationTag = (world != null)
+                    ? new LocationTag(new Location(world, x, y, z))
+                    : new LocationTag(x + "," + y + "," + z);
+
+            ScriptQueue queue = gc.runSection(
+                    GeneratorContainer.SECTION_BIOME,
+                    new ContextTag()
+                            .put("world", new WorldTag(info))
+                            .put("location", locationTag),
+                    outer.instanceDefs
+            );
 
             if (queue == null || queue.getReturns().isEmpty()) return Biome.PLAINS;
-            BiomeTag bt = (queue.getReturns().getFirst() instanceof BiomeTag) ? (BiomeTag) queue.getReturns().getFirst() : new BiomeTag(queue.getReturns().getFirst().identify());
-            Biome b = (bt.getBiomeKey() == null) ? null : RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).get(bt.getBiomeKey());
+
+            AbstractTag first = queue.getReturns().getFirst();
+            BiomeTag bt = first instanceof BiomeTag b ? b : new BiomeTag(first.identify());
+            if (bt.getBiomeKey() == null) return Biome.PLAINS;
+
+            Biome b = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).get(bt.getBiomeKey());
             return b != null ? b : Biome.PLAINS;
         }
 
-        @Override public @NotNull List<Biome> getBiomes(@NotNull WorldInfo info) { return List.copyOf(RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).stream().toList()); }
+        @Override
+        public @NotNull List<Biome> getBiomes(@NotNull WorldInfo info) {
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).stream().toList();
+        }
     }
 
     private static class ScriptedBlockPopulator extends BlockPopulator {
-        private final String containerName;
-        private final MapTag instanceDefs;
 
-        public ScriptedBlockPopulator(String containerName, MapTag instanceDefs) {
-            this.containerName = containerName;
-            this.instanceDefs = instanceDefs;
+        private final ScriptedChunkGenerator outer;
+
+        ScriptedBlockPopulator(@NotNull ScriptedChunkGenerator outer) {
+            this.outer = outer;
         }
 
         @Override
         public void populate(@NotNull WorldInfo info, @NotNull Random random, int chunkX, int chunkZ, @NotNull LimitedRegion region) {
-            Object raw = ScriptManager.getContainer(containerName);
-            if (!(raw instanceof GeneratorContainer gc)) return;
+            GeneratorContainer gc = outer.container();
+            if (gc == null) return;
 
-            ScriptQueue queue = gc.createQueue(GeneratorContainer.SECTION_POPULATORS, buildChunkContext(info, chunkX, chunkZ), instanceDefs);
+            ScriptQueue queue = gc.createQueue(
+                    GeneratorContainer.SECTION_POPULATORS,
+                    buildChunkContext(info, chunkX, chunkZ),
+                    outer.instanceDefs
+            );
             if (queue != null) {
                 queue.setTempData(TEMP_LIMITED_REGION, region);
                 queue.start();
