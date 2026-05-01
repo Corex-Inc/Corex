@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import org.bukkit.Color;
 import org.jspecify.annotations.NonNull;
 
 /* @doc object
@@ -396,6 +397,10 @@ public class ColorTag implements AbstractTag {
 
     public int asRGB() {
         return red << 16 | green << 8 | blue;
+    }
+
+    public Color asBukkitColor() {
+        return Color.fromARGB(alpha, red, green, blue);
     }
 
     private static int clamp(int value) {

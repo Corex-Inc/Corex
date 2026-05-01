@@ -46,6 +46,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+@SuppressWarnings("deprecation")
 public class Metrics {
 
     private final Plugin plugin;
@@ -75,12 +76,13 @@ public class Metrics {
             config
                     .options()
                     .header(
-                            "bStats (https://bStats.org) collects some basic information for plugin authors, like how\n"
-                                    + "many people use their plugin and their total player count. It's recommended to keep bStats\n"
-                                    + "enabled, but if you're not comfortable with this, you can turn this setting off. There is no\n"
-                                    + "performance penalty associated with having metrics enabled, and data sent to bStats is fully\n"
-                                    + "anonymous.\n"
-                                    + "Learn more here: https://bstats.org/docs/server-owners")
+                            """
+                                    bStats (https://bStats.org) collects some basic information for plugin authors, like how
+                                    many people use their plugin and their total player count. It's recommended to keep bStats
+                                    enabled, but if you're not comfortable with this, you can turn this setting off. There is no
+                                    performance penalty associated with having metrics enabled, and data sent to bStats is fully
+                                    anonymous.
+                                    Learn more here: https://bstats.org/docs/server-owners""")
                     .copyDefaults(true);
             try {
                 config.save(configFile);
@@ -95,9 +97,9 @@ public class Metrics {
         boolean logResponseStatusText = config.getBoolean("logResponseStatusText", false);
         boolean isFolia = false;
         try {
-            isFolia = Class.forName("io.papermc.paper.threadedregions.RegionizedServer") != null;
-        } catch (Exception e) {
-        }
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            isFolia = true;
+        } catch (ClassNotFoundException ignored) {}
         metricsBase =
                 new // See https://github.com/Bastian/bstats-metrics/pull/126
                         // See https://github.com/Bastian/bstats-metrics/pull/126
@@ -854,7 +856,7 @@ public class Metrics {
         }
 
         /**
-         * Escapes the given string like stated in https://www.ietf.org/rfc/rfc4627.txt.
+         * Escapes the given string like stated in <a href="https://www.ietf.org/rfc/rfc4627.txt">https://www.ietf.org/rfc/rfc4627.txt</a>.
          *
          * <p>This method escapes only the necessary characters '"', '\'. and '\u0000' - '\u001F'.
          * Compact escapes are not used (e.g., '\n' is escaped as "\u000a" and not as "\n").

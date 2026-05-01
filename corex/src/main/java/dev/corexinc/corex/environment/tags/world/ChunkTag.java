@@ -21,6 +21,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.generator.WorldInfo;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -135,6 +136,12 @@ public class ChunkTag implements AbstractTag, Flaggable {
         this.z = z;
     }
 
+    public ChunkTag(WorldInfo info, int x, int z) {
+        this.world = Bukkit.getWorld(info.getUID());
+        this.x = x;
+        this.z = z;
+    }
+
     public ChunkTag(String raw) {
         if (raw == null || raw.isBlank()) {
             this.world = null;
@@ -184,7 +191,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
     public @NonNull String getTestValue() { return "ch@world,0,0"; }
 
     @Override
-    public AbstractFlagTracker getFlagTracker() {
+    public @NonNull AbstractFlagTracker getFlagTracker() {
         if (world == null) throw new IllegalStateException("Cannot get flags for invalid chunk");
         Location center = new Location(world, (x << 4) + 8, 0, (z << 4) + 8);
         if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);

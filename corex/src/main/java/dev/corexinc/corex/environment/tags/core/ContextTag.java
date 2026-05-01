@@ -46,7 +46,7 @@ public class ContextTag implements AbstractTag {
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("context", attr -> {
-            if (attr.getQueue() != null && attr.getQueue().getContext() != null) {
+            if (attr.getQueue().getContext() != null) {
                 return attr.getQueue().getContext();
             }
             return null;
@@ -75,7 +75,11 @@ public class ContextTag implements AbstractTag {
         String key = attribute.getName();
         if (contextData.containsKey(key)) {
             attribute.fulfill(1);
-            return contextData.get(key);
+            AbstractTag value = contextData.get(key);
+            if (attribute.hasNext()) {
+                return value.getAttribute(attribute);
+            }
+            return value;
         }
 
         return null;

@@ -382,11 +382,79 @@ public class ElementTag implements AbstractTag {
          * @ReturnType ElementTag(Decimal)
          * @NoArg
          * @Description
-         * Returns the element to the power of a number.
+         * Returns the absolute value of the element.
          *
          * @Implements ElementTag.abs
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "abs", (attr, obj) -> new ElementTag(Math.abs(obj.asDouble())));
+
+        /* @doc tag
+         *
+         * @Name isLessThan[]
+         * @RawName <ElementTag.isLessThan[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns true if number is less than param.
+         *
+         * @Implements ElementTag.is_less_than[]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isLessThan", (attr, obj) -> {
+            if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
+            return new ElementTag(obj.asDouble() < param.asDouble());
+        }).test("22");
+
+        /* @doc tag
+         *
+         * @Name isMoreThan[]
+         * @RawName <ElementTag.isMoreThan[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns true if number is more than param.
+         *
+         * @Implements ElementTag.is_more_than[]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isMoreThan", (attr, obj) -> {
+            if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
+            return new ElementTag(obj.asDouble() > param.asDouble());
+        }).test("22");
+
+        /* @doc tag
+         *
+         * @Name isLessOrEqual[]
+         * @RawName <ElementTag.isLessOrEqual[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns true if number is less than or equal to param.
+         *
+         * @Implements ElementTag.is_less_than_of_equal_to[]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isLessOrEqual", (attr, obj) -> {
+            if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
+            return new ElementTag(obj.asDouble() <= param.asDouble());
+        }).test("22");
+
+        /* @doc tag
+         *
+         * @Name isMoreOrEqual[]
+         * @RawName <ElementTag.isMoreOrEqual[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns true if number is more than or equal to param.
+         *
+         * @Implements ElementTag.is_more_than_of_equal_to[]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isMoreOrEqual", (attr, obj) -> {
+            if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
+            return new ElementTag(obj.asDouble() >= param.asDouble());
+        }).test("22");
 
         /* @doc tag
          *

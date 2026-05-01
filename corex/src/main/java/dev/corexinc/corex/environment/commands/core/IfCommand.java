@@ -7,8 +7,6 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.scripts.ConditionCompiler;
 import org.jspecify.annotations.NonNull;
 
-import java.util.Arrays;
-
 /* @doc command
  *
  * @Name If
@@ -102,7 +100,7 @@ public class IfCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(@NonNull ScriptQueue queue, Instruction instruction) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         ConditionCompiler.Condition condition = (ConditionCompiler.Condition) instruction.customData;
         if (condition == null) {
             condition = ConditionCompiler.compile(instruction.linearArgs);
@@ -114,7 +112,6 @@ public class IfCommand implements AbstractCommand {
         queue.setTempData("corex_if_result", result);
 
         Debugger.report(queue, instruction,
-                "Condition", Arrays.toString(instruction.linearArgs),
                 "Result", String.valueOf(result)
         );
 

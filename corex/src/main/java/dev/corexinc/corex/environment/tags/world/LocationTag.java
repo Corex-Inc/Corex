@@ -1,6 +1,5 @@
 package dev.corexinc.corex.environment.tags.world;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -364,7 +363,7 @@ public class LocationTag implements AbstractTag, Flaggable {
     }
 
     @Override
-    public AbstractFlagTracker getFlagTracker() {
+    public @NonNull AbstractFlagTracker getFlagTracker() {
         if (location.getWorld() == null) return null;
         return new LocationPdcFlagTracker(location, identify());
     }

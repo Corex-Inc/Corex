@@ -32,7 +32,7 @@ public class IfElseCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(ScriptQueue queue, @NonNull Instruction instruction) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         Object lastIfObj = queue.getTempData("corex_if_result");
 
         if (!(lastIfObj instanceof Boolean)) {
@@ -59,6 +59,10 @@ public class IfElseCommand implements AbstractCommand {
 
                 boolean result = condition.evaluate(queue);
                 queue.setTempData("corex_if_result", result);
+
+                Debugger.report(queue, instruction,
+                        "Result", String.valueOf(result)
+                );
 
                 if (result && instruction.innerBlock != null) {
                     queue.pushFrame(getName(), instruction.innerBlock, null);

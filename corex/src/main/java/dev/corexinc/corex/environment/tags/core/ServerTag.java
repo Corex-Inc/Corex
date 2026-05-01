@@ -219,7 +219,7 @@ public class ServerTag implements AbstractTag, Flaggable {
     public ServerTag() {}
 
     @Override
-    public SqlFlagTracker getFlagTracker() {
+    public @NonNull SqlFlagTracker getFlagTracker() {
         return serverTracker;
     }
 

@@ -3,7 +3,6 @@ package dev.corexinc.corex.environment.commands.core;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
@@ -87,7 +86,7 @@ public class RepeatCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(@NonNull ScriptQueue queue, Instruction instruction) {
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String action = instruction.getLinear(0, queue);
 
         if (action != null && action.equals("break")) {

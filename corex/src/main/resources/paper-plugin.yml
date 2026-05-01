@@ -5,8 +5,7 @@ description: Modern, Paper-exclusive compiled scripting engine
 authors:
   - tizis0
   - Nybik_YT
-  - isnsest
-  - Corex Inc
 api-version: '1.21'
 folia-supported: true
+load: STARTUP
 loader: dev.corexinc.corex.CorexLoader

@@ -289,7 +289,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
     }
 
     @Override
-    public AbstractFlagTracker getFlagTracker() {
+    public @NonNull AbstractFlagTracker getFlagTracker() {
         File dbFile = new File(world.getWorldFolder(), "__flags.db");
         return new SqlFlagTracker(dbFile, identify());
     }

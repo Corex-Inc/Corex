@@ -10,48 +10,139 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import org.bukkit.Location;
+import org.jetbrains.annotations.ApiStatus.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 
+/**
+ * Represents an isolated execution thread within the Corex Virtual Machine (CVM).
+ * <p>
+ * The ScriptQueue manages the sequential execution of {@link Instruction}s,
+ * handles nested logic blocks via a Call Stack, and provides lexical scoping
+ * for variables (definitions).
+ * <p>
+ * This class is designed to be thread-aware, supporting both standard Paper
+ * and multithreaded Folia/Canvas environments through region-based scheduling.
+ *
+ * @since 1.0.0
+ */
 public class ScriptQueue {
 
+    /**
+     * The unique identifier of this queue.
+     */
     private final String id;
+
+    /**
+     * Whether this queue is running asynchronously.
+     */
     private final boolean isAsync;
+
+    /**
+     * The player context associated with this queue.
+     */
     private final PlayerTag linkedPlayer;
+
+    /**
+     * Local variables (definitions) stored in this queue.
+     */
     private final Map<String, AbstractTag> definitions;
+
+    /**
+     * List of values returned by the queue via 'return' or 'determine' commands.
+     */
     private final List<AbstractTag> returnValues = new ArrayList<>();
 
+    /**
+     * The current block of instructions being executed.
+     */
     private Instruction[] bytecode;
+
+    /**
+     * The instruction pointer (Program Counter) for the current block.
+     */
     private int pointer = 0;
+
+    /**
+     * A callback executed when the current stack frame or the entire queue finishes.
+     */
     private Runnable onFinish;
+
+    /**
+     * A condition used by loops (e.g., 'while' or 'repeat') to determine if the block should restart.
+     */
     private BooleanSupplier loopCondition;
 
+    /**
+     * Represents a saved state of execution (instruction set + pointer)
+     * when entering a nested block.
+     */
     private record QueueFrame(Instruction[] bytecode, int pointer, Runnable onFinish, BooleanSupplier loopCondition) {}
+
+    /**
+     * The internal Call Stack used to handle nested blocks (if, repeat, try-catch).
+     */
     private final ArrayDeque<QueueFrame> callStack = new ArrayDeque<>();
 
+    /**
+     * Temporary data storage for internal command communication.
+     */
     private final Map<String, Object> tempData = new HashMap<>();
-    private ContextTag context;
+
+    /**
+     * The contextual data object provided to this queue (e.g., event data).
+     */
+    private AbstractTag context;
 
     private volatile boolean isPaused = false;
     private boolean isStopped = false;
     private boolean isBroken = false;
     private boolean isCancelled = false;
+    private boolean silent = false;
 
+    /**
+     * If true, the queue will not be destroyed after finishing its bytecode,
+     * waiting for more instructions to be injected.
+     */
     private boolean keepAlive = false;
     private boolean isWaitingForInstructions = false;
 
+    /**
+     * Nanosecond timestamp of when the queue started.
+     */
     private long startNanos;
 
+    /**
+     * Tracks errors encountered during the execution of the current instruction.
+     */
     private final List<String> currentErrors = new ArrayList<>();
     private boolean errorHeaderPrinted = false;
-    public boolean isErrorHeaderPrinted() { return errorHeaderPrinted; }
-    public void setErrorHeaderPrinted(boolean value) { this.errorHeaderPrinted = value; }
 
+    public boolean isErrorHeaderPrinted() {
+        return errorHeaderPrinted;
+    }
+
+    public void setErrorHeaderPrinted(boolean value) {
+        this.errorHeaderPrinted = value;
+    }
+
+    /**
+     * Global registry of all active queues currently managed by the CVM.
+     */
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
+
+    /**
+     * The physical location this queue is "anchored" to (used for Folia region matching).
+     */
     private Location anchorLocation = null;
 
+    /**
+     * The target location of a region shift requested by a command.
+     */
     private Location targetRegionLocation = null;
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, Location anchorLocation) {
@@ -71,6 +162,21 @@ public class ScriptQueue {
         this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
     }
 
+    public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, boolean silent) {
+        this.id = id;
+        this.bytecode = bytecode;
+        this.isAsync = isAsync;
+        this.linkedPlayer = linkedPlayer;
+        this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+        this.silent = silent;
+    }
+
+    /**
+     * Starts the queue execution.
+     * <p>
+     * Initializes the start timer, logs the start event, and begins the instruction loop.
+     */
+    @AvailableSince("1.0.0")
     public void start() {
         startNanos = System.nanoTime();
         Debugger.queueStart(this);
@@ -116,6 +222,14 @@ public class ScriptQueue {
         isCancelled = cancelled;
     }
 
+    /**
+     * The main execution loop of the CVM.
+     * <p>
+     * Iterates through the {@code bytecode} array, processes global flags,
+     * executes commands, and manages stack frame transitions.
+     * Supports Folia region relocation via {@link RegionRelocateException}.
+     */
+    @AvailableSince("1.0.0")
     public void executeNext() {
         try {
             while (!isPaused && !isStopped) {
@@ -196,7 +310,7 @@ public class ScriptQueue {
                         isStopped = true;
                         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
                         Debugger.queueStop(this, elapsedMs);
-                        Debugger.releaseQueue(id);
+                        Debugger.releaseQueue(this);
                         if (callback != null) callback.run();
                         break;
                     } else {
@@ -237,6 +351,14 @@ public class ScriptQueue {
         return copy;
     }
 
+    /**
+     * Enters a nested instruction block (e.g., a loop body or an 'if' branch).
+     *
+     * @param calledScriptName Name of the script/block for debugging purposes.
+     * @param newBytecode      The block of instructions to execute.
+     * @param newOnFinish      Callback to run when this block finishes.
+     */
+    @AvailableSince("1.0.0")
     public void pushFrame(String calledScriptName, Instruction[] newBytecode, Runnable newOnFinish) {
         pushFrame(calledScriptName, newBytecode, newOnFinish, null);
     }
@@ -249,6 +371,13 @@ public class ScriptQueue {
         this.loopCondition = loopCondition;
     }
 
+    /**
+     * Forces the queue to jump to the end of the current instruction block.
+     * Useful for 'stop' or 'next' commands within loops.
+     *
+     * @param breakLoop If true, indicates that a loop should not restart.
+     */
+    @AvailableSince("1.0.0")
     public void skipFrame(boolean breakLoop) {
         this.pointer = this.bytecode != null ? this.bytecode.length : 0;
         this.isBroken = breakLoop;
@@ -262,43 +391,85 @@ public class ScriptQueue {
         this.isBroken = broken;
     }
 
+    /**
+     * Pauses the queue, preventing further instructions from being executed
+     * until {@link #resume()} is called.
+     */
+    @AvailableSince("1.0.0")
     public void pause() {
         this.isPaused = true;
     }
 
+    /**
+     * Resumes execution of a paused queue.
+     */
+    @AvailableSince("1.0.0")
     public void resume() {
         this.isPaused = false;
         executeNext();
     }
 
+    /**
+     * Fully terminates the queue, clearing the call stack and releasing resources.
+     */
+    @AvailableSince("1.0.0")
     public void stopEntireQueue() {
         this.isStopped = true;
         this.callStack.clear();
         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
         activeQueues.remove(id);
         Debugger.queueStop(this, elapsedMs);
-        Debugger.releaseQueue(id);
+        Debugger.releaseQueue(this);
     }
 
     public void setOnFinish(Runnable onFinish) {
         this.onFinish = onFinish;
     }
 
+    /**
+     * Pauses the queue and schedules a resume after the specified duration.
+     *
+     * @param ticks Time to wait in server ticks (1 tick = 50ms).
+     */
+    @AvailableSince("1.0.0")
     public void delay(long ticks) {
         pause();
         if (isAsync) SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
         else SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
     }
 
+    /**
+     * Defines a local variable within this queue's scope.
+     *
+     * @param name  The name of the definition.
+     * @param value The value to store. If {@code null}, the definition is removed.
+     */
+    @AvailableSince("1.0.0")
     public void define(String name, AbstractTag value) {
         if (value == null) definitions.remove(name);
         else definitions.put(name, value);
     }
 
+    /**
+     * Retrieves a stored local variable.
+     *
+     * @param name The name of the definition.
+     * @return The tag value, or {@code null} if not found.
+     */
+    @Nullable
+    @AvailableSince("1.0.0")
     public AbstractTag getDefinition(String name) {
         return definitions.get(name);
     }
 
+    /**
+     * Gets the primary player linked to this queue.
+     * Checks for the special {@code __player} definition before falling back to the queue's default.
+     *
+     * @return the linked {@link PlayerTag}.
+     */
+    @Nullable
+    @AvailableSince("1.0.0")
     public PlayerTag getPlayer() {
         AbstractTag def = getDefinition("__player");
         if (def instanceof PlayerTag) return (PlayerTag) def;
@@ -309,27 +480,80 @@ public class ScriptQueue {
         return id;
     }
 
+    /**
+     * Stores arbitrary Java objects in the queue's temporary internal memory.
+     * <p>
+     * <b>Note:</b> This memory is intended for internal communication between commands
+     * (e.g., 'if' passing results to 'else') and is <b>not</b> accessible via script tags.
+     * To store data accessible in scripts, use {@link #define(String, AbstractTag)}.
+     *
+     * @param key   The unique identifier for the data (case-insensitive).
+     * @param value The object to store. If {@code null}, the key is removed.
+     */
+    @AvailableSince("1.0.0")
     public void setTempData(String key, Object value) {
         if (value == null) tempData.remove(key);
         else tempData.put(key, value);
     }
 
+    /**
+     * Retrieves an object from the temporary internal memory.
+     *
+     * @param key The identifier for the data.
+     * @return The stored object, or {@code null} if not found.
+     */
+    @Nullable
+    @AvailableSince("1.0.0")
     public Object getTempData(String key) {
         return tempData.get(key);
     }
 
-    public void setContext(ContextTag context) {
+    /**
+     * Associates a contextual object with this queue.
+     * <p>
+     * The engine treats this purely as an {@link AbstractTag}. It is up to the
+     * environment to provide an implementation (like ContextTag) that can
+     * handle sub-attributes.
+     *
+     * @param context The tag object to attach as context.
+     */
+    @AvailableSince("1.0.0")
+    public void setContext(@Nullable AbstractTag context) {
         this.context = context;
     }
 
-    public ContextTag getContext() {
+    /**
+     * Retrieves the current context object of the queue.
+     *
+     * @return the associated context as an {@link AbstractTag}, or {@code null}.
+     */
+    @Nullable
+    @AvailableSince("1.0.0")
+    public AbstractTag getContext() {
         return context;
     }
 
+    /**
+     * Records a value returned by the script during execution.
+     * Typically called by {@code return} or {@code determine} commands.
+     *
+     * @param tag the tag object to record as a result.
+     */
+    @AvailableSince("1.0.0")
     public void addReturn(AbstractTag tag) {
         if (tag != null) returnValues.add(tag);
     }
 
+    /**
+     * Gets all values returned by the script.
+     * <p>
+     * This is used by the Event Engine to check for {@code cancelled} states
+     * or by Procedure scripts to retrieve the final result.
+     *
+     * @return a non-null list of result tags.
+     */
+    @NotNull
+    @AvailableSince("1.0.0")
     public List<AbstractTag> getReturns() {
         return returnValues;
     }
@@ -354,7 +578,13 @@ public class ScriptQueue {
         return definitions;
     }
 
-    public org.bukkit.Location getAnchorLocation() {
+    /**
+     * Gets the current evaluation location "anchor" of this queue.
+     * Used by the {@code <region>} tag to determine region-local performance metrics.
+     */
+    @Nullable
+    @AvailableSince("1.0.0")
+    public Location getAnchorLocation() {
         if (linkedPlayer != null && linkedPlayer.getPlayer() != null && linkedPlayer.getPlayer().isOnline()) {
             return linkedPlayer.getPlayer().getLocation();
         }
@@ -367,5 +597,13 @@ public class ScriptQueue {
 
     public Location getTargetRegion() {
         return targetRegionLocation;
+    }
+
+    public boolean isSilent() {
+        return silent;
+    }
+
+    public void setSilent(boolean silent) {
+        this.silent = silent;
     }
 }

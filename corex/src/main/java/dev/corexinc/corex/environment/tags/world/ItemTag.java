@@ -230,7 +230,7 @@ public class ItemTag implements AbstractTag, Adjustable {
     }
 
     @Override
-    public Adjustable duplicate() {
+    public @NonNull Adjustable duplicate() {
         return new ItemTag(this.item.clone());
     }
 
@@ -310,7 +310,7 @@ public class ItemTag implements AbstractTag, Adjustable {
 
     @Override public @NonNull TagProcessor<ItemTag> getProcessor() { return TAG_PROCESSOR; }
 
-    @Override public @Nullable MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+    @Override public @NonNull MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
         return MECHANISM_PROCESSOR;
     }
 

@@ -15,9 +15,7 @@ import java.util.Set;
  * @Name Websocket
  *
  * @Events
- * websocket opens
- * websocket message
- * websocket closes
+ * websocket opens|message|closes
  *
  * @Switches
  * id:<name> - Matches only events from the websocket connection with the given ID.
