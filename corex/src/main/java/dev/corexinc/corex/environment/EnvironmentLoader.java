@@ -111,6 +111,7 @@ public class EnvironmentLoader {
                 ResourcePackCommand.class,
                 ToastCommand.class,
                 ParticleCommand.class,
+                PlaySoundCommand.class,
 
                 // Tags
                 ElementTag.class,
