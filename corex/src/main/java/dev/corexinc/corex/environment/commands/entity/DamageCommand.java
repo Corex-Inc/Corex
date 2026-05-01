@@ -22,6 +22,31 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/* @doc command
+ *
+ * @Name Damage
+ * @Syntax damage [<entity>|...] [<#.#>] (source:<entity>) (cause:<causeType>)
+ * @RequiredArgs 2
+ * @MaxArgs 4
+ * @ShortDescription Hurts the player or a list of entities.
+ *
+ * @Implements Hurt
+ *
+ * @Description
+ * Does damage to a list of entities, or to any single entity.
+ *
+ * @Usage
+ * // Used to damage an entity.
+ * - damage <entity> 6.7
+ *
+ * @Usage
+ * // Used to deal damage to an entity from the player.
+ * - damage <entity> 1.0 source:<player>
+ *
+ * @Usage
+ * // Used to deal damage to a player from an entity using an arrow
+ * - damage <player> 10.0 source:<entity> cause:ARROW
+ */
 public class DamageCommand implements AbstractCommand {
     @Override
     public @NotNull String getName() {
@@ -29,6 +54,13 @@ public class DamageCommand implements AbstractCommand {
     }
 
     @Override
+    public @NotNull List<String> getAlias() {
+        return List.of("hurt");
+    }
+
+
+    @Override
+    @SuppressWarnings("UnstableApiUsage")
     public void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction) {
 
         AbstractTag entity = null;
@@ -115,7 +147,7 @@ public class DamageCommand implements AbstractCommand {
                 "Amount", amount,
                 "Targets", new ListTag(entitiesToDamage).identify(),
                 "Cause", cause,
-                "Source", source.identify());
+                "Source", source != null ? source.identify() : "???");
 
         for (Entity target : entitiesToDamage) {
             if (target != null && !target.isDead() && target instanceof Damageable damageable && amount != null) {
