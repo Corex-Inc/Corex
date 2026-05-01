@@ -22,6 +22,32 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/* @doc command
+ *
+ * @Name Damage
+ * @Syntax damage [<entity>|...] [<#.#>] (source:<entity>) (cause:<causeType>)
+ * @RequiredArgs 2
+ * @MaxArgs 4
+ * @ShortDescription Hurts the player or a list of entities.
+ *
+ * @Implements Hurt
+ *
+ * @Description
+ * Does damage to a list of entities, or to any single entity.
+ *
+ * @Usage
+ * // Used to damage an entity.
+ * - damage <entity> 6.7
+ *
+ * @Usage
+ * // Used to deal damage to an entity from the player.
+ * - damage <entity> 1.0 source:<player>
+ *
+ * @Usage
+ * // Used to deal damage to a player from an entity using an arrow
+ * - damage <player> 10.0 source:<entity> cause:ARROW
+ */
+
 public class DamageCommand implements AbstractCommand {
     @Override
     public @NotNull String getName() {
@@ -129,12 +155,12 @@ public class DamageCommand implements AbstractCommand {
 
     @Override
     public @NotNull String getSyntax() {
-        return "[<entity>] (<#.#>) (source:<entity>) (cause:<causeType>)";
+        return "[<entity>] [<#.#>] (source:<entity>) (cause:<causeType>)";
     }
 
     @Override
     public int getMinArgs() {
-        return 1;
+        return 2;
     }
 
     @Override
