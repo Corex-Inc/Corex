@@ -2,6 +2,7 @@ package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
@@ -113,7 +114,13 @@ public class AdjustCommand implements AbstractCommand {
                 String mech = entry.getKey();
                 AbstractTag value = entry.getValue();
 
-                current = current.applyMechanism(mech, value);
+                if (current instanceof Adjustable adjustable) {
+                    current = adjustable.applyMechanism(mech, value);
+                }
+                else {
+                    Debugger.echoError(queue, "Object is not adjustable: " + current.identify());
+                    break;
+                }
             }
         }
 
