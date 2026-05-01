@@ -89,14 +89,9 @@ public class TitleCommand implements AbstractCommand {
         Component titleComp = buildComponent(titleTag);
         Component subTitleComp = buildComponent(subTitleTag);
 
-        String fadeInRaw = instruction.getPrefix("fadeIn", queue);
-        long fadeInMs = fadeInRaw != null ? new DurationTag(fadeInRaw).getMilliseconds() : 1000L;
-
-        String stayRaw = instruction.getPrefix("stay", queue);
-        long stayMs = stayRaw != null ? new DurationTag(stayRaw).getMilliseconds() : 3000L;
-
-        String fadeOutRaw = instruction.getPrefix("fadeOut", queue);
-        long fadeOutMs = fadeOutRaw != null ? new DurationTag(fadeOutRaw).getMilliseconds() : 1000L;
+        long fadeInMs = parseDuration(queue, instruction, "fadeIn", 1000L);
+        long stayMs = parseDuration(queue, instruction, "stay", 3000L);
+        long fadeOutMs = parseDuration(queue, instruction, "fadeOut", 1000L);
 
         Title.Times times = Title.Times.times(
                 Duration.ofMillis(fadeInMs),
@@ -104,46 +99,58 @@ public class TitleCommand implements AbstractCommand {
                 Duration.ofMillis(fadeOutMs)
         );
 
-        Title title = Title.title(titleComp, subTitleComp, times);
+        final Title title = Title.title(titleComp, subTitleComp, times);
 
+        List<Player> targetPlayers = null;
         String targetsRaw = instruction.getPrefix("targets", queue);
 
+        if (targetsRaw != null) {
+            targetPlayers = new ArrayList<>();
+            for (PlayerTag pTag : new ListTag(targetsRaw).filter(PlayerTag.class, queue)) {
+                Player player = pTag.getPlayer();
+                if (player != null && player.isOnline()) {
+                    targetPlayers.add(player);
+                }
+            }
+        }
+
         Debugger.report(queue, instruction,
-                "Title", titleTag != null ? titleTag.identify() : "null",
-                "Subtitle", subTitleTag != null ? subTitleTag.identify() : "null",
+                "Title", titleTag != null ? titleTag.identify() : "None",
+                "Subtitle", subTitleTag != null ? subTitleTag.identify() : "None",
                 "FadeIn", fadeInMs + "ms",
                 "Stay", stayMs + "ms",
                 "FadeOut", fadeOutMs + "ms",
                 "Targets", targetsRaw != null ? targetsRaw : "Linked Player"
         );
 
-        if (targetsRaw != null) {
-            List<PlayerTag> playerTags = new ListTag(targetsRaw).filter(PlayerTag.class, queue);
-            List<Player> onlinePlayers = new ArrayList<>(playerTags.size());
+        if (targetPlayers != null) {
+            if (targetPlayers.isEmpty()) return;
 
-            for (PlayerTag pTag : playerTags) {
-                Player player = pTag.getPlayer();
-                if (player != null && player.isOnline()) {
-                    onlinePlayers.add(player);
-                }
+            for (Player player : targetPlayers) {
+                SchedulerAdapter.runEntity(player, () -> player.showTitle(title));
             }
-
-            if (onlinePlayers.isEmpty()) return;
-
-            SchedulerAdapter.run(() -> {
-                for (Player player : onlinePlayers) {
-                    player.showTitle(title);
-                }
-            });
-
         } else {
             PlayerTag queuePlayer = queue.getPlayer();
-            if (queuePlayer != null && queuePlayer.getOfflinePlayer().isOnline()) {
+            if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
                 Player player = queuePlayer.getPlayer();
                 SchedulerAdapter.runEntity(player, () -> player.showTitle(title));
             } else {
                 Debugger.echoError(queue, "No valid targets found and no player attached to the queue.");
             }
+        }
+    }
+
+    private long parseDuration(ScriptQueue queue, Instruction instruction, String prefix, long defaultMs) {
+        AbstractTag tag = instruction.getPrefixObject(prefix, queue);
+        if (tag == null) return defaultMs;
+
+        if (tag instanceof DurationTag dt) return dt.getMilliseconds();
+
+        try {
+            return new DurationTag(tag.identify()).getMilliseconds();
+        } catch (Exception e) {
+            Debugger.echoError(queue, "Invalid duration format for '" + prefix + "': " + tag.identify());
+            return defaultMs;
         }
     }
 

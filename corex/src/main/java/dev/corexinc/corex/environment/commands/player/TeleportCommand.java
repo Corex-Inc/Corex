@@ -32,7 +32,7 @@ import java.util.List;
  * @Description
  * Teleports the entity or entities to the new location.
  * Entities can be teleported between worlds using this command.
- * You may optionally specify a teleport cause for player entities, allowing proper teleport event handling. When not specified, this is "PLUGIN". See {@link language teleport cause} for causes.
+ * You may optionally specify a teleport cause for player entities, allowing proper teleport event handling. When not specified, this is "PLUGIN". See {@link javadoc https://jd.papermc.io/paper/org/bukkit/event/player/PlayerTeleportEvent.TeleportCause.html} for causes.
  *
  * Instead of a valid entity, an offline player may also be used.
  *

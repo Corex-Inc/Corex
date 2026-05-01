@@ -28,14 +28,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ResourcePackCommand implements AbstractCommand, Listener {
 
     private static final Map<UUID, List<Runnable>> WAIT_CALLBACKS = new ConcurrentHashMap<>();
+    private static boolean listenerRegistered = false;
 
     public ResourcePackCommand() {
-        Bukkit.getPluginManager().registerEvents(this, Corex.getInstance());
+        if (!listenerRegistered) {
+            Bukkit.getPluginManager().registerEvents(this, Corex.getInstance());
+            listenerRegistered = true;
+        }
     }
 
     @EventHandler
@@ -62,10 +67,25 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
         }
     }
 
-    @Override public @NonNull String getName() { return "resourcepack"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 7; }
-    @Override public boolean setCanBeWaitable() { return true; }
+    @Override
+    public @NonNull String getName() {
+        return "resourcepack";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 7;
+    }
+
+    @Override
+    public boolean setCanBeWaitable() {
+        return true;
+    }
 
     @Override
     public @NonNull String getSyntax() {
@@ -117,7 +137,13 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
         UUID packUUID = idRaw != null ? parseUUID(idRaw) : UUID.nameUUIDFromBytes(urlRaw.getBytes(StandardCharsets.UTF_8));
         Component promptComp = promptTag != null ? promptTag.asComponent() : Component.empty();
 
-        ResourcePackInfo packInfo = ResourcePackInfo.resourcePackInfo(packUUID, uri, hashRaw);
+        ResourcePackInfo packInfo;
+        try {
+            packInfo = ResourcePackInfo.resourcePackInfo(packUUID, uri, hashRaw);
+        } catch (IllegalArgumentException e) {
+            Debugger.echoError(queue, "Invalid resource pack hash (must be a 40-character hex string): " + hashRaw);
+            return;
+        }
 
         ResourcePackRequest request = ResourcePackRequest.resourcePackRequest()
                 .packs(packInfo)
@@ -138,8 +164,9 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
             Runnable onComplete = () -> {
                 if (pending.decrementAndGet() == 0) SchedulerAdapter.run(queue::resume);
             };
+
             for (Player player : targetPlayers) {
-                WAIT_CALLBACKS.computeIfAbsent(player.getUniqueId(), k -> new ArrayList<>()).add(onComplete);
+                WAIT_CALLBACKS.computeIfAbsent(player.getUniqueId(), k -> new CopyOnWriteArrayList<>()).add(onComplete);
             }
         }
 
@@ -154,13 +181,19 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
     private List<Player> getTargets(ScriptQueue queue, Instruction instruction) {
         String targetsRaw = instruction.getPrefix("targets", queue);
         List<Player> targetPlayers = new ArrayList<>();
+
         if (targetsRaw != null) {
             new ListTag(targetsRaw).filter(PlayerTag.class, queue).forEach(p -> {
-                if (p.getPlayer() != null && p.getPlayer().isOnline()) targetPlayers.add(p.getPlayer());
+                Player player = p.getPlayer();
+                if (player != null && player.isOnline()) targetPlayers.add(player);
             });
-        } else if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
-            targetPlayers.add(queue.getPlayer().getPlayer());
+        } else {
+            PlayerTag queuePlayer = queue.getPlayer();
+            if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
+                targetPlayers.add(queuePlayer.getPlayer());
+            }
         }
+
         if (targetPlayers.isEmpty()) Debugger.echoError(queue, "No online targets found.");
         return targetPlayers;
     }

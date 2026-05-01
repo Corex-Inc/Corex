@@ -8,8 +8,9 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
-import dev.corexinc.corex.environment.utils.nms.NMSHandler;
+import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
+import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -21,7 +22,7 @@ import java.util.List;
 /* @doc command
  *
  * @Name Toast
- * @Syntax toast [<text>] (icon:<material>) (frame:task/challenge/goal) (targets:<player>|...)
+ * @Syntax toast[<text>] (icon:<material>) (frame:task/challenge/goal) (targets:<player>|...)
  * @RequiredArgs 1
  * @MaxArgs 4
  * @ShortDescription Sends a visual advancement popup (toast) to players.
@@ -34,7 +35,7 @@ import java.util.List;
  * If no targets are specified, the toast is sent to the player attached to the current script queue.
  *
  * You can customize the visual appearance using the following arguments:
- * - `icon:` The material to display inside the popup. Defaults to DIRT if invalid or unspecified.
+ * - `icon:` The material to display inside the popup. Defaults to DIAMOND if invalid or unspecified.
  * - `frame:` Determines the background shape and sound of the toast. Valid options:
  *   - `task` (Default): A standard green rounded notification.
  *   - `goal`: A standard green rounded notification, traditionally used for major progress.
@@ -52,7 +53,7 @@ import java.util.List;
  * - toast "<&l><&d>Server Goal Reached!" frame:challenge icon:nether_star targets:<server.onlinePlayers>
  *
  * @Usage
- * // Send a basic toast with default settings (Dirt icon, Task frame).
+ * // Send a basic toast with default settings (Diamond icon, Task frame).
  * - toast "You discovered a new area."
  */
 public class ToastCommand implements AbstractCommand {
@@ -86,31 +87,30 @@ public class ToastCommand implements AbstractCommand {
         }
 
         String frameRaw = instruction.getPrefix("frame", queue);
-        String frame = frameRaw != null ? frameRaw.toLowerCase() : "task";
+        final String frame = frameRaw != null ? frameRaw.toLowerCase() : "task";
         if (!frame.equals("task") && !frame.equals("challenge") && !frame.equals("goal")) {
             Debugger.echoError(queue, "Invalid frame '" + frame + "'. Valid frames are: task, challenge, goal.");
             return;
         }
 
         AbstractTag iconTag = instruction.getPrefixObject("icon", queue);
-        Material iconMaterial;
+        Material tempIcon = Material.DIAMOND;
         if (iconTag != null) {
-            String rawIcon = iconTag.identify().replaceAll("(?i)^(m@|i@)", "").split("\\[")[0];
-            Material parsed = Material.matchMaterial(rawIcon);
+            MaterialTag matTag = iconTag instanceof MaterialTag ? (MaterialTag) iconTag : new MaterialTag(iconTag.identify());
+            Material parsed = matTag.getMaterial();
+
             if (parsed != null && parsed.isItem()) {
-                iconMaterial = parsed;
+                tempIcon = parsed;
             } else {
-                iconMaterial = Material.DIAMOND;
                 Debugger.echoError(queue, "Invalid icon material: " + iconTag.identify() + ". Falling back to DIAMOND.");
             }
-        } else {
-            iconMaterial = Material.DIAMOND;
         }
+        final Material iconMaterial = tempIcon;
 
         List<Player> targetPlayers = getTargets(queue, instruction);
         if (targetPlayers.isEmpty()) return;
 
-        Component message = textTag.asComponent() != null ? textTag.asComponent() : Component.text(textTag.identify());
+        final Component message = textTag.asComponent() != null ? textTag.asComponent() : Component.text(textTag.identify());
 
         Debugger.report(queue, instruction,
                 "Message", textTag.identify(),
@@ -126,9 +126,7 @@ public class ToastCommand implements AbstractCommand {
         }
 
         for (Player player : targetPlayers) {
-            SchedulerAdapter.runEntity(player, () -> {
-                adapter.sendToast(player, message, iconMaterial, frame);
-            });
+            SchedulerAdapter.runEntity(player, () -> adapter.sendToast(player, message, iconMaterial, frame));
         }
     }
 
@@ -138,13 +136,22 @@ public class ToastCommand implements AbstractCommand {
 
         if (targetsRaw != null) {
             new ListTag(targetsRaw).filter(PlayerTag.class, queue).forEach(p -> {
-                if (p.getPlayer() != null && p.getPlayer().isOnline()) targetPlayers.add(p.getPlayer());
+                Player player = p.getPlayer();
+                if (player != null && player.isOnline()) targetPlayers.add(player);
             });
-        } else if (queue.getPlayer() != null && queue.getPlayer().getOfflinePlayer().isOnline()) {
-            targetPlayers.add(queue.getPlayer().getPlayer());
+        } else {
+            PlayerTag queuePlayer = queue.getPlayer();
+            if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
+                targetPlayers.add(queuePlayer.getPlayer());
+            }
         }
 
-        if (targetPlayers.isEmpty()) Debugger.echoError(queue, "No online targets found to send toast.");
+        if (targetPlayers.isEmpty()) {
+            if (targetsRaw == null) {
+                Debugger.echoError(queue, "No online targets found and no player attached to the queue.");
+            }
+        }
+
         return targetPlayers;
     }
 }

@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
@@ -100,12 +101,16 @@ public class ItemCooldownCommand implements AbstractCommand {
             return;
         }
 
-        String durationRaw = instruction.getPrefix("duration", queue);
-        int durationTicks;
-        if (durationRaw != null) {
-            durationTicks = (int) new DurationTag(durationRaw).getTicks();
-        } else {
-            durationTicks = 20;
+        int durationTicks = 20;
+        AbstractTag durationTag = instruction.getPrefixObject("duration", queue);
+        if (durationTag != null) {
+            try {
+                DurationTag dt = durationTag instanceof DurationTag ? (DurationTag) durationTag : new DurationTag(durationTag.identify());
+                durationTicks = (int) dt.getTicks();
+            } catch (Exception e) {
+                Debugger.echoError(queue, "Invalid duration format: " + durationTag.identify());
+                return;
+            }
         }
 
         String targetsRaw = instruction.getPrefix("targets", queue);
@@ -121,7 +126,7 @@ public class ItemCooldownCommand implements AbstractCommand {
             }
         } else {
             PlayerTag queuePlayer = queue.getPlayer();
-            if (queuePlayer != null && queuePlayer.getOfflinePlayer().isOnline()) {
+            if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
                 targetPlayers.add(queuePlayer.getPlayer());
             }
         }
@@ -131,17 +136,19 @@ public class ItemCooldownCommand implements AbstractCommand {
             return;
         }
 
+        final int finalDurationTicks = Math.max(0, durationTicks);
+
         Debugger.report(queue, instruction,
                 "Materials", rawMaterials,
-                "Duration", durationTicks + "t",
-                "Targets", targetsRaw != null ? targetsRaw : "Attached Player",
+                "Duration", finalDurationTicks + "t",
+                "Targets", targetsRaw != null ? targetsRaw : "Linked Player",
                 "Targets_Count", targetPlayers.size()
         );
 
         for (Player player : targetPlayers) {
             SchedulerAdapter.runEntity(player, () -> {
                 for (Material material : validMaterials) {
-                    player.setCooldown(material, Math.max(0, durationTicks));
+                    player.setCooldown(material, finalDurationTicks);
                 }
             });
         }

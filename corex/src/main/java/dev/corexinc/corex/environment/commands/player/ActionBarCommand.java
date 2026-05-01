@@ -75,42 +75,41 @@ public class ActionBarCommand implements AbstractCommand {
             return;
         }
 
-        Component message = buildComponent(textTag);
+        final Component message = buildComponent(textTag);
         String targetsRaw = instruction.getPrefix("targets", queue);
 
-        Debugger.report(queue, instruction,
-                "Message", textTag.identify(),
-                "Targets", targetsRaw != null ? targetsRaw : "Linked Player"
-        );
+        List<Player> targetPlayers = new ArrayList<>();
 
         if (targetsRaw != null) {
             List<PlayerTag> playerTags = new ListTag(targetsRaw).filter(PlayerTag.class, queue);
-            List<Player> onlinePlayers = new ArrayList<>(playerTags.size());
-
             for (PlayerTag pTag : playerTags) {
                 Player player = pTag.getPlayer();
                 if (player != null && player.isOnline()) {
-                    onlinePlayers.add(player);
+                    targetPlayers.add(player);
                 }
             }
-
-            if (onlinePlayers.isEmpty()) return;
-
-            SchedulerAdapter.run(() -> {
-                for (Player player : onlinePlayers) {
-                    player.sendActionBar(message);
-                }
-            });
-
         } else {
             PlayerTag queuePlayer = queue.getPlayer();
-            if (queuePlayer != null && queuePlayer.getOfflinePlayer().isOnline()) {
-                Player player = queuePlayer.getPlayer();
+            if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
+                targetPlayers.add(queuePlayer.getPlayer());
+            }
+        }
 
-                SchedulerAdapter.runEntity(player, () -> player.sendActionBar(message));
-            } else {
+        Debugger.report(queue, instruction,
+                "Message", textTag.identify(),
+                "Targets", targetsRaw != null ? targetsRaw : "Attached Player",
+                "Targets_Count", targetPlayers.size()
+        );
+
+        if (targetPlayers.isEmpty()) {
+            if (targetsRaw == null) {
                 Debugger.echoError(queue, "No valid targets found and no player attached to the queue.");
             }
+            return;
+        }
+
+        for (Player player : targetPlayers) {
+            SchedulerAdapter.runEntity(player, () -> player.sendActionBar(message));
         }
     }
 
