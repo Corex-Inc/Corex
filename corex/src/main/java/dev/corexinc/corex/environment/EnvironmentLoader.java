@@ -12,6 +12,7 @@ import dev.corexinc.corex.environment.utils.nms.*;
 import dev.corexinc.corex.environment.commands.core.*;
 import dev.corexinc.corex.environment.commands.player.*;
 import dev.corexinc.corex.environment.commands.world.*;
+import dev.corexinc.corex.environment.commands.entity.*;
 // Containers
 import dev.corexinc.corex.environment.containers.*;
 // Events
@@ -112,6 +113,7 @@ public class EnvironmentLoader {
                 ToastCommand.class,
                 ParticleCommand.class,
                 PlaySoundCommand.class,
+                DamageCommand.class,
 
                 // Tags
                 ElementTag.class,
