@@ -44,7 +44,7 @@ import java.util.function.BiFunction;
 public final class TagProcessor<T extends AbstractTag> {
 
     /**
-     * Internal registry of sub-tags mapped by their lowercase names.
+     * Internal registry of sub-tags mapped by their names.
      */
     private final Map<String, TagData<T>> registeredTags = new HashMap<>();
 
@@ -69,8 +69,7 @@ public final class TagProcessor<T extends AbstractTag> {
      *
      * @param <R>        the specific type of tag that the handler returns.
      * @param returnType the class of the returned tag (e.g., {@code ElementTag.class}).
-     * @param name       the name of the sub-tag (e.g., {@code "to_uppercase"}).
-     *                   Stored and matched in <b>lowercase</b>.
+     * @param name       the name of the sub-tag (e.g., {@code "toUppercase"}).
      * @param action     the handler function that receives the current {@link Attribute}
      *                   and the object instance {@code T}.
      * @return a {@link TagRegistration} for fluent configuration of the registered tag.
@@ -89,7 +88,7 @@ public final class TagProcessor<T extends AbstractTag> {
     /**
      * Returns the internal registry of all sub-tags that passed version checks.
      *
-     * @return the registered tags map, keyed by lowercase tag name.
+     * @return the registered tags map, keyed by tag name.
      */
     public Map<String, TagData<T>> getRegisteredTags() {
         return registeredTags;

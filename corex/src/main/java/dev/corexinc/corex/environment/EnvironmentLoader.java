@@ -91,6 +91,8 @@ public class EnvironmentLoader {
                 DefCommand.class,
                 WaitCommand.class,
                 RepeatCommand.class,
+                ForeachCommand.class,
+                WhileCommand.class,
                 SwitchCommand.class,
                 SwitchCaseCommand.class, // Switch subcommand
                 SwitchDefaultCommand.class, // Switch subcommand

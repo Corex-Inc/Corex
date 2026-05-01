@@ -37,7 +37,7 @@ public class GlobalTagProcessor {
 
             String targetPrefix = ObjectFetcher.getPrefixForName(type);
             if (targetPrefix == null) {
-                Debugger.echoError(attr.getQueue(), "Tag .as[]: Unknown object type '<yellow>" + type + "</yellow>'");
+                Debugger.echoError(attr.getQueue(), "Unknown object type '<yellow>" + type + "</yellow>'");
                 return null;
             }
 
@@ -65,7 +65,6 @@ public class GlobalTagProcessor {
             if (!attr.hasParam()) return null;
 
             AbstractFlagTracker tracker = flaggable.getFlagTracker();
-            if (tracker == null) return null;
 
             return tracker.getFlag(attr.getParam());
         });
@@ -75,7 +74,6 @@ public class GlobalTagProcessor {
             if (!attr.hasParam()) return null;
 
             AbstractFlagTracker tracker = flaggable.getFlagTracker();
-            if (tracker == null) return new ElementTag(false);
 
             return new ElementTag(tracker.getFlag(attr.getParam()) != null);
         });

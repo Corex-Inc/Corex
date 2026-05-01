@@ -71,7 +71,7 @@ public class Attribute {
      *
      * @return the string representation of the parameter, or {@code null} if not present.
      */
-    @Nullable
+    @Contract(pure = true)
     public String getParam() {
         AbstractTag tag = getParamObject();
         return tag != null ? tag.identify() : null;
@@ -85,7 +85,7 @@ public class Attribute {
      *
      * @return the evaluated parameter object, or {@code null} if not present.
      */
-    @Nullable
+    @Contract(pure = true)
     public AbstractTag getParamObject() {
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0 || components[index].param == null) return null;
@@ -95,7 +95,7 @@ public class Attribute {
     /**
      * Retrieves the current parameter and attempts to cast it to the specified tag type.
      */
-    @Nullable
+    @Contract(pure = true)
     public <T extends AbstractTag> T getParamObject(@NotNull Class<T> type) {
         AbstractTag obj = getParamObject();
 
@@ -114,7 +114,7 @@ public class Attribute {
      * Advanced parameter retrieval: evaluates the parameter as an object of type {@code T},
      * or uses a fallback parser if the evaluated result is not of that type.
      */
-    @Nullable
+    @Contract(pure = true)
     public <T extends AbstractTag> T getParamObject(@NotNull Class<T> type, @NotNull Function<String, T> parser) {
         T typed = getParamObject(type);
 
@@ -167,7 +167,6 @@ public class Attribute {
     /**
      * Retrieves the next attribute's parameter as a plain string.
      */
-    @Nullable
     public String getNextParam() {
         AbstractTag tag = getNextParamObject();
         return tag != null ? tag.identify() : null;
@@ -176,7 +175,6 @@ public class Attribute {
     /**
      * Evaluates the next attribute's parameter and returns it as an {@link AbstractTag}.
      */
-    @Nullable
     public AbstractTag getNextParamObject() {
         if (currentIndex + 1 >= components.length || components[currentIndex + 1].param == null) {
             return null;
@@ -188,7 +186,6 @@ public class Attribute {
     /**
      * Evaluates the next attribute's parameter and returns it as an {@link AbstractTag}.
      */
-    @Nullable
     public <T extends AbstractTag> T getNextParamObject(Class<T> type) {
         AbstractTag obj = getNextParamObject();
 
@@ -206,7 +203,6 @@ public class Attribute {
     /**
      * Evaluates the next attribute's parameter and returns it as an {@link AbstractTag}.
      */
-    @Nullable
     public <T extends AbstractTag> T getNextParamObject(Class<T> type, Function<String, T> parser) {
         T typed = getNextParamObject(type);
 
