@@ -191,7 +191,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
     public @NonNull String getTestValue() { return "ch@world,0,0"; }
 
     @Override
-    public AbstractFlagTracker getFlagTracker() {
+    public @NonNull AbstractFlagTracker getFlagTracker() {
         if (world == null) throw new IllegalStateException("Cannot get flags for invalid chunk");
         Location center = new Location(world, (x << 4) + 8, 0, (z << 4) + 8);
         if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);

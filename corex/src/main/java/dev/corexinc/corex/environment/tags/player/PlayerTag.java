@@ -27,7 +27,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
@@ -1232,7 +1231,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
     }
 
     @Override
-    public Adjustable duplicate() {
+    public @NonNull Adjustable duplicate() {
         return this;
     }
 
@@ -1278,12 +1277,12 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
     }
 
     @Override
-    public @Nullable MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+    public @NonNull MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
         return MECHANISM_PROCESSOR;
     }
 
     @Override
-    public AbstractFlagTracker getFlagTracker() {
+    public @NonNull AbstractFlagTracker getFlagTracker() {
         Player p = getPlayer();
         if (p == null) return null;
         return new PdcFlagTracker(p, identify());

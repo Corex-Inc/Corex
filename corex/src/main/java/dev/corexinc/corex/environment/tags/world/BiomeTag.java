@@ -18,7 +18,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -656,12 +655,12 @@ public class BiomeTag implements AbstractTag, Adjustable {
     }
 
     @Override
-    public @Nullable MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+    public @NonNull MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
         return MECHANISM_PROCESSOR;
     }
 
     @Override
-    public Adjustable duplicate() {
+    public @NonNull Adjustable duplicate() {
         return this;
     }
 
