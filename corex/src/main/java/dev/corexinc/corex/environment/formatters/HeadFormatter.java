@@ -34,7 +34,7 @@ public class HeadFormatter implements AbstractFormatter {
     private static final ElementTag INSTANCE = new ElementTag("");
 
     @Override
-    public @NonNull AbstractTag parse(Attribute attribute) {
+    public @NonNull AbstractTag parse(@NonNull Attribute attribute) {
         if (!attribute.hasParam()) return INSTANCE;
         String safeParam = attribute.getParam().replace("<", "").replace(">", "");
 

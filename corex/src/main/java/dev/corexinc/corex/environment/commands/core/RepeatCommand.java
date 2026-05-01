@@ -6,6 +6,7 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
+
 import java.util.List;
 
 /* @doc command
@@ -65,58 +66,85 @@ import java.util.List;
  */
 public class RepeatCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() {
+    @Override
+    public @NonNull String getName() {
         return "repeat";
     }
 
-    @Override public @NonNull List<String> getAlias() {
+    @Override
+    public @NonNull List<String> getAlias() {
         return List.of();
     }
 
-    @Override public @NonNull String getSyntax() {
+    @Override
+    public @NonNull String getSyntax() {
         return "[<count>|break|continue] (from:<number>) (as:<var>)";
     }
 
-    @Override public int getMinArgs() {
+    @Override
+    public int getMinArgs() {
         return 1;
     }
 
-    @Override public int getMaxArgs() {
+    @Override
+    public int getMaxArgs() {
         return 3;
     }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String action = instruction.getLinear(0, queue);
+        String actionRaw = instruction.getLinear(0, queue);
 
-        if (action != null && action.equals("break")) {
+        if (actionRaw == null) {
+            Debugger.echoError(queue, "Repeat amount (or break/continue) must be specified.");
+            return;
+        }
+
+        if (actionRaw.equalsIgnoreCase("break")) {
             queue.skipFrame(true);
             return;
         }
 
-        if (action != null && action.equals("continue")) {
+        if (actionRaw.equalsIgnoreCase("continue")) {
             queue.skipFrame(false);
             return;
         }
 
-        if (instruction.innerBlock == null || instruction.innerBlock.length == 0) return;
+        if (instruction.innerBlock == null || instruction.innerBlock.length == 0) {
+            Debugger.echoError(queue, "Repeat command requires an inner block of instructions!");
+            return;
+        }
 
-        ElementTag countTag = new ElementTag(action);
-        if (!countTag.isInt()) return;
+        ElementTag countTag = new ElementTag(actionRaw);
+        if (!countTag.isInt() && !countTag.isDouble()) {
+            Debugger.echoError(queue, "Repeat amount must be a valid number, got: " + actionRaw);
+            return;
+        }
+
         int times = countTag.asInt();
         if (times <= 0) return;
 
-        String fromPrefix = instruction.getPrefix("from", queue);
-        final int startFrom = (fromPrefix != null) ? new ElementTag(fromPrefix).asInt() : 1;
+        int startFrom = 1;
+        String fromRaw = instruction.getPrefix("from", queue);
+        if (fromRaw != null) {
+            ElementTag fromTag = new ElementTag(fromRaw);
+            if (!fromTag.isInt() && !fromTag.isDouble()) {
+                Debugger.echoError(queue, "Invalid 'from' value, expected a number, got: " + fromRaw);
+                return;
+            }
+            startFrom = fromTag.asInt();
+        }
 
         String rawAs = instruction.getPrefix("as", queue);
-        final String asVar = (rawAs != null) ? rawAs.replace(":", "").trim() : "loopIndex";
+        final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
 
         final int max = startFrom + times - 1;
         final String stateKey = "rep_idx_" + queue.getDepth();
 
+        final int[] state = new int[] { startFrom + 1 };
+
         queue.define(asVar, new ElementTag(startFrom));
-        queue.setTempData(stateKey, startFrom + 1);
+        queue.setTempData(stateKey, state);
 
         Debugger.report(queue, instruction,
                 "Times", times,
@@ -133,16 +161,16 @@ public class RepeatCommand implements AbstractCommand {
                 () -> {
                     if (queue.isBroken()) return false;
 
-                    Object nextValObj = queue.getTempData(stateKey);
-                    int nextVal = (nextValObj instanceof Integer) ? (int) nextValObj : startFrom + 1;
+                    int[] currentState = (int[]) queue.getTempData(stateKey);
+                    if (currentState == null) return false;
 
+                    int nextVal = currentState[0];
                     if (nextVal > max) {
                         return false;
                     }
 
                     queue.define(asVar, new ElementTag(nextVal));
-
-                    queue.setTempData(stateKey, nextVal + 1);
+                    currentState[0] = nextVal + 1;
 
                     return true;
                 }

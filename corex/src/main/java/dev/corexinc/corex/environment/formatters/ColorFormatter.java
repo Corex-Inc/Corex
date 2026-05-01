@@ -248,7 +248,7 @@ public class ColorFormatter implements AbstractFormatter {
     }
 
     @Override
-    public @NonNull AbstractTag parse(Attribute attribute) {
+    public @NonNull AbstractTag parse(@NonNull Attribute attribute) {
         String name = attribute.getName();
 
         if (name.length() == 2 && name.startsWith("&")) {

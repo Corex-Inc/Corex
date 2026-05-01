@@ -47,7 +47,6 @@ import java.util.List;
  * // Used to deal damage to a player from an entity using an arrow
  * - damage <player> 10.0 source:<entity> cause:ARROW
  */
-
 public class DamageCommand implements AbstractCommand {
     @Override
     public @NotNull String getName() {
@@ -55,6 +54,13 @@ public class DamageCommand implements AbstractCommand {
     }
 
     @Override
+    public @NotNull List<String> getAlias() {
+        return List.of("hurt");
+    }
+
+
+    @Override
+    @SuppressWarnings("UnstableApiUsage")
     public void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction) {
 
         AbstractTag entity = null;
@@ -141,7 +147,7 @@ public class DamageCommand implements AbstractCommand {
                 "Amount", amount,
                 "Targets", new ListTag(entitiesToDamage).identify(),
                 "Cause", cause,
-                "Source", source.identify());
+                "Source", source != null ? source.identify() : "???");
 
         for (Entity target : entitiesToDamage) {
             if (target != null && !target.isDead() && target instanceof Damageable damageable && amount != null) {
@@ -155,12 +161,12 @@ public class DamageCommand implements AbstractCommand {
 
     @Override
     public @NotNull String getSyntax() {
-        return "[<entity>] [<#.#>] (source:<entity>) (cause:<causeType>)";
+        return "[<entity>] (<#.#>) (source:<entity>) (cause:<causeType>)";
     }
 
     @Override
     public int getMinArgs() {
-        return 2;
+        return 1;
     }
 
     @Override

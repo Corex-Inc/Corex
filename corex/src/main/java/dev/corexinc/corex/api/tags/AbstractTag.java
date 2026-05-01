@@ -94,24 +94,25 @@ public interface AbstractTag {
     @AvailableSince("1.0.0")
     TagProcessor<? extends AbstractTag> getProcessor();
 
-    default Component asComponent() {
-        return LegacyComponentSerializer.legacySection().deserialize(identify());
-    }
-
-    @OverrideOnly
-    @SuppressWarnings("unchecked")
-    default @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
-        MechanismProcessor<AbstractTag> proc = (MechanismProcessor<AbstractTag>) getMechanismProcessor();
-        if (proc != null) {
-            return proc.process(this, mechanism, value);
-        }
-        return this;
-    }
-
-    @Nullable
+    /**
+     * Converts this tag into a displayable Kyori {@link Component}.
+     * <p>
+     * <b>WARNING:</b> Do <b>NOT</b> override or implement this method unless you are
+     * absolutely certain of what you are doing. In <b>99.9%</b> of cases, you should
+     * <b>NOT</b> implement this manually.
+     * <p>
+     * The default implementation serves as a UI-level bridge, automatically converting
+     * the result of {@link #identify()} into a Component using the Legacy Section Serializer.
+     * Most tags should simply focus on providing a correct string in {@link #identify()}.
+     * <p>
+     * Only specialized tags that are designed specifically to wrap raw component data
+     * (such as a {@code ComponentTag} or {@code ElementTag}) should ever provide a custom implementation.
+     * @return a Kyori Component representing this tag's visual form.
+     */
+    @NotNull
     @OverrideOnly
     @AvailableSince("1.0.0")
-    default MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
-        return null;
+    default Component asComponent() {
+        return LegacyComponentSerializer.legacySection().deserialize(identify());
     }
 }
