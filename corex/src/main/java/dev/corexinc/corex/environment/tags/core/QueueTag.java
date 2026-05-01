@@ -34,8 +34,7 @@ public class QueueTag implements AbstractTag {
     public static void register() {
         BaseTagProcessor.registerBaseTag("queue", attr -> {
             if (attr.hasParam()) return new QueueTag(attr.getParam());
-            if (attr.getQueue() != null) return new QueueTag(attr.getQueue());
-            return null;
+            return new QueueTag(attr.getQueue());
         });
 
         ObjectFetcher.registerFetcher(PREFIX, QueueTag::new);

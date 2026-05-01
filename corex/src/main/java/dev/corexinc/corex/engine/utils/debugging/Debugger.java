@@ -146,7 +146,7 @@ public class Debugger {
         List<String> errors = queue.getAndClearErrors();
 
         if (!queue.isErrorHeaderPrinted()) {
-            String cmdName = (inst != null && inst.command != null) ? inst.command.getName().toUpperCase() : "UNKNOWN";
+            String cmdName = inst != null ? inst.command.getName().toUpperCase() : "UNKNOWN";
             CorexLogger.error(styleOf(queue).bar + " ERROR while executing command '<yellow>" + cmdName + "</yellow>'!");
             CorexLogger.error(styleOf(queue).bar + "  <gray>Error Message:</gray> <white>" + errors.getFirst().replace("§", "&"));
             queue.setErrorHeaderPrinted(true);
