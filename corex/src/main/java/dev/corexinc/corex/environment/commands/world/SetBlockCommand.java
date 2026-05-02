@@ -197,10 +197,11 @@ public class SetBlockCommand implements AbstractCommand {
 
         for (Location loc : blocks) {
             MaterialTag chosen = pickMaterial(materials, chances);
-            if (chosen == null || !chosen.getMaterial().isBlock()) continue;
+            if (chosen == null || !chosen.getMaterial().isBlock() || chosen.getBlockData() == null) continue;
             int relX = loc.getBlockX() & 15;
             int relZ = loc.getBlockZ() & 15;
-            chunkData.setBlock(relX, loc.getBlockY(), relZ, chosen.getMaterial());
+
+            chunkData.setBlock(relX, loc.getBlockY(), relZ, chosen.getBlockData());
         }
     }
 
@@ -279,10 +280,11 @@ public class SetBlockCommand implements AbstractCommand {
         if (chosen == null) return;
         Block block = loc.getBlock();
         if (ctx.tool() != null) block.breakNaturally(ctx.tool());
-        if (ctx.noPhysics()) {
-            block.setBlockData(chosen.getBlockData(), false);
+
+        if (chosen.getBlockData() != null) {
+            block.setBlockData(chosen.getBlockData(), !ctx.noPhysics());
         } else {
-            block.setType(chosen.getMaterial());
+            block.setType(chosen.getMaterial(), !ctx.noPhysics());
         }
     }
 
