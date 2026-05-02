@@ -109,7 +109,7 @@ public class CauldronLevelChangeEvent implements AbstractEvent {
 
             String causeSwitch = data.getSwitch("cause");
             if (causeSwitch != null) {
-                if (!causeSwitch.equalsIgnoreCase(cause) && !causeSwitch.equals("*") && !causeSwitch.equalsIgnoreCase("any")) {
+                if (!causeSwitch.equalsIgnoreCase(cause) && !causeSwitch.equals("*")) {
                     continue;
                 }
             }

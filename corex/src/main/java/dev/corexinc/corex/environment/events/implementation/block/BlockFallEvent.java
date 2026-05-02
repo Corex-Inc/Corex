@@ -106,7 +106,7 @@ public class BlockFallEvent implements AbstractEvent {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
                 context.put("entity", new EntityTag(event.getEntity()));
-                context.put("material", new MaterialTag(event.getBlockData().getMaterial()));
+                context.put("material", new MaterialTag(event.getBlockData()));
                 context.put("isLanding", new ElementTag(isLanding));
             }
 

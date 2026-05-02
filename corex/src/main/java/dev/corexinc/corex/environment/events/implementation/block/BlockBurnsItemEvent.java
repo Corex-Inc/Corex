@@ -1,65 +1,67 @@
 package dev.corexinc.corex.environment.events.implementation.block;
 
 import dev.corexinc.corex.Corex;
-import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.environment.events.EventReturn;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.events.AbstractEvent;
 import dev.corexinc.corex.environment.events.EventData;
 import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
+import dev.corexinc.corex.environment.tags.core.DurationTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
+import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockDispense
+ * @Name BlockBurnsItem
  *
  * @Events
- * <block> dispenses <item>
+ * <block> burns <item>
  *
  * @Cancellable
  *
  * @Description
- * Fires when a block dispenses a single item.
+ * Fires when a block (such as a furnace, smoker, or blast furnace) burns an item used as fuel.
  *
  * @Context
- * <context.location> - returns the LocationTag of the dispenser.
- * <context.item> - returns the ItemTag of the item being dispensed.
- * <context.velocity> - returns a LocationTag vector of the velocity the item will be shot at.
+ * <context.location> - returns the LocationTag of the furnace block.
+ * <context.material> - returns the MaterialTag of the furnace block.
+ * <context.item> - returns the ItemTag of the fuel item being burned.
  *
  * @Returns
- * LocationTag - Sets the velocity the item will be shot at.
- * ItemTag - Sets the item being shot.
+ * duration:<DurationTag> - Sets how long this fuel item will burn for.
  *
  * @Usage
- * // Prevents dispensers from shooting arrows.
- * on dispenser dispenses arrow:
+ * // Prevents blast furnaces from burning coal.
+ * on blast_furnace burns coal:
  * - return cancelled
  *
  * @Usage
- * // Replaces dispensed dirt with stone.
- * on dispenser dispenses dirt:
- * - return stone
+ * // Makes wooden sticks burn for 10 seconds in any furnace-like block.
+ * on any burns stick:
+ * - return duration:10s
  */
-public class BlockDispenseEvent implements AbstractEvent {
+public class BlockBurnsItemEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockDispense";
+        return "BlockBurnsItem";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> dispenses <item>";
+        return "<block> burns <item>";
     }
 
     @Override
@@ -76,9 +78,9 @@ public class BlockDispenseEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockDispense(org.bukkit.event.block.BlockDispenseEvent event) {
+    public void onFurnaceBurns(FurnaceBurnEvent event) {
         String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String itemMaterial = event.getItem().getType().name().toLowerCase();
+        String itemMaterial = event.getFuel().getType().name().toLowerCase();
 
         ContextTag context = null;
 
@@ -86,40 +88,25 @@ public class BlockDispenseEvent implements AbstractEvent {
             if (!data.isGenericMatch("block", 0, blockMaterial)) {
                 continue;
             }
-            if (!data.isGenericMatch("item", 0, itemMaterial)) {
+
+            if (!data.isGenericMatch("item", 2, itemMaterial)) {
                 continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("item", new ItemTag(event.getItem()));
-
-                Location velocityLoc = new Location(null, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
-                context.put("velocity", new LocationTag(velocityLoc));
+                context.put("material", new MaterialTag(event.getBlock()));
+                context.put("item", new ItemTag(event.getFuel()));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);
             if (queue.isCancelled()) event.setCancelled(true);
 
-            for (AbstractTag tag : queue.getReturns()) {
-                String raw = tag.identify();
-                ItemTag itemTag = tag instanceof ItemTag ? (ItemTag) tag : new ItemTag(raw);
-
-                if (itemTag.getItemStack() != null && !itemTag.getItemStack().getType().isAir()) {
-                    event.setItem(itemTag.getItemStack());
-                    continue;
-                }
-
-                LocationTag locTag = tag instanceof LocationTag ? (LocationTag) tag : null;
-
-                if (locTag == null && (raw.startsWith("l@") || raw.contains(","))) {
-                    locTag = new LocationTag(raw);
-                }
-
-                if (locTag != null) {
-                    event.setVelocity(locTag.getLocation().toVector());
-                }
+            String durationRaw = EventReturn.getPrefixed(queue.getReturns(), "duration");
+            if (durationRaw != null) {
+                DurationTag durationTag = new DurationTag(durationRaw);
+                event.setBurnTime((int) durationTag.getTicks());
             }
         }
     }

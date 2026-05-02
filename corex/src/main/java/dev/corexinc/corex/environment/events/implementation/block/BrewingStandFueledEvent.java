@@ -20,10 +20,10 @@ import java.util.List;
 
 /* @doc event
  *
- * @Name BlockFueled
+ * @Name BrewingStandFueledEvent
  *
  * @Events
- * <block> is fueled (with <item>)
+ * brewing stand fueled (with <item>)
  *
  * @Cancellable
  *
@@ -42,15 +42,15 @@ import java.util.List;
  *
  * @Usage
  * // Doubles the fuel power of blaze powder.
- * on brewing_stand is fueled with blaze_powder:
+ * on brewing stand fueled with blaze_powder:
  * - return fuelPower:<context.fuelPower.mul[2]>
  *
  * @Usage
  * // Prevents the fuel from being consumed.
- * on brewing_stand is fueled:
+ * on brewing stand fueled:
  * - return isConsuming:false
  */
-public class BlockFueledEvent implements AbstractEvent {
+public class BrewingStandFueledEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
@@ -62,7 +62,7 @@ public class BlockFueledEvent implements AbstractEvent {
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> is fueled (with <item>)";
+        return "brewing stand fueled (with <item>)";
     }
 
     @Override
@@ -80,16 +80,11 @@ public class BlockFueledEvent implements AbstractEvent {
 
     @EventHandler
     public void onBlockFueled(BrewingStandFuelEvent event) {
-        String blockMaterial = event.getBlock().getType().name().toLowerCase();
         String fuelMaterial = event.getFuel().getType().name().toLowerCase();
 
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, blockMaterial)) {
-                continue;
-            }
-
             if (data.getArgument("item", 0) != null) {
                 if (!data.isGenericMatch("item", 0, fuelMaterial)) {
                     continue;

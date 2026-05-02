@@ -5,54 +5,55 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.events.AbstractEvent;
 import dev.corexinc.corex.environment.events.EventData;
 import dev.corexinc.corex.environment.events.EventRegistry;
-import dev.corexinc.corex.environment.events.EventReturn;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
-import dev.corexinc.corex.environment.tags.core.DurationTag;
-import dev.corexinc.corex.environment.tags.world.ItemTag;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.BrewingStartEvent;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockBrewingStart
+ * @Name SkulkReceiveGame
  *
  * @Events
- * <block> brewing starts
+ * sculk sensor receives event
+ *
+ * @Switches
+ * event:<name> - Only process if the GameEvent matches a specific name. See {@link javadoc https://jd.papermc.io/paper/org/bukkit/GameEvent.html}
+ *
+ * @Cancellable
  *
  * @Description
- * Fires when a brewing stand starts brewing a potion.
+ * Fires when a block (typically a Sculk Sensor) receives a GameEvent vibration.
  *
  * @Context
- * <context.location> - returns the LocationTag of the brewing stand.
- * <context.item> - returns the ItemTag of the ingredient used to brew the potions.
- * <context.brewTime> - returns a DurationTag of the total time it will take to brew the potion.
- *
- * @Returns
- * brewTime:<DurationTag> - Sets the total time for the potion being brewed.
+ * <context.location> - returns the LocationTag of the block receiving the event.
+ * <context.entity> - returns the EntityTag of the entity that caused the vibration (may be null).
+ * <context.eventName> - returns an ElementTag of the GameEvent name (e.g. 'step', 'block_destroy').
  *
  * @Usage
- * // Makes all potions brew instantly.
- * on brewing_stand brewing starts:
- * - return brewTime:0t
+ * // Prevent sculk sensors from hearing players eating.
+ * on sculk sensor receives event event:eat:
+ * - return cancelled
  */
-public class BlockBrewingStartEvent implements AbstractEvent {
+public class SkulkReceiveGameEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockBrewingStart";
+        return "SkulkReceiveGame";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> brewing starts";
+        return "sculk sensor triggers (by <event>)";
     }
 
     @Override
@@ -69,30 +70,27 @@ public class BlockBrewingStartEvent implements AbstractEvent {
     }
 
     @EventHandler
-    @SuppressWarnings("UnstableApiUsage")
-    public void onBrewingStart(BrewingStartEvent event) {
-        String blockMaterial = event.getBlock().getType().name().toLowerCase();
+    public void onReceiveGameEvent(org.bukkit.event.block.BlockReceiveGameEvent event) {
+        String eventName = event.getEvent().getKey().getKey().toLowerCase();
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, blockMaterial)) {
+            if (!data.isGenericMatch("event", 0, eventName)) {
                 continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("item", new ItemTag(event.getSource()));
-                context.put("brewTime", new DurationTag(event.getBrewingTime()));
+                context.put("eventName", new ElementTag(eventName));
+
+                if (event.getEntity() != null) {
+                    context.put("entity", new EntityTag(event.getEntity()));
+                }
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);
-
-            String brewTimeStr = EventReturn.getPrefixed(queue.getReturns(), "brewTime");
-            if (brewTimeStr != null) {
-                DurationTag dur = new DurationTag(brewTimeStr);
-                event.setBrewingTime((int) dur.getTicksLong());
-            }
+            if (queue.isCancelled()) event.setCancelled(true);
         }
     }
 

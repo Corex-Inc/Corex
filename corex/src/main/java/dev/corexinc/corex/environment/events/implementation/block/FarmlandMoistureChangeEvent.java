@@ -7,60 +7,57 @@ import dev.corexinc.corex.environment.events.EventData;
 import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
+import org.bukkit.block.data.type.Farmland;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.MoistureChangeEvent;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockIgnite
+ * @Name FarmlandMoistureChange
  *
  * @Events
- * <block> ignites
+ * farmland moisture level changes
  *
  * @Switches
- * cause:<cause> - Matches the cause of the ignition (e.g., LAVA, FLINT_AND_STEEL, LIGHTNING).
+ * from:<level> - Only process the event when the previous moisture level matches the input.
+ * to:<level> - Only process the event when the new moisture level matches the input.
  *
  * @Cancellable
  *
  * @Description
- * Fires when a block is set on fire.
+ * Fires when a farmland block's moisture level changes.
  *
  * @Context
- * <context.location> - returns the LocationTag of the block that was set on fire.
- * <context.material> - returns the MaterialTag of the block that was set on fire.
- * <context.entity> - returns the EntityTag of the entity that ignited the block (if any).
- * <context.originLocation> - returns the LocationTag of the fire block that ignited this block (if any).
- * <context.cause> - returns an ElementTag of the cause of the ignition.
+ * <context.location> - returns the LocationTag of the farmland block.
+ * <context.material> - returns the MaterialTag of the farmland block.
+ * <context.oldLevel> - returns an ElementTag(Number) of the previous moisture level.
+ * <context.newLevel> - returns an ElementTag(Number) of the new moisture level.
  *
  * @Usage
- * // Prevents lava from starting fires.
- * on block ignites cause:LAVA:
- * - return cancelled
- *
- * @Usage
- * // Narrates when a player ignites TNT.
- * on tnt ignites cause:FLINT_AND_STEEL:
- * - narrate "TNT has been ignited by <context.entity.name>!"
+ * // Announce when farmland begins to dry out.
+ * on farmland moisture level changes from:7 to:6:
+ * - narrate "Farmland at <context.location> lost its water source and began to dry!"
  */
-public class BlockIgniteEvent implements AbstractEvent {
+public class FarmlandMoistureChangeEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockIgnite";
+        return "BlockFarmlandMoistureChange";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> ignites";
+        return "farmland moisture level changes";
     }
 
     @Override
@@ -77,37 +74,32 @@ public class BlockIgniteEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockIgnite(org.bukkit.event.block.BlockIgniteEvent event) {
-        String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String cause = event.getCause().name().toUpperCase();
+    public void onMoistureChange(MoistureChangeEvent event) {
+        if (!(event.getBlock().getBlockData() instanceof Farmland oldFarmland)) return;
+        if (!(event.getNewState().getBlockData() instanceof Farmland newFarmland)) return;
+
+        int oldMoisture = oldFarmland.getMoisture();
+        int newMoisture = newFarmland.getMoisture();
 
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, blockMaterial)) {
+            String fromSwitch = data.getSwitch("from");
+            if (fromSwitch != null && !fromSwitch.equals(String.valueOf(oldMoisture))) {
                 continue;
             }
 
-            String causeSwitch = data.getSwitch("cause");
-            if (causeSwitch != null) {
-                if (!causeSwitch.equalsIgnoreCase(cause) && !causeSwitch.equals("*") && !causeSwitch.equalsIgnoreCase("any")) {
-                    continue;
-                }
+            String toSwitch = data.getSwitch("to");
+            if (toSwitch != null && !toSwitch.equals(String.valueOf(newMoisture))) {
+                continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
                 context.put("material", new MaterialTag(event.getBlock()));
-                context.put("cause", new ElementTag(cause));
-
-                if (event.getIgnitingEntity() != null) {
-                    context.put("entity", new EntityTag(event.getIgnitingEntity()));
-                }
-
-                if (event.getIgnitingBlock() != null) {
-                    context.put("originLocation", new LocationTag(event.getIgnitingBlock().getLocation()));
-                }
+                context.put("oldLevel", new ElementTag(oldMoisture));
+                context.put("newLevel", new ElementTag(newMoisture));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);

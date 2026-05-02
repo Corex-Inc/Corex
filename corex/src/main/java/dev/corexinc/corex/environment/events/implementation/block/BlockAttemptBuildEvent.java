@@ -25,9 +25,6 @@ import java.util.List;
  * @Events
  * block attempts to build <block>
  *
- * @Switches
- * on:<block> - Matches the material of the block that is being replaced or built on
- *
  * @Description
  * Fires when an attempt is made to build a block on another block.
  * This is a physical check and not necessarily caused by a player placing a block.
@@ -44,7 +41,7 @@ import java.util.List;
  *
  * @Usage
  * // Prevents dirt from being placed on top of stone
- * on block attempts to build dirt on:stone:
+ * on stone attempts to build dirt:
  * - return false
  *
  * @Usage
@@ -97,21 +94,11 @@ public class BlockAttemptBuildEvent implements AbstractEvent {
                 continue;
             }
 
-            String onSwitch = data.getSwitch("on");
-            if (onSwitch != null) {
-                boolean match = onSwitch.equals("*") || onSwitch.equalsIgnoreCase("any") ||
-                        onSwitch.equalsIgnoreCase(oldMaterial) ||
-                        onSwitch.equalsIgnoreCase("minecraft:" + oldMaterial) ||
-                        oldMaterial.equalsIgnoreCase("minecraft:" + onSwitch);
-
-                if (!match) continue;
-            }
-
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
                 context.put("oldMaterial", new MaterialTag(event.getBlock()));
-                context.put("newMaterial", new MaterialTag(event.getBlockData().getMaterial()));
+                context.put("newMaterial", new MaterialTag(event.getBlockData()));
                 context.put("buildable", new ElementTag(event.isBuildable()));
             }
 

@@ -10,55 +10,47 @@ import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.BlockFadeEvent;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockDisappear
+ * @Name BlockFluidLevelChange
  *
  * @Events
- * <block> disappears
- *
- * @Switches
- * into:<material> - Matches the material the block is turning into (e.g., water when ice melts).
+ * <fluid> level changes
  *
  * @Cancellable
  *
  * @Description
- * Fires when a block fades, melts, or disappears based on world conditions.
- * Examples include ice or snow melting, fire burning out, or coral dying.
+ * Fires when a fluid block's level changes (usually when it goes down/evaporates).
+ * Note that '<liquid> spreads' is fired when a liquid first spreads out.
  *
  * @Context
- * <context.location> - returns the LocationTag of the block that is disappearing.
- * <context.oldMaterial> - returns the MaterialTag of the block before it disappears.
- * <context.material> - returns the MaterialTag of the block it will become (often air or water).
+ * <context.location> - returns the LocationTag of the fluid block changing level.
+ * <context.oldMaterial> - returns the MaterialTag of the fluid before the change.
+ * <context.newMaterial> - returns the MaterialTag of the block after the change (sometimes air).
  *
  * @Usage
- * // Prevents ice from melting into water.
- * on ice disappears into:water:
+ * // Prevent water from drying up.
+ * on water level changes:
  * - return cancelled
- *
- * @Usage
- * // Alerts when a fire burns out.
- * on fire disappears:
- * - narrate "The fire went out!"
  */
-public class BlockDisappearEvent implements AbstractEvent {
+public class FluidLevelChangeEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockDisappear";
+        return "BlockFluidLevelChange";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> disappears";
+        return "<fluid> level changes";
     }
 
     @Override
@@ -75,32 +67,20 @@ public class BlockDisappearEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockDisappear(BlockFadeEvent event) {
-        String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String newMaterial = event.getNewState().getType().name().toLowerCase();
-
+    public void onFluidLevelChange(org.bukkit.event.block.FluidLevelChangeEvent event) {
+        String fluidMaterial = event.getBlock().getType().name().toLowerCase();
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, blockMaterial)) {
+            if (!data.isGenericMatch("fluid", 0, fluidMaterial)) {
                 continue;
-            }
-
-            String intoSwitch = data.getSwitch("into");
-            if (intoSwitch != null) {
-                boolean match = intoSwitch.equals("*") || intoSwitch.equalsIgnoreCase("any") ||
-                        intoSwitch.equalsIgnoreCase(newMaterial) ||
-                        intoSwitch.equalsIgnoreCase("minecraft:" + newMaterial) ||
-                        newMaterial.equalsIgnoreCase("minecraft:" + intoSwitch);
-
-                if (!match) continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
                 context.put("oldMaterial", new MaterialTag(event.getBlock()));
-                context.put("material", new MaterialTag(event.getNewState().getBlockData()));
+                context.put("newMaterial", new MaterialTag(event.getNewData()));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);

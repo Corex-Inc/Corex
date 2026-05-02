@@ -103,15 +103,36 @@ public class BlockExplodeEvent implements AbstractEvent {
             if (queue.isCancelled()) event.setCancelled(true);
 
             for (AbstractTag tag : queue.getReturns()) {
-                if (tag instanceof ElementTag elementTag && elementTag.isDouble()) {
-                    event.setYield((float) elementTag.asDouble());
-                } else if (tag instanceof ListTag listTag) {
-                    event.blockList().clear();
+                String raw = tag.identify();
+
+                ElementTag el = tag instanceof ElementTag ? (ElementTag) tag : new ElementTag(raw);
+                if (el.isDouble()) {
+                    event.setYield((float) el.asDouble());
+                    continue;
+                }
+
+                ListTag listTag = tag instanceof ListTag ? (ListTag) tag : new ListTag(raw);
+
+                if (!listTag.getList().isEmpty()) {
+                    boolean isBlockList = false;
+                    List<Block> tempBlocks = new ArrayList<>();
+
                     for (AbstractTag listElement : listTag.getList()) {
-                        LocationTag locTag = new LocationTag(listElement.identify());
-                        if (locTag.getLocation().getWorld() != null) {
-                            event.blockList().add(locTag.getLocation().getBlock());
+                        String elRaw = listElement.identify();
+
+                        if (elRaw.startsWith("l@") || elRaw.contains(",")) {
+                            isBlockList = true;
+                            LocationTag locTag = listElement instanceof LocationTag ? (LocationTag) listElement : new LocationTag(elRaw);
+
+                            if (locTag.getLocation().getWorld() != null) {
+                                tempBlocks.add(locTag.getLocation().getBlock());
+                            }
                         }
+                    }
+
+                    if (isBlockList) {
+                        event.blockList().clear();
+                        event.blockList().addAll(tempBlocks);
                     }
                 }
             }
