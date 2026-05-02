@@ -122,7 +122,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @NoArg
          * @Description
          * Returns a MapTag containing all block state properties currently applied to this material.
-         * For example, returns a map like: {facing=east, waterlogged=false, half=bottom}
+         * For example, returns a map like: map@[facing=east;waterlogged=false;half=bottom]
          */
         TAG_PROCESSOR.registerTag(MapTag.class, "properties", (attr, obj) -> {
             if (obj.getBlockData() == null) return null;

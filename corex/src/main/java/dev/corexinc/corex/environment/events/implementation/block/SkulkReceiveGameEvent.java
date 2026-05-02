@@ -23,13 +23,11 @@ import java.util.List;
  * @Events
  * sculk sensor receives event
  *
- * @Switches
- * event:<name> - Only process if the GameEvent matches a specific name. See {@link javadoc https://jd.papermc.io/paper/org/bukkit/GameEvent.html}
- *
  * @Cancellable
  *
  * @Description
  * Fires when a block (typically a Sculk Sensor) receives a GameEvent vibration.
+ * Only process if the GameEvent matches a specific name. See {@link javadoc https://jd.papermc.io/paper/org/bukkit/GameEvent.html}
  *
  * @Context
  * <context.location> - returns the LocationTag of the block receiving the event.
