@@ -9,56 +9,55 @@ import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockDisappear
+ * @Name BlockLiquidSpread
  *
  * @Events
- * <block> disappears
- *
- * @Switches
- * into:<material> - Matches the material the block is turning into (e.g., water when ice melts).
+ * <liquid> spreads
  *
  * @Cancellable
  *
  * @Description
- * Fires when a block fades, melts, or disappears based on world conditions.
- * Examples include ice or snow melting, fire burning out, or coral dying.
+ * Fires when a liquid block (water or lava) spreads to an adjacent block.
  *
  * @Context
- * <context.location> - returns the LocationTag of the block that is disappearing.
- * <context.oldMaterial> - returns the MaterialTag of the block before it disappears.
- * <context.material> - returns the MaterialTag of the block it will become (often air or water).
+ * <context.location> - returns the LocationTag of the source liquid block.
+ * <context.destination> - returns the LocationTag the liquid is spreading to.
+ * <context.material> - returns the MaterialTag of the spreading liquid.
  *
  * @Usage
- * // Prevents ice from melting into water.
- * on ice disappears into:water:
+ * // Prevents lava from spreading anywhere.
+ * on lava spreads:
  * - return cancelled
  *
  * @Usage
- * // Alerts when a fire burns out.
- * on fire disappears:
- * - narrate "The fire went out!"
+ * // Prevents any liquid from spreading to a specific height.
+ * on liquid spreads:
+ * - if <context.destination.y> < 50:
+ *     - return cancelled
  */
-public class BlockDisappearEvent implements AbstractEvent {
+public class LiquidSpreadEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockDisappear";
+        return "BlockLiquidSpread";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> disappears";
+        return "<liquid> spreads";
     }
 
     @Override
@@ -75,32 +74,24 @@ public class BlockDisappearEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockDisappear(BlockFadeEvent event) {
-        String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String newMaterial = event.getNewState().getType().name().toLowerCase();
+    public void onLiquidSpreads(BlockFromToEvent event) {
+        if (event.getBlock().getType() == Material.DRAGON_EGG) {
+            return;
+        }
 
+        String liquidMaterial = event.getBlock().getType().name().toLowerCase();
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, blockMaterial)) {
+            if (!data.isGenericMatch("liquid", 0, liquidMaterial)) {
                 continue;
-            }
-
-            String intoSwitch = data.getSwitch("into");
-            if (intoSwitch != null) {
-                boolean match = intoSwitch.equals("*") || intoSwitch.equalsIgnoreCase("any") ||
-                        intoSwitch.equalsIgnoreCase(newMaterial) ||
-                        intoSwitch.equalsIgnoreCase("minecraft:" + newMaterial) ||
-                        newMaterial.equalsIgnoreCase("minecraft:" + intoSwitch);
-
-                if (!match) continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("oldMaterial", new MaterialTag(event.getBlock()));
-                context.put("material", new MaterialTag(event.getNewState().getBlockData()));
+                context.put("destination", new LocationTag(event.getToBlock().getLocation()));
+                context.put("material", new MaterialTag(event.getBlock()));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);

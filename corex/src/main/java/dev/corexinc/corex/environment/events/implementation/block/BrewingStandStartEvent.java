@@ -5,60 +5,54 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.events.AbstractEvent;
 import dev.corexinc.corex.environment.events.EventData;
 import dev.corexinc.corex.environment.events.EventRegistry;
+import dev.corexinc.corex.environment.events.EventReturn;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
+import dev.corexinc.corex.environment.tags.core.DurationTag;
+import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
-import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BrewingStartEvent;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockDisappear
+ * @Name BrewingStandStartEvent
  *
  * @Events
- * <block> disappears
- *
- * @Switches
- * into:<material> - Matches the material the block is turning into (e.g., water when ice melts).
- *
- * @Cancellable
+ * brewing starts
  *
  * @Description
- * Fires when a block fades, melts, or disappears based on world conditions.
- * Examples include ice or snow melting, fire burning out, or coral dying.
+ * Fires when a brewing stand starts brewing a potion.
  *
  * @Context
- * <context.location> - returns the LocationTag of the block that is disappearing.
- * <context.oldMaterial> - returns the MaterialTag of the block before it disappears.
- * <context.material> - returns the MaterialTag of the block it will become (often air or water).
+ * <context.location> - returns the LocationTag of the brewing stand.
+ * <context.item> - returns the ItemTag of the ingredient used to brew the potions.
+ * <context.brewTime> - returns a DurationTag of the total time it will take to brew the potion.
+ *
+ * @Returns
+ * brewTime:<DurationTag> - Sets the total time for the potion being brewed.
  *
  * @Usage
- * // Prevents ice from melting into water.
- * on ice disappears into:water:
- * - return cancelled
- *
- * @Usage
- * // Alerts when a fire burns out.
- * on fire disappears:
- * - narrate "The fire went out!"
+ * // Makes all potions brew instantly.
+ * on brewing starts:
+ * - return brewTime:0t
  */
-public class BlockDisappearEvent implements AbstractEvent {
+public class BrewingStandStartEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockDisappear";
+        return "BlockBrewingStart";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> disappears";
+        return "brewing starts";
     }
 
     @Override
@@ -75,10 +69,9 @@ public class BlockDisappearEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockDisappear(BlockFadeEvent event) {
+    @SuppressWarnings("UnstableApiUsage")
+    public void onBrewingStart(BrewingStartEvent event) {
         String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String newMaterial = event.getNewState().getType().name().toLowerCase();
-
         ContextTag context = null;
 
         for (EventData data : scripts) {
@@ -86,25 +79,20 @@ public class BlockDisappearEvent implements AbstractEvent {
                 continue;
             }
 
-            String intoSwitch = data.getSwitch("into");
-            if (intoSwitch != null) {
-                boolean match = intoSwitch.equals("*") || intoSwitch.equalsIgnoreCase("any") ||
-                        intoSwitch.equalsIgnoreCase(newMaterial) ||
-                        intoSwitch.equalsIgnoreCase("minecraft:" + newMaterial) ||
-                        newMaterial.equalsIgnoreCase("minecraft:" + intoSwitch);
-
-                if (!match) continue;
-            }
-
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("oldMaterial", new MaterialTag(event.getBlock()));
-                context.put("material", new MaterialTag(event.getNewState().getBlockData()));
+                context.put("item", new ItemTag(event.getSource()));
+                context.put("brewTime", new DurationTag(event.getBrewingTime()));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);
-            if (queue.isCancelled()) event.setCancelled(true);
+
+            String brewTimeStr = EventReturn.getPrefixed(queue.getReturns(), "brewTime");
+            if (brewTimeStr != null) {
+                DurationTag dur = new DurationTag(brewTimeStr);
+                event.setBrewingTime((int) dur.getTicksLong());
+            }
         }
     }
 

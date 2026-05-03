@@ -1,66 +1,63 @@
 package dev.corexinc.corex.environment.events.implementation.block;
 
 import dev.corexinc.corex.Corex;
+import dev.corexinc.corex.environment.events.EventReturn;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.events.AbstractEvent;
 import dev.corexinc.corex.environment.events.EventData;
 import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
+import dev.corexinc.corex.environment.tags.core.DurationTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.entity.EntityTag;
+import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.inventory.FurnaceStartSmeltEvent;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockIgnite
+ * @Name BlockStartsSmelting
  *
  * @Events
- * <block> ignites
- *
- * @Switches
- * cause:<cause> - Matches the cause of the ignition (e.g., LAVA, FLINT_AND_STEEL, LIGHTNING).
- *
- * @Cancellable
+ * <block> starts smelting <item>
  *
  * @Description
- * Fires when a block is set on fire.
+ * Fires when a furnace, blast furnace, or smoker starts smelting an item.
  *
  * @Context
- * <context.location> - returns the LocationTag of the block that was set on fire.
- * <context.material> - returns the MaterialTag of the block that was set on fire.
- * <context.entity> - returns the EntityTag of the entity that ignited the block (if any).
- * <context.originLocation> - returns the LocationTag of the fire block that ignited this block (if any).
- * <context.cause> - returns an ElementTag of the cause of the ignition.
+ * <context.location> - returns the LocationTag of the furnace block.
+ * <context.material> - returns the MaterialTag of the furnace block.
+ * <context.item> - returns the ItemTag of the item being smelted.
+ * <context.recipeId> - returns an ElementTag of the recipe ID being used.
+ * <context.totalCookTime> - returns a DurationTag of the total time it will take to smelt the item.
+ *
+ * @Returns
+ * duration:<DurationTag> - Sets the total cook time for the item being smelted.
  *
  * @Usage
- * // Prevents lava from starting fires.
- * on block ignites cause:LAVA:
- * - return cancelled
- *
- * @Usage
- * // Narrates when a player ignites TNT.
- * on tnt ignites cause:FLINT_AND_STEEL:
- * - narrate "TNT has been ignited by <context.entity.name>!"
+ * // Speeds up the smelting process for iron ore in blast furnaces.
+ * on blast_furnace starts smelting iron_ore:
+ * - return duration:2s
  */
-public class BlockIgniteEvent implements AbstractEvent {
+public class BlockStartsSmeltingEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockIgnite";
+        return "BlockStartsSmelting";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> ignites";
+        return "<block> starts smelting <item>";
     }
 
     @Override
@@ -77,9 +74,9 @@ public class BlockIgniteEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockIgnite(org.bukkit.event.block.BlockIgniteEvent event) {
+    public void onFurnaceStartsSmelting(FurnaceStartSmeltEvent event) {
         String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String cause = event.getCause().name().toUpperCase();
+        String itemMaterial = event.getSource().getType().name().toLowerCase();
 
         ContextTag context = null;
 
@@ -88,30 +85,26 @@ public class BlockIgniteEvent implements AbstractEvent {
                 continue;
             }
 
-            String causeSwitch = data.getSwitch("cause");
-            if (causeSwitch != null) {
-                if (!causeSwitch.equalsIgnoreCase(cause) && !causeSwitch.equals("*") && !causeSwitch.equalsIgnoreCase("any")) {
-                    continue;
-                }
+            if (!data.isGenericMatch("item", 3, itemMaterial)) {
+                continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
                 context.put("material", new MaterialTag(event.getBlock()));
-                context.put("cause", new ElementTag(cause));
-
-                if (event.getIgnitingEntity() != null) {
-                    context.put("entity", new EntityTag(event.getIgnitingEntity()));
-                }
-
-                if (event.getIgnitingBlock() != null) {
-                    context.put("originLocation", new LocationTag(event.getIgnitingBlock().getLocation()));
-                }
+                context.put("item", new ItemTag(event.getSource()));
+                context.put("recipeId", new ElementTag(event.getRecipe().getKey().toString()));
+                context.put("totalCookTime", new DurationTag(event.getTotalCookTime() + "t"));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);
-            if (queue.isCancelled()) event.setCancelled(true);
+
+            String durationRaw = EventReturn.getPrefixed(queue.getReturns(), "duration");
+            if (durationRaw != null) {
+                DurationTag durationTag = new DurationTag(durationRaw);
+                event.setTotalCookTime((int) durationTag.getTicks());
+            }
         }
     }
 

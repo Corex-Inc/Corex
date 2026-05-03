@@ -9,58 +9,58 @@ import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
-import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /* @doc event
  *
- * @Name BlockIgnite
+ * @Name BlockTNTPrime
  *
  * @Events
- * <block> ignites
+ * tnt primes
  *
  * @Switches
- * cause:<cause> - Matches the cause of the ignition (e.g., LAVA, FLINT_AND_STEEL, LIGHTNING).
+ * cause:<cause> - Matches the reason the TNT was primed. Check {@link javadoc https://jd.papermc.io/paper/org/bukkit/event/block/TNTPrimeEvent.PrimeCause.html}
  *
  * @Cancellable
  *
  * @Description
- * Fires when a block is set on fire.
+ * Fires when a TNT block is activated and begins its countdown to explode.
  *
  * @Context
- * <context.location> - returns the LocationTag of the block that was set on fire.
- * <context.material> - returns the MaterialTag of the block that was set on fire.
- * <context.entity> - returns the EntityTag of the entity that ignited the block (if any).
- * <context.originLocation> - returns the LocationTag of the fire block that ignited this block (if any).
- * <context.cause> - returns an ElementTag of the cause of the ignition.
+ * <context.location> - returns the LocationTag of the TNT block being primed.
+ * <context.cause> - returns an ElementTag of the PrimeCause.
+ * <context.entity> - returns the EntityTag of the entity that caused the TNT to prime, if applicable.
+ * <context.sourceBlock> - returns the LocationTag of the block that caused the prime (like a fire block or redstone block), if applicable.
  *
  * @Usage
- * // Prevents lava from starting fires.
- * on block ignites cause:LAVA:
+ * // Prevents players from manually igniting TNT with flint and steel.
+ * on tnt primes cause:PLAYER:
+ * - narrate "You cannot ignite TNT manually!" targets:<context.entity>
  * - return cancelled
  *
  * @Usage
- * // Narrates when a player ignites TNT.
- * on tnt ignites cause:FLINT_AND_STEEL:
- * - narrate "TNT has been ignited by <context.entity.name>!"
+ * // Broadcasts when TNT is activated by an explosion.
+ * on tnt primes cause:EXPLOSION:
+ * - announce "Chain reaction! TNT ignited at <context.location>!"
  */
-public class BlockIgniteEvent implements AbstractEvent {
+public class TNTPrimeEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "BlockIgnite";
+        return "BlockTNTPrime";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "<block> ignites";
+        return "tnt primes";
     }
 
     @Override
@@ -77,36 +77,27 @@ public class BlockIgniteEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockIgnite(org.bukkit.event.block.BlockIgniteEvent event) {
-        String blockMaterial = event.getBlock().getType().name().toLowerCase();
-        String cause = event.getCause().name().toUpperCase();
-
+    public void onTntPrime(org.bukkit.event.block.TNTPrimeEvent event) {
+        String cause = event.getCause().name();
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("block", 0, blockMaterial)) {
-                continue;
-            }
-
             String causeSwitch = data.getSwitch("cause");
-            if (causeSwitch != null) {
-                if (!causeSwitch.equalsIgnoreCase(cause) && !causeSwitch.equals("*") && !causeSwitch.equalsIgnoreCase("any")) {
-                    continue;
-                }
+            if (causeSwitch != null && !causeSwitch.equalsIgnoreCase(cause) && !causeSwitch.equals("*")) {
+                continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("material", new MaterialTag(event.getBlock()));
                 context.put("cause", new ElementTag(cause));
 
-                if (event.getIgnitingEntity() != null) {
-                    context.put("entity", new EntityTag(event.getIgnitingEntity()));
+                if (event.getPrimingEntity() != null) {
+                    context.put("entity", new EntityTag(event.getPrimingEntity()));
                 }
 
-                if (event.getIgnitingBlock() != null) {
-                    context.put("originLocation", new LocationTag(event.getIgnitingBlock().getLocation()));
+                if (event.getPrimingBlock() != null) {
+                    context.put("sourceBlock", new LocationTag(event.getPrimingBlock().getLocation()));
                 }
             }
 

@@ -11,6 +11,7 @@ import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockCookEvent;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +75,7 @@ public class BlockCookItemEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onBlockCook(org.bukkit.event.block.BlockCookEvent event) {
+    public void onBlockCook(BlockCookEvent event) {
         String sourceItem = event.getSource().getType().name().toLowerCase();
         String resultItem = event.getResult().getType().name().toLowerCase();
         String blockMaterial = event.getBlock().getType().name().toLowerCase();
@@ -107,8 +108,11 @@ public class BlockCookItemEvent implements AbstractEvent {
             if (queue.isCancelled()) event.setCancelled(true);
 
             for (AbstractTag tag : queue.getReturns()) {
-                if (tag instanceof ItemTag itemTag) {
+                ItemTag itemTag = tag instanceof ItemTag ? (ItemTag) tag : new ItemTag(tag.identify());
+
+                if (itemTag.getItemStack() != null && !itemTag.getItemStack().getType().isAir()) {
                     event.setResult(itemTag.getItemStack());
+                    break;
                 }
             }
         }

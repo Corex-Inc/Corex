@@ -118,7 +118,7 @@ public class BlockGrowEvent implements AbstractEvent {
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("material", new MaterialTag(event.getNewState().getBlockData().getMaterial()));
+                context.put("material", new MaterialTag(event.getNewState().getBlockData()));
 
                 if (newAge != -1) context.put("age", new ElementTag(newAge));
             }

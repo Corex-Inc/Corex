@@ -8,10 +8,10 @@ import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.events.EventReturn;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -19,47 +19,45 @@ import java.util.List;
 
 /* @doc event
  *
- * @Name CrafterCraft
+ * @Name BlockRedstoneRecalculate
  *
  * @Events
- * crafter crafts <item>
+ * redstone recalculates
  *
- * @Cancellable
+ * @Warning
+ * This event fires extremely rapidly! Use carefully to avoid causing server lag.
  *
  * @Description
- * Fires when a crafter block crafts an item.
+ * Fires when a redstone block or wire is recalculated (changes its power level).
+ * Note: This event is not strictly cancellable in Bukkit, but you can simulate cancellation by returning 'current:0' or keeping it at the old current.
  *
  * @Context
- * <context.location> - returns the LocationTag of the crafter block.
- * <context.item> - returns the ItemTag being crafted.
- * <context.recipeId> - returns an ElementTag of the ID of the recipe formed.
+ * <context.location> - returns the LocationTag of the redstone block/wire.
+ * <context.oldCurrent> - returns an ElementTag(Number) of the previous redstone power level.
+ * <context.newCurrent> - returns an ElementTag(Number) of the new redstone power level.
  *
  * @Returns
- * item:<ItemTag> - Sets the item being crafted (this still consumes the original ingredients).
+ * current:<ElementTag(Number)> - Sets the new redstone power level (0-15).
  *
  * @Usage
- * // Prevents crafters from making TNT.
- * on crafter crafts tnt:
- * - return cancelled
- *
- * @Usage
- * // Changes the result of a crafted diamond sword to a wooden sword.
- * on crafter crafts diamond_sword:
- * - return item:wooden_sword
+ * // Limits all redstone power to a maximum of 5.
+ * on redstone recalculates:
+ * - if <context.newCurrent> > 5:
+ *     - return current:5
  */
-public class CrafterCraftEvent implements AbstractEvent {
+public class RedstoneRecalculateEvent implements AbstractEvent {
 
     private boolean isRegistered = false;
     private final List<EventData> scripts = new ArrayList<>();
 
     @Override
     public @NotNull String getName() {
-        return "CrafterCraft";
+        return "BlockRedstoneRecalculate";
     }
 
     @Override
     public @NotNull String getSyntax() {
-        return "crafter crafts <item>";
+        return "redstone recalculates";
     }
 
     @Override
@@ -76,30 +74,25 @@ public class CrafterCraftEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onCrafterCraft(org.bukkit.event.block.CrafterCraftEvent event) {
-        String itemMaterial = event.getResult().getType().name().toLowerCase();
+    public void onRedstoneRecalculate(BlockRedstoneEvent event) {
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("item", 0, itemMaterial)) {
-                continue;
-            }
-
             if (context == null) {
                 context = new ContextTag();
                 context.put("location", new LocationTag(event.getBlock().getLocation()));
-                context.put("item", new ItemTag(event.getResult()));
-                context.put("recipeId", new ElementTag(event.getRecipe().getKey().toString()));
+                context.put("oldCurrent", new ElementTag(event.getOldCurrent()));
+                context.put("newCurrent", new ElementTag(event.getNewCurrent()));
             }
 
             ScriptQueue queue = EventRegistry.fire(data, null, context);
-            if (queue.isCancelled()) event.setCancelled(true);
 
-            String returnedItem = EventReturn.getPrefixed(queue.getReturns(), "item");
-            if (returnedItem != null) {
-                ItemTag itemTag = new ItemTag(returnedItem);
-                if (itemTag.getItemStack() != null) {
-                    event.setResult(itemTag.getItemStack());
+            String currentStr = EventReturn.getPrefixed(queue.getReturns(), "current");
+            if (currentStr != null) {
+                ElementTag el = new ElementTag(currentStr);
+                if (el.isInt()) {
+                    event.setNewCurrent(el.asInt());
+                    context.put("newCurrent", new ElementTag(event.getNewCurrent()));
                 }
             }
         }

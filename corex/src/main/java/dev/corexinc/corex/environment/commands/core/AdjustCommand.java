@@ -118,7 +118,7 @@ public class AdjustCommand implements AbstractCommand {
                     current = adjustable.applyMechanism(mech, value);
                 }
                 else {
-                    Debugger.echoError(queue, "Object is not adjustable: " + current.identify());
+                    Debugger.echoError(queue, "Mechanisms cannot be applied to the '<yellow>" + current.identify() + "</yellow>'!");
                     break;
                 }
             }

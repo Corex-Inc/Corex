@@ -194,7 +194,7 @@ public class EnvironmentLoader {
                 // Block
                 BellRingEvent.class,
                 BlockAttemptBuildEvent.class,
-                BlockBrewEvent.class,
+                BrewingStandBrewEvent.class,
                 BlockBurnEvent.class,
                 BlockCookItemEvent.class,
                 BlockDisappearEvent.class,
@@ -202,16 +202,31 @@ public class EnvironmentLoader {
                 BlockExplodeEvent.class,
                 BlockFallEvent.class,
                 BlockFormEvent.class,
-                BlockFueledEvent.class,
+                BrewingStandFueledEvent.class,
                 BlockGrowEvent.class,
                 BlockIgniteEvent.class,
                 BlockPreDispenseEvent.class,
                 BlockShearEntityEvent.class,
                 BlockSpreadEvent.class,
                 CauldronLevelChangeEvent.class,
-                BlockBrewingStartEvent.class,
+                BrewingStandStartEvent.class,
                 CrafterCraftEvent.class,
-                DragonEggMoveEvent.class
+                DragonEggMoveEvent.class,
+                FarmlandMoistureChangeEvent.class,
+                BlockBurnsItemEvent.class,
+                FluidLevelChangeEvent.class,
+                LiquidSpreadEvent.class,
+                BlockStartsSmeltingEvent.class,
+                PistonExtendEvent.class,
+                PistonRetractEvent.class,
+                BlockNotePlayEvent.class,
+                BlockDecayEvent.class,
+                BlockPhysicsEvent.class,
+                DispenserEquipEvent.class,
+                RedstoneRecalculateEvent.class,
+                SpongeAbsorbEvent.class,
+                TNTPrimeEvent.class,
+                SkulkReceiveGameEvent.class
         );
     }
 }

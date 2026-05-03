@@ -39,7 +39,7 @@ public class ItemContainer implements AbstractContainer {
     }
 
     private ItemTag buildItem() {
-        String materialName = rawData.getString("material");
+            String materialName = rawData.getString("material");
         if (materialName == null) {
             CorexLogger.error("Item '" + name + "' lacks a material key.");
             return new ItemTag("air");
