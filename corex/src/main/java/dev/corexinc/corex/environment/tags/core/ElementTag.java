@@ -568,6 +568,180 @@ public class ElementTag implements AbstractTag {
                 return obj;
             }
         });
+
+        /* @doc tag
+         * @Name cos
+         * @RawName <ElementTag.cos>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the cosine of the specified object
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "cos", (attr, obj) -> new ElementTag(Math.cos(obj.asDouble())));
+
+        /* @doc tag
+         * @Name acos
+         * @RawName <ElementTag.acos>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the arccosine of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "acos", (attr, obj) -> new ElementTag(Math.acos(obj.asDouble())));
+
+        /* @doc tag
+         * @Name sin
+         * @RawName <ElementTag.sin>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the sinus of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "sin", (attr, obj) -> new ElementTag(Math.sin(obj.asDouble())));
+
+        /* @doc tag
+         * @Name asin
+         * @RawName <ElementTag.asin>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the arcsine of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "asin", (attr, obj) -> new ElementTag(Math.asin(obj.asDouble())));
+
+        /* @doc tag
+         * @Name tgn
+         * @RawName <ElementTag.tg>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the tangent of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "tg", (attr, obj) -> new ElementTag(Math.tan(obj.asDouble())));
+
+        /* @doc tag
+         * @Name tgh
+         * @RawName <ElementTag.tgh>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the hyperbolic tangent of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "tgh", (attr, obj) -> new ElementTag(Math.tanh(obj.asDouble())));
+
+        /* @doc tag
+         * @Name atgn
+         * @RawName <ElementTag.atg>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the atan of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "atg", (attr, obj) -> new ElementTag(Math.atan(obj.asDouble())));
+
+        /* @doc tag
+         * @Name atg2[]
+         * @RawName <ElementTag.atg2[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @ArgRequired
+         *
+         * @Description
+         * Returns the atan2 of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "atg2", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if ((obj.isDouble()) && new ElementTag(attr.getParam()).isDouble()) {
+                return new ElementTag(Math.atan2(obj.asDouble(), new ElementTag(attr.getParam()).asDouble()));
+            }
+            return null;
+        }).test("5");
+
+        /* @doc tag
+         * @Name ctg
+         * @RawName <ElementTag.ctg>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the cotangent of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ctg", (attr, obj) -> new ElementTag(1 / Math.tan(obj.asDouble())));
+
+        /* @doc tag
+         * @Name actg
+         * @RawName <ElementTag.actg>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the arccotangent of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "actg", (attr, obj) -> new ElementTag(Math.PI / 2 - Math.atan(1 / Math.tan(obj.asDouble()))));
+
+        /* @doc tag
+         * @Name factorial
+         * @RawName <ElementTag.factorial>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the factorial of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "factorial", (attr, obj) -> {
+            long result = 1;
+            for (int i = 1; i <= obj.asLong(); i++) {
+                result *= i;
+            }
+            return new ElementTag(result);
+        });
+
+        /* @doc tag
+         * @Name ln
+         * @RawName <ElementTag.ln>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         *
+         * @Description
+         * Returns the natural logarithm of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ln", (attr, obj) -> new ElementTag(Math.log(obj.asDouble())));
+
+        /* @doc tag
+         * @Name log[]
+         * @RawName <ElementTag.log[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @ArgRequired
+         *
+         * @Description
+         * Returns the logarithm of the specified object.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "log", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if ((obj.isDouble()) && new ElementTag(attr.getParam()).isDouble()) {
+                return new ElementTag(Math.log(obj.asDouble()) / Math.log(new ElementTag(attr.getParam()).asDouble()));
+            }
+            return null;
+        }).test("5");
     }
 
     @Override
