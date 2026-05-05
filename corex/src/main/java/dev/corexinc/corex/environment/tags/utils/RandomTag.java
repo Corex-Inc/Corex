@@ -1,9 +1,11 @@
-package dev.corexinc.corex.environment.tags.core;
+package dev.corexinc.corex.environment.tags.utils;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MapTag;
 import org.bukkit.util.noise.SimplexNoiseGenerator;
 import org.jspecify.annotations.NonNull;
 
@@ -241,14 +243,28 @@ public class RandomTag implements AbstractTag {
         return seededRandom != null ? seededRandom : ThreadLocalRandom.current();
     }
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
 
     @Override
     public @NonNull String identify() {
         return seed != null ? PREFIX + "@" + seed : PREFIX + "@";
     }
 
-    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
-    @Override public @NonNull TagProcessor<RandomTag> getProcessor() { return TAG_PROCESSOR; }
-    @Override public String getTestValue() { return PREFIX + "@"; }
+    @Override
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return TAG_PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public @NonNull TagProcessor<RandomTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return PREFIX + "@";
+    }
 }

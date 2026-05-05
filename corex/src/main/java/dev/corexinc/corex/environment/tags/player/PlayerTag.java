@@ -53,7 +53,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
             if (attribute.hasParam()) {
                 return new PlayerTag(attribute.getParam());
             }
-            if (attribute.getQueue() != null && attribute.getQueue().getPlayer() != null) {
+            if (attribute.getQueue().getPlayer() != null) {
                 return attribute.getQueue().getPlayer();
             }
             return null;

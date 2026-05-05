@@ -223,9 +223,27 @@ public class ServerTag implements AbstractTag, Flaggable {
         return serverTracker;
     }
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
-    @Override public @NonNull String identify() { return PREFIX + "@"; }
-    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
-    @Override public @NonNull TagProcessor<ServerTag> getProcessor() { return PROCESSOR; }
-    @Override public @NonNull String getTestValue() { return "server@"; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
+
+    @Override
+    public @NonNull String identify() {
+        return PREFIX + "@";
+    }
+    @Override
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public @NonNull TagProcessor<ServerTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public @NonNull String getTestValue() {
+        return "server@";
+    }
 }

@@ -5,7 +5,6 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Location;
 import org.joml.Quaterniond;
@@ -48,7 +47,6 @@ public class QuaternionTag implements AbstractTag {
 
     private static final String prefix = "quat";
 
-    // Нативный оптимизированный класс из JOML (встроен в Paper)
     private final Quaterniond q;
 
     public static final TagProcessor<QuaternionTag> TAG_PROCESSOR = new TagProcessor<>();
