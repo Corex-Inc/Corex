@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /* @doc command
  *
  * @Name Look
- * @Syntax look [<entity>|...] (<location>) (yaw:<#>) (pitch:<#>) (offthread_repeat:<#>)
+ * @Syntax look [<entity>|...] (<location>) (yaw:<#>) (pitch:<#>) (offthreadRepeat:<#>)
  * @RequiredArgs 1
  * @MaxArgs 4
  * @ShortDescription Makes one or more entities face a target location or rotation.
@@ -39,21 +39,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * Accepts a target location as the second linear argument, OR a specific
  * rotation via (yaw:<#>) and/or (pitch:<#>) prefix arguments.
- * If neither is provided the command errors.
  *
- * Location mode uses Paper's lookAt API (EYES anchor) and works for any
- * LivingEntity. For Players a direction-computed yaw/pitch is applied via
- * setRotation(), which sends a position packet to the client.
- * Non-living entities support yaw/pitch mode only.
- *
- * Specify (offthread_repeat:<#>) to send extra relative-rotation packets
+ * Specify (offthreadRepeat:<#>) to send extra relative-rotation packets
  * to a player's client within a single tick using async sleeps. This smooths
  * out sudden large rotations caused by client-side interpolation lag.
  * Only effective for Player entities; silently ignored for all others.
- * Requires NMS PlayerAdapter to be registered.
  *
- * The look command is ~waitable when offthread_repeat is specified.
- * Refer to Language:~waitable.
+ * @Waitable
  *
  * @Usage
  * // Make the linked entity look at a fixed position.
@@ -65,7 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @Usage
  * // Look with 3 extra async packets and wait for completion.
- * - ~look <player> <npc.location> offthread_repeat:3
+ * - ~look <player> <[entity].location> offthreadRepeat:3
  */
 public class LookCommand implements AbstractCommand {
 
@@ -76,7 +68,7 @@ public class LookCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<entity>|...] (<location>) (yaw:<#>) (pitch:<#>) (offthread_repeat:<#>)";
+        return "[<entity>|...] (<location>) (yaw:<#>) (pitch:<#>) (offthreadRepeat:<#>)";
     }
 
     @Override
@@ -97,7 +89,7 @@ public class LookCommand implements AbstractCommand {
         String targetRaw    = instruction.getLinear(1, queue);
         String yawRaw       = instruction.getPrefix("yaw",               queue);
         String pitchRaw     = instruction.getPrefix("pitch",             queue);
-        String offthreadRaw = instruction.getPrefix("offthread_repeat",  queue);
+        String offthreadRaw = instruction.getPrefix("offthreadRepeat",  queue);
 
         if (entitiesRaw == null) {
             Debugger.echoError(queue, "Entities argument cannot be null!");
@@ -127,7 +119,7 @@ public class LookCommand implements AbstractCommand {
             try {
                 offthreadRepeats = Math.max(0, Integer.parseInt(offthreadRaw));
             } catch (NumberFormatException e) {
-                Debugger.echoError(queue, "Invalid offthread_repeat value: '" + offthreadRaw + "'.");
+                Debugger.echoError(queue, "Invalid offthreadRepeat value: '" + offthreadRaw + "'.");
             }
         }
 
