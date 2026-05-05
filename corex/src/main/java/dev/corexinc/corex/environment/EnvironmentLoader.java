@@ -47,6 +47,8 @@ public class EnvironmentLoader {
         nms.register(BiomeAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.BiomeAdapterImpl");
 
         nms.register(PlayerAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.PlayerAdapterImpl");
+        nms.register(PlayerAdapter.class, "1.21.3", "dev.corexinc.corex.nms.v1_21_3.PlayerAdapterImpl");
+        nms.register(PlayerAdapter.class, "1.21.5", "dev.corexinc.corex.nms.v1_21_5.PlayerAdapterImpl");
         nms.register(PlayerAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.PlayerAdapterImpl");
 
         // ---------- NMS (Net.Minecraft.Server) ----------
@@ -58,7 +60,7 @@ public class EnvironmentLoader {
 
         // DefinitionTag
         BaseTagProcessor.registerBaseTag("", (attribute) -> {
-            if (attribute.hasParam() && attribute.getQueue() != null) {
+            if (attribute.hasParam()) {
                 String fullPath = attribute.getParam();
 
                 if (!fullPath.contains(".")) {
@@ -116,6 +118,7 @@ public class EnvironmentLoader {
                 ParticleCommand.class,
                 PlaySoundCommand.class,
                 DamageCommand.class,
+                LookCommand.class,
 
                 // Tags
                 ElementTag.class,

@@ -1,4 +1,4 @@
-package dev.corexinc.corex.nms.v1_21;
+package dev.corexinc.corex.nms.v1_21_5;
 
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
@@ -11,7 +11,9 @@ import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
-import net.minecraft.world.entity.RelativeMovement;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -85,9 +87,9 @@ public class PlayerAdapterImpl implements PlayerAdapter {
         progress.grantProgress(CRITERIA_KEY);
 
         ClientboundUpdateAdvancementsPacket addPacket = new ClientboundUpdateAdvancementsPacket(
-                false, List.of(holder), Set.of(), Map.of(id, progress));
+                false, List.of(holder), Set.of(), Map.of(id, progress), true);
         ClientboundUpdateAdvancementsPacket removePacket = new ClientboundUpdateAdvancementsPacket(
-                false, List.of(), Set.of(id), Map.of());
+                false, List.of(), Set.of(id), Map.of(), true);
 
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         serverPlayer.connection.send(addPacket);
@@ -98,11 +100,10 @@ public class PlayerAdapterImpl implements PlayerAdapter {
     public void sendRelativeLookPacket(Player player, float relYaw, float relPitch) {
         ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
 
-        ClientboundPlayerPositionPacket packet = new ClientboundPlayerPositionPacket(
-                0.0, 0.0, 0.0,
-                relYaw, relPitch,
-                EnumSet.allOf(RelativeMovement.class),
-                0
+        ClientboundPlayerPositionPacket packet = ClientboundPlayerPositionPacket.of(
+                0,
+                new PositionMoveRotation(Vec3.ZERO, Vec3.ZERO, relYaw, relPitch),
+                EnumSet.allOf(Relative.class)
         );
 
         nmsPlayer.connection.send(packet);

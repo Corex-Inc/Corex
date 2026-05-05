@@ -20,10 +20,7 @@ import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -388,7 +385,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "statistic", (attribute, object) -> {
             if (!attribute.hasParam()) return null;
             try {
-                org.bukkit.Statistic stat = org.bukkit.Statistic.valueOf(attribute.getParam().toUpperCase());
+                Statistic stat = Statistic.valueOf(attribute.getParam().toUpperCase());
                 return new ElementTag(object.offlinePlayer.getStatistic(stat));
             } catch (IllegalArgumentException e) {
                 Debugger.error("Invalid statistic name: '" + attribute.getParam() + "'");

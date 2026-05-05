@@ -114,7 +114,6 @@ public class ActionBarCommand implements AbstractCommand {
     }
 
     private Component buildComponent(@NonNull AbstractTag text) {
-        Component component = text.asComponent();
-        return component != null ? component : Component.text(text.identify());
+        return text.asComponent();
     }
 }

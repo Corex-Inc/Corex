@@ -10,6 +10,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.scripts.JsonHelper;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -1263,15 +1264,43 @@ public class ListTag implements AbstractTag {
         }
     }
 
-    public <T extends AbstractTag> List<T> filter(Class<T> clazz, ScriptQueue queue) {
+    /**
+     * Returns all list entries that are an instance of {@code clazz}.
+     * Entries that do not match log an error to {@code queue} (pass {@code null} to suppress).
+     */
+    public <T extends AbstractTag> List<T> filter(Class<T> clazz, @Nullable ScriptQueue queue) {
         List<T> results = new ArrayList<>();
         for (AbstractTag item : this.list) {
             if (clazz.isInstance(item)) {
                 results.add(clazz.cast(item));
-            } else {
-                if (queue != null) {
-                    Debugger.echoError(queue, "Cannot process list-entry '" + item.identify() + "' as type '" + clazz.getSimpleName() + "' (does not match expected type).");
+            } else if (queue != null) {
+                Debugger.echoError(queue, "Cannot process list-entry '" + item.identify()
+                        + "' as type '" + clazz.getSimpleName() + "' (does not match expected type).");
+            }
+        }
+        return results;
+    }
+
+    @SafeVarargs
+    public final List<AbstractTag> filter(@Nullable ScriptQueue queue, Class<? extends AbstractTag>... classes) {
+        String typeLabel = Arrays.stream(classes)
+                .map(Class::getSimpleName)
+                .collect(Collectors.joining("/"));
+
+        List<AbstractTag> results = new ArrayList<>(this.list.size());
+        for (AbstractTag item : this.list) {
+            boolean matched = false;
+            for (Class<?> clazz : classes) {
+                if (clazz.isInstance(item)) {
+                    matched = true;
+                    break;
                 }
+            }
+            if (matched) {
+                results.add(item);
+            } else if (queue != null) {
+                Debugger.echoError(queue, "Cannot process list-entry '" + item.identify()
+                        + "' as type '" + typeLabel + "' (does not match expected type).");
             }
         }
         return results;
@@ -1292,6 +1321,10 @@ public class ListTag implements AbstractTag {
 
     public void addObject(AbstractTag tag) {
         if (tag != null) this.list.add(tag);
+    }
+
+    public boolean isEmpty() {
+        return list.isEmpty();
     }
 
     private static int resolveIndex(String param, int size) {

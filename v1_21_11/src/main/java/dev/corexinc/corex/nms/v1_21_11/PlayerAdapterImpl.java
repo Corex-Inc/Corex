@@ -6,10 +6,14 @@ import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.criterion.ImpossibleTrigger;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundUpdateAdvancementsPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -108,5 +112,18 @@ public class PlayerAdapterImpl implements PlayerAdapter {
 
         serverPlayer.connection.send(addPacket);
         serverPlayer.connection.send(removePacket);
+    }
+
+    @Override
+    public void sendRelativeLookPacket(Player player, float relYaw, float relPitch) {
+        ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
+
+        ClientboundPlayerPositionPacket packet = ClientboundPlayerPositionPacket.of(
+                0,
+                new PositionMoveRotation(Vec3.ZERO, Vec3.ZERO, relYaw, relPitch),
+                EnumSet.allOf(Relative.class)
+        );
+
+        nmsPlayer.connection.send(packet);
     }
 }
