@@ -6,6 +6,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -15,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
@@ -269,6 +271,32 @@ public class MaterialTag implements AbstractTag, Adjustable {
             this.material = Objects.requireNonNullElse(match, Material.AIR);
             this.blockData = this.material.isBlock() ? this.material.createBlockData() : null;
         }
+    }
+
+    public boolean tryAdvancedMatcher(String matcher) {
+        if (matcher == null || matcher.isEmpty() || matcher.equals("*") || matcher.equalsIgnoreCase("any")) {
+            return true;
+        }
+
+        if (matcher.startsWith("m@")) {
+            return this.identify().equalsIgnoreCase(matcher);
+        }
+
+        if (matcher.contains("[")) {
+            MaterialTag other = new MaterialTag(matcher);
+            if (this.material != other.material) return false;
+            if (other.blockData == null) return true;
+            return this.blockData.getAsString().contains(other.blockData.getAsString(false).replace(other.material.name().toLowerCase(), ""));
+        }
+
+        String materialName = material.name().toLowerCase();
+        String pattern = matcher.toLowerCase();
+
+        if (pattern.contains("*")) {
+            return materialName.matches(pattern.replace("*", ".*"));
+        }
+
+        return materialName.equals(pattern);
     }
 
     @Override
