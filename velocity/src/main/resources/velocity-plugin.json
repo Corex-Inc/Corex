@@ -1,0 +1,6 @@
+{
+  "id": "corex",
+  "name": "Corex",
+  "version": "1.0",
+  "main": "dev.corexinc.corex.velocity.CorexVelocity"
+}

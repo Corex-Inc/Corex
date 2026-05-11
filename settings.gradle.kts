@@ -1,6 +1,7 @@
 rootProject.name = "Corex"
 
 include("corex")
+include("velocity")
 include("v1_21")
 include("v1_21_3")
 include("v1_21_4")

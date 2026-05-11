@@ -25,6 +25,7 @@ subprojects {
 
 dependencies {
     implementation(project(":corex"))
+    implementation(project(":velocity"))
     implementation(project(":v1_21"))
     implementation(project(":v1_21_3"))
     implementation(project(":v1_21_4"))
