@@ -93,6 +93,14 @@ public class ScriptManager {
         }
     }
 
+    public static <T extends AbstractContainer> List<T> getContainersByType(Class<T> type) {
+        List<T> result = new ArrayList<>();
+        for (AbstractContainer container : containers.values()) {
+            if (type.isInstance(container)) result.add(type.cast(container));
+        }
+        return result;
+    }
+
     public static void reloadScripts() {
         lastReloadTime = System.currentTimeMillis();
         loadScripts();

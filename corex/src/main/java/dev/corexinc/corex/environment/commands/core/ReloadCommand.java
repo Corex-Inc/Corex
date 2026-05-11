@@ -6,10 +6,12 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.containers.commands.CommandContainer;
+import dev.corexinc.corex.environment.containers.commands.CommandManager;
 import dev.corexinc.corex.environment.events.EventRegistry;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jspecify.annotations.NonNull;
+
+import java.util.List;
 
 /* @doc command
  *
@@ -60,7 +62,14 @@ public class ReloadCommand implements AbstractCommand {
             Corex.getInstance().reloadConfig();
             Debugger.updateDebugMode();
             EventRegistry.resetAll();
+
             ScriptManager.reloadScripts();
+
+            List<CommandContainer> after = ScriptManager.getContainersByType(CommandContainer.class);
+            CommandManager.INSTANCE.updateContainers(after);
+
+            CommandManager.INSTANCE.reinjectAll(after);
+
         } catch (Exception e) {
             Debugger.echoError(queue, "ERROR while reloading scripts. See console logs above this message.");
         }

@@ -4,6 +4,8 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.environment.containers.commands.ArgumentTypeRegistry;
+import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // NMS
 import dev.corexinc.corex.environment.utils.adapters.*;
@@ -51,9 +53,10 @@ public class EnvironmentLoader {
         nms.register(PlayerAdapter.class, "1.21.5", "dev.corexinc.corex.nms.v1_21_5.PlayerAdapterImpl");
         nms.register(PlayerAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.PlayerAdapterImpl");
 
+        nms.register(CommandAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.CommandAdapterImpl");
+        nms.register(CommandAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.CommandAdapterImpl");
+
         // ---------- NMS (Net.Minecraft.Server) ----------
-
-
 
         // Global Tags
         GlobalTagProcessor.register();
@@ -159,6 +162,7 @@ public class EnvironmentLoader {
                 EventsContainer.class,
                 ItemContainer.class,
                 GeneratorContainer.class,
+                CommandContainer.class,
 
                 // Global Flags
                 IfGlobalFlag.class,

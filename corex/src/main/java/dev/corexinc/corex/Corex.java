@@ -11,11 +11,14 @@ import dev.corexinc.corex.engine.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.containers.GeneratorContainer;
+import dev.corexinc.corex.environment.containers.commands.CommandContainer;
+import dev.corexinc.corex.environment.containers.commands.CommandManager;
 import dev.corexinc.corex.environment.generators.ScriptedChunkGenerator;
 import dev.corexinc.corex.environment.generators.VoidGenerator;
 import dev.corexinc.corex.environment.utils.commands.impl.RunCommand;
 import dev.corexinc.corex.environment.utils.scripts.WebSocketManager;
 import dev.corexinc.corex.environment.utils.commands.impl.RunsCommand;
+import dev.corexinc.corex.environment.tags.core.MapTag;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -24,7 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
-import dev.corexinc.corex.environment.tags.core.MapTag;
+import java.util.List;
 
 public class Corex extends JavaPlugin {
 
@@ -32,9 +35,9 @@ public class Corex extends JavaPlugin {
 
     private CorexRegistry registry;
 
-    private static boolean IS_FOLIA = false;
+    private static boolean IS_FOLIA  = false;
     private static boolean IS_CANVAS = false;
-    private static boolean IS_TEST = false;
+    private static boolean IS_TEST   = false;
 
     public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
             .character('§')
@@ -65,6 +68,10 @@ public class Corex extends JavaPlugin {
         registerCommands();
 
         ScriptManager.loadScripts();
+
+        CommandManager.INSTANCE.updateContainers(
+                ScriptManager.getContainersByType(CommandContainer.class)
+        );
     }
 
     @Override
@@ -101,32 +108,20 @@ public class Corex extends JavaPlugin {
         DatabaseManager.closeAll();
     }
 
-    public static Corex getInstance() {
-        return instance;
-    }
+    public static Corex getInstance() { return instance; }
 
-    public CorexRegistry getRegistry() {
-        return registry;
-    }
+    public CorexRegistry getRegistry() { return registry; }
 
     @SuppressWarnings("UnstableApiUsage")
     public void registerCommands() {
         if (!isTest()) {
             try {
                 getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-                    event.registrar().register(
-                            "run",
-                            new RunCommand()
-                    );
+                    event.registrar().register("run",  new RunCommand());
+                    event.registrar().register("runs", new RunsCommand());
+                    CommandManager.INSTANCE.syncAll(event.registrar());
                 });
-                getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-                    event.registrar().register(
-                            "runs",
-                            new RunsCommand()
-                    );
-                });
-            }
-            catch (NoClassDefFoundError | Exception | NoSuchMethodError e) {
+            } catch (NoClassDefFoundError | Exception | NoSuchMethodError e) {
                 CorexLogger.warn("Failed to register Brigadier commands. Possibly an outdated version of Paper?");
             }
         }
@@ -164,15 +159,7 @@ public class Corex extends JavaPlugin {
         IS_TEST = Bukkit.getName().equalsIgnoreCase("ServerMock");
     }
 
-    public static boolean isFolia() {
-        return IS_FOLIA;
-    }
-
-    public static boolean isTest() {
-        return IS_TEST;
-    }
-
-    public static boolean isCanvas() {
-        return IS_CANVAS;
-    }
+    public static boolean isFolia()  { return IS_FOLIA; }
+    public static boolean isTest()   { return IS_TEST; }
+    public static boolean isCanvas() { return IS_CANVAS; }
 }

@@ -542,6 +542,10 @@ public class MapTag implements AbstractTag {
         return map.keySet();
     }
 
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
     public AbstractTag getObject(String key) {
         String val = map.get(key);
         return val != null ? ObjectFetcher.pickObject(val) : null;
