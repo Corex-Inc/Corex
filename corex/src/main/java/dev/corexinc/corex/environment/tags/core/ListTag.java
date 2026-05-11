@@ -1241,6 +1241,118 @@ public class ListTag implements AbstractTag {
             }
             return new ElementTag(json.toString());
         });
+
+        /* @doc tag
+         *
+         * @Name dotProduct[]
+         * @RawName <ListTag.dotProduct[<list>]>
+         * @Object ListTag
+         * @ReturnType ElementTag
+         * @ArgRequired
+         *
+         * @Description
+         * Calculates the dot product between this list and the input list.
+         * If lengths differ, the smaller size is used.
+         * All values are treated as numbers.
+         *
+         * @Usage
+         * // Narrates "32"
+         * - narrate <list[1|2|3].dotProduct[4|5|6]>
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "dotProduct", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            List<AbstractTag> other = new ListTag(attr.getParam()).getList();
+
+            double sum = 0;
+            int size = Math.min(obj.list.size(), other.size());
+
+            for (int i = 0; i < size; i++) {
+                double a = numericValue(obj.list.get(i));
+                double b = numericValue(other.get(i));
+                sum += a * b;
+            }
+            return new ElementTag(sum);
+        }).ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name activation[]
+         * @RawName <ListTag.activation[(<type>)]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         *
+         * @Description
+         * Applies an activation function to all numeric values in the list.
+         * Defaults to "relu" if no type is specified.
+         * Supports "relu", "sigmoid", "tanh", and "softmax".
+         * Softmax is applied to the whole list, other functions are applied element-wise.
+         *
+         * @Usage
+         * // Narrates "li@0|0|3"
+         * - narrate <list[-1|0|3].activation>
+         *
+         * @Usage
+         * // Narrates softmax probabilities
+         * - narrate <list[1|2|3].activation[softmax]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "activation", (attr, obj) -> {
+            String type = attr.hasParam() ? attr.getParam().toLowerCase() : "relu";
+
+            if (type.equals("softmax")) {
+                double max = obj.getList().stream().mapToDouble(ListTag::numericValue).max().orElse(0);
+                double sumExp = 0;
+                List<Double> exps = new ArrayList<>();
+
+                for (AbstractTag item : obj.getList()) {
+                    double exp = Math.exp(numericValue(item) - max);
+                    exps.add(exp);
+                    sumExp += exp;
+                }
+
+                ListTag result = new ListTag();
+                for (double exp : exps) result.addObject(new ElementTag(sumExp == 0 ? 0 : exp / sumExp));
+                return result;
+            }
+
+            return applyActivationRecursively(obj, type);
+        }).ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name matrixMul[]
+         * @RawName <ListTag.matrixMul[<list>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         *
+         * @Description
+         * Multiplies this list (as a matrix of rows) by the input list (as a vector).
+         * Each row is dot-multiplied with the input list, producing a result list.
+         * If lengths differ, the smaller size is used. Non-list rows are ignored.
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "matrixMul", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ListTag other = attr.getParamObject(ListTag.class, ListTag::new);
+            if (other == null) return null;
+
+            ListTag result = new ListTag();
+            List<AbstractTag> otherItems = other.getList();
+
+            for (AbstractTag rowTag : obj.getList()) {
+                if (!(rowTag instanceof ListTag row)) continue;
+
+                double sum = 0;
+                List<AbstractTag> rowItems = row.getList();
+                int size = Math.min(rowItems.size(), otherItems.size());
+
+                for (int i = 0; i < size; i++) {
+                    sum += numericValue(rowItems.get(i)) * numericValue(otherItems.get(i));
+                }
+                result.addObject(new ElementTag(sum));
+            }
+
+            return result;
+        }).ignoreTest();
     }
 
     public ListTag() {}
@@ -1306,6 +1418,25 @@ public class ListTag implements AbstractTag {
         return results;
     }
 
+    private static ListTag applyActivationRecursively(ListTag source, String type) {
+        ListTag result = new ListTag();
+        for (AbstractTag item : source.getList()) {
+            if (item instanceof ListTag subList) {
+                result.addObject(applyActivationRecursively(subList, type));
+                continue;
+            }
+
+            double val = numericValue(item);
+            double calc = switch (type) {
+                case "relu" -> Math.max(0, val);
+                case "sigmoid" -> 1.0 / (1.0 + Math.exp(-val));
+                case "tanh" -> Math.tanh(val);
+                default -> val;
+            };
+            result.addObject(new ElementTag(calc));
+        }
+        return result;
+    }
 
     public List<AbstractTag> getList() { return new ArrayList<>(list); }
 

@@ -25,6 +25,7 @@ import dev.corexinc.corex.environment.events.implementation.player.*;
 import dev.corexinc.corex.environment.formatters.*;
 // BaseTags
 import dev.corexinc.corex.environment.tags.core.*;
+import dev.corexinc.corex.environment.tags.utils.*;
 import dev.corexinc.corex.environment.tags.entity.*;
 import dev.corexinc.corex.environment.tags.player.*;
 import dev.corexinc.corex.environment.tags.world.*;
@@ -148,6 +149,7 @@ public class EnvironmentLoader {
                 ColorTag.class,
                 StructureTag.class,
                 BiomeTag.class,
+                FindTag.class,
 
                 // Formatters
                 NewLineFormatter.class,

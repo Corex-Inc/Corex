@@ -138,6 +138,30 @@ public class EntityTag implements AbstractTag, Flaggable {
         }
     }
 
+    public boolean tryAdvancedMatcher(String matcher) {
+        if (entity == null) return false;
+        if (matcher == null || matcher.isEmpty() || matcher.equals("*") || matcher.equalsIgnoreCase("any")) {
+            return true;
+        }
+
+        String pattern = matcher.toLowerCase();
+
+        if (pattern.equals(entity.getUniqueId().toString().toLowerCase())) {
+            return true;
+        }
+
+        String typeName = entity.getType().name().toLowerCase();
+        if (pattern.equals(typeName)) {
+            return true;
+        }
+
+        if (pattern.contains("*")) {
+            return typeName.matches(pattern.replace("*", ".*"));
+        }
+
+        return entity.customName() != null && entity.customName().toString().toLowerCase().contains(pattern);
+    }
+
     public Entity getEntity() {
         return entity;
     }
