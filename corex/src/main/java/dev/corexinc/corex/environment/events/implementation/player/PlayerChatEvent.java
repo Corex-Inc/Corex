@@ -124,7 +124,7 @@ public class PlayerChatEvent implements AbstractEvent {
 
             if (event.isAsynchronous()) {
                 try {
-                    SchedulerAdapter.run(logic);
+                    SchedulerAdapter.get().run(logic);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

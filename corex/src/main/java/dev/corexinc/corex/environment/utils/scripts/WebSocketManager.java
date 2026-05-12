@@ -23,17 +23,17 @@ public class WebSocketManager {
             WebSocketClient client = new WebSocketClient(new URI(uriStr)) {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
-                    SchedulerAdapter.runLater(() -> WebsocketScriptEvent.fireOpen(id), 1L);
+                    SchedulerAdapter.get().runLater(() -> WebsocketScriptEvent.fireOpen(id), 1L);
                 }
 
                 @Override
                 public void onMessage(String message) {
-                    SchedulerAdapter.runLater(() -> WebsocketScriptEvent.fireMessage(id, message), 1L);
+                    SchedulerAdapter.get().runLater(() -> WebsocketScriptEvent.fireMessage(id, message), 1L);
                 }
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
-                    SchedulerAdapter.runLater(() -> WebsocketScriptEvent.fireClose(id, code, reason), 1L);
+                    SchedulerAdapter.get().runLater(() -> WebsocketScriptEvent.fireClose(id, code, reason), 1L);
                     clients.remove(id);
                 }
 

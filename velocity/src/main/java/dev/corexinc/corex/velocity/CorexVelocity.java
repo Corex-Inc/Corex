@@ -11,7 +11,9 @@ import java.util.logging.Logger;
 @Plugin(
         id = "corex",
         name = "Corex",
-        version = "1.0"
+        version = "1.0",
+        description = "Modern, Paper-exclusive compiled scripting engine",
+        authors = { "tizis0", "Nybik_YT" }
 )
 
 public class CorexVelocity {

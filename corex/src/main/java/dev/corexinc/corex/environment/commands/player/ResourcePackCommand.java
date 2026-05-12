@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import net.kyori.adventure.text.Component;
@@ -113,7 +114,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
         if (action.equals("remove")) {
             UUID packUUID = idRaw != null ? parseUUID(idRaw) : null;
             for (Player player : targetPlayers) {
-                SchedulerAdapter.runEntity(player, () -> {
+                ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> {
                     if (packUUID == null) player.removeResourcePacks();
                     else player.removeResourcePack(packUUID);
                 });
@@ -162,7 +163,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
             queue.pause();
             AtomicInteger pending = new AtomicInteger(targetPlayers.size());
             Runnable onComplete = () -> {
-                if (pending.decrementAndGet() == 0) SchedulerAdapter.run(queue::resume);
+                if (pending.decrementAndGet() == 0) SchedulerAdapter.get().run(queue::resume);
             };
 
             for (Player player : targetPlayers) {
@@ -171,7 +172,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
         }
 
         for (Player player : targetPlayers) {
-            SchedulerAdapter.runEntity(player, () -> {
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> {
                 if (action.equals("set")) player.removeResourcePacks();
                 player.sendResourcePacks(request);
             });

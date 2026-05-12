@@ -4,8 +4,10 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 
 import java.util.PriorityQueue;
 
@@ -26,7 +28,7 @@ public class FlagManager {
 
         sleeperThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
-                FlagTask nextTask = null;
+                FlagTask nextTask;
 
                 synchronized (monitor) {
                     if (queue.isEmpty()) {
@@ -98,7 +100,7 @@ public class FlagManager {
         }
 
         if (tracker.isAsyncSafeCleanup()) {
-            SchedulerAdapter.runAsync(() -> {
+            SchedulerAdapter.get().runAsync(() -> {
                 try {
                     tracker.deleteFlagPhysically(task.flagPath);
                 } catch (Exception e) {
@@ -106,11 +108,12 @@ public class FlagManager {
                 }
             });
         } else if (tracker instanceof LocationPdcFlagTracker locTracker) {
-            SchedulerAdapter.runAt(locTracker.getLocation(), () -> {
+            Position pos = BukkitSchedulerAdapter.toPosition(locTracker.getLocation());
+            SchedulerAdapter.get().runAt(pos, () -> {
                 tracker.deleteFlagPhysically(task.flagPath);
             });
         } else {
-            SchedulerAdapter.run(() -> {
+            SchedulerAdapter.get().run(() -> {
                 tracker.deleteFlagPhysically(task.flagPath);
             });
         }

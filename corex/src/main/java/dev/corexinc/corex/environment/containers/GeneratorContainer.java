@@ -1,12 +1,12 @@
 package dev.corexinc.corex.environment.containers;
 
+import com.google.gson.JsonObject;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
-import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,54 +25,31 @@ public class GeneratorContainer implements AbstractContainer {
     public static final String SECTION_SPAWN_LOCATION = "spawnLocation";
 
     static final Set<String> KNOWN_SECTIONS = Set.of(
-            SECTION_BASE_HEIGHT,
-            SECTION_NOISE,
-            SECTION_SURFACE,
-            SECTION_BEDROCK,
-            SECTION_CAVES,
-            SECTION_BIOME,
-            SECTION_POPULATORS,
-            SECTION_CAN_SPAWN,
-            SECTION_SPAWN_LOCATION
+            SECTION_BASE_HEIGHT, SECTION_NOISE, SECTION_SURFACE, SECTION_BEDROCK,
+            SECTION_CAVES, SECTION_BIOME, SECTION_POPULATORS, SECTION_CAN_SPAWN, SECTION_SPAWN_LOCATION
     );
 
     private String name;
-    private ConfigurationSection data;
-
+    private JsonObject data;
     private final Map<String, Instruction[]> scripts = new HashMap<>();
-
     private final Set<String> vanillaFirst = new HashSet<>();
 
-    @Override
-    public @NotNull String getType() {
-        return "generator";
-    }
+    @Override public @NotNull String getType() { return "generator"; }
+    @Override public @NotNull String getName() { return name != null ? name : ""; }
 
     @Override
-    public @NotNull String getName() {
-        return name != null ? name : "";
-    }
-
-    @Override
-    public void init(@NotNull String name, @NotNull ConfigurationSection section) {
+    public void init(@NotNull String name, @NotNull JsonObject section) {
         this.name = name;
         this.data = section;
         parseVanillaFirst(section);
     }
 
-    @Override
-    public @NotNull ConfigurationSection getData() {
-        return data;
-    }
+    @Override public @NotNull JsonObject getData() { return data; }
 
     @Override
     public @NotNull PathType resolvePath(@NotNull String path) {
-        if (path.equals("type") || path.equals("definitions") || path.equals("vanillaFirst")) {
-            return PathType.IGNORE;
-        }
-        if (KNOWN_SECTIONS.contains(path)) {
-            return PathType.SCRIPT;
-        }
+        if (path.equals("type") || path.equals("definitions") || path.equals("vanillaFirst")) return PathType.IGNORE;
+        if (KNOWN_SECTIONS.contains(path)) return PathType.SCRIPT;
         return PathType.DATA;
     }
 
@@ -89,18 +66,14 @@ public class GeneratorContainer implements AbstractContainer {
     @Override
     public @NotNull List<String> getDefinitions() {
         if (data == null) return List.of();
-        String raw = data.getString("definitions", "");
-        if (raw.isBlank()) return List.of();
-        return List.of(raw.replace(" ", "").split("\\|"));
+        var el = data.get("definitions");
+        if (el == null || !el.isJsonPrimitive()) return List.of();
+        String raw = el.getAsString().replace(" ", "");
+        return raw.isBlank() ? List.of() : List.of(raw.split("\\|"));
     }
 
-    public boolean hasSection(@NotNull String section) {
-        return scripts.containsKey(section);
-    }
-
-    public boolean isVanillaFirst(@NotNull String section) {
-        return vanillaFirst.contains(section);
-    }
+    public boolean hasSection(@NotNull String section) { return scripts.containsKey(section); }
+    public boolean isVanillaFirst(@NotNull String section) { return vanillaFirst.contains(section); }
 
     @Nullable
     public ScriptQueue createQueue(@NotNull String section, @Nullable ContextTag context) {
@@ -111,21 +84,9 @@ public class GeneratorContainer implements AbstractContainer {
     public ScriptQueue createQueue(@NotNull String section, @Nullable ContextTag context, @NotNull MapTag instanceDefs) {
         Instruction[] bytecode = scripts.get(section);
         if (bytecode == null) return null;
-
-        ScriptQueue queue = new ScriptQueue(
-                "Generator_" + name + "_" + section + "_" + System.nanoTime(),
-                bytecode,
-                false,
-                null,
-                true
-        );
-
-        if (context != null) {
-            queue.setContext(context);
-        }
-
+        ScriptQueue queue = new ScriptQueue("Generator_" + name + "_" + section + "_" + System.nanoTime(), bytecode, false, null, true);
+        if (context != null) queue.setContext(context);
         instanceDefs.keySet().forEach(k -> queue.define(k, instanceDefs.getObject(k)));
-
         return queue;
     }
 
@@ -142,16 +103,14 @@ public class GeneratorContainer implements AbstractContainer {
         return queue;
     }
 
-
-    private void parseVanillaFirst(@NotNull ConfigurationSection section) {
-        String raw = section.getString("vanillaFirst", "");
+    private void parseVanillaFirst(@NotNull JsonObject section) {
+        var el = section.get("vanillaFirst");
+        if (el == null || !el.isJsonPrimitive()) return;
+        String raw = el.getAsString().replace(" ", "");
         if (raw.isBlank()) return;
-
-        for (String entry : raw.replace(" ", "").split("\\|")) {
+        for (String entry : raw.split("\\|")) {
             String key = entry.strip();
-            if (!key.isEmpty() && KNOWN_SECTIONS.contains(key)) {
-                vanillaFirst.add(key);
-            }
+            if (!key.isEmpty() && KNOWN_SECTIONS.contains(key)) vanillaFirst.add(key);
         }
     }
 }

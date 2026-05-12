@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.entity.Player;
@@ -127,13 +128,13 @@ public class TitleCommand implements AbstractCommand {
             if (targetPlayers.isEmpty()) return;
 
             for (Player player : targetPlayers) {
-                SchedulerAdapter.runEntity(player, () -> player.showTitle(title));
+                ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.showTitle(title));
             }
         } else {
             PlayerTag queuePlayer = queue.getPlayer();
             if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
                 Player player = queuePlayer.getPlayer();
-                SchedulerAdapter.runEntity(player, () -> player.showTitle(title));
+                ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.showTitle(title));
             } else {
                 Debugger.echoError(queue, "No valid targets found and no player attached to the queue.");
             }
@@ -156,7 +157,6 @@ public class TitleCommand implements AbstractCommand {
 
     private Component buildComponent(AbstractTag text) {
         if (text == null) return Component.empty();
-        Component component = text.asComponent();
-        return component != null ? component : Component.text(text.identify());
+        return text.asComponent();
     }
 }

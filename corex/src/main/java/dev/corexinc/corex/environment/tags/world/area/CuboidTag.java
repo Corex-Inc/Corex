@@ -254,7 +254,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
     }
 
     @Override
-    public @NonNull AbstractFlagTracker getFlagTracker() {
+    public AbstractFlagTracker getFlagTracker() {
         File dbFile = new File(world.getWorldFolder(), "__flags.db");
         return new SqlFlagTracker(dbFile, identify());
     }

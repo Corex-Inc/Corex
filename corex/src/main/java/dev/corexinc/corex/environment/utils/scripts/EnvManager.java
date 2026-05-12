@@ -1,7 +1,7 @@
-package dev.corexinc.corex.engine.utils;
+package dev.corexinc.corex.environment.utils.scripts;
 
 import dev.corexinc.corex.Corex;
-import org.bukkit.plugin.Plugin;
+import dev.corexinc.corex.engine.utils.CorexLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -14,13 +14,11 @@ public class EnvManager {
 
     private static final Map<String, String> secrets = new HashMap<>();
 
-    // Теперь принимаем инстанс плагина
     public static void load() {
         JavaPlugin plugin = Corex.getInstance();
         secrets.clear();
         File envFile = new File(plugin.getDataFolder(), "secrets.env");
 
-        // Если файла нет в папке плагина
         if (!envFile.exists()) {
             try {
                 plugin.saveResource("secrets.env", false);
@@ -38,7 +36,6 @@ public class EnvManager {
             List<String> lines = Files.readAllLines(envFile.toPath());
             for (String line : lines) {
                 String trimmed = line.trim();
-                // Пропускаем пустые строки и комментарии
                 if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
 
                 int eqIndex = trimmed.indexOf('=');

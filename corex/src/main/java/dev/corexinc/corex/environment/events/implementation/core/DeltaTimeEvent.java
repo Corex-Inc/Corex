@@ -49,7 +49,7 @@ public class DeltaTimeEvent implements AbstractEvent {
         currentSessionId++;
         final int mySession = currentSessionId;
 
-        SchedulerAdapter.runRepeating(() -> {
+        SchedulerAdapter.get().runRepeating(() -> {
             if (!isRegistered || mySession != currentSessionId) return;
 
             tick();

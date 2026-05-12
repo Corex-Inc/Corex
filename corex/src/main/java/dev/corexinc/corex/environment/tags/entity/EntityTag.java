@@ -182,7 +182,7 @@ public class EntityTag implements AbstractTag, Flaggable {
     }
 
     @Override
-    public @NonNull AbstractFlagTracker getFlagTracker() {
+    public AbstractFlagTracker getFlagTracker() {
         if (entity == null) return null;
         return new PdcFlagTracker(entity, identify());
     }

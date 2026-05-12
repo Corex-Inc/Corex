@@ -11,6 +11,7 @@ import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -116,7 +117,7 @@ public class ItemCooldownCommand implements AbstractCommand {
 
         final int finalTicks = durationTicks;
         for (Player player : targetPlayers) {
-            SchedulerAdapter.runEntity(player, () -> applyCooldowns(player, cooldownTargets, finalTicks));
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> applyCooldowns(player, cooldownTargets, finalTicks));
         }
     }
 

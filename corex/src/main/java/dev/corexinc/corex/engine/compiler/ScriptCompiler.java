@@ -165,10 +165,10 @@ public class ScriptCompiler {
 
         if (nodes.length == 1 && fallback == null) {
             var formats = Corex.getInstance().getRegistry().getFormats();
-            if (formats.isFormat(nodes[0].name)) {
-                if (nodes[0].param == null || nodes[0].param instanceof StaticArg) {
+            if (formats.isFormat(nodes[0].name())) {
+                if (nodes[0].param() == null || nodes[0].param() instanceof StaticArg) {
                     Attribute mockAttr = new Attribute(nodes, null);
-                    AbstractTag result = formats.get(nodes[0].name).parse(mockAttr);
+                    AbstractTag result = formats.get(nodes[0].name()).parse(mockAttr);
                     return new StaticArg(result);
                 }
             }

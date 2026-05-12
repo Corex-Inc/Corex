@@ -1,143 +1,63 @@
 package dev.corexinc.corex.engine.utils;
 
-import dev.corexinc.corex.Corex;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.entity.Entity;
+/**
+ * Platform-agnostic scheduling abstraction for the Corex engine.
+ * <p>
+ * Register the platform implementation once at startup via {@link #set(SchedulerAdapter)}.
+ * All engine code calls {@link #get()} to retrieve the active instance — no Bukkit,
+ * Paper, or Velocity imports leak into platform-neutral modules.
+ * <p>
+ * Bukkit/Folia: register {@code BukkitSchedulerAdapter}.<br>
+ * Velocity: register your own implementation extending this class.
+ */
+public abstract class SchedulerAdapter {
 
-import java.util.concurrent.TimeUnit;
+    private static SchedulerAdapter instance;
 
-public class SchedulerAdapter {
-
-    // Runs a task on the global region (main thread equivalent in Folia)
-    public static void run(Runnable task) {
-        if (Corex.isFolia()) {
-            Bukkit.getGlobalRegionScheduler().execute(Corex.getInstance(), task);
-        } else {
-            Bukkit.getScheduler().runTask(Corex.getInstance(), task);
-        }
+    /** Returns the active platform adapter. Throws if not yet registered. */
+    public static SchedulerAdapter get() {
+        if (instance == null) throw new IllegalStateException("SchedulerAdapter not initialised");
+        return instance;
     }
 
-    // Runs a task on the region that owns the given location
-    public static void runAt(Location location, Runnable task) {
-        if (Corex.isFolia()) {
-            Bukkit.getRegionScheduler().execute(Corex.getInstance(), location, task);
-        } else {
-            Bukkit.getScheduler().runTask(Corex.getInstance(), task);
-        }
+    /** Registers the platform adapter. Call once during plugin/proxy startup. */
+    public static void set(SchedulerAdapter adapter) {
+        instance = adapter;
     }
 
-    // Runs a task after a delay on the region that owns the given location
-    public static void runLaterAt(Location location, Runnable task, long delayTicks) {
-        if (Corex.isFolia()) {
-            Bukkit.getRegionScheduler().runDelayed(
-                    Corex.getInstance(),
-                    location,
-                    scheduledTask -> task.run(),
-                    Math.max(1, delayTicks)
-            );
-        } else {
-            Bukkit.getScheduler().runTaskLater(Corex.getInstance(), task, delayTicks);
-        }
-    }
+    /** Runs a task on the main/global thread. */
+    public abstract void run(Runnable task);
 
-    // Runs a task after a delay (in ticks)
-    public static void runLater(Runnable task, long delayTicks) {
-        if (Corex.isFolia()) {
-            Bukkit.getGlobalRegionScheduler().runDelayed(
-                    Corex.getInstance(),
-                    scheduledTask -> task.run(),
-                    Math.max(1, delayTicks)
-            );
-        } else {
-            Bukkit.getScheduler().runTaskLater(Corex.getInstance(), task, delayTicks);
-        }
-    }
+    /**
+     * Runs a task on the region that owns {@code position}.
+     * On Velocity (no regions) this is equivalent to {@link #run(Runnable)}.
+     */
+    public abstract void runAt(Position position, Runnable task);
 
-    // Runs a repeating task (in ticks)
-    public static void runRepeating(Runnable task, long delayTicks, long periodTicks) {
-        if (Corex.isFolia()) {
-            Bukkit.getGlobalRegionScheduler().runAtFixedRate(
-                    Corex.getInstance(),
-                    scheduledTask -> task.run(),
-                    Math.max(1, delayTicks),
-                    Math.max(1, periodTicks)
-            );
-        } else {
-            Bukkit.getScheduler().runTaskTimer(Corex.getInstance(), task, delayTicks, periodTicks);
-        }
-    }
+    /**
+     * Runs a task after {@code delayTicks} ticks on the region that owns {@code position}.
+     * On Velocity this is equivalent to {@link #runLater(Runnable, long)}.
+     */
+    public abstract void runLaterAt(Position position, Runnable task, long delayTicks);
 
-    // Runs a task asynchronously
-    public static void runAsync(Runnable task) {
-        if (Corex.isFolia()) {
-            Bukkit.getAsyncScheduler().runNow(Corex.getInstance(), scheduledTask -> task.run());
-        } else {
-            Bukkit.getScheduler().runTaskAsynchronously(Corex.getInstance(), task);
-        }
-    }
+    /** Runs a task after {@code delayTicks} ticks on the main/global thread. */
+    public abstract void runLater(Runnable task, long delayTicks);
 
-    // Runs an async task after a delay (in ticks, converted to ms for Folia)
-    public static void runAsyncLater(Runnable task, long delayTicks) {
-        if (Corex.isFolia()) {
-            long delayMs = delayTicks * 50L;
-            Bukkit.getAsyncScheduler().runDelayed(
-                    Corex.getInstance(),
-                    scheduledTask -> task.run(),
-                    Math.max(1, delayMs),
-                    TimeUnit.MILLISECONDS
-            );
-        } else {
-            Bukkit.getScheduler().runTaskLaterAsynchronously(Corex.getInstance(), task, delayTicks);
-        }
-    }
+    /** Runs a repeating task on the main/global thread. */
+    public abstract void runRepeating(Runnable task, long delayTicks, long periodTicks);
 
-    // Runs a repeating async task (in ticks, converted to ms for Folia)
-    public static void runAsyncRepeating(Runnable task, long delayTicks, long periodTicks) {
-        if (Corex.isFolia()) {
-            long delayMs = Math.max(1, delayTicks * 50L);
-            long periodMs = Math.max(1, periodTicks * 50L);
-            Bukkit.getAsyncScheduler().runAtFixedRate(
-                    Corex.getInstance(),
-                    scheduledTask -> task.run(),
-                    delayMs,
-                    periodMs,
-                    TimeUnit.MILLISECONDS
-            );
-        } else {
-            Bukkit.getScheduler().runTaskTimerAsynchronously(Corex.getInstance(), task, delayTicks, periodTicks);
-        }
-    }
+    /** Runs a task asynchronously. */
+    public abstract void runAsync(Runnable task);
 
-    // Runs a task tied to a specific entity
-    public static void runEntity(Entity entity, Runnable task) {
-        if (Corex.isFolia()) {
-            // Third arg is the retired callback (runs if entity is removed before execution)
-            entity.getScheduler().run(Corex.getInstance(), scheduledTask -> task.run(), null);
-        } else {
-            Bukkit.getScheduler().runTask(Corex.getInstance(), task);
-        }
-    }
+    /** Runs an async task after a delay. */
+    public abstract void runAsyncLater(Runnable task, long delayTicks);
 
-    // Returns true if the current thread owns the region for the given location.
-    // On Paper (non-Folia) this is simply a primary thread check.
-    // Use this before any world-read that must be region-safe on Folia.
-    public static boolean isRegionOwner(Location location) {
-        if (!Corex.isFolia()) return Bukkit.isPrimaryThread();
-        return Bukkit.isOwnedByCurrentRegion(location);
-    }
+    /** Runs a repeating async task. */
+    public abstract void runAsyncRepeating(Runnable task, long delayTicks, long periodTicks);
 
-    // Runs a delayed task tied to a specific entity
-    public static void runEntityLater(Entity entity, Runnable task, long delayTicks) {
-        if (Corex.isFolia()) {
-            entity.getScheduler().runDelayed(
-                    Corex.getInstance(),
-                    scheduledTask -> task.run(),
-                    null,
-                    Math.max(1, delayTicks)
-            );
-        } else {
-            Bukkit.getScheduler().runTaskLater(Corex.getInstance(), task, delayTicks);
-        }
-    }
+    /**
+     * Returns {@code true} if the current thread does NOT own the region for {@code position}
+     * and a relocation is required. On Velocity always returns {@code false}.
+     */
+    public abstract boolean needsRegionRelocation(Position position);
 }

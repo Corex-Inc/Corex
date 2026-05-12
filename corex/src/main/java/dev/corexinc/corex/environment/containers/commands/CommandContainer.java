@@ -1,11 +1,13 @@
 package dev.corexinc.corex.environment.containers.commands;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
-import org.bukkit.configuration.ConfigurationSection;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -26,7 +28,7 @@ public class CommandContainer implements AbstractContainer {
     );
 
     private String name;
-    private ConfigurationSection data;
+    private JsonObject data;
 
     private String description = "";
     private String usage       = "";
@@ -39,16 +41,20 @@ public class CommandContainer implements AbstractContainer {
     @Override public @NonNull String getName()  { return name != null ? name : ""; }
 
     @Override
-    public void init(@NonNull String name, @NonNull ConfigurationSection section) {
+    public void init(@NonNull String name, @NonNull JsonObject section) {
         this.name        = name;
         this.data        = section;
-        this.description = section.getString("description", "");
-        this.usage       = section.getString("usage", "/" + name);
-        this.aliases     = section.getStringList("aliases");
-        this.argumentSpecs = parseArguments(section.getConfigurationSection("arguments"));
+        this.description = getString(section, "description", "");
+        this.usage       = getString(section, "usage", "/" + name);
+        this.aliases     = getStringList(section, "aliases");
+        this.argumentSpecs = parseArguments(
+                section.has("arguments") && section.get("arguments").isJsonObject()
+                        ? section.getAsJsonObject("arguments")
+                        : null
+        );
     }
 
-    @Override public @NonNull ConfigurationSection getData() { return data; }
+    @Override public @NonNull JsonObject getData() { return data; }
 
     @Override
     public @NonNull PathType resolvePath(@NonNull String path) {
@@ -70,7 +76,7 @@ public class CommandContainer implements AbstractContainer {
     @Override
     public @NonNull List<String> getDefinitions() {
         if (data == null) return List.of();
-        String raw = data.getString("definitions", "");
+        String raw = getString(data, "definitions", "");
         return raw.isBlank() ? List.of() : List.of(raw.replace(" ", "").split("\\|"));
     }
 
@@ -107,22 +113,23 @@ public class CommandContainer implements AbstractContainer {
         return queue;
     }
 
-    private static @NonNull List<CommandArgumentSpec> parseArguments(@Nullable ConfigurationSection section) {
+    private static @NonNull List<CommandArgumentSpec> parseArguments(@Nullable JsonObject section) {
         if (section == null) return List.of();
 
         List<CommandArgumentSpec> specs = new ArrayList<>();
 
-        for (String argName : section.getKeys(false)) {
-            ConfigurationSection argSection = section.getConfigurationSection(argName);
-            if (argSection == null) continue;
+        for (String argName : section.keySet()) {
+            JsonElement argEl = section.get(argName);
+            if (!argEl.isJsonObject()) continue;
+            JsonObject argObj = argEl.getAsJsonObject();
 
-            String typeName = argSection.getString("type", "word");
-            boolean optional = argSection.getBoolean("optional", false);
+            String typeName  = getString(argObj, "type", "word");
+            boolean optional = getBoolean(argObj, "optional", false);
 
             Map<String, Object> options = new LinkedHashMap<>();
-            for (String key : argSection.getKeys(false)) {
+            for (String key : argObj.keySet()) {
                 if (!key.equals("type") && !key.equals("optional")) {
-                    options.put(key, argSection.get(key));
+                    options.put(key, argObj.get(key));
                 }
             }
 
@@ -130,5 +137,24 @@ public class CommandContainer implements AbstractContainer {
         }
 
         return Collections.unmodifiableList(specs);
+    }
+
+    private static String getString(JsonObject obj, String key, String defaultValue) {
+        JsonElement el = obj.get(key);
+        return (el != null && !el.isJsonNull()) ? el.getAsString() : defaultValue;
+    }
+
+    private static boolean getBoolean(JsonObject obj, String key, boolean defaultValue) {
+        JsonElement el = obj.get(key);
+        return (el != null && !el.isJsonNull()) ? el.getAsBoolean() : defaultValue;
+    }
+
+    private static List<String> getStringList(JsonObject obj, String key) {
+        JsonElement el = obj.get(key);
+        if (el == null || !el.isJsonArray()) return List.of();
+        JsonArray arr = el.getAsJsonArray();
+        List<String> result = new ArrayList<>(arr.size());
+        for (JsonElement entry : arr) result.add(entry.getAsString());
+        return Collections.unmodifiableList(result);
     }
 }

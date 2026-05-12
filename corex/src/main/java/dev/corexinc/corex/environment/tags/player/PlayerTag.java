@@ -17,6 +17,7 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -783,7 +784,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                     double maxHp = Objects.requireNonNull(
                             player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue();
                     double clamped = Math.max(0, Math.min(el.asDouble(), maxHp));
-                    SchedulerAdapter.runEntity(player, () -> player.setHealth(clamped));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setHealth(clamped));
                 }
             }
             return playerTag;
@@ -813,7 +814,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 targetMax = attribute.getDefaultValue();
             }
             double finalMax = Math.max(0.1, targetMax);
-            SchedulerAdapter.runEntity(player, () -> attribute.setBaseValue(finalMax));
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> attribute.setBaseValue(finalMax));
 
             return playerTag;
         });
@@ -834,7 +835,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     int clamped = Math.max(0, Math.min(el.asInt(), 20));
-                    SchedulerAdapter.runEntity(player, () -> player.setFoodLevel(clamped));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setFoodLevel(clamped));
                 }
             }
             return playerTag;
@@ -922,7 +923,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
             if (player == null) return playerTag;
             try {
                 GameMode mode = GameMode.valueOf(el.asString().toUpperCase());
-                SchedulerAdapter.runEntity(player, () -> player.setGameMode(mode));
+                ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setGameMode(mode));
             } catch (IllegalArgumentException e) {
                 Debugger.error("Invalid game mode: '" + el.asString() + "'");
             }
@@ -944,7 +945,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     int lvl = Math.max(0, el.asInt());
-                    SchedulerAdapter.runEntity(player, () -> player.setLevel(lvl));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setLevel(lvl));
                 }
             }
             return playerTag;
@@ -966,7 +967,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     float clamped = (float) Math.max(0.0, Math.min(1.0, el.asDouble()));
-                    SchedulerAdapter.runEntity(player, () -> player.setExp(clamped));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setExp(clamped));
                 }
             }
             return playerTag;
@@ -987,7 +988,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     int total = Math.max(0, el.asInt());
-                    SchedulerAdapter.runEntity(player, () -> player.setTotalExperience(total));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setTotalExperience(total));
                 }
             }
             return playerTag;
@@ -1009,7 +1010,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     boolean fly = el.asBoolean();
-                    SchedulerAdapter.runEntity(player, () -> player.setFlying(fly));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setFlying(fly));
                 }
             }
             return playerTag;
@@ -1030,7 +1031,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     boolean allow = el.asBoolean();
-                    SchedulerAdapter.runEntity(player, () -> player.setAllowFlight(allow));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setAllowFlight(allow));
                 }
             }
             return playerTag;
@@ -1052,7 +1053,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     float clamped = (float) Math.max(-1.0, Math.min(1.0, el.asDouble()));
-                    SchedulerAdapter.runEntity(player, () -> player.setFlySpeed(clamped));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setFlySpeed(clamped));
                 }
             }
             return playerTag;
@@ -1074,7 +1075,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     float clamped = (float) Math.max(-1.0, Math.min(1.0, el.asDouble()));
-                    SchedulerAdapter.runEntity(player, () -> player.setWalkSpeed(clamped));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setWalkSpeed(clamped));
                 }
             }
             return playerTag;
@@ -1096,7 +1097,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     float sat = (float) Math.max(0.0, el.asDouble());
-                    SchedulerAdapter.runEntity(player, () -> player.setSaturation(sat));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setSaturation(sat));
                 }
             }
             return playerTag;
@@ -1118,7 +1119,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     float exh = (float) Math.max(0.0, el.asDouble());
-                    SchedulerAdapter.runEntity(player, () -> player.setExhaustion(exh));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setExhaustion(exh));
                 }
             }
             return playerTag;
@@ -1140,7 +1141,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     var component = MINI_MESSAGE.deserialize(el.asString());
-                    SchedulerAdapter.runEntity(player, () -> player.displayName(component));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.displayName(component));
                 }
             }
             return playerTag;
@@ -1161,7 +1162,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     Location loc = locTag.getLocation();
-                    SchedulerAdapter.runEntity(player, () -> player.setCompassTarget(loc));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setCompassTarget(loc));
                 }
             }
             return playerTag;
@@ -1182,7 +1183,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     int level = Math.max(0, Math.min(4, el.asInt()));
-                    SchedulerAdapter.runEntity(player, () -> player.setWardenWarningLevel(level));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setWardenWarningLevel(level));
                 }
             }
             return playerTag;
@@ -1279,7 +1280,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
     }
 
     @Override
-    public @NonNull AbstractFlagTracker getFlagTracker() {
+    public AbstractFlagTracker getFlagTracker() {
         Player p = getPlayer();
         if (p == null) return null;
         return new PdcFlagTracker(p, identify());

@@ -1,6 +1,7 @@
 package dev.corexinc.corex.nms.v1_21;
 
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
@@ -25,7 +26,7 @@ public class PlayerAdapterImpl implements PlayerAdapter {
 
     @Override
     public void sendReconfiguration(Player player) {
-        SchedulerAdapter.runEntity(player, () -> {
+        ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> {
             ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
             nmsPlayer.connection.switchToConfig();
             monitorTransition(nmsPlayer);
@@ -33,12 +34,12 @@ public class PlayerAdapterImpl implements PlayerAdapter {
     }
 
     private void monitorTransition(ServerPlayer nmsPlayer) {
-        SchedulerAdapter.run(() -> {
+        SchedulerAdapter.get().run(() -> {
             Object listener = nmsPlayer.connection.connection.getPacketListener();
             if (listener instanceof ServerConfigurationPacketListenerImpl configListener) {
                 configListener.startConfiguration();
             } else {
-                SchedulerAdapter.runLater(() -> monitorTransition(nmsPlayer), 1);
+                SchedulerAdapter.get().runLater(() -> monitorTransition(nmsPlayer), 1);
             }
         });
     }

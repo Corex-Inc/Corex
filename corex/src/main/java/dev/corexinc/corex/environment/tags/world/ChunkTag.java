@@ -8,13 +8,12 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.engine.utils.SchedulerAdapter;
-import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.area.CuboidTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -87,7 +86,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
             if (obj.world == null || !obj.world.isChunkLoaded(obj.x, obj.z)) return listTag;
 
             Location center = new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8);
-            if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);
+            BukkitSchedulerAdapter.requireRegion(center);
 
             for (Entity entity : obj.getChunk().getEntities()) {
                 if (entity instanceof Player player) {
@@ -102,7 +101,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
             if (obj.world == null || !obj.world.isChunkLoaded(obj.x, obj.z)) return listTag;
 
             Location center = new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8);
-            if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);
+            BukkitSchedulerAdapter.requireRegion(center);
 
             for (Entity entity : obj.getChunk().getEntities()) {
                 listTag.addObject(new EntityTag(entity));
@@ -191,10 +190,10 @@ public class ChunkTag implements AbstractTag, Flaggable {
     public @NonNull String getTestValue() { return "ch@world,0,0"; }
 
     @Override
-    public @NonNull AbstractFlagTracker getFlagTracker() {
+    public AbstractFlagTracker getFlagTracker() {
         if (world == null) throw new IllegalStateException("Cannot get flags for invalid chunk");
         Location center = new Location(world, (x << 4) + 8, 0, (z << 4) + 8);
-        if (!SchedulerAdapter.isRegionOwner(center)) throw new RegionRelocateException(center);
+        BukkitSchedulerAdapter.requireRegion(center);
 
         return new PdcFlagTracker(getChunk(), identify());
     }

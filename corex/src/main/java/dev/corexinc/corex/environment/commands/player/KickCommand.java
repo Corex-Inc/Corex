@@ -7,6 +7,7 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.entity.Player;
@@ -88,7 +89,7 @@ public class KickCommand implements AbstractCommand {
         for (PlayerTag pTag : players) {
             Player player = pTag.getPlayer();
             if (player != null && player.isOnline()) {
-                SchedulerAdapter.runEntity(player, () -> player.kick(reason));
+                ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.kick(reason));
             } else {
                 Debugger.echoError(queue, getName() + ": player '" + pTag.getPlayer().getName() + "' is offline or not found");
             }

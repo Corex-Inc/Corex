@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -106,7 +107,7 @@ public class NarrateCommand implements AbstractCommand {
 
         if (onlinePlayers.isEmpty()) return;
 
-        SchedulerAdapter.run(() -> {
+        SchedulerAdapter.get().run(() -> {
             for (Player player : onlinePlayers) {
                 player.sendMessage(message);
             }
@@ -117,7 +118,7 @@ public class NarrateCommand implements AbstractCommand {
         PlayerTag queuePlayer = queue.getPlayer();
         if (queuePlayer != null && queuePlayer.getOfflinePlayer().isOnline()) {
             Player player = queuePlayer.getPlayer();
-            SchedulerAdapter.runEntity(player, () -> player.sendMessage(message));
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.sendMessage(message));
         } else {
             Bukkit.getServer().getConsoleSender().sendMessage(message);
         }

@@ -1,9 +1,9 @@
 package dev.corexinc.corex.environment.containers;
 
+import com.google.gson.JsonObject;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.compiler.Instruction;
-import org.bukkit.configuration.ConfigurationSection;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -14,19 +14,19 @@ import java.util.Map;
 public class TaskContainer implements AbstractContainer {
 
     private String name;
-    private ConfigurationSection rawData;
+    private JsonObject rawData;
     private final Map<String, Instruction[]> compiledScripts = new HashMap<>();
     private List<String> definitions = new ArrayList<>();
 
     @Override public @NonNull String getType() { return "task"; }
 
     @Override
-    public void init(@NonNull String name, @NonNull ConfigurationSection section) {
+    public void init(@NonNull String name, @NonNull JsonObject section) {
         this.name = name;
         this.rawData = section;
-        String defs = section.getString("definitions");
-        if (defs != null) {
-            this.definitions = List.of(defs.replace(" ", "").split("\\|"));
+        var defsElement = section.get("definitions");
+        if (defsElement != null && defsElement.isJsonPrimitive()) {
+            this.definitions = List.of(defsElement.getAsString().replace(" ", "").split("\\|"));
         }
     }
 
@@ -36,7 +36,7 @@ public class TaskContainer implements AbstractContainer {
     }
 
     @Override public @NonNull String getName() { return name; }
-    @Override public @NonNull ConfigurationSection getData() { return rawData; }
+    @Override public @NonNull JsonObject getData() { return rawData; }
 
     @Override
     public @NonNull PathType resolvePath(@NonNull String path) {

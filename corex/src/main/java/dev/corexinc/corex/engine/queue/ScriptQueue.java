@@ -4,12 +4,11 @@ import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
-import org.bukkit.Location;
 import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +26,10 @@ import java.util.function.BooleanSupplier;
  * <p>
  * This class is designed to be thread-aware, supporting both standard Paper
  * and multithreaded Folia/Canvas environments through region-based scheduling.
+ * <p>
+ * <b>Platform note:</b> this class is Bukkit-free. Position data is represented
+ * as {@link Position}. On Velocity (proxy), region fields are unused and
+ * {@link RegionRelocateException} is never thrown.
  *
  * @since 1.0.0
  */
@@ -136,22 +139,28 @@ public class ScriptQueue {
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
 
     /**
-     * The physical location this queue is "anchored" to (used for Folia region matching).
+     * The position this queue is "anchored" to (used for Folia region matching).
+     * <p>
+     * {@code null} on Velocity and in queue contexts that have no world position.
      */
-    private Location anchorLocation = null;
+    @Nullable
+    private Position anchorPosition = null;
 
     /**
-     * The target location of a region shift requested by a command.
+     * The target position of a region shift requested by a command.
+     * <p>
+     * {@code null} when no region shift is pending.
      */
-    private Location targetRegionLocation = null;
+    @Nullable
+    private Position targetRegionPosition = null;
 
-    public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, Location anchorLocation) {
+    public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer, Position anchorPosition) {
         this.id = id;
         this.bytecode = bytecode;
         this.isAsync = isAsync;
         this.linkedPlayer = linkedPlayer;
         this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
-        this.anchorLocation = anchorLocation;
+        this.anchorPosition = anchorPosition;
     }
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync, PlayerTag linkedPlayer) {
@@ -184,44 +193,6 @@ public class ScriptQueue {
         executeNext();
     }
 
-    public boolean isStopped() {
-        return isStopped;
-    }
-
-    public void setKeepAlive(boolean keepAlive) {
-        this.keepAlive = keepAlive;
-    }
-
-    public boolean isKeepAlive() {
-        return keepAlive;
-    }
-
-    public void injectInstructions(Instruction... insts) {
-        if (this.bytecode == null || this.pointer >= this.bytecode.length) {
-            this.bytecode = insts;
-        } else {
-            int remaining = this.bytecode.length - this.pointer;
-            Instruction[] combined = new Instruction[remaining + insts.length];
-            System.arraycopy(this.bytecode, this.pointer, combined, 0, remaining);
-            System.arraycopy(insts, 0, combined, remaining, insts.length);
-            this.bytecode = combined;
-        }
-        this.pointer = 0;
-
-        if (isWaitingForInstructions) {
-            isWaitingForInstructions = false;
-            executeNext();
-        }
-    }
-
-    public boolean isCancelled() {
-        return isCancelled;
-    }
-
-    public void setCancelled(boolean cancelled) {
-        isCancelled = cancelled;
-    }
-
     /**
      * The main execution loop of the CVM.
      * <p>
@@ -234,10 +205,10 @@ public class ScriptQueue {
         try {
             while (!isPaused && !isStopped) {
 
-                if (targetRegionLocation != null && !SchedulerAdapter.isRegionOwner(targetRegionLocation)) {
+                if (targetRegionPosition != null && SchedulerAdapter.get().needsRegionRelocation(targetRegionPosition)) {
                     isPaused = true;
-                    Location target = targetRegionLocation;
-                    SchedulerAdapter.runAt(target, () -> {
+                    Position target = targetRegionPosition;
+                    SchedulerAdapter.get().runAt(target, () -> {
                         isPaused = false;
                         executeNext();
                     });
@@ -259,33 +230,29 @@ public class ScriptQueue {
 
                         boolean skipCommand = false;
 
-                        if (inst.globalFlags != null) {
-                            for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
-                                if (!entry.getKey().execute(this, inst, entry.getValue())) {
-                                    skipCommand = true;
-                                    break;
-                                }
+                        for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
+                            if (!entry.getKey().execute(this, inst, entry.getValue())) {
+                                skipCommand = true;
+                                break;
                             }
                         }
 
                         if (!skipCommand) {
                             this.setErrorHeaderPrinted(false);
-                            if (inst.command != null) {
-                                try {
-                                    inst.command.run(this, inst);
-                                } catch (RegionRelocateException rre) {
-                                    throw rre;
-                                } catch (Exception e) {
-                                    this.addError("Internal Java Exception: " + e.getMessage());
-                                    e.printStackTrace();
-                                }
+                            try {
+                                inst.command.run(this, inst);
+                            } catch (RegionRelocateException rre) {
+                                throw rre;
+                            } catch (Exception e) {
+                                this.addError("Internal Java Exception: " + e.getMessage());
+                                e.printStackTrace();
                             }
                             Debugger.flushErrors(this, inst);
                         }
                     } catch (RegionRelocateException rre) {
                         throw rre;
                     } catch (Exception e) {
-                        String cmdName = (inst != null && inst.command != null) ? inst.command.getName() : "unknown";
+                        String cmdName = inst != null ? inst.command.getName() : "unknown";
                         Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, depth);
                     }
                 } else if (!isPaused) {
@@ -327,7 +294,7 @@ public class ScriptQueue {
         } catch (RegionRelocateException rre) {
             pointer--;
             isPaused = true;
-            SchedulerAdapter.runAt(rre.getLocation(), () -> {
+            SchedulerAdapter.get().runAt(rre.getPosition(), () -> {
                 isPaused = false;
                 executeNext();
             });
@@ -335,20 +302,6 @@ public class ScriptQueue {
             Debugger.error(this, "Fatal queue execution crash: " + t.getMessage(), t, callStack.size());
             stopEntireQueue();
         }
-    }
-
-    public void addError(String message) {
-        currentErrors.add(message);
-    }
-
-    public boolean hasErrors() {
-        return !currentErrors.isEmpty();
-    }
-
-    public List<String> getAndClearErrors() {
-        List<String> copy = new ArrayList<>(currentErrors);
-        currentErrors.clear();
-        return copy;
     }
 
     /**
@@ -383,13 +336,6 @@ public class ScriptQueue {
         this.isBroken = breakLoop;
     }
 
-    public boolean isBroken() {
-        return isBroken;
-    }
-
-    public void setBroken(boolean broken) {
-        this.isBroken = broken;
-    }
 
     /**
      * Pauses the queue, preventing further instructions from being executed
@@ -422,10 +368,6 @@ public class ScriptQueue {
         Debugger.releaseQueue(this);
     }
 
-    public void setOnFinish(Runnable onFinish) {
-        this.onFinish = onFinish;
-    }
-
     /**
      * Pauses the queue and schedules a resume after the specified duration.
      *
@@ -434,9 +376,29 @@ public class ScriptQueue {
     @AvailableSince("1.0.0")
     public void delay(long ticks) {
         pause();
-        if (isAsync) SchedulerAdapter.runAsyncLater(this::resume, Math.max(1, ticks));
-        else SchedulerAdapter.runLater(this::resume, Math.max(1, ticks));
+        if (isAsync) SchedulerAdapter.get().runAsyncLater(this::resume, Math.max(1, ticks));
+        else SchedulerAdapter.get().runLater(this::resume, Math.max(1, ticks));
     }
+
+
+    public void injectInstructions(Instruction... insts) {
+        if (this.bytecode == null || this.pointer >= this.bytecode.length) {
+            this.bytecode = insts;
+        } else {
+            int remaining = this.bytecode.length - this.pointer;
+            Instruction[] combined = new Instruction[remaining + insts.length];
+            System.arraycopy(this.bytecode, this.pointer, combined, 0, remaining);
+            System.arraycopy(insts, 0, combined, remaining, insts.length);
+            this.bytecode = combined;
+        }
+        this.pointer = 0;
+
+        if (isWaitingForInstructions) {
+            isWaitingForInstructions = false;
+            executeNext();
+        }
+    }
+
 
     /**
      * Defines a local variable within this queue's scope.
@@ -476,134 +438,108 @@ public class ScriptQueue {
         return linkedPlayer;
     }
 
-    public String getId() {
-        return id;
-    }
-
     /**
-     * Stores arbitrary Java objects in the queue's temporary internal memory.
+     * Gets the current evaluation position "anchor" of this queue.
+     * Used by the {@code <region>} tag to determine region-local performance metrics.
      * <p>
-     * <b>Note:</b> This memory is intended for internal communication between commands
-     * (e.g., 'if' passing results to 'else') and is <b>not</b> accessible via script tags.
-     * To store data accessible in scripts, use {@link #define(String, AbstractTag)}.
-     *
-     * @param key   The unique identifier for the data (case-insensitive).
-     * @param value The object to store. If {@code null}, the key is removed.
-     */
-    @AvailableSince("1.0.0")
-    public void setTempData(String key, Object value) {
-        if (value == null) tempData.remove(key);
-        else tempData.put(key, value);
-    }
-
-    /**
-     * Retrieves an object from the temporary internal memory.
-     *
-     * @param key The identifier for the data.
-     * @return The stored object, or {@code null} if not found.
+     * On Bukkit/Folia the environment should override the anchor by calling
+     * {@link #setAnchorPosition(Position)} with the player's current position
+     * at queue creation time. On Velocity this always returns {@code null}.
+     * <p>
+     * <b>Migration note:</b> the previous implementation called
+     * {@code linkedPlayer.getPlayer().getLocation()} directly here, which required
+     * a Bukkit import. Player position retrieval is now a platform concern —
+     * populate {@code anchorPosition} from the platform layer instead.
      */
     @Nullable
     @AvailableSince("1.0.0")
-    public Object getTempData(String key) {
-        return tempData.get(key);
+    public Position getAnchorPosition() {
+        return anchorPosition;
+    }
+
+    /** Sets (or clears) the anchor position for this queue. */
+    public void setAnchorPosition(@Nullable Position position) {
+        this.anchorPosition = position;
+    }
+
+    /**
+     * Requests a region shift to the given position.
+     * The shift is applied at the start of the next {@link #executeNext()} tick.
+     */
+    public void setTargetRegion(@Nullable Position position) {
+        this.targetRegionPosition = position;
+    }
+
+    @Nullable
+    public Position getTargetRegion() {
+        return targetRegionPosition;
+    }
+
+    public void addError(String message) {
+        currentErrors.add(message);
+    }
+
+    public boolean hasErrors() {
+        return !currentErrors.isEmpty();
+    }
+
+    public List<String> getAndClearErrors() {
+        List<String> copy = new ArrayList<>(currentErrors);
+        currentErrors.clear();
+        return copy;
     }
 
     /**
      * Associates a contextual object with this queue.
-     * <p>
-     * The engine treats this purely as an {@link AbstractTag}. It is up to the
-     * environment to provide an implementation (like ContextTag) that can
-     * handle sub-attributes.
-     *
-     * @param context The tag object to attach as context.
      */
     @AvailableSince("1.0.0")
     public void setContext(@Nullable AbstractTag context) {
         this.context = context;
     }
 
-    /**
-     * Retrieves the current context object of the queue.
-     *
-     * @return the associated context as an {@link AbstractTag}, or {@code null}.
-     */
     @Nullable
     @AvailableSince("1.0.0")
     public AbstractTag getContext() {
         return context;
     }
 
-    /**
-     * Records a value returned by the script during execution.
-     * Typically called by {@code return} or {@code determine} commands.
-     *
-     * @param tag the tag object to record as a result.
-     */
     @AvailableSince("1.0.0")
     public void addReturn(AbstractTag tag) {
         if (tag != null) returnValues.add(tag);
     }
 
-    /**
-     * Gets all values returned by the script.
-     * <p>
-     * This is used by the Event Engine to check for {@code cancelled} states
-     * or by Procedure scripts to retrieve the final result.
-     *
-     * @return a non-null list of result tags.
-     */
     @NotNull
     @AvailableSince("1.0.0")
     public List<AbstractTag> getReturns() {
         return returnValues;
     }
 
-    public boolean isAsync() {
-        return isAsync;
+    @AvailableSince("1.0.0")
+    public void setTempData(String key, Object value) {
+        if (value == null) tempData.remove(key);
+        else tempData.put(key, value);
     }
 
-    public int getDepth() {
-        return callStack.size();
-    }
-
-    public static ScriptQueue getQueueById(String id) {
-        return activeQueues.get(id);
-    }
-
-    public static Collection<ScriptQueue> getAllQueues() {
-        return activeQueues.values();
-    }
-
-    public Map<String, AbstractTag> getDefinitionsMap() {
-        return definitions;
-    }
-
-    /**
-     * Gets the current evaluation location "anchor" of this queue.
-     * Used by the {@code <region>} tag to determine region-local performance metrics.
-     */
     @Nullable
     @AvailableSince("1.0.0")
-    public Location getAnchorLocation() {
-        if (linkedPlayer != null && linkedPlayer.getPlayer() != null && linkedPlayer.getPlayer().isOnline()) {
-            return linkedPlayer.getPlayer().getLocation();
-        }
-        return anchorLocation;
+    public Object getTempData(String key) {
+        return tempData.get(key);
     }
 
-    public void setTargetRegion(Location location) {
-        this.targetRegionLocation = location;
-    }
-
-    public Location getTargetRegion() {
-        return targetRegionLocation;
-    }
-
-    public boolean isSilent() {
-        return silent;
-    }
-
-    public void setSilent(boolean silent) {
-        this.silent = silent;
-    }
+    public String getId() { return id; }
+    public boolean isAsync() { return isAsync; }
+    public boolean isStopped() { return isStopped; }
+    public boolean isCancelled() { return isCancelled; }
+    public void setCancelled(boolean cancelled) { isCancelled = cancelled; }
+    public boolean isBroken() { return isBroken; }
+    public void setBroken(boolean broken) { isBroken = broken; }
+    public boolean isSilent() { return silent; }
+    public void setSilent(boolean silent) { this.silent = silent; }
+    public void setOnFinish(Runnable onFinish) { this.onFinish = onFinish; }
+    public void setKeepAlive(boolean keepAlive) { this.keepAlive = keepAlive; }
+    public boolean isKeepAlive() { return keepAlive; }
+    public int getDepth() { return callStack.size(); }
+    public Map<String, AbstractTag> getDefinitionsMap() { return definitions; }
+    public static ScriptQueue getQueueById(String id) { return activeQueues.get(id); }
+    public static Collection<ScriptQueue> getAllQueues() { return activeQueues.values(); }
 }

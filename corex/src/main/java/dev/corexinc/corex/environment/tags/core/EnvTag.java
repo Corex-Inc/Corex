@@ -5,7 +5,7 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.engine.utils.EnvManager;
+import dev.corexinc.corex.environment.utils.scripts.EnvManager;
 import org.jspecify.annotations.NonNull;
 
 /* @[objecttype]

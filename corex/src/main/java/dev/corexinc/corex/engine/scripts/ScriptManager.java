@@ -1,5 +1,6 @@
 package dev.corexinc.corex.engine.scripts;
 
+import com.google.gson.Gson;
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
@@ -7,47 +8,47 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.environment.containers.ItemContainer;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ScriptManager {
 
     private static final Map<String, AbstractContainer> containers = new HashMap<>();
+    private static final Gson GSON = new Gson();
     public static long lastReloadTime = System.currentTimeMillis();
 
     public static void loadScripts() {
         ItemContainer.ItemCache.clear();
         containers.clear();
-        JavaPlugin plugin = Corex.getInstance();
-        File scriptsFolder = new File(plugin.getDataFolder(), "scripts");
+        File scriptsFolder = new File(Corex.getInstance().getDataFolder(), "scripts");
         if (!scriptsFolder.exists()) {
             scriptsFolder.mkdirs();
-            plugin.saveResource("scripts/readme.txt", true);
+            Corex.getInstance().saveResource("scripts/readme.txt", true);
         }
 
         List<File> files = new ArrayList<>();
         findScriptsRecursively(scriptsFolder, files);
-
         int loadedCount = 0;
 
         for (File file : files) {
             try {
                 List<String> rawLines = Files.readAllLines(file.toPath());
-                String cleanYamlString = ScriptPreprocessor.preprocess(rawLines);
+                String cleanYaml = ScriptPreprocessor.preprocess(rawLines);
 
-                YamlConfiguration yaml = new YamlConfiguration();
-                yaml.loadFromString(cleanYamlString);
+                Map<String, Object> parsed = new Yaml().load(cleanYaml);
+                if (parsed == null) continue;
 
-                for (String scriptName : yaml.getKeys(false)) {
-                    String type = yaml.getString(scriptName + ".type");
-                    if (type == null) continue;
+                for (Map.Entry<String, Object> entry : parsed.entrySet()) {
+                    String scriptName = entry.getKey();
+                    if (!(entry.getValue() instanceof Map<?, ?> rawSection)) continue;
+
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> section = (Map<String, Object>) rawSection;
+
+                    if (!(section.get("type") instanceof String type)) continue;
 
                     Class<? extends AbstractContainer> clazz = Corex.getInstance().getRegistry().getContainerClass(type);
                     if (clazz == null) {
@@ -56,25 +57,16 @@ public class ScriptManager {
                     }
 
                     AbstractContainer container = clazz.getDeclaredConstructor().newInstance();
-                    org.bukkit.configuration.ConfigurationSection section = yaml.getConfigurationSection(scriptName);
-                    container.init(scriptName, section);
+                    container.init(scriptName, GSON.toJsonTree(section).getAsJsonObject());
 
-                    assert section != null;
-                    for (String path : section.getKeys(true)) {
-
-                        PathType pathType = container.resolvePath(path);
-
-                        if (pathType == PathType.SCRIPT) {
-                            List<?> rawCommands = section.getList(path);
-
-                            if (rawCommands != null) {
-                                Instruction[] bytecode = compileBlock(rawCommands);
-                                container.addCompiledScript(path, bytecode);
-                            }
+                    for (String path : flatKeys(section)) {
+                        if (container.resolvePath(path) == PathType.SCRIPT) {
+                            List<?> rawCommands = getNestedList(section, path);
+                            if (rawCommands != null) container.addCompiledScript(path, compileBlock(rawCommands));
                         }
                     }
 
-                    containers.put(scriptName.toLowerCase(), container);
+                    containers.put(scriptName, container);
                     loadedCount++;
                 }
             } catch (Exception e) {
@@ -82,6 +74,30 @@ public class ScriptManager {
             }
         }
         CorexLogger.success("Loaded <aqua>" + loadedCount + "</aqua> containers!");
+    }
+
+    private static Set<String> flatKeys(Map<String, Object> map) {
+        Set<String> keys = new LinkedHashSet<>();
+        collectFlatKeys(map, "", keys);
+        return keys;
+    }
+
+    private static void collectFlatKeys(Map<?, ?> map, String prefix, Set<String> keys) {
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            String fullKey = prefix.isEmpty() ? entry.getKey().toString() : prefix + "." + entry.getKey();
+            keys.add(fullKey);
+            if (entry.getValue() instanceof Map<?, ?> nested) collectFlatKeys(nested, fullKey, keys);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<?> getNestedList(Map<String, Object> root, String path) {
+        Object current = root;
+        for (String part : path.split("\\.")) {
+            if (!(current instanceof Map<?, ?> map)) return null;
+            current = ((Map<String, Object>) map).get(part);
+        }
+        return current instanceof List<?> list ? list : null;
     }
 
     private static void findScriptsRecursively(File folder, List<File> list) {
@@ -107,28 +123,21 @@ public class ScriptManager {
     }
 
     public static AbstractContainer getContainer(String name) {
-        return containers.get(name.toLowerCase());
+        return containers.get(name);
     }
 
     public static Instruction[] compileBlock(List<?> rawList) {
         List<Instruction> bytecode = new ArrayList<>();
-
         for (Object obj : rawList) {
-            if (obj instanceof String) {
-                Instruction inst = ScriptCompiler.compile((String) obj);
+            if (obj instanceof String str) {
+                Instruction inst = ScriptCompiler.compile(str);
                 if (inst != null) bytecode.add(inst);
-            }
-            else if (obj instanceof Map<?, ?> map) {
+            } else if (obj instanceof Map<?, ?> map) {
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
                     String rawKey = entry.getKey().toString().trim();
-
-                    String cmdLine = rawKey.endsWith(":")
-                            ? rawKey.substring(0, rawKey.length() - 1).trim()
-                            : rawKey;
-
-                    if (entry.getValue() instanceof List) {
-                        Instruction[] inner = compileBlock((List<?>) entry.getValue());
-                        Instruction inst = ScriptCompiler.compile(cmdLine, inner);
+                    String cmdLine = rawKey.endsWith(":") ? rawKey.substring(0, rawKey.length() - 1).trim() : rawKey;
+                    if (entry.getValue() instanceof List<?> inner) {
+                        Instruction inst = ScriptCompiler.compile(cmdLine, compileBlock(inner));
                         if (inst != null) bytecode.add(inst);
                     }
                 }

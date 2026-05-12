@@ -7,6 +7,8 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Position;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.QueueTag;
@@ -17,9 +19,11 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /* @doc object
  *
@@ -61,31 +65,9 @@ public class RegionTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(PREFIX, RegionTag::new);
 
-        /* @doc tag
-         *
-         * @Name isGlobal
-         * @RawName <RegionTag.isGlobal>
-         * @Object RegionTag
-         * @ReturnType ElementTag(Boolean)
-         * @NoArg
-         * @Description
-         * Returns 'true' if this region is the global region (Global Tick).
-         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isGlobal", (attr, obj) ->
                 new ElementTag(obj.isGlobal));
 
-        /* @doc tag
-         *
-         * @Name tps
-         * @RawName <RegionTag.tps>
-         * @Object RegionTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the current TPS (Ticks Per Second) for this specific region.
-         * On Folia, this value may differ from other regions.
-         * Default value - 20.0.
-         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "tps", (attr, obj) -> {
             if (Corex.isFolia() && !obj.isGlobal) {
                 return new ElementTag(FoliaSupport.getTPS(obj));
@@ -93,31 +75,9 @@ public class RegionTag implements AbstractTag {
             return new ElementTag(Bukkit.getServer().getTPS()[0]);
         }).ignoreTest();
 
-        /* @doc tag
-         *
-         * @Name mspt
-         * @RawName <RegionTag.mspt>
-         * @Object RegionTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the server's average Milliseconds Per Tick (MSPT).
-         * On Folia servers it returns total server (not region) MSPT.
-         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "mspt", (attr, obj) ->
                 new ElementTag(Bukkit.getServer().getAverageTickTime())).ignoreTest();
 
-        /* @doc tag
-         *
-         * @Name players
-         * @RawName <RegionTag.players>
-         * @Object RegionTag
-         * @ReturnType ListTag(PlayerTag)
-         * @NoArg
-         * @Description
-         * Returns a list of all players currently being processed by this region (sharing this thread).
-         * For the global region on Folia, this will always return an empty list.
-         */
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attr, obj) -> {
             ListTag list = new ListTag();
             if (obj.isGlobal) {
@@ -139,21 +99,11 @@ public class RegionTag implements AbstractTag {
             return list;
         });
 
-        /* @doc tag
-         *
-         * @Name queues
-         * @RawName <RegionTag.queues>
-         * @Object RegionTag
-         * @ReturnType ListTag(QueueTag)
-         * @NoArg
-         * @Description
-         * Returns a list of all active script queues anchored to this region.
-         */
         TAG_PROCESSOR.registerTag(ListTag.class, "queues", (attr, obj) -> {
             ListTag list = new ListTag();
             if (obj.isGlobal) {
                 for (ScriptQueue queue : ScriptQueue.getAllQueues()) {
-                    if (queue.getAnchorLocation() == null) list.addObject(new QueueTag(queue));
+                    if (queue.getAnchorPosition() == null) list.addObject(new QueueTag(queue));
                 }
                 return list;
             }
@@ -162,9 +112,10 @@ public class RegionTag implements AbstractTag {
             if (Corex.isFolia()) {
                 FoliaSupport.fillQueues(obj, list);
             } else {
+                UUID worldId = obj.world.getUID();
                 for (ScriptQueue queue : ScriptQueue.getAllQueues()) {
-                    Location anchor = queue.getAnchorLocation();
-                    if (anchor != null && anchor.getWorld() == obj.world) {
+                    Position anchor = queue.getAnchorPosition();
+                    if (anchor != null && worldId.equals(anchor.world())) {
                         list.addObject(new QueueTag(queue));
                     }
                 }
@@ -253,47 +204,116 @@ public class RegionTag implements AbstractTag {
 
     public static class FoliaSupport {
 
+        @FunctionalInterface
+        private interface RegionNodeResolver {
+            Object resolve(World world, int cx, int cz) throws Exception;
+        }
+
+        private static final AtomicReference<RegionNodeResolver> cachedResolver = new AtomicReference<>();
+        private static volatile Method cachedTpsLocMethod;
+        private static volatile Method cachedTpsWorldMethod;
+        private static volatile boolean tpsProbed = false;
+
         private static Object getRegionNode(World world, int cx, int cz) {
+            RegionNodeResolver resolver = cachedResolver.get();
+            if (resolver != null) {
+                try {
+                    return resolver.resolve(world, cx, cz);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+            return probeAndResolve(world, cx, cz);
+        }
+
+        private static synchronized Object probeAndResolve(World world, int cx, int cz) {
+            RegionNodeResolver existing = cachedResolver.get();
+            if (existing != null) {
+                try { return existing.resolve(world, cx, cz); } catch (Exception e) { return null; }
+            }
+
             try {
                 Method getRegionizer = world.getClass().getMethod("getRegionizer");
                 Object regionizer = getRegionizer.invoke(world);
                 if (regionizer != null) {
-                    try {
-                        return regionizer.getClass().getMethod("getRegionAtSynchronised", int.class, int.class).invoke(regionizer, cx, cz);
-                    } catch (Exception ignored) {
-                        return regionizer.getClass().getMethod("getRegionAt", int.class, int.class).invoke(regionizer, cx, cz);
+                    Method getAt = findMethod(regionizer.getClass(), "getRegionAtSynchronised", "getRegionAt");
+                    if (getAt != null) {
+                        Object result = getAt.invoke(regionizer, cx, cz);
+                        Method getAtFinal = getAt;
+                        Method getRegionizerFinal = getRegionizer;
+                        cachedResolver.set((w, x, z) -> {
+                            Object reg = getRegionizerFinal.invoke(w);
+                            return reg != null ? getAtFinal.invoke(reg, x, z) : null;
+                        });
+                        return result;
                     }
                 }
             } catch (Exception ignored) {}
 
             try {
-                Object nmsWorld = world.getClass().getMethod("getHandle").invoke(world);
-
-                try {
-                    return nmsWorld.getClass().getMethod("getRegionAtSynchronised", int.class, int.class).invoke(nmsWorld, cx, cz);
-                } catch (Exception ignored) {}
-
-                try {
-                    Object tickRegions = nmsWorld.getClass().getField("tickRegions").get(nmsWorld);
-                    return tickRegions.getClass().getMethod("getRegionAt", int.class, int.class).invoke(tickRegions, cx, cz);
-                } catch (Exception ignored) {}
-
-                try {
-                    Object chunkTaskScheduler = nmsWorld.getClass().getField("chunkTaskScheduler").get(nmsWorld);
-                    Object regioniser = chunkTaskScheduler.getClass().getField("regioniser").get(chunkTaskScheduler);
-                    return regioniser.getClass().getMethod("getRegionAt", int.class, int.class).invoke(regioniser, cx, cz);
-                } catch (Exception ignored) {}
-
+                Method getHandle = world.getClass().getMethod("getHandle");
+                Object nmsWorld = getHandle.invoke(world);
+                Method getAt = findMethod(nmsWorld.getClass(), "getRegionAtSynchronised", "getRegionAt");
+                if (getAt != null) {
+                    Object result = getAt.invoke(nmsWorld, cx, cz);
+                    cachedResolver.set((w, x, z) -> {
+                        Object nms = getHandle.invoke(w);
+                        return getAt.invoke(nms, x, z);
+                    });
+                    return result;
+                }
             } catch (Exception ignored) {}
 
+            try {
+                Method getHandle = world.getClass().getMethod("getHandle");
+                Object nmsWorld = getHandle.invoke(world);
+                Field tickRegionsField = nmsWorld.getClass().getField("tickRegions");
+                Object tickRegions = tickRegionsField.get(nmsWorld);
+                Method getAt = tickRegions.getClass().getMethod("getRegionAt", int.class, int.class);
+                Object result = getAt.invoke(tickRegions, cx, cz);
+                cachedResolver.set((w, x, z) -> {
+                    Object nms = getHandle.invoke(w);
+                    Object tr = tickRegionsField.get(nms);
+                    return getAt.invoke(tr, x, z);
+                });
+                return result;
+            } catch (Exception ignored) {}
+
+            try {
+                Method getHandle = world.getClass().getMethod("getHandle");
+                Object nmsWorld = getHandle.invoke(world);
+                Field schedulerField = nmsWorld.getClass().getField("chunkTaskScheduler");
+                Object scheduler = schedulerField.get(nmsWorld);
+                Field regioniserField = scheduler.getClass().getField("regioniser");
+                Object regioniser = regioniserField.get(scheduler);
+                Method getAt = regioniser.getClass().getMethod("getRegionAt", int.class, int.class);
+                Object result = getAt.invoke(regioniser, cx, cz);
+                cachedResolver.set((w, x, z) -> {
+                    Object nms = getHandle.invoke(w);
+                    Object sched = schedulerField.get(nms);
+                    Object reg = regioniserField.get(sched);
+                    return getAt.invoke(reg, x, z);
+                });
+                return result;
+            } catch (Exception ignored) {}
+
+            cachedResolver.set((w, x, z) -> null);
+            return null;
+        }
+
+        private static Method findMethod(Class<?> cls, String... names) {
+            for (String name : names) {
+                try {
+                    return cls.getMethod(name, int.class, int.class);
+                } catch (NoSuchMethodException ignored) {}
+            }
             return null;
         }
 
         private static String identifyNode(Object node) {
             if (node == null) return null;
             String id = CenterExtractor.getCenterId(node);
-            if (id != null) return id;
-            return String.valueOf(node.hashCode());
+            return id != null ? id : String.valueOf(node.hashCode());
         }
 
         private static boolean isSameRegion(Object nodeA, Object nodeB) {
@@ -314,51 +334,53 @@ public class RegionTag implements AbstractTag {
         }
 
         private static double getTPS(RegionTag tag) {
+            if (!tpsProbed) probeTpsMethods(tag);
+
             Location loc = new Location(tag.world, tag.chunkX << 4, 0, tag.chunkZ << 4);
             try {
-                Method getRegionTPSLoc = Bukkit.getServer().getClass().getMethod("getRegionTPS", Location.class);
-                double[] tps = (double[]) getRegionTPSLoc.invoke(Bukkit.getServer(), loc);
-                if (tps != null) return tps[0];
-            } catch (Exception ignored) {
-                try {
-                    Method getRegionTPSWorld = Bukkit.getServer().getClass().getMethod("getRegionTPS", World.class, int.class, int.class);
-                    double[] tps = (double[]) getRegionTPSWorld.invoke(Bukkit.getServer(), tag.world, tag.chunkX, tag.chunkZ);
+                if (cachedTpsLocMethod != null) {
+                    double[] tps = (double[]) cachedTpsLocMethod.invoke(Bukkit.getServer(), loc);
                     if (tps != null) return tps[0];
-                } catch (Exception ignored2) {}
-            }
+                }
+                if (cachedTpsWorldMethod != null) {
+                    double[] tps = (double[]) cachedTpsWorldMethod.invoke(Bukkit.getServer(), tag.world, tag.chunkX, tag.chunkZ);
+                    if (tps != null) return tps[0];
+                }
+            } catch (Exception ignored) {}
+
             return Bukkit.getServer().getTPS()[0];
+        }
+
+        private static synchronized void probeTpsMethods(RegionTag tag) {
+            if (tpsProbed) return;
+            try {
+                cachedTpsLocMethod = Bukkit.getServer().getClass().getMethod("getRegionTPS", Location.class);
+            } catch (Exception ignored) {}
+            try {
+                cachedTpsWorldMethod = Bukkit.getServer().getClass().getMethod("getRegionTPS", World.class, int.class, int.class);
+            } catch (Exception ignored) {}
+            tpsProbed = true;
         }
 
         private static void fillPlayers(RegionTag tag, ListTag list) {
             Location targetLoc = new Location(tag.world, tag.chunkX << 4, 0, tag.chunkZ << 4);
             boolean isTargetCurrentThread = false;
-            try {
-                isTargetCurrentThread = Bukkit.isOwnedByCurrentRegion(targetLoc);
-            } catch (Exception ignored) {}
+            try { isTargetCurrentThread = Bukkit.isOwnedByCurrentRegion(targetLoc); } catch (Exception ignored) {}
 
-            Object targetNode = getRegionNode(tag.world, tag.chunkX, tag.chunkZ);
+            Object targetNode = isTargetCurrentThread ? null : getRegionNode(tag.world, tag.chunkX, tag.chunkZ);
 
             for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.getWorld() == tag.world) {
-                    Location pLoc;
-                    try {
-                        pLoc = p.getLocation();
-                    } catch (Exception e) {
-                        continue;
-                    }
+                if (p.getWorld() != tag.world) continue;
+                Location pLoc;
+                try { pLoc = p.getLocation(); } catch (Exception e) { continue; }
 
-                    if (isTargetCurrentThread) {
-                        try {
-                            if (Bukkit.isOwnedByCurrentRegion(pLoc)) {
-                                list.addObject(new PlayerTag(p));
-                            }
-                        } catch (Exception ignored) {}
-                    } else if (targetNode != null) {
-                        Object pNode = getRegionNode(tag.world, pLoc.getBlockX() >> 4, pLoc.getBlockZ() >> 4);
-                        if (isSameRegion(targetNode, pNode)) {
-                            list.addObject(new PlayerTag(p));
-                        }
-                    }
+                if (isTargetCurrentThread) {
+                    try {
+                        if (Bukkit.isOwnedByCurrentRegion(pLoc)) list.addObject(new PlayerTag(p));
+                    } catch (Exception ignored) {}
+                } else if (targetNode != null) {
+                    Object pNode = getRegionNode(tag.world, pLoc.getBlockX() >> 4, pLoc.getBlockZ() >> 4);
+                    if (isSameRegion(targetNode, pNode)) list.addObject(new PlayerTag(p));
                 }
             }
         }
@@ -366,27 +388,24 @@ public class RegionTag implements AbstractTag {
         private static void fillQueues(RegionTag tag, ListTag list) {
             Location targetLoc = new Location(tag.world, tag.chunkX << 4, 0, tag.chunkZ << 4);
             boolean isTargetCurrentThread = false;
-            try {
-                isTargetCurrentThread = Bukkit.isOwnedByCurrentRegion(targetLoc);
-            } catch (Exception ignored) {}
+            try { isTargetCurrentThread = Bukkit.isOwnedByCurrentRegion(targetLoc); } catch (Exception ignored) {}
 
-            Object targetNode = getRegionNode(tag.world, tag.chunkX, tag.chunkZ);
+            Object targetNode = isTargetCurrentThread ? null : getRegionNode(tag.world, tag.chunkX, tag.chunkZ);
+            UUID worldId = tag.world.getUID();
 
             for (ScriptQueue queue : ScriptQueue.getAllQueues()) {
-                Location anchor = queue.getAnchorLocation();
-                if (anchor != null && anchor.getWorld() == tag.world) {
-                    if (isTargetCurrentThread) {
-                        try {
-                            if (Bukkit.isOwnedByCurrentRegion(anchor)) {
-                                list.addObject(new QueueTag(queue));
-                            }
-                        } catch (Exception ignored) {}
-                    } else if (targetNode != null) {
-                        Object qNode = getRegionNode(tag.world, anchor.getBlockX() >> 4, anchor.getBlockZ() >> 4);
-                        if (isSameRegion(targetNode, qNode)) {
-                            list.addObject(new QueueTag(queue));
-                        }
-                    }
+                Position anchor = queue.getAnchorPosition();
+                if (anchor == null || !worldId.equals(anchor.world())) continue;
+
+                Location anchorLoc = BukkitSchedulerAdapter.toLocation(anchor);
+
+                if (isTargetCurrentThread) {
+                    try {
+                        if (Bukkit.isOwnedByCurrentRegion(anchorLoc)) list.addObject(new QueueTag(queue));
+                    } catch (Exception ignored) {}
+                } else if (targetNode != null) {
+                    Object qNode = getRegionNode(tag.world, anchorLoc.getBlockX() >> 4, anchorLoc.getBlockZ() >> 4);
+                    if (isSameRegion(targetNode, qNode)) list.addObject(new QueueTag(queue));
                 }
             }
         }
@@ -394,7 +413,8 @@ public class RegionTag implements AbstractTag {
         public static List<RegionTag> getAllRegions(World world) {
             List<RegionTag> results = new ArrayList<>();
             try {
-                Object nmsWorld = world.getClass().getMethod("getHandle").invoke(world);
+                Method getHandle = world.getClass().getMethod("getHandle");
+                Object nmsWorld = getHandle.invoke(world);
                 Object regioniser = null;
 
                 try {
@@ -445,7 +465,6 @@ public class RegionTag implements AbstractTag {
         private static Field centerField;
         private static Method centerMethod;
         private static Method idMethod;
-
         private static Method posX;
         private static Method posZ;
         private static Field fieldX;
@@ -481,24 +500,19 @@ public class RegionTag implements AbstractTag {
 
         private static String getCenterId(Object region) {
             if (region == null) return null;
-            if (!inited) {
-                init(region.getClass());
-            }
+            if (!inited) init(region.getClass());
 
             try {
                 Object center = null;
-                if (centerField != null) {
-                    center = centerField.get(region);
-                } else if (centerMethod != null) {
-                    center = centerMethod.invoke(region);
-                }
+                if (centerField != null) center = centerField.get(region);
+                else if (centerMethod != null) center = centerMethod.invoke(region);
 
                 if (center != null) {
                     try {
                         if (posX == null) posX = center.getClass().getMethod("x");
                         if (posZ == null) posZ = center.getClass().getMethod("z");
                         return posX.invoke(center) + "," + posZ.invoke(center);
-                    } catch (Exception e) {
+                    } catch (Exception ignored) {
                         try {
                             if (fieldX == null) {
                                 fieldX = center.getClass().getDeclaredField("x");
@@ -507,14 +521,12 @@ public class RegionTag implements AbstractTag {
                                 fieldZ.setAccessible(true);
                             }
                             return fieldX.get(center) + "," + fieldZ.get(center);
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored2) {}
                     }
                     return center.toString();
                 }
 
-                if (idMethod != null) {
-                    return String.valueOf(idMethod.invoke(region));
-                }
+                if (idMethod != null) return String.valueOf(idMethod.invoke(region));
             } catch (Exception ignored) {}
 
             return null;

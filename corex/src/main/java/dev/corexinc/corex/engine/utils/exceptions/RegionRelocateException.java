@@ -1,17 +1,17 @@
 package dev.corexinc.corex.engine.utils.exceptions;
 
-import org.bukkit.Location;
+import dev.corexinc.corex.engine.utils.Position;
 
 public class RegionRelocateException extends RuntimeException {
 
-    private final Location location;
+    private final Position position;
 
-    public RegionRelocateException(Location location) {
+    public RegionRelocateException(Position position) {
         super(null, null, true, false);
-        this.location = location;
+        this.position = position;
     }
 
-    public Location getLocation() {
-        return location;
+    public Position getPosition() {
+        return position;
     }
 }

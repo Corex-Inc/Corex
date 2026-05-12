@@ -215,7 +215,7 @@ public class FetchCommand implements AbstractCommand {
         }
 
         HTTP_CLIENT.sendAsync(requestBuilder.build(), bodyHandler).whenComplete((response, throwable) -> {
-            SchedulerAdapter.runLater(() -> {
+            SchedulerAdapter.get().runLater(() -> {
                 MapTag result = new MapTag();
 
                 if (throwable != null) {

@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
@@ -109,7 +110,7 @@ public class ActionBarCommand implements AbstractCommand {
         }
 
         for (Player player : targetPlayers) {
-            SchedulerAdapter.runEntity(player, () -> player.sendActionBar(message));
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.sendActionBar(message));
         }
     }
 

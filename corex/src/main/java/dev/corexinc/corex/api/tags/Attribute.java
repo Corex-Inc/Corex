@@ -5,7 +5,6 @@ import dev.corexinc.corex.engine.compiler.TagNode;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -51,7 +50,7 @@ public class Attribute {
     public String getName() {
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0) return "null";
-        return components[index].name;
+        return components[index].name();
     }
 
     /**
@@ -63,7 +62,7 @@ public class Attribute {
     public boolean hasParam() {
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0) return false;
-        return components[index].param != null;
+        return components[index].param() != null;
     }
 
     /**
@@ -88,8 +87,8 @@ public class Attribute {
     @Contract(pure = true)
     public AbstractTag getParamObject() {
         int index = Math.min(currentIndex, components.length - 1);
-        if (index < 0 || components[index].param == null) return null;
-        return components[index].param.evaluate(queue);
+        if (index < 0 || components[index].param() == null) return null;
+        return components[index].param().evaluate(queue);
     }
 
     /**
@@ -149,7 +148,7 @@ public class Attribute {
             return false;
         }
 
-        return components[currentIndex + 1].name.equals(expectedName);
+        return components[currentIndex + 1].name().equals(expectedName);
     }
 
     /**
@@ -161,7 +160,7 @@ public class Attribute {
             return false;
         }
 
-        return components[currentIndex + 1].param != null;
+        return components[currentIndex + 1].param() != null;
     }
 
     /**
@@ -176,11 +175,11 @@ public class Attribute {
      * Evaluates the next attribute's parameter and returns it as an {@link AbstractTag}.
      */
     public AbstractTag getNextParamObject() {
-        if (currentIndex + 1 >= components.length || components[currentIndex + 1].param == null) {
+        if (currentIndex + 1 >= components.length || components[currentIndex + 1].param() == null) {
             return null;
         }
 
-        return components[currentIndex + 1].param.evaluate(queue);
+        return components[currentIndex + 1].param().evaluate(queue);
     }
 
     /**

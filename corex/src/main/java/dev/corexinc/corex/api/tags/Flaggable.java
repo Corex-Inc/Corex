@@ -2,7 +2,6 @@ package dev.corexinc.corex.api.tags;
 
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import org.jetbrains.annotations.ApiStatus.*;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Indicates that an {@link AbstractTag} can store and retrieve persistent data (flags).
@@ -21,7 +20,6 @@ public interface Flaggable {
      *
      * @return a non-null {@link AbstractFlagTracker} instance.
      */
-    @NotNull
     @OverrideOnly
     @AvailableSince("1.0.0")
     AbstractFlagTracker getFlagTracker();

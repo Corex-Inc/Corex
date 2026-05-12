@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.Location;
@@ -133,7 +134,7 @@ public class PlaySoundCommand implements AbstractCommand {
 
     private void playToTargets(List<Player> targets, List<LocationTag> locations, Sound sound) {
         for (Player player : targets) {
-            SchedulerAdapter.runEntity(player, () -> {
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> {
                 if (locations.isEmpty()) {
                     player.playSound(sound);
                 } else {
@@ -150,7 +151,7 @@ public class PlaySoundCommand implements AbstractCommand {
         for (LocationTag locTag : locations) {
             Location loc = locTag.getLocation();
             if (loc == null || loc.getWorld() == null) continue;
-            SchedulerAdapter.runAt(loc, () -> loc.getWorld().playSound(sound, loc.getX(), loc.getY(), loc.getZ()));
+            SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(loc), () -> loc.getWorld().playSound(sound, loc.getX(), loc.getY(), loc.getZ()));
         }
     }
 

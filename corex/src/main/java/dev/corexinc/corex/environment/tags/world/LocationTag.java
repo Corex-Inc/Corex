@@ -9,12 +9,11 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.engine.utils.SchedulerAdapter;
-import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.utils.FindTag;
 import dev.corexinc.corex.environment.tags.world.area.CuboidTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.*;
@@ -782,7 +781,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
             return new MaterialTag(loc.getBlock());
         });
 
@@ -906,7 +905,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ItemTag.class, "buriedItem", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
             if (loc.getBlock().getState() instanceof BrushableBlock brushable) {
                 return new ItemTag(brushable.getItem());
             }
@@ -928,7 +927,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "lastInteractedSlot", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
             if (loc.getBlock().getState() instanceof ChiseledBookshelf shelf) {
                 return new ElementTag(shelf.getLastInteractedSlot() + 1);
             }
@@ -951,7 +950,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(MapTag.class, "sherds", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
             if (loc.getBlock().getState() instanceof DecoratedPot pot) {
                 MapTag map = new MapTag();
                 for (var entry : pot.getSherds().entrySet()) {
@@ -980,7 +979,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (vector == null) return null;
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
             if (loc.getBlock().getState() instanceof ChiseledBookshelf shelf) {
                 return new ElementTag(shelf.getSlot(vector.getLocation().toVector()) + 1);
             }
@@ -1002,7 +1001,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "temperature", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
             return new ElementTag(loc.getBlock().getTemperature());
         }).ignoreTest();
 
@@ -1446,7 +1445,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             World world = obj.getLocation().getWorld();
             if (world == null || target.getLocation().getWorld() != world) return new ElementTag(false);
 
-            if (!SchedulerAdapter.isRegionOwner(obj.getLocation())) throw new RegionRelocateException(obj.getLocation());
+            BukkitSchedulerAdapter.requireRegion(obj.getLocation());
 
             Vector dir = target.getLocation().toVector().subtract(obj.getLocation().toVector());
             double distance = dir.length();
@@ -1928,7 +1927,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "attachedTo", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             BlockData data = loc.getBlock().getBlockData();
             BlockFace face = null;
@@ -1977,7 +1976,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "beaconPrimaryEffect", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Beacon beacon && beacon.getPrimaryEffect() != null) {
                 return new ElementTag(beacon.getPrimaryEffect().getType().getKey().getKey());
@@ -2000,7 +1999,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "beaconSecondaryEffect", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Beacon beacon && beacon.getSecondaryEffect() != null) {
                 return new ElementTag(beacon.getSecondaryEffect().getType().getKey().getKey());
@@ -2023,7 +2022,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(DurationTag.class, "age", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof EndGateway gateway) {
                 return new DurationTag(gateway.getAge());
@@ -2046,7 +2045,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "beaconTier", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Beacon beacon) {
                 return new ElementTag(beacon.getTier());
@@ -2069,7 +2068,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "blockFacing", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getBlockData() instanceof Directional dir) {
                 BlockFace face = dir.getFacing();
@@ -2093,7 +2092,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "brewingFuelLevel", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof BrewingStand stand) {
                 return new ElementTag(stand.getFuelLevel());
@@ -2116,7 +2115,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(DurationTag.class, "brewingTime", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof BrewingStand stand) {
                 return new DurationTag(stand.getBrewingTime());
@@ -2139,7 +2138,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ListTag.class, "campfireItems", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Campfire campfire) {
                 ListTag list = new ListTag();
@@ -2167,7 +2166,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "command", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CommandBlock cmdBlock) {
                 return new ElementTag(cmdBlock.getCommand());
@@ -2190,7 +2189,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "commandBlockName", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CommandBlock cmdBlock) {
                 return new ElementTag(cmdBlock.name());
@@ -2213,7 +2212,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "customName", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Nameable nameable && nameable.customName() != null) {
                 return new ElementTag(nameable.customName());
@@ -2236,7 +2235,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ListTag.class, "disabledSlots", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Crafter crafter) {
                 ListTag list = new ListTag();
@@ -2262,7 +2261,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ListTag.class, "drops", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             ItemStack tool = null;
             if (attr.hasParam()) {
@@ -2292,7 +2291,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "exitLocation", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof EndGateway gateway && gateway.getExitLocation() != null) {
                 return new LocationTag(gateway.getExitLocation());
@@ -2322,9 +2321,8 @@ public class LocationTag implements AbstractTag, Flaggable {
 
             while (iterator.hasNext()) {
                 Block nextBlock = iterator.next();
-                if (!SchedulerAdapter.isRegionOwner(nextBlock.getLocation())) {
-                    throw new RegionRelocateException(nextBlock.getLocation());
-                }
+
+                BukkitSchedulerAdapter.requireRegion(nextBlock.getLocation());
                 list.addObject(new LocationTag(new Location(loc.getWorld(), nextBlock.getX(), nextBlock.getY(), nextBlock.getZ())));
             }
             return list;
@@ -2352,7 +2350,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location startLoc = obj.getLocation();
             World world = startLoc.getWorld();
             if (world == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(startLoc)) throw new RegionRelocateException(startLoc);
+            BukkitSchedulerAdapter.requireRegion(startLoc);
 
             int startX = startLoc.getBlockX(), startY = startLoc.getBlockY(), startZ = startLoc.getBlockZ();
             Material targetMat = world.getBlockAt(startX, startY, startZ).getType();
@@ -2391,7 +2389,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 int cx = unpackX(curr), cy = unpackY(curr), cz = unpackZ(curr);
 
                 Location currLoc = new Location(world, cx, cy, cz);
-                if (!SchedulerAdapter.isRegionOwner(currLoc)) throw new RegionRelocateException(currLoc);
+                BukkitSchedulerAdapter.requireRegion(currLoc);
 
                 Block b = world.getBlockAt(cx, cy, cz);
                 boolean match = hasMatcher ? new MaterialTag(b).tryAdvancedMatcher(matcher) : b.getType() == targetMat;
@@ -2430,7 +2428,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(DurationTag.class, "furnaceBurnDuration", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Furnace furnace) {
                 return new DurationTag((long) furnace.getBurnTime());
@@ -2453,7 +2451,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(DurationTag.class, "furnaceCookDuration", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Furnace furnace) {
                 return new DurationTag((long) furnace.getCookTime());
@@ -2476,7 +2474,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(DurationTag.class, "furnaceCookDurationTotal", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Furnace furnace) {
                 return new DurationTag((long) furnace.getCookTimeTotal());
@@ -2499,7 +2497,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "hasInventory", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().getState() instanceof InventoryHolder);
         }).ignoreTest();
@@ -2519,7 +2517,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "hasLootTable", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().getState() instanceof Lootable lootable && lootable.getLootTable() != null);
         }).ignoreTest();
@@ -2539,7 +2537,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "headRotation", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getBlockData() instanceof Rotatable rotatable) {
                 return new ElementTag(blockFaceToRotationIndex(rotatable.getRotation()));
@@ -2562,7 +2560,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "highest", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             Location highest = loc.getWorld().getHighestBlockAt(loc).getLocation();
             return new LocationTag(new Location(loc.getWorld(), highest.getX(), highest.getY(), highest.getZ()));
@@ -2583,7 +2581,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "hiveBeeCount", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Beehive hive) {
                 return new ElementTag(hive.getEntityCount());
@@ -2606,7 +2604,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "hiveMaxBees", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Beehive hive) {
                 return new ElementTag(hive.getMaxEntities());
@@ -2629,7 +2627,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isExactTeleport", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof EndGateway gateway) {
                 return new ElementTag(gateway.isExactTeleport());
@@ -2652,7 +2650,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLiquid", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().isLiquid());
         }).ignoreTest();
@@ -2672,7 +2670,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLockable", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().getState() instanceof Lockable);
         }).ignoreTest();
@@ -2692,7 +2690,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLocked", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().getState() instanceof Lockable lockable && lockable.isLocked());
         }).ignoreTest();
@@ -2712,7 +2710,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isPassable", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().isPassable());
         }).ignoreTest();
@@ -2733,7 +2731,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isSpawnable", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             Block b = loc.getBlock();
             Block above = b.getRelative(BlockFace.UP);
@@ -2780,7 +2778,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "jukeboxIsPlaying", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Jukebox jukebox) {
                 return new ElementTag(jukebox.isPlaying());
@@ -2803,7 +2801,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ItemTag.class, "jukeboxRecord", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Jukebox jukebox) {
                 ItemStack record = jukebox.getRecord();
@@ -2827,7 +2825,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "page", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Lectern lectern) {
                 return new ElementTag(lectern.getPage() + 1);
@@ -2851,7 +2849,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "light", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             Block b = loc.getBlock();
 
@@ -2907,7 +2905,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "password", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Lockable lockable && lockable.isLocked()) {
                 return new ElementTag(lockable.getLock());
@@ -2930,7 +2928,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "lootTableId", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Lootable lootable && lootable.getLootTable() != null) {
                 return new ElementTag(lootable.getLootTable().getKey().toString());
@@ -2953,7 +2951,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "mapColor", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             org.bukkit.Color color = loc.getBlock().getBlockData().getMapColor();
             return new ElementTag(color.getRed() + "," + color.getGreen() + "," + color.getBlue());
@@ -2974,7 +2972,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "otherBlock", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             BlockData data = loc.getBlock().getBlockData();
             int modX = 0, modY = 0, modZ = 0;
@@ -3023,7 +3021,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ListTag.class, "patterns", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             Registry<PatternType> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN);
             if (loc.getBlock().getState() instanceof Banner banner) {
@@ -3051,7 +3049,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "power", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             return new ElementTag(loc.getBlock().getBlockPower());
         }).ignoreTest();
@@ -3133,7 +3131,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location start = obj.getLocation();
             World world = start.getWorld();
             if (world == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(start)) throw new RegionRelocateException(start);
+            BukkitSchedulerAdapter.requireRegion(start);
 
             Vector startVec = start.toVector();
             Vector dirVec = start.getDirection();
@@ -3161,7 +3159,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 BlockIterator bit = new BlockIterator(world, startVec, dirVec, 0, (int) Math.ceil(range));
                 while (bit.hasNext()) {
                     Block b = bit.next();
-                    if (!SchedulerAdapter.isRegionOwner(b.getLocation())) throw new RegionRelocateException(b.getLocation());
+                    BukkitSchedulerAdapter.requireRegion(b.getLocation());
 
                     if (b.isEmpty() || (b.isPassable() && !nonsolids)) continue;
 
@@ -3280,7 +3278,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location start = obj.getLocation();
             World world = start.getWorld();
             if (world == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(start)) throw new RegionRelocateException(start);
+            BukkitSchedulerAdapter.requireRegion(start);
 
             Vector startVec = start.toVector();
             Vector dirVec = start.getDirection();
@@ -3355,7 +3353,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ListTag.class, "signContents", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Sign sign) {
                 Side side = Side.FRONT;
@@ -3387,7 +3385,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "signGlowColor", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Sign sign) {
                 Side side = Side.FRONT;
@@ -3416,7 +3414,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "signGlowing", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Sign sign) {
                 Side side = Side.FRONT;
@@ -3444,7 +3442,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "waxed", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Sign sign) {
                 return new ElementTag(sign.isWaxed());
@@ -3467,7 +3465,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "skullName", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof org.bukkit.block.Skull skull) {
                 PlayerProfile profile = skull.getPlayerProfile();
@@ -3491,7 +3489,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "skullSkin", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof org.bukkit.block.Skull skull) {
                 PlayerProfile profile = skull.getPlayerProfile();
@@ -3537,7 +3535,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "skullType", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Skull) {
                 return new ElementTag(loc.getBlock().getType().name());
@@ -3560,7 +3558,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "spawnerCount", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CreatureSpawner spawner) {
                 return new ElementTag(spawner.getSpawnCount());
@@ -3583,7 +3581,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(EntityTag.class, "spawnerDisplayEntity", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CreatureSpawner spawner && spawner.getSpawnedType() != null) {
                 return new EntityTag(spawner.getSpawnedType().name());
@@ -3606,7 +3604,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "spawnerMaxNearbyEntities", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CreatureSpawner spawner) {
                 return new ElementTag(spawner.getMaxNearbyEntities());
@@ -3630,7 +3628,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(MapTag.class, "spawnerDelayData", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CreatureSpawner spawner) {
                 MapTag map = new MapTag();
@@ -3657,7 +3655,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "spawnerPlayerRange", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CreatureSpawner spawner) {
                 return new ElementTag(spawner.getRequiredPlayerRange());
@@ -3680,7 +3678,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "spawnerRange", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof CreatureSpawner spawner) {
                 return new ElementTag(spawner.getSpawnRange());
@@ -3703,7 +3701,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(MapTag.class, "structureBlockData", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getState() instanceof Structure struct) {
                 MapTag map = new MapTag();
@@ -3745,7 +3743,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "activated", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             BlockData data = loc.getBlock().getBlockData();
 
@@ -3773,7 +3771,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "withFacingDirection", (attr, obj) -> {
             Location loc = obj.getLocation();
             if (loc.getWorld() == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(loc)) throw new RegionRelocateException(loc);
+            BukkitSchedulerAdapter.requireRegion(loc);
 
             if (loc.getBlock().getBlockData() instanceof Directional dir) {
                 Vector facing = dir.getFacing().getDirection();
@@ -3930,7 +3928,7 @@ public class LocationTag implements AbstractTag, Flaggable {
     }
 
     @Override
-    public @NonNull AbstractFlagTracker getFlagTracker() {
+    public AbstractFlagTracker getFlagTracker() {
         if (location.getWorld() == null) return null;
         return new LocationPdcFlagTracker(location, identify());
     }

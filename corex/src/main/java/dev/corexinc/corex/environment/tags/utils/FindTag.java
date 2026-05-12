@@ -4,7 +4,6 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -14,6 +13,7 @@ import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.BiomeTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Entity;
@@ -67,7 +67,7 @@ public class FindTag implements AbstractTag {
 
                 World world = obj.center.getWorld();
                 if (world == null) return null;
-                if (!SchedulerAdapter.isRegionOwner(obj.center)) throw new RegionRelocateException(obj.center);
+                BukkitSchedulerAdapter.requireRegion(obj.center);
 
                 List<AbstractTag> found = new ArrayList<>();
                 for (Entity entity : world.getNearbyEntities(obj.center, radius, radius, radius)) {
@@ -102,7 +102,7 @@ public class FindTag implements AbstractTag {
 
                 World world = obj.center.getWorld();
                 if (world == null) return null;
-                if (!SchedulerAdapter.isRegionOwner(obj.center)) throw new RegionRelocateException(obj.center);
+                BukkitSchedulerAdapter.requireRegion(obj.center);
 
                 List<AbstractTag> found = new ArrayList<>();
                 for (Entity entity : world.getNearbyEntities(obj.center, radius, radius, radius)) {
@@ -136,7 +136,7 @@ public class FindTag implements AbstractTag {
 
                 World world = obj.center.getWorld();
                 if (world == null) return null;
-                if (!SchedulerAdapter.isRegionOwner(obj.center)) throw new RegionRelocateException(obj.center);
+                BukkitSchedulerAdapter.requireRegion(obj.center);
 
                 List<AbstractTag> found = new ArrayList<>();
                 for (Player player : world.getPlayers()) {
@@ -169,7 +169,7 @@ public class FindTag implements AbstractTag {
 
                 World world = obj.center.getWorld();
                 if (world == null) return null;
-                if (!SchedulerAdapter.isRegionOwner(obj.center)) throw new RegionRelocateException(obj.center);
+                BukkitSchedulerAdapter.requireRegion(obj.center);
 
                 int r = (int) Math.ceil(radius);
                 int cx = obj.center.getBlockX();
@@ -215,7 +215,7 @@ public class FindTag implements AbstractTag {
 
                 World world = obj.center.getWorld();
                 if (world == null) return null;
-                if (!SchedulerAdapter.isRegionOwner(obj.center)) throw new RegionRelocateException(obj.center);
+                BukkitSchedulerAdapter.requireRegion(obj.center);
 
                 int r = (int) Math.ceil(radius);
                 int cx = obj.center.getBlockX();
@@ -263,7 +263,7 @@ public class FindTag implements AbstractTag {
             if (!attr.hasParam()) return null;
             World world = obj.center.getWorld();
             if (world == null) return null;
-            if (!SchedulerAdapter.isRegionOwner(obj.center)) throw new RegionRelocateException(obj.center);
+            BukkitSchedulerAdapter.requireRegion(obj.center);
 
             BiomeTag biomeTag = attr.getParamObject(BiomeTag.class, BiomeTag::new);
             if (biomeTag == null || biomeTag.getBiomeKey() == null) return null;

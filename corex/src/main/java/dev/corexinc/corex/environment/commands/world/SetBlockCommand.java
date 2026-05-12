@@ -13,6 +13,7 @@ import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import dev.corexinc.corex.environment.tags.world.area.AbstractAreaObject;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.generator.ChunkGenerator;
@@ -200,7 +201,6 @@ public class SetBlockCommand implements AbstractCommand {
             if (chosen == null || !chosen.getMaterial().isBlock() || chosen.getBlockData() == null) continue;
             int relX = loc.getBlockX() & 15;
             int relZ = loc.getBlockZ() & 15;
-
             chunkData.setBlock(relX, loc.getBlockY(), relZ, chosen.getBlockData());
         }
     }
@@ -214,7 +214,7 @@ public class SetBlockCommand implements AbstractCommand {
         if (instruction.isWaitable) queue.pause();
         AtomicInteger remaining = new AtomicInteger(ctx.chunkGroups().size());
         for (List<Location> group : ctx.chunkGroups()) {
-            SchedulerAdapter.runAt(group.getFirst(), () -> {
+            SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(group.getFirst()), () -> {
                 group.forEach(loc -> placeBlock(loc, ctx));
                 if (instruction.isWaitable && remaining.decrementAndGet() == 0) queue.resume();
             });
@@ -223,7 +223,7 @@ public class SetBlockCommand implements AbstractCommand {
 
     private void applyDelayedPaper(ScriptQueue queue, Instruction instruction,
                                    PlacementContext ctx, int fromIndex) {
-        SchedulerAdapter.runLater(() -> {
+        SchedulerAdapter.get().runLater(() -> {
             long tickStart = System.currentTimeMillis();
             int next = fromIndex;
             List<Location> blocks = ctx.allBlocks();
@@ -249,7 +249,7 @@ public class SetBlockCommand implements AbstractCommand {
         }
 
         List<Location> group = ctx.chunkGroups().get(groupIndex);
-        SchedulerAdapter.runAt(group.get(blockIndex), () -> {
+        SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(group.get(blockIndex)), () -> {
             long tickStart = System.currentTimeMillis();
             int i = blockIndex;
 
@@ -260,12 +260,12 @@ public class SetBlockCommand implements AbstractCommand {
 
             if (i < group.size()) {
                 final int nextBlock = i;
-                SchedulerAdapter.runLaterAt(group.get(nextBlock),
+                SchedulerAdapter.get().runLaterAt(BukkitSchedulerAdapter.toPosition(group.get(nextBlock)),
                         () -> applyDelayedFolia(queue, instruction, ctx, groupIndex, nextBlock), 1L);
             } else {
                 final int nextGroup = groupIndex + 1;
                 if (nextGroup < ctx.chunkGroups().size()) {
-                    SchedulerAdapter.runLaterAt(ctx.chunkGroups().get(nextGroup).getFirst(),
+                    SchedulerAdapter.get().runLaterAt(BukkitSchedulerAdapter.toPosition(ctx.chunkGroups().get(nextGroup).getFirst()),
                             () -> applyDelayedFolia(queue, instruction, ctx, nextGroup, 0), 1L);
                 } else if (instruction.isWaitable) {
                     queue.resume();

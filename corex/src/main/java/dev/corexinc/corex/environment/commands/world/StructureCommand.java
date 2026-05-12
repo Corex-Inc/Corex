@@ -11,6 +11,7 @@ import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.StructureTag;
 import dev.corexinc.corex.environment.tags.world.area.AbstractAreaObject;
 import dev.corexinc.corex.environment.tags.world.area.CuboidTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -171,7 +172,7 @@ public class StructureCommand implements AbstractCommand, Listener {
 
         if (instruction.isWaitable) queue.pause();
 
-        SchedulerAdapter.runAt(loc, () -> {
+        SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(loc), () -> {
             try {
                 if (noPhysics) {
                     DISABLE_PHYSICS.set(true);
@@ -202,13 +203,13 @@ public class StructureCommand implements AbstractCommand, Listener {
 
         if (instruction.isWaitable) queue.pause();
 
-        SchedulerAdapter.runAsync(() -> {
+        SchedulerAdapter.get().runAsync(() -> {
             try {
                 Bukkit.getStructureManager().deleteStructure(key, false);
             } catch (Exception e) {
                 Debugger.echoError(queue, "Failed to delete structure file for '" + key + "': " + e.getMessage());
             }
-            SchedulerAdapter.run(() -> {
+            SchedulerAdapter.get().run(() -> {
                 Bukkit.getStructureManager().unregisterStructure(key);
                 if (instruction.isWaitable) queue.resume();
             });
@@ -268,13 +269,13 @@ public class StructureCommand implements AbstractCommand, Listener {
 
         if (instruction.isWaitable) queue.pause();
 
-        SchedulerAdapter.runAt(origin, () -> {
+        SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(origin), () -> {
             try {
                 StructureManager manager = Bukkit.getStructureManager();
                 Structure structure = manager.createStructure();
                 structure.fill(origin, bounds.size(), includeEntities);
 
-                SchedulerAdapter.runAsync(() -> {
+                SchedulerAdapter.get().runAsync(() -> {
                     if (saveToDisk) {
                         try {
                             manager.saveStructure(key, structure);
@@ -283,7 +284,7 @@ public class StructureCommand implements AbstractCommand, Listener {
                         }
                     }
 
-                    SchedulerAdapter.run(() -> {
+                    SchedulerAdapter.get().run(() -> {
                         try {
                             manager.registerStructure(key, structure);
                         } finally {

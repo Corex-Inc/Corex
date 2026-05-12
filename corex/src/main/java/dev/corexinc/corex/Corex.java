@@ -6,8 +6,10 @@ import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
-import dev.corexinc.corex.engine.utils.EnvManager;
-import dev.corexinc.corex.engine.utils.Metrics;
+import dev.corexinc.corex.engine.utils.SchedulerAdapter;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
+import dev.corexinc.corex.environment.utils.scripts.EnvManager;
+import dev.corexinc.corex.environment.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.EnvironmentLoader;
 import dev.corexinc.corex.environment.containers.GeneratorContainer;
@@ -27,8 +29,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.List;
-
 public class Corex extends JavaPlugin {
 
     private static Corex instance;
@@ -47,6 +47,9 @@ public class Corex extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        SchedulerAdapter.set(new BukkitSchedulerAdapter());
+        CorexLogger.setConsole(Bukkit.getConsoleSender());
+
         instance = this;
         silenceHikariLogs();
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");

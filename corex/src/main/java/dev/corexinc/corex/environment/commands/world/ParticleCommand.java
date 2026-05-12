@@ -12,6 +12,7 @@ import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -219,7 +220,7 @@ public class ParticleCommand implements AbstractCommand {
             Location loc = locTag.getLocation();
             if (loc == null || loc.getWorld() == null) continue;
 
-            SchedulerAdapter.runAt(loc, () -> {
+            SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(loc), () -> {
                 ParticleBuilder builder = new ParticleBuilder(particle)
                         .location(loc)
                         .data(finalData);

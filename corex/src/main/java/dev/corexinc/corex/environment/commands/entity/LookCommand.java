@@ -190,7 +190,7 @@ public class LookCommand implements AbstractCommand {
 
         long intervalMs = Math.max(1L, 50L / (offthreadRepeats + 1));
 
-        SchedulerAdapter.runAsync(() -> {
+        SchedulerAdapter.get().runAsync(() -> {
             for (int i = 0; i < offthreadRepeats; i++) {
                 try {
                     Thread.sleep(intervalMs * (i + 1));

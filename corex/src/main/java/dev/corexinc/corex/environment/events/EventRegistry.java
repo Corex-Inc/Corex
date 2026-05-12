@@ -89,7 +89,7 @@ public class EventRegistry {
         }
 
         if (data.isAfter) {
-            SchedulerAdapter.runLater(queue::start, 1L);
+            SchedulerAdapter.get().runLater(queue::start, 1L);
         } else {
             queue.start();
         }

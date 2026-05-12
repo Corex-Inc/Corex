@@ -2,5 +2,7 @@
   "id": "corex",
   "name": "Corex",
   "version": "1.0",
-  "main": "dev.corexinc.corex.velocity.CorexVelocity"
+  "main": "dev.corexinc.corex.velocity.CorexVelocity",
+  "description": "Modern, Paper-exclusive compiled scripting engine",
+  "authors": ["tizis0", "Nybik_YT"]
 }

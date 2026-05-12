@@ -8,6 +8,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
@@ -323,7 +324,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
     public ServerTag() {}
 
     @Override
-    public @NonNull SqlFlagTracker getFlagTracker() {
+    public AbstractFlagTracker getFlagTracker() {
         return serverTracker;
     }
 

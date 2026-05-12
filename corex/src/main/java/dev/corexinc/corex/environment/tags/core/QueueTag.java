@@ -6,7 +6,9 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.Location;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -87,9 +89,10 @@ public class QueueTag implements AbstractTag {
          * If the queue has no anchor location, it returns the global region ('reg@global').
          */
         PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> {
-            Location anchor = obj.queue.getAnchorLocation();
+            Position anchor = obj.queue.getAnchorPosition();
             if (anchor == null) return new RegionTag("global");
-            return new RegionTag(anchor.getWorld(), anchor.getBlockX() >> 4, anchor.getBlockZ() >> 4);
+            Location loc = BukkitSchedulerAdapter.toLocation(anchor);
+            return new RegionTag(loc.getWorld(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
         });
 
         /* @doc tag

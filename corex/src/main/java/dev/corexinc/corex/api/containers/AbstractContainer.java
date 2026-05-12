@@ -1,7 +1,7 @@
 package dev.corexinc.corex.api.containers;
 
+import com.google.gson.JsonObject;
 import dev.corexinc.corex.engine.compiler.Instruction;
-import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.OverrideOnly;
@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents a high-level script container defined in a {@code .crx} file.
+ * Represents a high-level script container defined in a {@code .cx} file.
  *
  * <p>Each implementation corresponds to a specific script type (e.g., {@code task}, {@code events}).
  * The container is responsible for defining which parts of its YAML structure should be compiled
@@ -67,17 +67,17 @@ public interface AbstractContainer {
      */
     @Internal
     @AvailableSince("1.0.0")
-    void init(@NotNull String name, @NotNull ConfigurationSection section);
+    void init(@NotNull String name, @NotNull JsonObject section);
 
     /**
-     * Returns the raw {@link ConfigurationSection} associated with this container.
+     * Returns the raw {@link JsonObject} associated with this container.
      * Useful for retrieving non-script data such as custom keys or metadata.
      *
      * @return the raw YAML section.
      */
     @NotNull
     @AvailableSince("1.0.0")
-    ConfigurationSection getData();
+    JsonObject getData();
 
     /**
      * Determines how the engine should process a specific YAML path within this container.

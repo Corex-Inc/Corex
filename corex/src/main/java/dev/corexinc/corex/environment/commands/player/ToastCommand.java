@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.Component;
@@ -126,7 +127,7 @@ public class ToastCommand implements AbstractCommand {
         }
 
         for (Player player : targetPlayers) {
-            SchedulerAdapter.runEntity(player, () -> adapter.sendToast(player, message, iconMaterial, frame));
+            ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> adapter.sendToast(player, message, iconMaterial, frame));
         }
     }
 
