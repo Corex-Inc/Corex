@@ -6,6 +6,7 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.containers.ItemContainer;
 import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 import dev.corexinc.corex.environment.containers.commands.CommandManager;
 import dev.corexinc.corex.environment.events.EventRegistry;
@@ -64,6 +65,7 @@ public class ReloadCommand implements AbstractCommand {
             EventRegistry.resetAll();
 
             ScriptManager.reloadScripts();
+            ItemContainer.ItemCache.clear();
 
             List<CommandContainer> after = ScriptManager.getContainersByType(CommandContainer.class);
             CommandManager.INSTANCE.updateContainers(after);

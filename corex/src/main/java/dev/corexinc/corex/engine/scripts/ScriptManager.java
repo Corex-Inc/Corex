@@ -7,7 +7,6 @@ import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.utils.CorexLogger;
-import dev.corexinc.corex.environment.containers.ItemContainer;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -21,7 +20,6 @@ public class ScriptManager {
     public static long lastReloadTime = System.currentTimeMillis();
 
     public static void loadScripts() {
-        ItemContainer.ItemCache.clear();
         containers.clear();
         File scriptsFolder = new File(Corex.getInstance().getDataFolder(), "scripts");
         if (!scriptsFolder.exists()) {

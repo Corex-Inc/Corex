@@ -3,20 +3,19 @@ package dev.corexinc.corex.engine.flags.trackers;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractFlagTracker {
 
     public abstract String getTrackerId();
     protected abstract String readRaw(String rootKey);
-
     protected abstract void writeRaw(String rootKey, String value, long expireTimeMs);
-
     protected abstract void deleteRaw(String rootKey);
-
     public abstract boolean isAsyncSafeCleanup();
 
     private static final Map<String, AbstractFlagTracker> activeTrackers = new ConcurrentHashMap<>();
@@ -55,8 +54,7 @@ public abstract class AbstractFlagTracker {
         if (parts.length == 1) {
             if (value == null) deleteRaw(rootKey);
             else writeRaw(rootKey, value.identify(), expireTimeMs);
-        }
-        else {
+        } else {
             String raw = readRaw(rootKey);
             MapTag rootMap = (raw != null && ObjectFetcher.pickObject(raw) instanceof MapTag m) ? m : new MapTag("");
 
@@ -91,5 +89,9 @@ public abstract class AbstractFlagTracker {
 
     public void cleanUpExpiredFlag(String keyPath) {
         this.getFlag(keyPath);
+    }
+
+    public Optional<Position> getSchedulerPosition() {
+        return Optional.empty();
     }
 }

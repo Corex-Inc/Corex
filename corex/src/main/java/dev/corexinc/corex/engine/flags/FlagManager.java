@@ -2,12 +2,9 @@ package dev.corexinc.corex.engine.flags;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
-import dev.corexinc.corex.engine.flags.trackers.LocationPdcFlagTracker;
 import dev.corexinc.corex.engine.utils.CorexLogger;
-import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
-import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 
 import java.util.PriorityQueue;
 
@@ -107,15 +104,11 @@ public class FlagManager {
                     CorexLogger.error("Error clearing flag in background " + task.flagPath + ": " + e.getMessage());
                 }
             });
-        } else if (tracker instanceof LocationPdcFlagTracker locTracker) {
-            Position pos = BukkitSchedulerAdapter.toPosition(locTracker.getLocation());
-            SchedulerAdapter.get().runAt(pos, () -> {
-                tracker.deleteFlagPhysically(task.flagPath);
-            });
         } else {
-            SchedulerAdapter.get().run(() -> {
-                tracker.deleteFlagPhysically(task.flagPath);
-            });
+            tracker.getSchedulerPosition().ifPresentOrElse(
+                    pos -> SchedulerAdapter.get().runAt(pos, () -> tracker.deleteFlagPhysically(task.flagPath)),
+                    () -> SchedulerAdapter.get().run(() -> tracker.deleteFlagPhysically(task.flagPath))
+            );
         }
     }
 
@@ -125,6 +118,8 @@ public class FlagManager {
         final long expireTime;
 
         FlagTask(String t, String f, long e) { trackerId = t; flagPath = f; expireTime = e; }
-        @Override public int compareTo(FlagTask o) { return Long.compare(this.expireTime, o.expireTime); }
+
+        @Override
+        public int compareTo(FlagTask o) { return Long.compare(this.expireTime, o.expireTime); }
     }
 }

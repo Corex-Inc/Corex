@@ -1,9 +1,19 @@
 package dev.corexinc.corex.environment.utils;
 
-import org.bukkit.Bukkit;
 import org.jspecify.annotations.NonNull;
 
 public record ServerVersion(int major, int minor, int patch) implements Comparable<ServerVersion> {
+
+    private static ServerVersion current;
+
+    public static void setCurrent(String version) {
+        current = parse(version);
+    }
+
+    public static ServerVersion getCurrent() {
+        if (current == null) throw new IllegalStateException("ServerVersion not initialized");
+        return current;
+    }
 
     public static ServerVersion parse(String version) {
         String[] parts = version.split("\\.");
@@ -11,11 +21,6 @@ public record ServerVersion(int major, int minor, int patch) implements Comparab
         int minor = parts.length > 1 ? parseInt(parts[1]) : 0;
         int patch = parts.length > 2 ? parseInt(parts[2]) : 0;
         return new ServerVersion(major, minor, patch);
-    }
-
-    public static ServerVersion getCurrent() {
-        String versionString = Bukkit.getBukkitVersion().split("-")[0];
-        return parse(versionString);
     }
 
     private static int parseInt(String str) {

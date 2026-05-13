@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
+import dev.corexinc.corex.environment.utils.ServerVersion;
 import dev.corexinc.corex.environment.utils.scripts.EnvManager;
 import dev.corexinc.corex.environment.utils.Metrics;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -53,6 +54,7 @@ public class Corex extends JavaPlugin {
         instance = this;
         silenceHikariLogs();
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
+        ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
 
         getConfig().options().copyDefaults();
         saveDefaultConfig();
