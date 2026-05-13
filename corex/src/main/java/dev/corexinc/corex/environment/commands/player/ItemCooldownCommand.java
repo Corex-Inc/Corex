@@ -185,7 +185,7 @@ public class ItemCooldownCommand implements AbstractCommand {
                     .filter(p -> p != null && p.isOnline())
                     .toList();
         }
-        PlayerTag linked = queue.getPlayer();
+        PlayerTag linked = (PlayerTag) queue.getPlayer();
         if (linked != null && linked.getPlayer() != null && linked.getPlayer().isOnline())
             return List.of(linked.getPlayer());
         return List.of();

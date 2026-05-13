@@ -122,7 +122,7 @@ public class PlaySoundCommand implements AbstractCommand {
         }
 
         if (locations.isEmpty()) {
-            PlayerTag queuePlayer = queue.getPlayer();
+            PlayerTag queuePlayer = (PlayerTag) queue.getPlayer();
             if (queuePlayer != null) {
                 Player player = queuePlayer.getPlayer();
                 if (player != null && player.isOnline()) return List.of(player);

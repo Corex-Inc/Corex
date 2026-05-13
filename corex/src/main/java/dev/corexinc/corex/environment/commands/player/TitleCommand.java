@@ -131,7 +131,7 @@ public class TitleCommand implements AbstractCommand {
                 ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.showTitle(title));
             }
         } else {
-            PlayerTag queuePlayer = queue.getPlayer();
+            PlayerTag queuePlayer = (PlayerTag) queue.getPlayer();
             if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
                 Player player = queuePlayer.getPlayer();
                 ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.showTitle(title));

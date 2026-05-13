@@ -10,6 +10,7 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -25,6 +26,7 @@ import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
@@ -40,7 +42,7 @@ import java.util.UUID;
  * @Description
  * A PlayerTag represents a player in the game.
  */
-public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
+public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIdentity {
 
     private static final String prefix = "p";
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
@@ -54,10 +56,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
             if (attribute.hasParam()) {
                 return new PlayerTag(attribute.getParam());
             }
-            if (attribute.getQueue().getPlayer() != null) {
-                return attribute.getQueue().getPlayer();
-            }
-            return null;
+            return (AbstractTag) attribute.getQueue().getPlayer();
         });
 
         ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new PlayerTag(UUID.fromString(uuidStr)));
@@ -1250,13 +1249,29 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable {
     }
 
     @Override
+    public UUID getUniqueId() {
+        return offlinePlayer.getUniqueId();
+    }
+
+    @Override
+    @Nullable
+    public String getName() {
+        return offlinePlayer.getName();
+    }
+
+    @Override
+    public boolean isOnline() {
+        return offlinePlayer.isOnline();
+    }
+
+    @Override
     public @NonNull String getPrefix() {
         return prefix;
     }
 
     @Override
     public @NonNull String identify() {
-        return prefix + "@" + offlinePlayer.getUniqueId().toString();
+        return prefix + "@" + offlinePlayer.getUniqueId();
     }
 
     @Override

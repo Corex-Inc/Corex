@@ -189,7 +189,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
                 if (player != null && player.isOnline()) targetPlayers.add(player);
             });
         } else {
-            PlayerTag queuePlayer = queue.getPlayer();
+            PlayerTag queuePlayer = (PlayerTag) queue.getPlayer();
             if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
                 targetPlayers.add(queuePlayer.getPlayer());
             }

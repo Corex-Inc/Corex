@@ -115,7 +115,7 @@ public class NarrateCommand implements AbstractCommand {
     }
 
     private void sendToQueuePlayerOrConsole(@NonNull ScriptQueue queue, @NonNull Component message) {
-        PlayerTag queuePlayer = queue.getPlayer();
+        PlayerTag queuePlayer = (PlayerTag) queue.getPlayer();
         if (queuePlayer != null && queuePlayer.getOfflinePlayer().isOnline()) {
             Player player = queuePlayer.getPlayer();
             ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.sendMessage(message));

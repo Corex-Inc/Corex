@@ -102,8 +102,9 @@ public class TeleportCommand implements AbstractCommand {
                 entitiesToTeleport.add(e.getEntity());
             }
         } else {
-            if (queue.getPlayer() != null) {
-                entitiesToTeleport.add(queue.getPlayer().getPlayer());
+            PlayerTag pt = (PlayerTag) queue.getPlayer();
+            if (pt != null) {
+                entitiesToTeleport.add(pt.getPlayer());
             }
             rawLocationInput = instruction.getLinear(0, queue);
         }

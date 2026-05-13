@@ -90,7 +90,7 @@ public class ActionBarCommand implements AbstractCommand {
                 }
             }
         } else {
-            PlayerTag queuePlayer = queue.getPlayer();
+            PlayerTag queuePlayer = (PlayerTag) queue.getPlayer();
             if (queuePlayer != null && queuePlayer.getPlayer() != null && queuePlayer.getPlayer().isOnline()) {
                 targetPlayers.add(queuePlayer.getPlayer());
             }

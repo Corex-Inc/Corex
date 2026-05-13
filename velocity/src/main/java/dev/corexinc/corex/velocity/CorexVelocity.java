@@ -6,7 +6,7 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.google.inject.Inject;
 import com.velocitypowered.api.proxy.ProxyServer;
 
-import java.util.logging.Logger;
+import dev.corexinc.corex.engine.utils.CorexLogger;
 
 @Plugin(
         id = "corex",
@@ -19,15 +19,16 @@ import java.util.logging.Logger;
 public class CorexVelocity {
 
     private final ProxyServer server;
-    private final Logger logger;
 
     @Inject
-    public CorexVelocity(ProxyServer server, Logger logger) {
+    public CorexVelocity(ProxyServer server) {
         this.server = server;
-        this.logger = logger;
     }
+
     @Subscribe
     public void onInit(ProxyInitializeEvent event) {
-        logger.info("Hey Corex! Say hello to Velocity :)");
+        CorexLogger.setConsole(server.getConsoleCommandSource());
+
+        CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
     }
 }
