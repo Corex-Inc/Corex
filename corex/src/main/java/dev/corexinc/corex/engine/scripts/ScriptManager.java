@@ -1,9 +1,9 @@
 package dev.corexinc.corex.engine.scripts;
 
 import com.google.gson.Gson;
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
+import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.utils.CorexLogger;
@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class ScriptManager {
@@ -19,12 +20,18 @@ public class ScriptManager {
     private static final Gson GSON = new Gson();
     public static long lastReloadTime = System.currentTimeMillis();
 
+    private static Path dataFolder;
+    private static CorexRegistry registry;
+
     public static void loadScripts() {
         containers.clear();
-        File scriptsFolder = new File(Corex.getInstance().getDataFolder(), "scripts");
+        File scriptsFolder = new File(dataFolder.toFile(), "scripts");
         if (!scriptsFolder.exists()) {
             scriptsFolder.mkdirs();
-            Corex.getInstance().saveResource("scripts/readme.txt", true);
+            File readme = new File(scriptsFolder, "readme.txt");
+            try (var stream = ScriptManager.class.getResourceAsStream("/scripts/readme.txt")) {
+                if (stream != null) Files.copy(stream, readme.toPath());
+            } catch (Exception ignored) {}
         }
 
         List<File> files = new ArrayList<>();
@@ -48,7 +55,7 @@ public class ScriptManager {
 
                     if (!(section.get("type") instanceof String type)) continue;
 
-                    Class<? extends AbstractContainer> clazz = Corex.getInstance().getRegistry().getContainerClass(type);
+                    Class<? extends AbstractContainer> clazz = registry.getContainerClass(type);
                     if (clazz == null) {
                         CorexLogger.warn("Script " + scriptName + " is using unknown type: " + type);
                         continue;
@@ -123,6 +130,9 @@ public class ScriptManager {
     public static AbstractContainer getContainer(String name) {
         return containers.get(name);
     }
+
+    public static void setDataFolder(Path path) { dataFolder = path; }
+    public static void setRegistry(CorexRegistry r) { registry = r; }
 
     public static Instruction[] compileBlock(List<?> rawList) {
         List<Instruction> bytecode = new ArrayList<>();

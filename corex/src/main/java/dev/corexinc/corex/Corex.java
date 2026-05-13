@@ -59,7 +59,7 @@ public class Corex extends JavaPlugin {
         getConfig().options().copyDefaults();
         saveDefaultConfig();
         FlagManager.init();
-        Debugger.updateDebugMode();
+        Debugger.updateDebugMode(getConfig().getString("logger.debug-mode", "default"));
 
         setupRuntimeFlags();
 
@@ -72,6 +72,8 @@ public class Corex extends JavaPlugin {
 
         registerCommands();
 
+        ScriptManager.setDataFolder(getDataFolder().toPath());
+        ScriptManager.setRegistry(registry);
         ScriptManager.loadScripts();
 
         CommandManager.INSTANCE.updateContainers(

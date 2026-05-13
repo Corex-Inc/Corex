@@ -73,7 +73,7 @@ public class CorexRegistry {
 
             } catch (NoSuchMethodException e) {
                 Debugger.error("Class " + clazz.getSimpleName() + " doesn't have required method!", e);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Debugger.error("Error registering " + clazz.getSimpleName() + ": " + e.getMessage(), e);
             }
         }

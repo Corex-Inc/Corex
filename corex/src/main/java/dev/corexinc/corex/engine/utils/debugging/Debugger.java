@@ -33,10 +33,9 @@ public class Debugger {
     public static Mode getMode() { return mode; }
     public static void setMode(Mode value) { mode = value; }
 
-    public static void updateDebugMode() {
-        String raw = Corex.getInstance().getConfig().getString("logger.debug-mode", "default");
+    // Debugger.java — заменить метод
+    public static void updateDebugMode(String raw) {
         Mode debugMode;
-
         try {
             debugMode = Mode.valueOf(raw.toUpperCase());
         } catch (IllegalArgumentException e) {
