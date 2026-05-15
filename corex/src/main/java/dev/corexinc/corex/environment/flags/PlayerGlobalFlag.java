@@ -6,15 +6,16 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import org.jspecify.annotations.NonNull;
 
 public class PlayerGlobalFlag implements AbstractGlobalFlag {
     @Override
-    public String getName() {
+    public @NonNull String getName() {
         return "player";
     }
 
     @Override
-    public boolean execute(ScriptQueue queue, Instruction instruction, CompiledArgument value) {
+    public boolean execute(@NonNull ScriptQueue queue, @NonNull Instruction instruction, @NonNull CompiledArgument value) {
         if (value.evaluate(queue) instanceof PlayerTag playerTag) {
             AbstractTag previous = queue.getDefinition("__player");
             queue.define("__player", playerTag);

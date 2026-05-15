@@ -1,6 +1,7 @@
 package dev.corexinc.corex.engine.scripts;
 
 import com.google.gson.Gson;
+import dev.corexinc.corex.api.commands.DataBlockCommand;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.CorexRegistry;
@@ -136,21 +137,51 @@ public class ScriptManager {
 
     public static Instruction[] compileBlock(List<?> rawList) {
         List<Instruction> bytecode = new ArrayList<>();
+
         for (Object obj : rawList) {
             if (obj instanceof String str) {
                 Instruction inst = ScriptCompiler.compile(str);
                 if (inst != null) bytecode.add(inst);
-            } else if (obj instanceof Map<?, ?> map) {
+            }
+            else if (obj instanceof Map<?, ?> map) {
                 for (Map.Entry<?, ?> entry : map.entrySet()) {
                     String rawKey = entry.getKey().toString().trim();
-                    String cmdLine = rawKey.endsWith(":") ? rawKey.substring(0, rawKey.length() - 1).trim() : rawKey;
-                    if (entry.getValue() instanceof List<?> inner) {
-                        Instruction inst = ScriptCompiler.compile(cmdLine, compileBlock(inner));
-                        if (inst != null) bytecode.add(inst);
+                    String cmdLine = rawKey.endsWith(":")
+                            ? rawKey.substring(0, rawKey.length() - 1).trim()
+                            : rawKey;
+
+                    Object value = entry.getValue();
+
+                    if (value instanceof List<?> inner) {
+                        compileListEntry(cmdLine, inner, bytecode);
+                    }
+                    else if (value instanceof Map<?, ?> innerMap) {
+                        compileMapEntry(cmdLine, innerMap, bytecode);
                     }
                 }
             }
         }
+
         return bytecode.toArray(new Instruction[0]);
+    }
+
+    private static void compileListEntry(String cmdLine, List<?> inner, List<Instruction> bytecode) {
+        Instruction probe = ScriptCompiler.compile(cmdLine, null);
+        if (probe == null) return;
+
+        if (probe.command instanceof DataBlockCommand) {
+            probe.customData = inner;
+            bytecode.add(probe);
+        } else {
+            Instruction inst = ScriptCompiler.compile(cmdLine, compileBlock(inner));
+            if (inst != null) bytecode.add(inst);
+        }
+    }
+
+    private static void compileMapEntry(String cmdLine, Map<?, ?> innerMap, List<Instruction> bytecode) {
+        Instruction inst = ScriptCompiler.compile(cmdLine, null);
+        if (inst == null) return;
+        inst.customData = innerMap;
+        bytecode.add(inst);
     }
 }

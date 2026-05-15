@@ -2,16 +2,21 @@ package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.DataBlockCommand;
 import dev.corexinc.corex.api.data.actions.AbstractDataAction;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /* @doc command
@@ -30,10 +35,14 @@ import java.util.regex.Pattern;
  * If the map or any intermediate key does not exist, it will be created automatically.
  *
  * Optionally append a data action after a colon to modify the existing value instead of replacing it
- * (e.g. "def count:++" to increment, "def items:->:sword" to add to a list).
+ * (e.g. "def count:++" to increment, "def items:|+:sword" to add to a list).
  * Available actions are registered by the engine.
  *
  * If no value argument is provided, the definition is set to null.
+ *
+ * You can also define a MapTag or ListTag using an inline YAML block.
+ * Values inside the block support full tag syntax (e.g. <player.name>).
+ * Maps and lists can be nested arbitrarily.
  *
  * @Usage
  * // Store a simple string.
@@ -50,19 +59,74 @@ import java.util.regex.Pattern;
  * @Usage
  * // Clear a definition.
  * - def tempValue
+ *
+ * @Usage
+ * // Define a MapTag using an inline block.
+ * - def myMap:
+ *     name: <player.name>
+ *     score: 42
+ *     active: true
+ *
+ * @Usage
+ * // Define a ListTag using an inline block.
+ * - def myList:
+ *     - sword
+ *     - shield
+ *     - <player.item>
+ *
+ * @Usage
+ * // Nested maps and lists are supported.
+ * - def player:
+ *     name: <player.name>
+ *     stats:
+ *       level: 10
+ *       xp: 500
+ *     items:
+ *       - sword
+ *       - bow
  */
-public class DefCommand implements AbstractCommand {
+public class DefCommand implements AbstractCommand, DataBlockCommand {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
 
-    @Override public @NonNull String getName() { return "def"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("define"); }
-    @Override public @NonNull String getSyntax() { return "[<key>(:action)] [<value>]"; }
-    @Override public int getMinArgs() { return 1; }
-    @Override public int getMaxArgs() { return 2; }
+    @Override
+    public @NonNull String getName() {
+        return "def";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("define");
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<key>(:action)] [<value>]";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 2;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
+
+        if (instruction.customData instanceof Map<?, ?> rawMap) {
+            handleDataBlock(queue, instruction, rawMap);
+            return;
+        }
+
+        if (instruction.customData instanceof List<?> rawList) {
+            handleDataBlock(queue, instruction, rawList);
+            return;
+        }
+
         String rawArg = instruction.getLinear(0, queue);
         if (rawArg == null) {
             Debugger.echoError(queue, "Definition name cannot be null!");
@@ -116,6 +180,66 @@ public class DefCommand implements AbstractCommand {
                     "Action", ":" + action.getSymbol()
             );
         }
+    }
+
+    private void handleDataBlock(@NonNull ScriptQueue queue, @NonNull Instruction instruction, Map<?, ?> rawMap) {
+        String key = instruction.getLinear(0, queue);
+        if (key == null) {
+            Debugger.echoError(queue, "Definition name cannot be null!");
+            return;
+        }
+        MapTag result = buildMapTag(rawMap, queue);
+        queue.define(key, result);
+        Debugger.report(queue, instruction,
+                "Definition", key,
+                "Value", result.identify(),
+                "Action", ":"
+        );
+    }
+
+    private void handleDataBlock(@NonNull ScriptQueue queue, @NonNull Instruction instruction, List<?> rawList) {
+        String key = instruction.getLinear(0, queue);
+        if (key == null) {
+            Debugger.echoError(queue, "Definition name cannot be null!");
+            return;
+        }
+        ListTag result = buildListTag(rawList, queue);
+        queue.define(key, result);
+        Debugger.report(queue, instruction,
+                "Definition", key,
+                "Value", result.identify(),
+                "Action", ":"
+        );
+    }
+
+    private AbstractTag buildTag(Object raw, ScriptQueue queue) {
+        if (raw instanceof Map<?, ?> m)  return buildMapTag(m, queue);
+        if (raw instanceof List<?> l)    return buildListTag(l, queue);
+        if (raw == null)                 return null;
+
+        String str = raw.toString();
+        CompiledArgument compiled = ScriptCompiler.parseArg(str);
+        AbstractTag evaluated = compiled.evaluate(queue);
+        return evaluated != null ? evaluated : ObjectFetcher.pickObject(str);
+    }
+
+    private MapTag buildMapTag(Map<?, ?> raw, ScriptQueue queue) {
+        MapTag map = new MapTag();
+        for (Map.Entry<?, ?> entry : raw.entrySet()) {
+            String k = entry.getKey().toString();
+            AbstractTag value = buildTag(entry.getValue(), queue);
+            map.putObject(k, value);
+        }
+        return map;
+    }
+
+    private ListTag buildListTag(List<?> raw, ScriptQueue queue) {
+        ListTag list = new ListTag();
+        for (Object item : raw) {
+            AbstractTag tag = buildTag(item, queue);
+            list.addObject(tag);
+        }
+        return list;
     }
 
     private static void applyToMap(@NonNull ScriptQueue queue, @NonNull String[] parts,

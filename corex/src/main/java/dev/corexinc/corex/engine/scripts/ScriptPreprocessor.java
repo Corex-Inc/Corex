@@ -10,23 +10,28 @@ public class ScriptPreprocessor {
         boolean inBlockComment = false;
 
         for (String line : rawLines) {
+
+            line = line.replace("\t", "    ");
+
             if (inBlockComment) {
-                if (line.contains("*/")) {
-                    inBlockComment = false;
-                    line = line.substring(line.indexOf("*/") + 2);
-                } else continue;
+                int endIdx = line.indexOf("*/");
+                if (endIdx == -1) continue;
+                inBlockComment = false;
+                line = line.substring(endIdx + 2);
             }
-            if (line.contains("/*")) {
-                if (line.contains("*/")) line = line.replaceAll("/\\*.*?\\*/", "");
-                else {
-                    inBlockComment = true;
-                    line = line.substring(0, line.indexOf("/*"));
-                }
+
+            line = stripInlineBlockComments(line);
+
+            int blockStart = line.indexOf("/*");
+            if (blockStart != -1) {
+                inBlockComment = true;
+                line = line.substring(0, blockStart);
             }
-            if (line.contains("//")) line = line.substring(0, line.indexOf("//"));
+
+            line = stripLineComment(line);
 
             String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
+            if (trimmed.isEmpty()) continue;
 
             boolean isNewYamlLine = trimmed.startsWith("- ")
                     || trimmed.endsWith(":")
@@ -39,8 +44,55 @@ public class ScriptPreprocessor {
                 currentLine.append(trimmed);
             }
         }
+
         flushLine(result, currentLine, null);
         return result.toString();
+    }
+
+    private static String stripInlineBlockComments(String line) {
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while (i < line.length()) {
+            if (i + 1 < line.length() && line.charAt(i) == '/' && line.charAt(i + 1) == '*') {
+                int end = line.indexOf("*/", i + 2);
+                if (end != -1) {
+                    i = end + 2;
+                } else {
+                    sb.append(line, i, line.length());
+                    break;
+                }
+            } else {
+                sb.append(line.charAt(i));
+                i++;
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String stripLineComment(String line) {
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+
+        for (int i = 0; i < line.length() - 1; i++) {
+            char c = line.charAt(i);
+
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                continue;
+            }
+            if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                continue;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote) {
+                if (c == '/' && line.charAt(i + 1) == '/') {
+                    if (i > 0 && line.charAt(i - 1) == ':') continue;
+                    return line.substring(0, i);
+                }
+            }
+        }
+        return line;
     }
 
     private static void flushLine(StringBuilder result, StringBuilder currentLine, String nextLine) {
@@ -60,7 +112,6 @@ public class ScriptPreprocessor {
                 if (nextLine != null) {
                     int currentIndent = getIndent(line);
                     int nextIndent = getIndent(nextLine);
-
                     if (nextIndent > currentIndent) {
                         hasOffset = true;
                     }
@@ -71,17 +122,16 @@ public class ScriptPreprocessor {
                 } else {
                     result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
                 }
-            }
-            else if ((trimmedContent.startsWith("\"") && trimmedContent.endsWith("\"")) ||
+            } else if ((trimmedContent.startsWith("\"") && trimmedContent.endsWith("\"")) ||
                     (trimmedContent.startsWith("'") && trimmedContent.endsWith("'"))) {
                 result.append(line).append("\n");
-            }
-            else {
+            } else {
                 result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
             }
         } else {
             result.append(line).append("\n");
         }
+
         currentLine.setLength(0);
     }
 
@@ -89,11 +139,8 @@ public class ScriptPreprocessor {
         int count = 0;
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == ' ' || c == '\t') {
-                count++;
-            } else {
-                break;
-            }
+            if (c == ' ' || c == '\t') count++;
+            else break;
         }
         return count;
     }
