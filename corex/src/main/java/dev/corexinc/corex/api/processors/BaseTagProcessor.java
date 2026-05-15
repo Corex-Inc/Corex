@@ -3,7 +3,7 @@ package dev.corexinc.corex.api.processors;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.TagManager;
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,7 +41,7 @@ import java.util.function.Function;
  *
  * @since 1.0.0
  */
-@ApiStatus.AvailableSince("1.0.0")
+@AvailableSince("1.0.0")
 public final class BaseTagProcessor {
 
     private BaseTagProcessor() {
@@ -54,7 +54,7 @@ public final class BaseTagProcessor {
      * @param name     the name of the base tag. Must be unique.
      * @param function the handler for the tag.
      */
-    @ApiStatus.AvailableSince("1.0.0")
+    @AvailableSince("1.0.0")
     public static void registerBaseTag(
             @NotNull final String name,
             @NotNull final Function<@NotNull Attribute, @Nullable AbstractTag> function

@@ -111,7 +111,5 @@ public interface AbstractCommand {
         return false;
     }
 
-    default void report(ScriptQueue queue, Instruction instruction, Map<String, Object> report) {
-        // По умолчанию пусто - дебаггер выведет просто сырые аргументы
-    }
+    default void report(ScriptQueue queue, Instruction instruction, Map<String, Object> report) {}
 }
