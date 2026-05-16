@@ -90,7 +90,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
     }
 
     public Optional<Player> getPlayer() {
-        return Optional.of(player);
+        return Optional.ofNullable(player);
     }
 
     @Override
@@ -104,7 +104,9 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
     }
 
     @Override
-    public boolean isOnline() { return true; }
+    public boolean isOnline() {
+        return player != null;
+    }
 
     @Override
     public @NonNull String getPrefix() { return PREFIX; }

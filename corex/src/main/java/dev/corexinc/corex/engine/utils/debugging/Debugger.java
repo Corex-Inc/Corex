@@ -123,9 +123,15 @@ public class Debugger {
     public static void error(String message, Throwable cause) {
         if (mode == Mode.NONE) return;
         CorexLogger.error(message.replace("§", "&"));
-        if (cause != null)
+        Throwable unwrapped = cause;
+        while (unwrapped != null) {
             CorexLogger.error("<dark_red>Caused by: <red>"
-                    + cause.getClass().getSimpleName() + ": " + cause.getMessage());
+                    + unwrapped.getClass().getSimpleName() + ": " + unwrapped.getMessage());
+            StackTraceElement[] trace = unwrapped.getStackTrace();
+            for (int i = 0; i < Math.min(5, trace.length); i++)
+                CorexLogger.error("  <dark_red>at <red>" + trace[i]);
+            unwrapped = unwrapped.getCause();
+        }
     }
 
     public static void echoError(ScriptQueue queue, String message) {

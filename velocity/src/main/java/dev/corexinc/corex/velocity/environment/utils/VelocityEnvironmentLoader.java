@@ -14,6 +14,8 @@ import dev.corexinc.corex.environment.containers.TaskContainer;
 import dev.corexinc.corex.environment.formatters.ColorFormatter;
 // Tags
 import dev.corexinc.corex.environment.tags.core.*;
+import dev.corexinc.corex.velocity.environment.tags.core.ServerTag;
+import dev.corexinc.corex.velocity.environment.tags.core.VelocityTag;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
 
 public class VelocityEnvironmentLoader {
@@ -72,6 +74,8 @@ public class VelocityEnvironmentLoader {
                 // Tags
                 ElementTag.class,
                 PlayerTag.class,
+                ServerTag.class,
+                VelocityTag.class,
                 ListTag.class,
                 MapTag.class,
                 DurationTag.class,
