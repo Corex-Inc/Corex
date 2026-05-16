@@ -1,6 +1,5 @@
 package dev.corexinc.corex.environment.commands.core;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.commands.DataBlockCommand;
 import dev.corexinc.corex.api.data.actions.AbstractDataAction;
@@ -9,6 +8,7 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -152,7 +152,7 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
         String keyPath = rawArg.substring(0, colonIndex);
         String actionStr = rawArg.substring(colonIndex + 1);
 
-        AbstractDataAction action = Corex.getInstance().getRegistry().findAction(actionStr);
+        AbstractDataAction action = ScriptManager.getRegistry().findAction(actionStr);
         if (action == null) {
             Debugger.echoError(queue, "DataAction cannot be null!");
             Debugger.echoError(queue, "It seems DataAction is <red>null</red>.");

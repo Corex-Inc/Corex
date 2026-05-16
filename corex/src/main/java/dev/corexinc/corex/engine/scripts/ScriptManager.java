@@ -135,6 +135,8 @@ public class ScriptManager {
     public static void setDataFolder(Path path) { dataFolder = path; }
     public static void setRegistry(CorexRegistry r) { registry = r; }
 
+    public static CorexRegistry getRegistry() { return registry; }
+
     public static Instruction[] compileBlock(List<?> rawList) {
         List<Instruction> bytecode = new ArrayList<>();
 

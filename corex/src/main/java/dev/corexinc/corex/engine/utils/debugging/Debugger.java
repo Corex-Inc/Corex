@@ -1,6 +1,5 @@
 package dev.corexinc.corex.engine.utils.debugging;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -33,7 +32,6 @@ public class Debugger {
     public static Mode getMode() { return mode; }
     public static void setMode(Mode value) { mode = value; }
 
-    // Debugger.java — заменить метод
     public static void updateDebugMode(String raw) {
         Mode debugMode;
         try {

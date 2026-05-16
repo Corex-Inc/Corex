@@ -1,6 +1,5 @@
 package dev.corexinc.corex.engine.compiler;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -10,6 +9,7 @@ import dev.corexinc.corex.engine.compiler.args.PreSlicedDynamicArg;
 import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.compiler.math.MathCompiler;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 
@@ -39,7 +39,7 @@ public class ScriptCompiler {
             cmdName = cmdName.substring(1);
         }
 
-        CommandMetadata meta = Corex.getInstance().getRegistry().getScriptCommands().getMetadata(cmdName);
+        CommandMetadata meta = ScriptManager.getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) {
             CorexLogger.error("SCRIPT ERROR: Unknown script command '<yellow>" + cmdName + "</yellow>'!");
@@ -58,7 +58,7 @@ public class ScriptCompiler {
             if (colonIndex > 0) {
                 String potentialPrefix = token.substring(0, colonIndex);
 
-                AbstractGlobalFlag gFlag = Corex.getInstance().getRegistry().getGlobalFlag(potentialPrefix);
+                AbstractGlobalFlag gFlag = ScriptManager.getRegistry().getGlobalFlag(potentialPrefix);
                 if (gFlag != null) {
                     gFlags.put(gFlag, parseArg(token.substring(colonIndex + 1)));
                     continue;
@@ -164,7 +164,7 @@ public class ScriptCompiler {
         TagNode[] nodes = parseTagNodes(mainTag);
 
         if (nodes.length == 1 && fallback == null) {
-            var formats = Corex.getInstance().getRegistry().getFormats();
+            var formats = ScriptManager.getRegistry().getFormats();
             if (formats.isFormat(nodes[0].name())) {
                 if (nodes[0].param() == null || nodes[0].param() instanceof StaticArg) {
                     Attribute mockAttr = new Attribute(nodes, null);

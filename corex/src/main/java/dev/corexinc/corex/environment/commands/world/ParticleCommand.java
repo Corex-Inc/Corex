@@ -269,13 +269,13 @@ public class ParticleCommand implements AbstractCommand {
         try {
             return switch (type.getSimpleName()) {
                 case "DustOptions" -> {
-                    Color color = new ColorTag(getMapString(map, "color", "#FF0000")).asBukkitColor();
+                    Color color = toBukkit(new ColorTag(getMapString(map, "color", "#FF0000")));
                     float size = Float.parseFloat(getMapString(map, "size", "1.0"));
                     yield new Particle.DustOptions(color, size);
                 }
                 case "DustTransition" -> {
-                    Color from = new ColorTag(getMapString(map, "from", "#FF0000")).asBukkitColor();
-                    Color to = new ColorTag(getMapString(map, "to", "#0000FF")).asBukkitColor();
+                    Color from = toBukkit(new ColorTag(getMapString(map, "from", "#FF0000")));
+                    Color to = toBukkit(new ColorTag(getMapString(map, "to", "#0000FF")));
                     float size = Float.parseFloat(getMapString(map, "size", "1.0"));
                     yield new Particle.DustTransition(from, to, size);
                 }
@@ -287,7 +287,7 @@ public class ParticleCommand implements AbstractCommand {
                     Material mat = new MaterialTag(getMapString(map, "item", "STICK")).getMaterial();
                     yield new ItemStack(mat != null ? mat : Material.STICK);
                 }
-                case "Color" -> new ColorTag(getMapString(map, "color", "#FF0000")).asBukkitColor();
+                case "Color" -> toBukkit(new ColorTag(getMapString(map, "color", "#FF0000")));
                 case "Float" -> Float.parseFloat(getMapString(map, "radians", "0.0"));
                 case "Integer" -> (int) new DurationTag(getMapString(map, "duration", "1s")).getTicks();
                 case "Vibration" -> {
@@ -328,5 +328,9 @@ public class ParticleCommand implements AbstractCommand {
     private String getMapString(MapTag map, String key, String def) {
         AbstractTag tag = map.getObject(key);
         return tag != null ? tag.identify() : def;
+    }
+
+    private static Color toBukkit(ColorTag c) {
+        return Color.fromARGB(c.alpha, c.red, c.green, c.blue);
     }
 }

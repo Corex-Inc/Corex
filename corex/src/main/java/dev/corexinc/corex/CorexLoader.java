@@ -20,7 +20,7 @@ public class CorexLoader implements PluginLoader {
         resolver.addDependency(new Dependency(new DefaultArtifact("org.xerial:sqlite-jdbc:3.45.1.0"), null));
 
         resolver.addRepository(new RemoteRepository.Builder(
-                "central", "default", MavenLibraryResolver.MAVEN_CENTRAL_DEFAULT_MIRROR
+                "central", "default", "https://maven-central.storage-download.googleapis.com/maven2"
         ).build());
 
         builder.addLibrary(resolver);

@@ -4,6 +4,7 @@ import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.engine.utils.CorexSerializer;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
@@ -22,7 +23,7 @@ public class ComponentTag implements AbstractTag {
     }
 
     public @NonNull String identify() {
-        return Corex.SERIALIZER.serialize(component);
+        return CorexSerializer.LEGACY.serialize(component);
     }
 
     @Override public @NonNull String getPrefix() { return "component"; }

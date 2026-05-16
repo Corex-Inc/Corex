@@ -23,7 +23,6 @@ import dev.corexinc.corex.environment.utils.scripts.WebSocketManager;
 import dev.corexinc.corex.environment.utils.commands.impl.RunsCommand;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,12 +39,6 @@ public class Corex extends JavaPlugin {
     private static boolean IS_CANVAS = false;
     private static boolean IS_TEST   = false;
 
-    public static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-            .character('§')
-            .hexColors()
-            .useUnusualXRepeatedCharacterHexFormat()
-            .build();
-
     @Override
     public void onEnable() {
         SchedulerAdapter.set(new BukkitSchedulerAdapter());
@@ -56,7 +49,7 @@ public class Corex extends JavaPlugin {
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
         ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
 
-        getConfig().options().copyDefaults();
+        getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         FlagManager.init();
         Debugger.updateDebugMode(getConfig().getString("logger.debug-mode", "default"));

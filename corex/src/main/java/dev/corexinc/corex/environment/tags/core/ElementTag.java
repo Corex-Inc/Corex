@@ -2,11 +2,11 @@ package dev.corexinc.corex.environment.tags.core;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.scripts.JsonHelper;
 import net.kyori.adventure.text.Component;
@@ -60,7 +60,7 @@ public class ElementTag implements AbstractTag {
 
     public ElementTag(Component component) {
         this.prefix = "el";
-        this.element = Corex.SERIALIZER.serialize(component);
+        this.element = CorexSerializer.LEGACY.serialize(component);
     }
 
     public ElementTag(boolean bool) {
@@ -781,6 +781,6 @@ public class ElementTag implements AbstractTag {
     @Override
     public @NonNull Component asComponent() {
         if (identify().isEmpty()) return Component.empty();
-        return Corex.SERIALIZER.deserialize(identify());
+        return CorexSerializer.LEGACY.deserialize(identify());
     }
 }

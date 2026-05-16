@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.TagNode;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.registry.FormatRegistry;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.tags.TagManager;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -23,7 +24,7 @@ public class PreSlicedDynamicArg implements CompiledArgument {
         this.nodes = nodes;
         this.fallback = fallback;
         this.rawFullTag = rawFullTag;
-        this.formats = Corex.getInstance().getRegistry().getFormats();
+        this.formats = ScriptManager.getRegistry().getFormats();
     }
 
     @Override
@@ -65,8 +66,8 @@ public class PreSlicedDynamicArg implements CompiledArgument {
             String escapedTag = rawFullTag.replace("<", "\\<");
 
             Debugger.echoError(queue, "Tag-base '<red>" + escapedName + "</red>' returned null.");
-            Debugger.echoError(queue, "Tag \\<<yellow>" + escapedTag + "</yellow>\\> is invalid!");
-            Debugger.echoError(queue, "Unfilled or unrecognized sub-tag(s) '<red>" + escapedName + "</red>' for tag \\<<aqua>" + escapedTag + "</aqua>\\>!");
+            Debugger.echoError(queue, "Tag \\<<yellow>" + escapedTag + "</yellow>> is invalid!");
+            Debugger.echoError(queue, "Unfilled or unrecognized sub-tag(s) '<red>" + escapedName + "</red>' for tag \\<<aqua>" + escapedTag + "</aqua>>!");
 
             return new ElementTag(rawFullTag);
         }

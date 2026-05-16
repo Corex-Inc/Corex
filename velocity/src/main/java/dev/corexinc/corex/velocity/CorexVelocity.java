@@ -12,12 +12,16 @@ import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
+import dev.corexinc.corex.environment.utils.ServerVersion;
+import dev.corexinc.corex.velocity.environment.utils.ConfigManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.utils.scripts.EnvManager;
-import dev.corexinc.corex.velocity.utils.VelocitySchedulerAdapter;
+import dev.corexinc.corex.velocity.environment.utils.VelocityEnvironmentLoader;
+import dev.corexinc.corex.velocity.environment.utils.VelocitySchedulerAdapter;
+import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunCommand;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 @Plugin(
@@ -31,33 +35,50 @@ public class CorexVelocity {
 
     private static CorexVelocity instance;
     private final ProxyServer server;
-    private final Path dataDirectory;
+    private final Path dataFolder;
+    private final CorexVelocityLoader loader;
     private CorexRegistry registry;
+    private ConfigManager config;
 
     @Inject
     public CorexVelocity(ProxyServer server, @DataDirectory Path dataDirectory) {
         this.server = server;
-        this.dataDirectory = dataDirectory;
+        this.dataFolder = dataDirectory;
+        this.loader = new CorexVelocityLoader(server.getPluginManager(), this, dataFolder);
+
+        CorexLogger.setConsole(server.getConsoleCommandSource());
+        try {
+            this.loader.download();
+        } catch (IOException e) {
+            CorexLogger.error("Failed to download libraries: " + e.getMessage());
+        }
     }
 
     @Subscribe
     public void onInit(ProxyInitializeEvent event) {
         instance = this;
 
-        CorexLogger.setConsole(server.getConsoleCommandSource());
         SchedulerAdapter.set(new VelocitySchedulerAdapter(server, this));
 
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
+        ServerVersion.setCurrent(server.getVersion().getVersion().split("-")[0]);
+
+        loader.inject();
+
+        this.config = new ConfigManager(dataFolder, "config.yml");
+        this.config.load();
 
         FlagManager.init();
-        Debugger.updateDebugMode("ALL");
+        Debugger.updateDebugMode(config.getString("logger.debug-mode", "default"));
 
         this.registry = new CorexRegistry();
         VelocityEnvironmentLoader.registerDefaults(this.registry);
 
-        ScriptManager.setDataFolder(dataDirectory);
+        ScriptManager.setDataFolder(dataFolder);
         ScriptManager.setRegistry(registry);
         ScriptManager.loadScripts();
+
+        registerCommands();
     }
 
     @Subscribe
@@ -66,9 +87,18 @@ public class CorexVelocity {
         DatabaseManager.closeAll();
     }
 
+    public void registerCommands() {
+        server.getCommandManager().register(
+                server.getCommandManager().metaBuilder("vrun")
+                        .plugin(this)
+                        .build(),
+                new VRunCommand()
+        );
+    }
+
     public static CorexVelocity getInstance() { return instance; }
     public CorexRegistry getRegistry() { return registry; }
     public ProxyServer getServer() { return server; }
-    public Path getDataDirectory() { return dataDirectory; }
-
+    public Path getDataFolder() { return dataFolder; }
+    public ConfigManager getConfig() { return config; }
 }

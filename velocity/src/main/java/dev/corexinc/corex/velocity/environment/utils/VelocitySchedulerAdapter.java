@@ -1,4 +1,4 @@
-package dev.corexinc.corex.velocity.utils;
+package dev.corexinc.corex.velocity.environment.utils;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.corexinc.corex.engine.utils.Position;
@@ -17,8 +17,6 @@ public class VelocitySchedulerAdapter extends SchedulerAdapter {
         this.server = server;
         this.plugin = plugin;
     }
-
-    // ── Tick-based (SchedulerAdapter contract) ────────────────────────────────
 
     @Override
     public void run(Runnable task) {

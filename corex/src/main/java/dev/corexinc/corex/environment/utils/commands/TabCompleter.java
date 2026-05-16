@@ -1,14 +1,13 @@
 package dev.corexinc.corex.environment.utils.commands;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
 import dev.corexinc.corex.engine.registry.ScriptCommandRegistry;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.tags.TagManager;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -29,10 +28,16 @@ public class TabCompleter {
 
         if (trailingSpace) tokens.add("");
         if (tokens.isEmpty()) return filterCommands("");
-        if (tokens.size() == 1) return filterCommands(tokens.getFirst());
+        if (tokens.size() == 1) {
+            String first = tokens.getFirst();
+            CommandMetadata exactMeta = ScriptManager.getRegistry().getScriptCommands().getMetadata(first.toLowerCase());
+            if (exactMeta == null) return filterCommands(first);
+            tokens.add("");
+            rawToken = "";
+        }
 
         String cmdName = tokens.getFirst().toLowerCase();
-        CommandMetadata meta = Corex.getInstance().getRegistry().getScriptCommands().getMetadata(cmdName);
+        CommandMetadata meta = ScriptManager.getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) return new ArrayList<>();
 
@@ -49,7 +54,7 @@ public class TabCompleter {
                     if (cleanPrefix.toLowerCase().startsWith(rawToken.toLowerCase())) {
                         suggestions.add(cleanPrefix);
                     }
-                } else if (!clean.startsWith("<") && !clean.contains("|")) {
+                } else if (!token.contains("<") && !clean.contains("|")) {
                     if (clean.contains("/")) {
                         for (String option : clean.split("/")) {
                             if (option.toLowerCase().startsWith(rawToken.toLowerCase())) {
@@ -64,7 +69,7 @@ public class TabCompleter {
                 }
             }
 
-            for (String gFlag : Corex.getInstance().getRegistry().getGlobalFlagsNames()) {
+            for (String gFlag : ScriptManager.getRegistry().getGlobalFlagsNames()) {
                 String prefix = gFlag + ":";
                 if (prefix.toLowerCase().startsWith(rawToken.toLowerCase())) {
                     suggestions.add(prefix);
@@ -79,7 +84,7 @@ public class TabCompleter {
 
             int lastDot = tagContent.lastIndexOf('.');
             if (lastDot == -1) {
-                for (String fmt : Corex.getInstance().getRegistry().getFormats().getAllFormatNames()) {
+                for (String fmt : ScriptManager.getRegistry().getFormats().getAllFormatNames()) {
                     if (fmt.toLowerCase().startsWith(tagContent.toLowerCase())) suggestions.add(baseToken + fmt);
                 }
                 for (String baseTag : TagManager.getBaseTagNames()) {
@@ -101,7 +106,7 @@ public class TabCompleter {
         return suggestions;
     }
 
-    private static List<String> getDeepTagSuggestions(String previousParts) {
+    public static List<String> getDeepTagSuggestions(String previousParts) {
         List<String> suggestions = new ArrayList<>();
         String[] parts = previousParts.split("\\.");
         if (parts.length == 0) return suggestions;
@@ -112,12 +117,10 @@ public class TabCompleter {
         List<Class<? extends AbstractTag>> currentClasses = new ArrayList<>();
 
         if (rawBase.startsWith("[")) {
-            currentClasses.addAll(Corex.getInstance().getRegistry().getRegisteredTagClasses());
-
+            currentClasses.addAll(ScriptManager.getRegistry().getRegisteredTagClasses());
             currentClasses.add(ElementTag.class);
             currentClasses.add(ComponentTag.class);
-            currentClasses.add(PlayerTag.class);
-        } else if (Corex.getInstance().getRegistry().getFormats().isFormat(baseName)) {
+        } else if (ScriptManager.getRegistry().getFormats().isFormat(baseName)) {
             Class<? extends AbstractTag> elementClass = getTagClassByName("element");
             if (elementClass != null) currentClasses.add(elementClass);
         } else {
@@ -162,7 +165,7 @@ public class TabCompleter {
             search = search.substring(0, search.indexOf('@'));
         }
 
-        for (Class<? extends AbstractTag> clazz : Corex.getInstance().getRegistry().getRegisteredTagClasses()) {
+        for (Class<? extends AbstractTag> clazz : ScriptManager.getRegistry().getRegisteredTagClasses()) {
             String className = clazz.getSimpleName().toLowerCase();
             if (className.replace("tag", "").equals(search) || className.startsWith(search)) {
                 return clazz;
@@ -170,7 +173,6 @@ public class TabCompleter {
         }
 
         return switch (search) {
-            case "player", "p" -> PlayerTag.class;
             case "element", "el", "format" -> ElementTag.class;
             case "component", "c" -> ComponentTag.class;
             default -> null;

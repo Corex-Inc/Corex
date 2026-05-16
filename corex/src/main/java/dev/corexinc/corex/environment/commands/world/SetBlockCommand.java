@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 /* @doc command
  *
  * @Name SetBlock
- * @Syntax setblock [<location>|.../<area>] [<material>|...] (no_physics) (naturally:<tool>) (delayed) (max_delay_ms:<#>) (chance:<percent>|...)
+ * @Syntax setblock [<location>|.../<area>] [<material>|...] (no_physics) (naturally:<tool>) (delayed) (maxDelayMs:<#>) (chance:<percent>|...)
  * @RequiredArgs 2
  * @MaxArgs 6
  * @ShortDescription Sets blocks in the world.
@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  * Use 'air' as the material alongside this to simply break blocks with drops.
  *
  * Specify (delayed) to spread block modifications across ticks, avoiding lag on large regions.
- * Optionally specify (max_delay_ms:<#>) to control how many milliseconds are spent per tick (defaults to 50).
+ * Optionally specify (maxDelayMs:<#>) to control how many milliseconds are spent per tick (defaults to 50).
  *
  * Specify (chance:<percent>|...) to assign a probability to each material.
  * Percentages correspond positionally to the material list.
@@ -77,7 +77,7 @@ import java.util.stream.Collectors;
  *
  * @Usage
  * // Slowly fill a large area with glass, spending at most 30ms per tick.
- * - ~setblock <[myCuboid]> glass delayed max_delay_ms:30
+ * - ~setblock <[myCuboid]> glass delayed maxDelayMs:30
  */
 public class SetBlockCommand implements AbstractCommand {
 
@@ -98,7 +98,7 @@ public class SetBlockCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<location>|.../<area>] [<material>|...] (no_physics) (naturally:<tool>) (delayed) (max_delay_ms:<#>) (chance:<percent>|...)";
+        return "[<location>|.../<area>] [<material>|...] (no_physics) (naturally:<tool>) (delayed) (maxDelayMs:<#>) (chance:<percent>|...)";
     }
 
     @Override
@@ -126,7 +126,7 @@ public class SetBlockCommand implements AbstractCommand {
         }
 
         String naturallyRaw  = instruction.getPrefix("naturally", queue);
-        String maxDelayMsRaw = instruction.getPrefix("max_delay_ms", queue);
+        String maxDelayMsRaw = instruction.getPrefix("maxDelayMs", queue);
         String chanceRaw     = instruction.getPrefix("chance", queue);
         boolean noPhysics    = instruction.getPrefix("no_physics", queue) != null;
         boolean delayed      = instruction.getPrefix("delayed", queue) != null;
@@ -146,7 +146,7 @@ public class SetBlockCommand implements AbstractCommand {
             try {
                 maxDelayMs = Integer.parseInt(maxDelayMsRaw);
             } catch (NumberFormatException ignored) {
-                Debugger.echoError(queue, "Invalid max_delay_ms '" + maxDelayMsRaw + "', defaulting to " + DEFAULT_MAX_DELAY_MS + ".");
+                Debugger.echoError(queue, "Invalid maxDelayMs '" + maxDelayMsRaw + "', defaulting to " + DEFAULT_MAX_DELAY_MS + ".");
             }
         }
 

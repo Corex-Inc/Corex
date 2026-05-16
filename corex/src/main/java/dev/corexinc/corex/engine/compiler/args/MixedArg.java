@@ -1,9 +1,9 @@
 package dev.corexinc.corex.engine.compiler.args;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -27,7 +27,7 @@ public class MixedArg implements CompiledArgument {
             if (tag instanceof ComponentTag) {
                 if (!textBuffer.isEmpty()) {
                     String flushedText = textBuffer.toString();
-                    builder.append(Corex.SERIALIZER.deserialize(flushedText));
+                    builder.append(CorexSerializer.LEGACY.deserialize(flushedText));
 
                     lastColors = extractLastColors(flushedText);
                     textBuffer.setLength(0);
@@ -44,7 +44,7 @@ public class MixedArg implements CompiledArgument {
         if (!textBuffer.isEmpty()) {
             String remaining = textBuffer.toString();
             if (!remaining.equals(lastColors)) {
-                builder.append(Corex.SERIALIZER.deserialize(remaining));
+                builder.append(CorexSerializer.LEGACY.deserialize(remaining));
             }
         }
 
