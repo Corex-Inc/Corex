@@ -123,6 +123,9 @@ public class EnvironmentLoader {
                 PlaySoundCommand.class,
                 DamageCommand.class,
                 LookCommand.class,
+                MountCommand.class,
+                LeashCommand.class,
+                KillCommand.class,
 
                 // Tags
                 ElementTag.class,
