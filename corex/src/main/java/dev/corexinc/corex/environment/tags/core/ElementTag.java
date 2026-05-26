@@ -742,6 +742,107 @@ public class ElementTag implements AbstractTag {
             }
             return null;
         }).test("5");
+
+        /* @doc tag
+         *
+         * @Name numberToHex
+         * @RawName <ElementTag.numberToHex>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Converts an integer to a hexadecimal string.
+         * @Usage
+         * // Narrates "ff"
+         * - narrate <element[255].numberToHex>
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "numberToHex", (attr, obj) -> new ElementTag(Integer.toHexString(obj.asInt())));
+
+        /* @doc tag
+         *
+         * @Name max[]
+         * @RawName <ElementTag.max[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the greater of the element and the given number.
+         * For example, <element[-5].max[0]> returns 0.
+         *
+         * @Implements ElementTag.max
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "max", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ElementTag param = new ElementTag(attr.getParam());
+            if (!obj.isDouble() || !param.isDouble()) return null;
+            return new ElementTag(Math.max(obj.asDouble(), param.asDouble()));
+        }).test("5");
+
+        /* @doc tag
+         *
+         * @Name min[]
+         * @RawName <ElementTag.min[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the lesser of the element and the given number.
+         * For example, <element[360].min[360]> returns 360.
+         *
+         * @Implements ElementTag.min
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "min", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ElementTag param = new ElementTag(attr.getParam());
+            if (!obj.isDouble() || !param.isDouble()) return null;
+            return new ElementTag(Math.min(obj.asDouble(), param.asDouble()));
+        }).test("5");
+
+        /* @doc tag
+         *
+         * @Name round
+         * @RawName <ElementTag.round>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the element rounded to the nearest integer.
+         * For example, <element[3.7].round> returns 4.
+         *
+         * @Implements ElementTag.round
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "round", (attr, obj) ->
+                new ElementTag(Math.round(obj.asDouble())));
+
+        /* @doc tag
+         *
+         * @Name padLeft[].with[]
+         * @RawName <ElementTag.padLeft[<#>].with[<element>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @ArgRequired
+         * @Description
+         * Left-pads the element to the specified total length using the given fill character or string.
+         * If the element is already at or beyond the target length, it is returned unchanged.
+         * The optional .with[] segment specifies the pad character (defaults to a space).
+         * For example, <element[ff].padLeft[4].with[0]> returns "00ff".
+         *
+         * @Implements ElementTag.pad_left
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "padLeft", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            int targetLength = new ElementTag(attr.getParam()).asInt();
+            String fill = " ";
+            if (attr.matchesNext("with") && attr.hasNextParam()) {
+                fill = attr.getNextParam();
+                attr.fulfill(1);
+            }
+            if (fill.isEmpty()) fill = " ";
+            String value = obj.asString();
+            if (value.length() >= targetLength) return new ElementTag(value);
+            String pad = fill.repeat((targetLength - value.length() + fill.length() - 1) / fill.length());
+            return new ElementTag(pad.substring(0, targetLength - value.length()) + value);
+        }).test("2", "with[0]");
     }
 
     @Override

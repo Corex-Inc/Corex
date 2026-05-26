@@ -340,6 +340,28 @@ public class ColorTag implements AbstractTag {
             int luminance = clamp((int) (obj.red * 0.2126 + obj.green * 0.7152 + obj.blue * 0.0722));
             return new ColorTag(luminance, luminance, luminance, obj.alpha);
         });
+
+        /* @doc tag
+         *
+         * @Name argbInteger
+         * @RawName <ColorTag.argbInteger>
+         * @Object ColorTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Returns color as ARGB integer.
+         * @Usage
+         * // Narrates "-65536"
+         * - narrate <color[255,0,0].argbInteger>
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "argbInteger", (attr, obj) -> {
+            int argb = ((obj.alpha & 0xFF) << 24)
+                    | ((obj.red & 0xFF) << 16)
+                    | ((obj.green & 0xFF) << 8)
+                    | (obj.blue & 0xFF);
+
+            return new ElementTag(argb);
+        });
     }
 
     public ColorTag(int red, int green, int blue) {
