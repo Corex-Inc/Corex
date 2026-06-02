@@ -6,10 +6,9 @@ import org.jspecify.annotations.Nullable;
 import java.util.Map;
 
 public record CommandArgumentSpec(
-        @NonNull  String name,
-        @NonNull  String typeName,
-        boolean optional,
-        @NonNull  Map<String, Object> options
+        @NonNull String name,
+        @NonNull String typeName,
+        @NonNull Map<String, Object> options
 ) {
 
     public int intOption(@NonNull String key, int defaultValue) {

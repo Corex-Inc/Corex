@@ -11,11 +11,7 @@ import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -90,7 +86,7 @@ public class NarrateCommand implements AbstractCommand {
 
     private Component buildComponent(@NonNull AbstractTag text) {
         Component component = text.asComponent();
-        return component != null ? component : Component.text(text.identify());
+        return component;
     }
 
     private void sendToTargets(@NonNull ScriptQueue queue, @NonNull Instruction entry,

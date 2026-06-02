@@ -5,5 +5,7 @@ import org.jspecify.annotations.NonNull;
 
 public interface CommandAdapter {
     void injectCommand(@NonNull CommandContainer container);
+    void removeCommand(@NonNull String name);
+    boolean commandExists(@NonNull String name);
     void syncCommandTree();
 }

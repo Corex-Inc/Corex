@@ -1,15 +1,14 @@
 package dev.corexinc.corex.environment.containers.commands;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -29,39 +28,47 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class CommandManager {
 
     public static final CommandManager INSTANCE = new CommandManager();
 
-    // Allowed-check results are stable for the duration of a player session.
-    // 5 s avoids hammering the script engine on every tab press / command dispatch.
     private static final long ALLOWED_CACHE_TTL_MS = 5_000L;
-
-    // Tab-complete scripts run on every keystroke. Cache the suggestion list for a
-    // short window so only the *filter* step (startsWith) repeats, not the queue.
     private static final long TAB_CACHE_TTL_MS = 250L;
 
     private volatile Collection<CommandContainer> containers = List.of();
+    private volatile Set<String> registeredNames = Set.of();
     private final Map<String, CachedAllowedEntry> allowedCache = new ConcurrentHashMap<>();
     private final Map<String, CachedTabEntry>     tabCache     = new ConcurrentHashMap<>();
 
     private CommandManager() {}
 
     public void syncAll(@NonNull Commands registrar) {
-        NMSHandler.get().get(CommandAdapter.class);
+        CommandAdapter adapter = NMSHandler.get().get(CommandAdapter.class);
+        CommandTreeBuilder.Platform<CommandSourceStack> platform = new PaperPlatform();
+        Set<String> oldNames = registeredNames;
+        Set<String> newNames = new HashSet<>();
+
         for (CommandContainer container : containers) {
+            if (!canRegister(container, oldNames, adapter)) continue;
             try {
-                registerCommand(registrar, container);
+                LiteralArgumentBuilder<CommandSourceStack> root = CommandTreeBuilder.build(container, platform);
+                registrar.register(root.build(), container.getDescription(), container.getAliases());
+                newNames.addAll(container.getAllAliases());
             } catch (Exception e) {
                 Debugger.error("Failed to register command '" + container.getName() + "': " + e.getMessage());
             }
         }
+        registeredNames = newNames;
     }
 
     public void updateContainers(@NonNull Collection<CommandContainer> newContainers) {
@@ -70,296 +77,20 @@ public final class CommandManager {
         tabCache.clear();
     }
 
-    private void registerCommand(@NonNull Commands registrar, @NonNull CommandContainer container) {
-        LiteralArgumentBuilder<CommandSourceStack> root =
-                Commands.literal(container.getName())
-                        .requires(source -> checkAllowed(source, container));
-
-        List<CommandArgumentSpec> specs = container.getArgumentSpecs();
-
-        if (specs.isEmpty()) {
-            root.executes(ctx -> executeContainer(ctx, container));
-            root.then(buildCatchAllArgument(container));
-        } else {
-            if (specs.getFirst().optional()) {
-                root.executes(ctx -> executeContainer(ctx, container));
-            }
-            root.then(buildArgumentChain(specs, 0, container));
-        }
-
-        registrar.register(root.build(), container.getDescription(), container.getAliases());
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> buildArgumentChain(
-            @NonNull List<CommandArgumentSpec> specs,
-            int index,
-            @NonNull CommandContainer container) {
-
-        CommandArgumentSpec spec  = specs.get(index);
-        ArgumentTypeRegistry.Entry entry = ArgumentTypeRegistry.get(spec.typeName());
-
-        if (entry == null) throw new IllegalStateException(
-                "Unknown argument type '" + spec.typeName() + "' in command '" +
-                        container.getName() + "' argument '" + spec.name() + "'");
-
-        RequiredArgumentBuilder<CommandSourceStack, ?> node =
-                Commands.argument(spec.name(), entry.adapter().buildType(spec));
-
-        boolean isLast         = index == specs.size() - 1;
-        boolean nextIsOptional = !isLast && specs.get(index + 1).optional();
-
-        if (isLast || nextIsOptional) {
-            node.executes(ctx -> executeContainer(ctx, container));
-        }
-
-        if (container.hasSection(CommandContainer.SECTION_TAB_COMPLETE)) {
-            node.suggests((ctx, builder) -> buildTabCompletions(ctx, builder, container));
-        }
-
-        if (!isLast) {
-            node.then(buildArgumentChain(specs, index + 1, container));
-        }
-
-        return node;
-    }
-
-    private @NonNull RequiredArgumentBuilder<CommandSourceStack, String> buildCatchAllArgument(
-            @NonNull CommandContainer container) {
-
-        RequiredArgumentBuilder<CommandSourceStack, String> node =
-                Commands.argument("...", StringArgumentType.greedyString())
-                        .executes(ctx -> executeContainer(ctx, container));
-
-        if (container.hasSection(CommandContainer.SECTION_TAB_COMPLETE)) {
-            node.suggests((ctx, builder) -> buildTabCompletions(ctx, builder, container));
-        }
-
-        return node;
-    }
-
-    private int executeContainer(
-            @NonNull CommandContext<CommandSourceStack> ctx,
-            @NonNull CommandContainer container) {
-
-        CommandContainer live = resolveContainer(container.getName());
-        if (live == null) live = container;
-
-        if (!checkAllowed(ctx.getSource(), live)) return Command.SINGLE_SUCCESS;
-
-        if (!live.hasSection(CommandContainer.SECTION_SCRIPT)) return Command.SINGLE_SUCCESS;
-
-        String rawArgs = extractRawArgs(ctx.getInput());
-
-        ContextTag context = new ContextTag()
-                .put("sender",  resolveSender(ctx.getSource().getSender()))
-                .put("alias",   new ElementTag(resolveAlias(ctx.getInput(), live)))
-                .put("aliases", buildAliasesList(live))
-                .put("rawArgs", new ElementTag(rawArgs))
-                .put("args",    live.getArgumentSpecs().isEmpty()
-                        ? parseRawArgs(rawArgs)
-                        : resolveBrigadierArgs(ctx, live));
-
-        ScriptQueue queue = live.createQueue(CommandContainer.SECTION_SCRIPT, context);
-        if (queue == null) return Command.SINGLE_SUCCESS;
-
-        queue.start();
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private @NonNull MapTag resolveBrigadierArgs(
-            @NonNull CommandContext<CommandSourceStack> ctx,
-            @NonNull CommandContainer container) {
-
-        MapTag args = new MapTag();
-        for (CommandArgumentSpec spec : container.getArgumentSpecs()) {
-            ArgumentTypeRegistry.Entry entry = ArgumentTypeRegistry.get(spec.typeName());
-            if (entry == null) continue;
-            try {
-                AbstractTag value = entry.adapter().resolveValue(ctx, spec);
-                if (value != null) args.putObject(spec.name(), value);
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        return args;
-    }
-
-    private @NonNull CompletableFuture<Suggestions> buildTabCompletions(
-            @NonNull CommandContext<CommandSourceStack> ctx,
-            @NonNull SuggestionsBuilder builder,
-            @NonNull CommandContainer container) {
-
-        CommandContainer live = resolveContainer(container.getName());
-        if (live == null) live = container;
-        if (!live.hasSection(CommandContainer.SECTION_TAB_COMPLETE)) return builder.buildFuture();
-
-        String fullInput  = builder.getInput();
-        String remaining  = builder.getRemaining();
-
-        int    lastSpace  = remaining.lastIndexOf(' ');
-        String partial    = (lastSpace < 0 ? remaining : remaining.substring(lastSpace + 1)).toLowerCase();
-
-        List<AbstractTag> suggestions = cachedTabSuggestions(
-                ctx.getSource().getSender(), fullInput, remaining, lastSpace, live);
-
-        int tokenStart = lastSpace < 0 ? builder.getStart() : builder.getStart() + lastSpace + 1;
-        SuggestionsBuilder tokenBuilder = builder.createOffset(tokenStart);
-
-        for (AbstractTag item : suggestions) {
-            String text = item.identify();
-            if (text.toLowerCase().startsWith(partial)) tokenBuilder.suggest(text);
-        }
-
-        return tokenBuilder.buildFuture();
-    }
-
-    public CompletableFuture<Suggestions> buildTabCompletionsFromNms(
-            @NonNull CommandSender sender,
-            @NonNull SuggestionsBuilder builder,
-            @NonNull CommandContainer container) {
-
-        CommandContainer live = resolveContainer(container.getName());
-        if (live == null) live = container;
-        if (!live.hasSection(CommandContainer.SECTION_TAB_COMPLETE)) return builder.buildFuture();
-
-        String fullInput = builder.getInput();
-        String remaining = builder.getRemaining();
-        int    lastSpace = remaining.lastIndexOf(' ');
-        String partial   = (lastSpace < 0 ? remaining : remaining.substring(lastSpace + 1)).toLowerCase();
-
-        int tokenStart = lastSpace < 0 ? builder.getStart() : builder.getStart() + lastSpace + 1;
-        SuggestionsBuilder tokenBuilder = builder.createOffset(tokenStart);
-
-        List<AbstractTag> suggestions = cachedTabSuggestions(sender, fullInput, remaining, lastSpace, live);
-
-        for (AbstractTag item : suggestions) {
-            String text = item.identify();
-            if (text.toLowerCase().startsWith(partial)) tokenBuilder.suggest(text);
-        }
-
-        return tokenBuilder.buildFuture();
-    }
-
-    private @NonNull List<AbstractTag> cachedTabSuggestions(
-            @NonNull CommandSender sender,
-            @NonNull String fullInput,
-            @NonNull String remaining,
-            int lastSpaceInRemaining,
-            @NonNull CommandContainer container) {
-
-        int remStart = fullInput.length() - remaining.length();
-        String inputPrefix = lastSpaceInRemaining < 0
-                ? fullInput.substring(0, remStart)
-                : fullInput.substring(0, remStart + lastSpaceInRemaining + 1);
-
-        String cacheKey = container.getName() + '\0' + senderKey(sender) + '\0' + inputPrefix;
-        CachedTabEntry cached = tabCache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) return cached.items;
-
-        List<AbstractTag> fresh = runTabScript(sender, fullInput, container);
-        tabCache.put(cacheKey, new CachedTabEntry(fresh));
-        return fresh;
-    }
-
-    private @NonNull List<AbstractTag> runTabScript(
-            @NonNull CommandSender sender,
-            @NonNull String fullInput,
-            @NonNull CommandContainer container) {
-
-        ContextTag context = new ContextTag()
-                .put("sender",  resolveSender(sender))
-                .put("alias",   new ElementTag(resolveAlias(fullInput, container)))
-                .put("aliases", buildAliasesList(container))
-                .put("args",    parseCompletedArgs(fullInput))
-                .put("input",   new ElementTag(fullInput));
-
-        ScriptQueue queue = container.createQueue(CommandContainer.SECTION_TAB_COMPLETE, context);
-        if (queue == null) return List.of();
-
-        queue.start();
-
-        List<AbstractTag> returns = queue.getReturns();
-        if (returns.isEmpty()) return List.of();
-
-        AbstractTag first = returns.getFirst();
-        return first instanceof ListTag listTag ? listTag.getList() : List.of();
-    }
-
-    private boolean checkAllowed(@NonNull CommandSourceStack source, @NonNull CommandContainer container) {
-        if (!container.hasSection(CommandContainer.SECTION_ALLOWED)) return true;
-
-        CommandContainer live = resolveContainer(container.getName());
-        if (live == null) live = container;
-
-        String cacheKey = live.getName() + ':' + senderKey(source.getSender());
-        CachedAllowedEntry cached = allowedCache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) return cached.allowed;
-
-        boolean allowed = runAllowedScript(source.getSender(), live);
-        allowedCache.put(cacheKey, new CachedAllowedEntry(allowed));
-        return allowed;
-    }
-
-    public boolean checkAllowedFromNms(@NonNull CommandSender sender, @NonNull CommandContainer container) {
-        if (!container.hasSection(CommandContainer.SECTION_ALLOWED)) return true;
-
-        CommandContainer live = resolveContainer(container.getName());
-        if (live == null) live = container;
-
-        String cacheKey = live.getName() + ':' + senderKey(sender);
-        CachedAllowedEntry cached = allowedCache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) return cached.allowed;
-
-        boolean allowed = runAllowedScript(sender, live);
-        allowedCache.put(cacheKey, new CachedAllowedEntry(allowed));
-        return allowed;
-    }
-
-    private boolean runAllowedScript(@NonNull CommandSender sender, @NonNull CommandContainer container) {
-        ContextTag context = new ContextTag()
-                .put("sender",  resolveSender(sender))
-                .put("alias",   new ElementTag(container.getName()))
-                .put("aliases", buildAliasesList(container));
-
-        ScriptQueue queue = container.createQueue(CommandContainer.SECTION_ALLOWED, context);
-        if (queue == null) return true;
-
-        queue.start();
-
-        List<AbstractTag> returns = queue.getReturns();
-        if (returns.isEmpty()) return false;
-        return returns.getFirst().identify().equalsIgnoreCase("true");
-    }
-
-    public void executeFromNms(
-            @NonNull CommandSender sender,
-            @NonNull String input,
-            @NonNull MapTag args,
-            @NonNull CommandContainer container) {
-
-        CommandContainer live = resolveContainer(container.getName());
-        if (live == null) live = container;
-        if (!live.hasSection(CommandContainer.SECTION_SCRIPT)) return;
-
-        String rawArgs = extractRawArgs(input);
-        ContextTag context = new ContextTag()
-                .put("sender",  resolveSender(sender))
-                .put("alias",   new ElementTag(resolveAlias(input, live)))
-                .put("aliases", buildAliasesList(live))
-                .put("rawArgs", new ElementTag(rawArgs))
-                .put("args",    args.isEmpty() ? parseRawArgs(rawArgs) : args);
-
-        ScriptQueue queue = live.createQueue(CommandContainer.SECTION_SCRIPT, context);
-        if (queue == null) return;
-        queue.start();
-    }
-
     public void injectNew(@NonNull CommandContainer container) {
         CommandAdapter adapter = NMSHandler.get().get(CommandAdapter.class);
         if (adapter == null) {
             Debugger.error("CommandAdapter not available - cannot inject '" + container.getName() + "' at runtime");
             return;
         }
+        if (!canRegister(container, registeredNames, adapter)) return;
+
         adapter.injectCommand(container);
+
+        Set<String> updated = new HashSet<>(registeredNames);
+        updated.addAll(container.getAllAliases());
+        registeredNames = updated;
+
         adapter.syncCommandTree();
     }
 
@@ -369,14 +100,180 @@ public final class CommandManager {
             Debugger.error("CommandAdapter not available - cannot re-inject commands at runtime");
             return;
         }
+
+        Set<String> oldNames = registeredNames;
+        Set<String> newNames = new HashSet<>();
+        List<CommandContainer> registrable = new ArrayList<>();
+
         for (CommandContainer container : toInject) {
+            if (!canRegister(container, oldNames, adapter)) continue;
+            registrable.add(container);
+            newNames.addAll(container.getAllAliases());
+        }
+
+        for (String name : oldNames) {
+            if (newNames.contains(name)) continue;
+            try {
+                adapter.removeCommand(name);
+            } catch (Exception e) {
+                Debugger.error("Failed to remove command '" + name + "': " + e.getMessage());
+            }
+        }
+
+        for (CommandContainer container : registrable) {
             try {
                 adapter.injectCommand(container);
             } catch (Exception e) {
                 Debugger.error("Failed to re-inject command '" + container.getName() + "': " + e.getMessage());
             }
         }
+
+        registeredNames = newNames;
         adapter.syncCommandTree();
+    }
+
+    private boolean canRegister(@NonNull CommandContainer container, @NonNull Set<String> ours, @Nullable CommandAdapter adapter) {
+        if (container.isOverride()) return true;
+        if (ours.contains(container.getName())) return true;
+        if (adapter != null && adapter.commandExists(container.getName())) {
+            Debugger.error("Command '" + container.getName() + "' already exists - set 'override: true' to replace it");
+            return false;
+        }
+        return true;
+    }
+
+    public boolean checkNode(@NonNull CommandSender sender, @NonNull CommandContainer container, @NonNull CommandNode node) {
+        CommandContainer live = resolveContainer(container.getName());
+        if (live == null) return false;
+
+        if (!node.hasRequires()) return true;
+
+        String cacheKey = live.getName() + ':' + node.basePath() + ':' + senderKey(sender);
+        CachedAllowedEntry cached = allowedCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) return cached.allowed;
+
+        boolean allowed = runRequiresScript(sender, live, node);
+        allowedCache.put(cacheKey, new CachedAllowedEntry(allowed));
+        return allowed;
+    }
+
+    public void dispatch(@NonNull CommandSender sender, @NonNull String input,
+                         @NonNull CommandContainer container, @NonNull CommandNode node,
+                         @NonNull CommandArgResolver resolver) {
+        if (!node.hasScript()) return;
+
+        CommandContainer live = resolveContainer(container.getName());
+        if (live == null) return;
+
+        ContextTag context = baseContext(sender, live, input)
+                .put("args", buildArgs(node.pathChain(), resolver))
+                .put("path", pathList(node));
+
+        ScriptQueue queue = live.createQueue(node.scriptPath(), playerIdentity(sender), context);
+        if (queue != null) queue.start();
+    }
+
+    public @NonNull CompletableFuture<Suggestions> complete(@NonNull CommandSender sender,
+                                                            @NonNull SuggestionsBuilder builder,
+                                                            @NonNull CommandContainer container,
+                                                            @NonNull CommandNode node,
+                                                            @NonNull CommandArgResolver resolver) {
+        if (!node.hasSuggestions()) return builder.buildFuture();
+
+        CommandContainer live = resolveContainer(container.getName());
+        if (live == null) return builder.buildFuture();
+
+        String remaining = builder.getRemaining();
+        String lower = remaining.toLowerCase();
+
+        List<AbstractTag> suggestions = cachedSuggestions(sender, builder.getInput(), remaining, live, node, resolver);
+
+        for (AbstractTag item : suggestions) {
+            String text = item.identify();
+            if (text.toLowerCase().startsWith(lower)) builder.suggest(text);
+        }
+        return builder.buildFuture();
+    }
+
+    private @NonNull MapTag buildArgs(@NonNull List<CommandNode> chain, @NonNull CommandArgResolver resolver) {
+        MapTag args = new MapTag();
+        for (CommandNode node : chain) {
+            if (!node.isArgument()) continue;
+            AbstractTag value = resolver.resolve(node.spec());
+            if (value == null) continue;
+            String key = node.hasChildren() ? node.argPath() + ".this" : node.argPath();
+            args.putDeepObject(key, value);
+        }
+        return args;
+    }
+
+    private @NonNull List<AbstractTag> cachedSuggestions(@NonNull CommandSender sender,
+                                                         @NonNull String fullInput,
+                                                         @NonNull String remaining,
+                                                         @NonNull CommandContainer container,
+                                                         @NonNull CommandNode node,
+                                                         @NonNull CommandArgResolver resolver) {
+        String prefix = fullInput.substring(0, fullInput.length() - remaining.length());
+        String cacheKey = node.basePath() + '\0' + senderKey(sender) + '\0' + prefix;
+        CachedTabEntry cached = tabCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) return cached.items;
+
+        List<AbstractTag> fresh = runSuggestScript(sender, fullInput, remaining, container, node, resolver);
+        tabCache.put(cacheKey, new CachedTabEntry(fresh));
+        return fresh;
+    }
+
+    private @NonNull List<AbstractTag> runSuggestScript(@NonNull CommandSender sender,
+                                                        @NonNull String fullInput,
+                                                        @NonNull String remaining,
+                                                        @NonNull CommandContainer container,
+                                                        @NonNull CommandNode node,
+                                                        @NonNull CommandArgResolver resolver) {
+        ContextTag context = baseContext(sender, container, fullInput)
+                .put("args", buildArgs(node.ancestorChain(), resolver))
+                .put("arg",  new ElementTag(remaining))
+                .put("path", pathList(node));
+
+        ScriptQueue queue = container.createQueue(node.suggestsPath(), playerIdentity(sender), context);
+        if (queue == null) return List.of();
+        queue.start();
+
+        List<AbstractTag> returns = queue.getReturns();
+        if (returns.isEmpty()) return List.of();
+        AbstractTag first = returns.getFirst();
+        return first instanceof ListTag list ? list.getList() : List.of();
+    }
+
+    private boolean runRequiresScript(@NonNull CommandSender sender, @NonNull CommandContainer container, @NonNull CommandNode node) {
+        ContextTag context = baseContext(sender, container, container.getName())
+                .put("path", pathList(node));
+
+        ScriptQueue queue = container.createQueue(node.requiresPath(), playerIdentity(sender), context);
+        if (queue == null) return true;
+        queue.start();
+
+        List<AbstractTag> returns = queue.getReturns();
+        if (returns.isEmpty()) return false;
+        return returns.getFirst().identify().equalsIgnoreCase("true");
+    }
+
+    private @NonNull ContextTag baseContext(@NonNull CommandSender sender, @NonNull CommandContainer container, @NonNull String input) {
+        return new ContextTag()
+                .put("sender",   resolveSender(sender))
+                .put("label",    new ElementTag(container.getName()))
+                .put("alias",    new ElementTag(resolveAlias(input, container)))
+                .put("aliases",  buildAliasesList(container))
+                .put("raw_args", new ElementTag(extractRawArgs(input)));
+    }
+
+    private @NonNull ListTag pathList(@NonNull CommandNode node) {
+        ListTag list = new ListTag();
+        for (CommandNode n : node.pathChain()) list.addString(n.name());
+        return list;
+    }
+
+    private @Nullable PlayerIdentity playerIdentity(@NonNull CommandSender sender) {
+        return sender instanceof Player player ? new PlayerTag(player) : null;
     }
 
     private @NonNull AbstractTag resolveSender(@NonNull CommandSender sender) {
@@ -401,26 +298,6 @@ public final class CommandManager {
         return spaceIndex < 0 ? "" : input.substring(spaceIndex + 1).trim();
     }
 
-    private @NonNull ListTag parseRawArgs(@NonNull String rawArgs) {
-        ListTag result = new ListTag();
-        if (rawArgs.isBlank()) return result;
-        for (String token : rawArgs.split(" ")) {
-            if (!token.isEmpty()) result.addString(token);
-        }
-        return result;
-    }
-
-    private @NonNull ListTag parseCompletedArgs(@NonNull String input) {
-        ListTag result = new ListTag();
-        int firstSpace = input.indexOf(' ');
-        if (firstSpace < 0) return result;
-        String[] tokens = input.substring(firstSpace + 1).split(" ", -1);
-        for (int i = 0; i < tokens.length - 1; i++) {
-            if (!tokens[i].isEmpty()) result.addString(tokens[i]);
-        }
-        return result;
-    }
-
     private @NonNull ListTag buildAliasesList(@NonNull CommandContainer container) {
         ListTag list = new ListTag();
         container.getAllAliases().forEach(list::addString);
@@ -437,6 +314,40 @@ public final class CommandManager {
             if (container.getName().equalsIgnoreCase(name)) return container;
         }
         return null;
+    }
+
+    private final class PaperPlatform implements CommandTreeBuilder.Platform<CommandSourceStack> {
+
+        @Override
+        public ArgumentType<?> argumentType(CommandArgumentSpec spec) {
+            ArgumentTypeRegistry.Entry entry = ArgumentTypeRegistry.get(spec.typeName());
+            if (entry == null) throw new IllegalStateException("Unknown argument type '" + spec.typeName() + "'");
+            return entry.adapter().buildType(spec);
+        }
+
+        @Override
+        public boolean requires(CommandSourceStack source, CommandContainer container, CommandNode node) {
+            return checkNode(source.getSender(), container, node);
+        }
+
+        @Override
+        public int execute(CommandContext<CommandSourceStack> ctx, CommandContainer container, CommandNode node) {
+            dispatch(ctx.getSource().getSender(), ctx.getInput(), container, node, paperResolver(ctx));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        @Override
+        public CompletableFuture<Suggestions> suggest(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder,
+                                                       CommandContainer container, CommandNode node) {
+            return complete(ctx.getSource().getSender(), builder, container, node, paperResolver(ctx));
+        }
+
+        private CommandArgResolver paperResolver(CommandContext<CommandSourceStack> ctx) {
+            return spec -> {
+                ArgumentTypeRegistry.Entry entry = ArgumentTypeRegistry.get(spec.typeName());
+                return entry == null ? null : entry.adapter().resolveValue(ctx, spec);
+            };
+        }
     }
 
     private static final class CachedAllowedEntry {

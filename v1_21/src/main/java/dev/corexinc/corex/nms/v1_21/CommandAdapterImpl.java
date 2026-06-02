@@ -3,28 +3,28 @@ package dev.corexinc.corex.nms.v1_21;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.*;
-import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.containers.commands.ArgumentTypeAdapter;
 import dev.corexinc.corex.environment.containers.commands.ArgumentTypeRegistry;
+import dev.corexinc.corex.environment.containers.commands.CommandArgResolver;
 import dev.corexinc.corex.environment.containers.commands.CommandArgumentSpec;
 import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 import dev.corexinc.corex.environment.containers.commands.CommandManager;
+import dev.corexinc.corex.environment.containers.commands.CommandTreeBuilder;
 import dev.corexinc.corex.environment.utils.adapters.CommandAdapter;
 import dev.corexinc.corex.environment.utils.ReflectionHelper;
 
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
-import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
@@ -404,32 +404,26 @@ public class CommandAdapterImpl implements CommandAdapter {
         removeCommandNodes(dispatcher.getRoot(), container);
 
         LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> root =
-                Commands.literal(container.getName())
-                        .requires(source -> CommandManager.INSTANCE.checkAllowedFromNms(
-                                source.getBukkitSender(), container));
+                CommandTreeBuilder.build(container, new NmsPlatform());
 
-        List<CommandArgumentSpec> specs = container.getArgumentSpecs();
-
-        if (specs.isEmpty()) {
-            root.executes(ctx -> executeFromNms(ctx, container));
-            root.then(buildCatchAllArgument(container));
-        } else {
-            if (specs.getFirst().optional()) {
-                root.executes(ctx -> executeFromNms(ctx, container));
-            }
-            root.then(buildArgumentChain(specs, 0, container));
-        }
-
-        dispatcher.register(root);
+        LiteralCommandNode<net.minecraft.commands.CommandSourceStack> built = dispatcher.register(root);
 
         for (String alias : container.getAliases()) {
-            LiteralArgumentBuilder<net.minecraft.commands.CommandSourceStack> aliasNode =
-                    Commands.literal(alias)
-                            .requires(source -> CommandManager.INSTANCE.checkAllowedFromNms(
-                                    source.getBukkitSender(), container))
-                            .redirect(dispatcher.getRoot().getChild(container.getName()));
-            dispatcher.register(aliasNode);
+            dispatcher.register(Commands.literal(alias)
+                    .requires(source -> CommandManager.INSTANCE.checkNode(
+                            source.getBukkitSender(), container, container.getTree()))
+                    .redirect(built));
         }
+    }
+
+    @Override
+    public void removeCommand(@NonNull String name) {
+        removeNode(getDispatcher().getRoot(), name);
+    }
+
+    @Override
+    public boolean commandExists(@NonNull String name) {
+        return getDispatcher().getRoot().getChild(name) != null;
     }
 
     @Override
@@ -439,83 +433,45 @@ public class CommandAdapterImpl implements CommandAdapter {
         }
     }
 
-    private int executeFromNms(
-            @NonNull CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
-            @NonNull CommandContainer container) {
-        MapTag args = buildNmsArgs(ctx, container);
-        CommandManager.INSTANCE.executeFromNms(ctx.getSource().getBukkitSender(), ctx.getInput(), args, container);
-        return Command.SINGLE_SUCCESS;
-    }
+    private static final class NmsPlatform
+            implements CommandTreeBuilder.Platform<net.minecraft.commands.CommandSourceStack> {
 
-    private MapTag buildNmsArgs(
-            @NonNull CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
-            @NonNull CommandContainer container) {
-
-        MapTag args = new MapTag();
-
-        for (CommandArgumentSpec spec : container.getArgumentSpecs()) {
-            var resolver = NMS_RESOLVERS.get(spec.typeName());
-            if (resolver == null) continue;
-
-            AbstractTag value = resolver.apply(ctx, spec);
-            if (value != null) args.putObject(spec.name(), value);
+        @Override
+        public ArgumentType<?> argumentType(CommandArgumentSpec spec) {
+            ArgumentTypeRegistry.Entry entry = ArgumentTypeRegistry.get(spec.typeName());
+            if (entry == null) throw new IllegalStateException("Unknown argument type '" + spec.typeName() + "'");
+            return entry.nmsFactory().apply(spec);
         }
 
-        return args;
-    }
-
-    private ArgumentBuilder<net.minecraft.commands.CommandSourceStack, ?> buildArgumentChain(
-            @NonNull List<CommandArgumentSpec> specs,
-            int index,
-            @NonNull CommandContainer container) {
-
-        CommandArgumentSpec spec = specs.get(index);
-        ArgumentTypeRegistry.Entry entry = ArgumentTypeRegistry.get(spec.typeName());
-
-        if (entry == null) throw new IllegalStateException(
-                "Unknown argument type '" + spec.typeName() + "' for command '" + container.getName() + "'");
-
-        RequiredArgumentBuilder<net.minecraft.commands.CommandSourceStack, ?> node =
-                Commands.argument(spec.name(), entry.nmsFactory().apply(spec));
-
-        boolean isLast         = index == specs.size() - 1;
-        boolean nextIsOptional = !isLast && specs.get(index + 1).optional();
-
-        if (isLast || nextIsOptional) {
-            node.executes(ctx -> executeFromNms(ctx, container));
+        @Override
+        public boolean requires(net.minecraft.commands.CommandSourceStack source,
+                                CommandContainer container,
+                                dev.corexinc.corex.environment.containers.commands.CommandNode node) {
+            return CommandManager.INSTANCE.checkNode(source.getBukkitSender(), container, node);
         }
 
-        if (container.hasSection(CommandContainer.SECTION_TAB_COMPLETE)) {
-            node.suggests((ctx, builder) -> buildSuggestionsFromNms(ctx, builder, container));
+        @Override
+        public int execute(CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
+                           CommandContainer container,
+                           dev.corexinc.corex.environment.containers.commands.CommandNode node) {
+            CommandManager.INSTANCE.dispatch(ctx.getSource().getBukkitSender(), ctx.getInput(), container, node, nmsResolver(ctx));
+            return Command.SINGLE_SUCCESS;
         }
 
-        if (!isLast) {
-            node.then(buildArgumentChain(specs, index + 1, container));
+        @Override
+        public CompletableFuture<Suggestions> suggest(CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
+                                                       SuggestionsBuilder builder,
+                                                       CommandContainer container,
+                                                       dev.corexinc.corex.environment.containers.commands.CommandNode node) {
+            return CommandManager.INSTANCE.complete(ctx.getSource().getBukkitSender(), builder, container, node, nmsResolver(ctx));
         }
 
-        return node;
-    }
-
-    private @NonNull RequiredArgumentBuilder<net.minecraft.commands.CommandSourceStack, String>
-    buildCatchAllArgument(@NonNull CommandContainer container) {
-
-        RequiredArgumentBuilder<net.minecraft.commands.CommandSourceStack, String> node =
-                Commands.argument("...", StringArgumentType.greedyString())
-                        .executes(ctx -> executeFromNms(ctx, container));
-
-        if (container.hasSection(CommandContainer.SECTION_TAB_COMPLETE)) {
-            node.suggests((ctx, builder) -> buildSuggestionsFromNms(ctx, builder, container));
+        private CommandArgResolver nmsResolver(CommandContext<net.minecraft.commands.CommandSourceStack> ctx) {
+            return spec -> {
+                var resolver = NMS_RESOLVERS.get(spec.typeName());
+                return resolver == null ? null : resolver.apply(ctx, spec);
+            };
         }
-
-        return node;
-    }
-
-    private CompletableFuture<Suggestions> buildSuggestionsFromNms(
-            @NonNull CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
-            @NonNull SuggestionsBuilder builder,
-            @NonNull CommandContainer container) {
-        return CommandManager.INSTANCE.buildTabCompletionsFromNms(
-                ctx.getSource().getBukkitSender(), builder, container);
     }
 
     private void removeCommandNodes(
