@@ -39,8 +39,8 @@ jobs:
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: build/libs/!(*-sources|*-dev|*-javadoc).jar
           name: ${{ steps.meta.outputs.sha }}
-          version: Corex ${{ steps.meta.outputs.ver }}-${{ steps.meta.outputs.sha }}
-          version-type: release
+          version: ${{ steps.meta.outputs.ver }}-${{ steps.meta.outputs.sha }}
+          version-type: alpha
           changelog: ${{ github.event.head_commit.message }}
           loaders: |
             paper
