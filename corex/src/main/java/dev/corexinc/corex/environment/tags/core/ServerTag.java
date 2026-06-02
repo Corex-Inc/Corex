@@ -13,14 +13,19 @@ import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.BiomeTag;
+import dev.corexinc.corex.environment.tags.world.MaterialTag;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
 import dev.corexinc.corex.environment.utils.adapters.BiomeAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import dev.corexinc.corex.environment.tags.world.StructureTag;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.World;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.StructureType;
 import org.jspecify.annotations.NonNull;
@@ -183,6 +188,205 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 listTag.addObject(new PlayerTag(player));
             }
             return listTag;
+        });
+
+        /* @doc tag
+         *
+         * @Name onlineOps
+         * @RawName <server.onlineOps>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Implements server.online_ops
+         * @Description
+         * Returns a list of all currently online players that are server operators.
+         *
+         * @Usage
+         * // Message every online operator
+         * - narrate targets:<server.onlineOps> "Staff meeting now." per_player
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "onlineOps", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (player.isOp()) list.addObject(new PlayerTag(player));
+            }
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name offlinePlayers
+         * @RawName <server.offlinePlayers>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Implements server.offline_players
+         * @Description
+         * Returns a list of all players that have ever joined the server, including those
+         * currently offline.
+         *
+         * @Usage
+         * // Count everyone who has ever played
+         * - narrate "Total known players: <server.offlinePlayers.size>"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "offlinePlayers", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+                list.addObject(new PlayerTag(player.getUniqueId()));
+            }
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name offlineOps
+         * @RawName <server.offlineOps>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Implements server.offline_ops
+         * @Description
+         * Returns a list of all players that are server operators, including those currently offline.
+         *
+         * @Usage
+         * // List every operator's name
+         * - narrate <server.offlineOps.parse[name].join[, ]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "offlineOps", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+                if (player.isOp()) list.addObject(new PlayerTag(player.getUniqueId()));
+            }
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name matchPlayer
+         * @RawName <server.matchPlayer[<name>]>
+         * @Object ServerTag
+         * @ReturnType PlayerTag
+         * @Implements server.match_player
+         * @Description
+         * Returns the online player that best matches the input name.
+         * For example, in a group of 'bo', 'bob', and 'bobby': input 'bob' returns 'bob',
+         * input 'bobb' returns 'bobby', and input 'b' returns 'bo'.
+         *
+         * @Usage
+         * // Resolve a partial name to an online player
+         * - narrate "Best match: <server.matchPlayer[bob].name>"
+         */
+        TAG_PROCESSOR.registerTag(PlayerTag.class, "matchPlayer", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            String input = attr.getParam().toLowerCase();
+            Player best = null;
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                String name = player.getName().toLowerCase();
+                if (name.equals(input)) { best = player; break; }
+                if (name.contains(input) && (best == null || name.length() < best.getName().length())) {
+                    best = player;
+                }
+            }
+            return best == null ? null : new PlayerTag(best);
+        });
+
+        /* @doc tag
+         *
+         * @Name motd
+         * @RawName <server.motd>
+         * @Object ServerTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Implements server.motd
+         * @Description
+         * Returns the server's message of the day.
+         *
+         * @Usage
+         * // Show the configured MOTD
+         * - narrate "MOTD: <server.motd>"
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "motd", (attr, obj) -> new ElementTag(Bukkit.motd()));
+
+        /* @doc tag
+         *
+         * @Name maxPlayers
+         * @RawName <server.maxPlayers>
+         * @Object ServerTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Implements server.max_players
+         * @Description
+         * Returns the maximum number of players the server allows online at once.
+         *
+         * @Usage
+         * // Show current slots usage
+         * - narrate "<server.onlinePlayers.size>/<server.maxPlayers>"
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "maxPlayers", (attr, obj) -> new ElementTag(Bukkit.getMaxPlayers()));
+
+        /* @doc tag
+         *
+         * @Name materialTypes
+         * @RawName <server.materialTypes>
+         * @Object ServerTag
+         * @ReturnType ListTag(MaterialTag)
+         * @NoArg
+         * @Implements server.material_types
+         * @Description
+         * Returns a list of all material types known to the server.
+         *
+         * @Usage
+         * // Check whether a material exists
+         * - if <server.materialTypes.contains[m@diamond_block]>:
+         *   - narrate "Diamond blocks exist!"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "materialTypes", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (Material material : Material.values()) list.addObject(new MaterialTag(material));
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name particleTypes
+         * @RawName <server.particleTypes>
+         * @Object ServerTag
+         * @ReturnType ListTag(ElementTag)
+         * @NoArg
+         * @Implements server.particle_types
+         * @Description
+         * Returns a list of all particle type names available on the server.
+         *
+         * @Usage
+         * // List all particles
+         * - narrate <server.particleTypes.join[, ]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "particleTypes", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (Particle particle : Particle.values()) list.addString(particle.name().toLowerCase());
+            return list;
+        });
+
+        /* @doc tag
+         *
+         * @Name entityTypes
+         * @RawName <server.entityTypes>
+         * @Object ServerTag
+         * @ReturnType ListTag(ElementTag)
+         * @NoArg
+         * @Implements server.entity_types
+         * @Description
+         * Returns a list of all entity type names known to the server.
+         *
+         * @Usage
+         * // Check whether an entity type exists
+         * - if <server.entityTypes.contains[zombie]>:
+         *   - narrate "Zombies exist!"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "entityTypes", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (EntityType type : EntityType.values()) list.addString(type.name());
+            return list;
         });
 
         /* @doc tag
