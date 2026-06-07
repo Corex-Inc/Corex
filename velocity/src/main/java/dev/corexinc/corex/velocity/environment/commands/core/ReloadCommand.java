@@ -10,28 +10,6 @@ import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import org.jspecify.annotations.NonNull;
 
-import java.util.List;
-
-/* @doc command
- *
- * @Name Reload
- * @Syntax reload
- * @RequiredArgs 0
- * @MaxArgs 0
- * @ShortDescription Reloads and recompile all Corex scripts. Primarily for use as an in-game command.
- *
- * @Implements Reload
- *
- * @Description
- * Reloads and recompile all Corex scripts.
- * Primarily for use as an in-game command, like "/run reload".
- *
- * Reloads and recompile scripts in a way that may delay a few ticks to avoid interrupting the server on large reloads.
- *
- * @Usage
- * // Use to reload scripts automatically
- * - reload
- */
 public class ReloadCommand implements AbstractCommand {
 
     @Override
