@@ -1,6 +1,7 @@
 package dev.corexinc.corex.api.tags;
 
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.TagNode;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import org.jetbrains.annotations.Contract;
@@ -51,6 +52,24 @@ public class Attribute {
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0) return "null";
         return components[index].name();
+    }
+
+    @NotNull
+    @Contract(pure = true)
+    public String getRawArguments() {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < components.length; i++) {
+            if (i > 0) builder.append('.');
+
+            TagNode node = components[i];
+            builder.append(node.name());
+
+            CompiledArgument param = node.param();
+            if (param != null) builder.append('[').append(param.getRaw()).append(']');
+        }
+
+        return builder.toString();
     }
 
     /**
