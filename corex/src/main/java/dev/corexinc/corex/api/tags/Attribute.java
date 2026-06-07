@@ -95,6 +95,13 @@ public class Attribute {
         return tag != null ? tag.identify() : null;
     }
 
+    @Contract(pure = true)
+    public String getRawParam() {
+        int index = Math.min(currentIndex, components.length - 1);
+        if (index < 0 || components[index].param() == null) return null;
+        return components[index].param().getRaw();
+    }
+
     /**
      * Evaluates the current attribute's parameter and returns it as an {@link AbstractTag}.
      * <p>
