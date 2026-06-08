@@ -41,10 +41,7 @@ import java.util.List;
  * Specify (reason:<reason>) to control the CreatureSpawnEvent spawn reason. When not specified, this is "CUSTOM".
  *
  * The spawn command is ~waitable, and supports the 'save:' argument to store the spawned entities.
- * The saved result is a MapTag with 'spawned' (a list of all spawned entities) and 'entity' (the first spawned entity).
- *
- * @Tags
- * <EntityTag.isSpawned>
+ * The saved result is a MapTag with 'entity' (when a single entity is spawned) or 'entities' (a list, when several are spawned).
  *
  * @Usage
  * // Spawn a zombie at the player's location.
@@ -130,22 +127,28 @@ public class SpawnCommand implements AbstractCommand {
         if (instruction.isWaitable) queue.pause();
 
         SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(location), () -> {
-            ListTag spawned = new ListTag();
-            for (EntityTag blueprint : blueprints) {
-                EntityTag result = blueprint.spawn(location, spawnReason, persistent);
-                if (result != null) {
-                    spawned.addObject(result);
-                } else {
-                    Debugger.echoError(queue, "Spawn command failed to spawn '" + blueprint.identify() + "'.");
+            try {
+                ListTag spawned = new ListTag();
+                for (EntityTag blueprint : blueprints) {
+                    EntityTag result = blueprint.spawn(location, spawnReason, persistent);
+                    if (result != null) {
+                        spawned.addObject(result);
+                    } else {
+                        Debugger.echoError(queue, "Spawn command failed to spawn '" + blueprint.identify() + "'.");
+                    }
                 }
+
+                MapTag result = new MapTag();
+                List<AbstractTag> list = spawned.getList();
+                if (list.size() == 1) {
+                    result.putObject("entity", list.getFirst());
+                } else {
+                    result.putObject("entities", spawned);
+                }
+                CommandHelper.saveResult(queue, instruction, result);
+            } finally {
+                if (instruction.isWaitable) queue.resume();
             }
-
-            MapTag result = new MapTag();
-            result.putObject("spawned", spawned);
-            if (!spawned.getList().isEmpty()) result.putObject("entity", spawned.getList().getFirst());
-            CommandHelper.saveResult(queue, instruction, result);
-
-            if (instruction.isWaitable) queue.resume();
         });
     }
 

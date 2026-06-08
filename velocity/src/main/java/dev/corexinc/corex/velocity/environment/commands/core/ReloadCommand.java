@@ -1,6 +1,5 @@
 package dev.corexinc.corex.velocity.environment.commands.core;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
