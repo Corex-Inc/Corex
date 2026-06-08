@@ -1,40 +1,62 @@
 package dev.corexinc.corex.environment.tags.entity;
 
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
+import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
-import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /* @doc object
  *
  * @Name EntityTag
  * @Prefix e
  * @Format
- * The identity format for entities is a spawned entity's UUID, or an entity type.
- * For example, 'e@abc123' or 'e@zombie'.
+ * The identity format for entities is either a spawned entity's UUID, or an entity type blueprint.
+ * A spawned entity is 'e@<uuid>', for example 'e@cf5d1e35-fb92-476e-9c96-bc932ca0b0cb'.
+ * A blueprint is 'e@<type>' with optional mechanisms, for example 'e@item_display' or 'e@zombie[maxHealth=100;name=okak]'.
  *
  * @Description
- * An EntityTag represents a spawned entity, or a generic entity type.
+ * An EntityTag represents either a spawned entity, or an unspawned entity blueprint.
+ * A blueprint holds an entity type and a set of mechanisms that are applied once the entity is spawned.
+ * Blueprints are created without summoning anything, and are turned into real entities only by the Spawn command.
  */
-public class EntityTag implements AbstractTag, Flaggable {
+public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
     private static final String prefix = "e";
+
     private final Entity entity;
+    private final EntityType type;
+    private final MapTag mechanisms;
 
     public static final TagProcessor<EntityTag> TAG_PROCESSOR = new TagProcessor<>();
+    public static final MechanismProcessor<EntityTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("entity", (attribute) -> {
@@ -42,7 +64,7 @@ public class EntityTag implements AbstractTag, Flaggable {
             return new EntityTag(attribute.getParam());
         });
 
-        ObjectFetcher.registerFetcher(prefix, (uuidStr) -> new EntityTag(UUID.fromString(uuidStr)));
+        ObjectFetcher.registerFetcher(prefix, EntityTag::new);
 
         /* @doc tag
          *
@@ -56,7 +78,7 @@ public class EntityTag implements AbstractTag, Flaggable {
          *
          * @Implements EntityTag.uuid
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new  ElementTag(object.entity.getUniqueId().toString()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new  ElementTag(object.entity.getUniqueId().toString())).ignoreTest();
 
         /* @doc tag
          *
@@ -71,7 +93,7 @@ public class EntityTag implements AbstractTag, Flaggable {
          *
          * @Implements EntityTag.name
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> new ElementTag(object.entity.getName()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> new ElementTag(object.entity.getName())).ignoreTest();
 
         /* @doc tag
          *
@@ -85,7 +107,21 @@ public class EntityTag implements AbstractTag, Flaggable {
          *
          * @Implements EntityTag.type
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.entity.getType().name()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.getEntityType().name()));
+
+        /* @doc tag
+         *
+         * @Name isSpawned
+         * @RawName <EntityTag.isSpawned>
+         * @Object EntityTag
+         * @ReturnType ElementTag(Boolean)
+         * @NoArg
+         * @Description
+         * Returns 'true' if this EntityTag points to a spawned entity, or 'false' if it is an unspawned blueprint.
+         *
+         * @Implements EntityTag.is_spawned
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isSpawned", (attribute, object) -> new ElementTag(object.entity != null));
 
         /* @doc tag
          *
@@ -97,7 +133,7 @@ public class EntityTag implements AbstractTag, Flaggable {
          * @Description
          * Returns 'true' whether the entity is alive.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) -> new ElementTag(String.valueOf(!object.entity.isDead())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) -> new ElementTag(String.valueOf(!object.entity.isDead()))).ignoreTest();
 
         /* @doc tag
          *
@@ -111,31 +147,261 @@ public class EntityTag implements AbstractTag, Flaggable {
          *
          * @Implements EntityTag.location
          */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.entity.getLocation()));
+        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.entity.getLocation())).ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name describe
+         * @RawName <EntityTag.describe>
+         * @Object EntityTag
+         * @ReturnType MapTag
+         * @NoArg
+         * @Description
+         * Returns a MapTag of the entity's mechanisms and their current values.
+         * For a spawned entity this is read from the live entity, for a blueprint it is the recorded mechanisms.
+         * The result can be fed back into <@link tag EntityTag.with> or the Adjust command.
+         *
+         * @Implements EntityTag.describe
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "describe", (attribute, object) -> object.describe());
+
+        /* @doc tag
+         *
+         * @Name blueprint
+         * @RawName <EntityTag.blueprint>
+         * @Object EntityTag
+         * @ReturnType EntityTag
+         * @NoArg
+         * @Description
+         * Returns an unspawned blueprint of the entity - its type plus a snapshot of its mechanisms.
+         * For example a spawned 'e@<uuid>' becomes 'e@zombie[maxHealth=100;name=okak]'.
+         * The blueprint can be passed to the Spawn command to create fresh copies.
+         */
+        TAG_PROCESSOR.registerTag(EntityTag.class, "blueprint", (attribute, object) ->
+                new EntityTag(null, object.getEntityType(), object.describe()));
+
+        /* @doc mechanism
+         *
+         * @Name name
+         * @Object EntityTag
+         * @Input ElementTag
+         * @Description
+         * Sets the entity's custom name.
+         *
+         * @Implements EntityTag.custom_name
+         */
+        MECHANISM_PROCESSOR.registerMechanism("name", (object, value) ->
+                object.adjust("name", value, (target, val) -> target.customName(val.asComponent())));
+
+        /* @doc mechanism
+         *
+         * @Name customNameVisible
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Controls whether the entity's custom name is always visible.
+         *
+         * @Implements EntityTag.custom_name_visible
+         */
+        MECHANISM_PROCESSOR.registerMechanism("customNameVisible", (object, value) ->
+                object.adjust("customNameVisible", value, (target, val) -> target.setCustomNameVisible(asBoolean(val))));
+
+        /* @doc mechanism
+         *
+         * @Name maxHealth
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets the maximum health of a living entity.
+         *
+         * @Implements EntityTag.max_health
+         */
+        MECHANISM_PROCESSOR.registerMechanism("maxHealth", (object, value) ->
+                object.adjust("maxHealth", value, (target, val) -> {
+                    if (target instanceof LivingEntity living) {
+                        AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
+                        if (attribute != null) attribute.setBaseValue(asDouble(val));
+                    }
+                }));
+
+        /* @doc mechanism
+         *
+         * @Name health
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets the current health of a living entity, clamped to its maximum health.
+         *
+         * @Implements EntityTag.health
+         */
+        MECHANISM_PROCESSOR.registerMechanism("health", (object, value) ->
+                object.adjust("health", value, (target, val) -> {
+                    if (target instanceof LivingEntity living) {
+                        AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
+                        double max = attribute != null ? attribute.getValue() : asDouble(val);
+                        living.setHealth(Math.max(0.0, Math.min(asDouble(val), max)));
+                    }
+                }));
+
+        /* @doc mechanism
+         *
+         * @Name glowing
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Controls whether the entity has the glowing outline effect.
+         *
+         * @Implements EntityTag.glowing
+         */
+        MECHANISM_PROCESSOR.registerMechanism("glowing", (object, value) ->
+                object.adjust("glowing", value, (target, val) -> target.setGlowing(asBoolean(val))));
+
+        /* @doc mechanism
+         *
+         * @Name gravity
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Controls whether the entity is affected by gravity.
+         *
+         * @Implements EntityTag.gravity
+         */
+        MECHANISM_PROCESSOR.registerMechanism("gravity", (object, value) ->
+                object.adjust("gravity", value, (target, val) -> target.setGravity(asBoolean(val))));
+
+        /* @doc mechanism
+         *
+         * @Name invulnerable
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Controls whether the entity is immune to all damage sources except void and /kill.
+         *
+         * @Implements EntityTag.invulnerable
+         */
+        MECHANISM_PROCESSOR.registerMechanism("invulnerable", (object, value) ->
+                object.adjust("invulnerable", value, (target, val) -> target.setInvulnerable(asBoolean(val))));
+
+        /* @doc mechanism
+         *
+         * @Name silent
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Controls whether the entity produces sounds.
+         *
+         * @Implements EntityTag.silent
+         */
+        MECHANISM_PROCESSOR.registerMechanism("silent", (object, value) ->
+                object.adjust("silent", value, (target, val) -> target.setSilent(asBoolean(val))));
+    }
+
+    private EntityTag(Entity entity, EntityType type, MapTag mechanisms) {
+        this.entity = entity;
+        this.type = type;
+        this.mechanisms = mechanisms;
     }
 
     public EntityTag(UUID uuid) {
-        this.entity = Bukkit.getEntity(uuid);
+        this(Bukkit.getEntity(uuid), null, new MapTag());
     }
 
     public EntityTag(Entity entity) {
-        this.entity = entity;
+        this(entity, null, new MapTag());
     }
 
     public EntityTag(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            this.entity = null;
-        } else {
-            String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(prefix.length() + 1) : raw;
+        Entity parsedEntity = null;
+        EntityType parsedType = null;
+        MapTag parsedMechanisms = new MapTag();
 
-            Entity tempEntity;
-            try {
-                tempEntity = Bukkit.getEntity(UUID.fromString(cleanRaw));
-            } catch (Exception e) {
-                tempEntity = null;
+        if (raw != null && !raw.isEmpty()) {
+            String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(prefix.length() + 1) : raw;
+            int bracketStart = cleanRaw.indexOf('[');
+            String basePart = cleanRaw;
+
+            if (bracketStart > 0 && cleanRaw.endsWith("]")) {
+                basePart = cleanRaw.substring(0, bracketStart);
+                parsedMechanisms = new MapTag(cleanRaw.substring(bracketStart + 1, cleanRaw.length() - 1));
             }
-            this.entity = tempEntity;
+
+            try {
+                parsedEntity = Bukkit.getEntity(UUID.fromString(basePart));
+            } catch (IllegalArgumentException ignored) {
+                parsedType = matchEntityType(basePart);
+            }
         }
+
+        this.entity = parsedEntity;
+        this.type = parsedType;
+        this.mechanisms = parsedMechanisms;
+    }
+
+    private AbstractTag adjust(String name, AbstractTag value, BiConsumer<Entity, AbstractTag> liveApplier) {
+        if (entity != null) {
+            liveApplier.accept(entity, value);
+        } else {
+            mechanisms.putObject(name, value);
+        }
+        return this;
+    }
+
+    public EntityTag spawn(Location location, CreatureSpawnEvent.SpawnReason reason, boolean persistent) {
+        World world = location.getWorld();
+        if (world == null) return null;
+
+        Entity spawned;
+        if (entity != null) {
+            spawned = entity.copy(location);
+        } else {
+            if (type == null) return null;
+            spawned = world.spawnEntity(location, type, reason);
+            EntityTag blueprint = new EntityTag(spawned);
+            for (String key : mechanisms.keySet()) {
+                blueprint.applyMechanism(key, mechanisms.getObject(key));
+            }
+        }
+
+        if (persistent) spawned.setPersistent(true);
+        return new EntityTag(spawned);
+    }
+
+    public MapTag describe() {
+        MapTag data = new MapTag();
+
+        if (entity == null) {
+            for (String key : mechanisms.keySet()) data.putObject(key, mechanisms.getObject(key));
+            return data;
+        }
+
+        if (entity.customName() != null) {
+            data.putObject("name", new ElementTag(CorexSerializer.LEGACY.serialize(entity.customName())));
+        }
+        data.putObject("customNameVisible", new ElementTag(entity.isCustomNameVisible()));
+        data.putObject("glowing", new ElementTag(entity.isGlowing()));
+        data.putObject("gravity", new ElementTag(entity.hasGravity()));
+        data.putObject("invulnerable", new ElementTag(entity.isInvulnerable()));
+        data.putObject("silent", new ElementTag(entity.isSilent()));
+
+        if (entity instanceof LivingEntity living) {
+            AttributeInstance maxHealth = living.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) data.putObject("maxHealth", new ElementTag(maxHealth.getBaseValue()));
+            data.putObject("health", new ElementTag(living.getHealth()));
+        }
+        return data;
+    }
+
+    private static EntityType matchEntityType(String name) {
+        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase());
+        return key != null ? Registry.ENTITY_TYPE.get(key) : null;
+    }
+
+    private static double asDouble(AbstractTag value) {
+        return value instanceof ElementTag element ? element.asDouble() : new ElementTag(value.identify()).asDouble();
+    }
+
+    private static boolean asBoolean(AbstractTag value) {
+        return value instanceof ElementTag element ? element.asBoolean() : new ElementTag(value.identify()).asBoolean();
     }
 
     public boolean tryAdvancedMatcher(String matcher) {
@@ -166,9 +432,25 @@ public class EntityTag implements AbstractTag, Flaggable {
         return entity;
     }
 
+    public EntityType getEntityType() {
+        return entity != null ? entity.getType() : type;
+    }
+
     @Override
     public @NotNull String identify() {
-        return prefix + "@" + entity.getUniqueId();
+        if (entity != null) return prefix + "@" + entity.getUniqueId();
+
+        StringBuilder builder = new StringBuilder(prefix + "@");
+        builder.append(type != null ? type.getKey().getKey() : "unknown");
+
+        if (!mechanisms.isEmpty()) {
+            List<String> pairs = new ArrayList<>();
+            for (String key : mechanisms.keySet()) {
+                pairs.add(key + "=" + mechanisms.getObject(key).identify());
+            }
+            builder.append("[").append(String.join(";", pairs)).append("]");
+        }
+        return builder.toString();
     }
 
     @Override
@@ -177,8 +459,25 @@ public class EntityTag implements AbstractTag, Flaggable {
     }
 
     @Override
-    public @Nullable AbstractTag getAttribute(@NotNull Attribute attribute) {
+    public @Nullable AbstractTag getAttribute(@NotNull dev.corexinc.corex.api.tags.Attribute attribute) {
         return TAG_PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public @NonNull Adjustable duplicate() {
+        MapTag copy = new MapTag();
+        for (String key : mechanisms.keySet()) copy.putObject(key, mechanisms.getObject(key));
+        return new EntityTag(entity, type, copy);
+    }
+
+    @Override
+    public @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
+        return MECHANISM_PROCESSOR.process(this, mechanism, value);
+    }
+
+    @Override
+    public @NonNull MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+        return MECHANISM_PROCESSOR;
     }
 
     @Override
@@ -189,7 +488,7 @@ public class EntityTag implements AbstractTag, Flaggable {
 
     @Override
     public @NonNull String getTestValue() {
-        return "e@cf5d1e35-fb92-476e-9c96-bc932ca0b0cb";
+        return "e@zombie[maxHealth=100;name=okak]";
     }
 
     @Override

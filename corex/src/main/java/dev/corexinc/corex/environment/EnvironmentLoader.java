@@ -126,6 +126,7 @@ public class EnvironmentLoader {
                 MountCommand.class,
                 LeashCommand.class,
                 KillCommand.class,
+                SpawnCommand.class,
 
                 // Tags
                 ElementTag.class,
