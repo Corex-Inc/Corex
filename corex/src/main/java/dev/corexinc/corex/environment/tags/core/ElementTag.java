@@ -12,6 +12,8 @@ import dev.corexinc.corex.environment.utils.scripts.JsonHelper;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NonNull;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -815,6 +817,77 @@ public class ElementTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "round", (attr, obj) ->
                 new ElementTag(Math.round(obj.asDouble())));
+
+        /* @doc tag
+         *
+         * @Name roundTo[]
+         * @RawName <ElementTag.roundTo[<#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the element rounded to the specified number of decimal places.
+         * Uses HALF_UP rounding mode (i.e. 0.5 rounds up).
+         * For example, <element[3.14159].roundTo[2]> returns 3.14.
+         *
+         * @Usage
+         * // Narrates "3.14"
+         * - narrate <element[3.14159].roundTo[2]>
+         *
+         * @Usage
+         * // Narrates "100"
+         * - narrate <element[99.999].roundTo[0]>
+         *
+         * @Implements ElementTag.round_to[<#>]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "roundTo", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if (!obj.isDouble()) return null;
+            int places = new ElementTag(attr.getParam()).asInt();
+            if (places < 0) return null;
+            double rounded = BigDecimal.valueOf(obj.asDouble())
+                    .setScale(places, RoundingMode.HALF_UP)
+                    .doubleValue();
+            return new ElementTag(rounded);
+        }).test("2");
+
+        /* @doc tag
+         *
+         * @Name floor
+         * @RawName <ElementTag.floor>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the largest integer less than or equal to the element (rounds down).
+         * For example, <element[3.9].floor> returns 3, and <element[-1.2].floor> returns -2.
+         *
+         * @Usage
+         * // Narrates "3"
+         * - narrate <element[3.9].floor>
+         *
+         * @Implements ElementTag.round_down
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "floor", (attr, obj) -> new ElementTag((long) Math.floor(obj.asDouble())));
+
+        /* @doc tag
+         *
+         * @Name ceil
+         * @RawName <ElementTag.ceil>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the smallest integer greater than or equal to the element (rounds up).
+         * For example, <element[3.1].ceil> returns 4, and <element[-1.9].ceil> returns -1.
+         *
+         * @Usage
+         * // Narrates "4"
+         * - narrate <element[3.1].ceil>
+         *
+         * @Implements ElementTag.round_up
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ceil", (attr, obj) -> new ElementTag((long) Math.ceil(obj.asDouble())));
 
         /* @doc tag
          *
