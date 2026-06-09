@@ -7,6 +7,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.Position;
+import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.Location;
@@ -145,6 +146,18 @@ public class QueueTag implements AbstractTag {
             }
             return map;
         });
+
+        /* @doc tag
+         *
+         * @Name player
+         * @RawName <QueueTag.player>
+         * @Object QueueTag
+         * @ReturnType PlayerTag
+         * @NoArg
+         * @Description
+         * Returns a linked player of the queue.
+         */
+        PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer()));
     }
 
     public QueueTag(String id) {
