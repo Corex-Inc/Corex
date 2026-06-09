@@ -178,6 +178,12 @@ public class EnvironmentLoader {
                 SpriteFormatter.class,
                 ColorFormatter.class,
                 HeadFormatter.class,
+                FontFormatter.class,
+                GradientFormatter.class,
+                KeybindFormatter.class,
+                ParagraphFormatter.class,
+                ScoreFormatter.class,
+                TranslateFormatter.class,
 
                 // Script containers
                 TaskContainer.class,
