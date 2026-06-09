@@ -44,3 +44,9 @@ jobs:
             --title "Nightly Build" \
             --notes "Automatic build from commit: ${{ github.sha }}" \
             --prerelease
+
+      - name: Reload Meta documentation
+        run: |
+          curl -X POST "https://server.corexinc.dev/api/v1/meta/update/Corex" \
+               -H "Authorization: Bearer ${{ secrets.COREX_API_SECRET }}" \
+               -H "Content-Type: application/json"
