@@ -157,7 +157,7 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns a linked player of the queue.
          */
-        PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer()));
+        PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer())).ignoreTest();
     }
 
     public QueueTag(String id) {
