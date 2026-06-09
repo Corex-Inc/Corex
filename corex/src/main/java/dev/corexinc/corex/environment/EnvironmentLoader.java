@@ -4,8 +4,6 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
-import dev.corexinc.corex.environment.containers.commands.ArgumentTypeRegistry;
-import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // NMS
 import dev.corexinc.corex.environment.utils.adapters.*;
@@ -17,6 +15,7 @@ import dev.corexinc.corex.environment.commands.world.*;
 import dev.corexinc.corex.environment.commands.entity.*;
 // Containers
 import dev.corexinc.corex.environment.containers.*;
+import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 // Events
 import dev.corexinc.corex.environment.events.implementation.block.*;
 import dev.corexinc.corex.environment.events.implementation.core.*;
@@ -143,6 +142,7 @@ public class EnvironmentLoader {
                 LeashCommand.class,
                 KillCommand.class,
                 SpawnCommand.class,
+                NetworkMessageCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -212,6 +212,7 @@ public class EnvironmentLoader {
                 DeltaTimeEvent.class,
                 WebsocketScriptEvent.class,
                 FlagExpireEvent.class,
+                ProxyMessageEvent.class,
 
                 // Player
                 PlayerBreakBlockEvent.class,

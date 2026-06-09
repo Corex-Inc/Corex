@@ -16,6 +16,7 @@ dependencies {
     @SuppressWarnings("deprecation")
     compileOnly("io.canvasmc.canvas:canvas-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:24.1.0")
+    compileOnly("io.netty:netty-all:4.1.97.Final")
 
     // Other Libs
     compileOnly("org.java-websocket:Java-WebSocket:1.5.6")

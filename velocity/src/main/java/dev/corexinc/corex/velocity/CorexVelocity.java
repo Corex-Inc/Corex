@@ -13,6 +13,7 @@ import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.environment.utils.ServerVersion;
+import dev.corexinc.corex.velocity.environment.network.ProxyMessagingHandler;
 import dev.corexinc.corex.velocity.environment.utils.ConfigManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
@@ -20,6 +21,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.velocity.environment.utils.VelocityEnvironmentLoader;
 import dev.corexinc.corex.velocity.environment.utils.VelocitySchedulerAdapter;
 import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunCommand;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -39,12 +41,14 @@ public class CorexVelocity {
     private final CorexVelocityLoader loader;
     private CorexRegistry registry;
     private ConfigManager config;
+    private final Logger logger;
 
     @Inject
-    public CorexVelocity(ProxyServer server, @DataDirectory Path dataDirectory) {
+    public CorexVelocity(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger) {
         this.server = server;
         this.dataFolder = dataDirectory;
         this.loader = new CorexVelocityLoader(server.getPluginManager(), this, dataFolder);
+        this.logger = logger;
 
         CorexLogger.setConsole(server.getConsoleCommandSource());
         try {
@@ -73,6 +77,10 @@ public class CorexVelocity {
 
         this.registry = new CorexRegistry();
         VelocityEnvironmentLoader.registerDefaults(this.registry);
+
+        ProxyMessagingHandler handler = new ProxyMessagingHandler(server, logger);
+        handler.init();
+        server.getEventManager().register(this, handler);
 
         ScriptManager.setDataFolder(dataFolder);
         ScriptManager.setRegistry(registry);

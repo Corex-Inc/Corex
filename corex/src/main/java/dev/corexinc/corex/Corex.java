@@ -7,6 +7,7 @@ import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
+import dev.corexinc.corex.environment.network.ProxyMessagingManager;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.utils.ServerVersion;
 import dev.corexinc.corex.environment.utils.scripts.EnvManager;
@@ -52,6 +53,7 @@ public class Corex extends JavaPlugin {
         getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         FlagManager.init();
+        new ProxyMessagingManager().init(this);
         Debugger.updateDebugMode(getConfig().getString("logger.debug-mode", "default"));
 
         setupRuntimeFlags();
