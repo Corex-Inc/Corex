@@ -41,6 +41,8 @@ import java.nio.charset.StandardCharsets;
  * will result in the value 'THIS_IS_A_TEST'.
  *
  * Note that while other objects often return their object identifier (p@, li@, e@, etc.), elements usually do not (except special type-validation circumstances).
+ *
+ * @Implements ElementTag
  */
 public class ElementTag implements AbstractTag {
 

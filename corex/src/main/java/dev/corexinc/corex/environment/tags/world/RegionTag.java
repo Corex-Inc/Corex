@@ -65,9 +65,36 @@ public class RegionTag implements AbstractTag {
 
         ObjectFetcher.registerFetcher(PREFIX, RegionTag::new);
 
+        /* @doc tag
+         *
+         * @Name isGlobal
+         * @RawName <RegionTag.isGlobal>
+         * @Object RegionTag
+         * @ReturnType ElementTag(Boolean)
+         * @NoArg
+         * @Description
+         * Returns true if this region represents the global thread (i.e. `reg@global`),
+         * false if it represents a specific tick-region in the world.
+         *
+         * @Implements RegionTag.isGlobal
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isGlobal", (attr, obj) ->
                 new ElementTag(obj.isGlobal));
 
+        /* @doc tag
+         *
+         * @Name tps
+         * @RawName <RegionTag.tps>
+         * @Object RegionTag
+         * @ReturnType ElementTag(Decimal)
+         * @NoArg
+         * @Description
+         * Returns the current TPS (ticks per second) of this region.
+         * On Folia servers, returns the TPS of the specific tick-region this tag refers to.
+         * On Paper servers (or for `reg@global`), returns the server-wide 1-minute average TPS.
+         *
+         * @Implements RegionTag.tps
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "tps", (attr, obj) -> {
             if (Corex.isFolia() && !obj.isGlobal) {
                 return new ElementTag(FoliaSupport.getTPS(obj));
@@ -75,9 +102,38 @@ public class RegionTag implements AbstractTag {
             return new ElementTag(Bukkit.getServer().getTPS()[0]);
         }).ignoreTest();
 
+        /* @doc tag
+         *
+         * @Name mspt
+         * @RawName <RegionTag.mspt>
+         * @Object RegionTag
+         * @ReturnType ElementTag(Decimal)
+         * @NoArg
+         * @Description
+         * Returns the server's average milliseconds per tick (MSPT).
+         * Values consistently above 50ms indicate the server is running behind schedule.
+         * Note: this is a server-wide metric and does not differ between regions.
+         *
+         * @Implements RegionTag.mspt
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "mspt", (attr, obj) ->
                 new ElementTag(Bukkit.getServer().getAverageTickTime())).ignoreTest();
 
+        /* @doc tag
+         *
+         * @Name players
+         * @RawName <RegionTag.players>
+         * @Object RegionTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Description
+         * Returns a ListTag of all players currently processed by this region's thread.
+         * On Folia, only players whose location belongs to this tick-region are included.
+         * On Paper, returns all online players in the same world (or all players for `reg@global`).
+         * Returns an empty list on Folia for `reg@global`.
+         *
+         * @Implements RegionTag.players
+         */
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attr, obj) -> {
             ListTag list = new ListTag();
             if (obj.isGlobal) {
@@ -99,6 +155,21 @@ public class RegionTag implements AbstractTag {
             return list;
         });
 
+        /* @doc tag
+         *
+         * @Name queues
+         * @RawName <RegionTag.queues>
+         * @Object RegionTag
+         * @ReturnType ListTag(QueueTag)
+         * @NoArg
+         * @Description
+         * Returns a ListTag of all script queues anchored to this region's thread.
+         * On Folia, only queues whose anchor position falls within this tick-region are included.
+         * On Paper, returns all queues anchored in the same world.
+         * For `reg@global`, returns all queues with no anchor position.
+         *
+         * @Implements RegionTag.queues
+         */
         TAG_PROCESSOR.registerTag(ListTag.class, "queues", (attr, obj) -> {
             ListTag list = new ListTag();
             if (obj.isGlobal) {

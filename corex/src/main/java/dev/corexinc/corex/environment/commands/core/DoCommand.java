@@ -22,6 +22,7 @@ import java.util.Map;
  * @Syntax do [<script>] (path:<name>) (def:<element>|.../def.<name>:<value>) (id:<name>)
  * @RequiredArgs 1
  * @MaxArgs -1
+ * @Waitable
  * @Aliases run
  * @ShortDescription Runs a script in a new queue.
  *

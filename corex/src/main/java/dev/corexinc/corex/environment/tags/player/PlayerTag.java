@@ -41,6 +41,8 @@ import java.util.UUID;
  *
  * @Description
  * A PlayerTag represents a player in the game.
+ *
+ * @Implements PlayerTag
  */
 public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIdentity {
 

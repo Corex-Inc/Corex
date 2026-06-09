@@ -29,6 +29,8 @@ import java.util.*;
  * Values can be duplicated into multiple keys exclude issue.
  *
  * Order of keys is preserved.
+ *
+ * @Implements MapTag
  */
 public class MapTag implements AbstractTag {
 

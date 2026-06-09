@@ -44,7 +44,7 @@ import java.util.List;
  * @Usage
  * // Send a personalized message to everyone on the server using a loop.
  * - foreach <server.onlinePlayers> as:target:
- *     - actionbar "<&7>Hello, <&b><[target].name><gray>! Your ping is <[target].ping>ms." targets:<[target]>
+ *     - actionbar "<&7>Hello, <&b><[target].name><&7>! Your ping is <[target].ping>ms." targets:<[target]>
  */
 public class ActionBarCommand implements AbstractCommand {
 

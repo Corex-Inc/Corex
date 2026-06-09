@@ -47,16 +47,6 @@ import java.io.File;
  * data using the flag command with "server@" as the target.
  * Server flags persist to disk across restarts (SQLite).
  *
- * @Tags
- * <server.onlinePlayers>       - returns a ListTag(PlayerTag) of all currently online players.
- * <server.regions>             - returns a ListTag(RegionTag) of all active tick-regions on the server.
- * <server.loadedStructures>    - returns a ListTag(StructureTag) of all structures registered with the StructureManager.
- * <server.structureTypes>      - returns a ListTag(ElementTag) of all structure type keys known to the server.
- * <server.availableBiomes>     - returns a ListTag(BiomeTag) of all biome types available on the server.
- * <server.flag[name]>          - returns the value of a server flag.
- * <server.hasFlag[name]>       - returns an ElementTag(Boolean) indicating if the flag exists.
- * <server.flagExpiry[name]>    - returns a DurationTag of remaining time before the flag expires.
- *
  * @Usage
  * // Send a message to every online player.
  * - narrate targets:<server.onlinePlayers> "Server is restarting soon." per_player
@@ -68,6 +58,8 @@ import java.io.File;
  * @Usage
  * // Get average TPS across all active regions.
  * - narrate "Average TPS: <server.regions.parse[tps].average>"
+ *
+ * @Implements ServerTag
  */
 public class ServerTag implements AbstractTag, Flaggable, Adjustable {
 

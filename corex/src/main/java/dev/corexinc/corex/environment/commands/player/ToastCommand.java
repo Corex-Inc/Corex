@@ -23,7 +23,7 @@ import java.util.List;
 /* @doc command
  *
  * @Name Toast
- * @Syntax toast[<text>] (icon:<material>) (frame:task/challenge/goal) (targets:<player>|...)
+ * @Syntax toast [<text>] (icon:<material>) (frame:task/challenge/goal) (targets:<player>|...)
  * @RequiredArgs 1
  * @MaxArgs 4
  * @ShortDescription Sends a visual advancement popup (toast) to players.

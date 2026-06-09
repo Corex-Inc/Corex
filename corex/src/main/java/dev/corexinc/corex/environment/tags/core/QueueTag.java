@@ -25,6 +25,8 @@ import java.util.Map;
  * A QueueTag represents an active or finished script queue.
  * This can be used to track the status of running scripts, retrieve their definitions (variables),
  * or identify which region/thread they are currently running on.
+ *
+ * @Implements QueueTag
  */
 public class QueueTag implements AbstractTag {
 

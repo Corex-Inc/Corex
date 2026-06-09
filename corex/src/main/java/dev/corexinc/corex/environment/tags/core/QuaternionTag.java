@@ -37,11 +37,13 @@ import org.jspecify.annotations.NonNull;
  * 1. No rotation: Use `quat@identity`. This means "default rotation, don't twist anything".
  * 2. Spinning around an axis: Take a direction vector and use `.toAxisAngleQuaternion`.
  *    Example: `<location[0,1,0].toAxisAngleQuaternion[3.14]>` will create a quaternion that rotates the object 180 degrees (3.14 radians) around the Y-axis (straight up).
- * 3. **Looking from A to B:** If you want an object to face a certain way, use `.quaternionBetween`.
+ * 3. Looking from A to B: If you want an object to face a certain way, use `.quaternionBetween`.
  *    Example: `<location[0,0,1].quaternionBetween[<player.location>]>` creates a rotation that transitions from looking South (Z=1) to looking wherever the player is looking.
  *
  * The biggest superpower of quaternions is the `.slerp` tag (Spherical Linear Interpolation). It allows you to smoothly blend two rotations together.
  * For example: `<[rotationA].slerp[<[rotationB]>].amount[0.5]>` will give you a quaternion that is exactly halfway between Rotation A and Rotation B. By changing `amount` from `0.0` to `1.0` in a repeating script, you can create buttery-smooth 3D rotation animations.
+ *
+ * @Implements QuaternionTag
  */
 public class QuaternionTag implements AbstractTag {
 

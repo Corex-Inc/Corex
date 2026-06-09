@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @Usage
  * // Make the linked entity look at a fixed position.
- * - look <player> l@world,0,64,0
+ * - look <player> <location[>0,64,0,world]>
  *
  * @Usage
  * // Set an exact yaw and pitch for a player.

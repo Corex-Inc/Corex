@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
  * - 'first' to mean index 1
  * - 'last'  to mean the final entry in the list
  * - Negative numbers to select from the end - 'get[-1]' is the last entry, 'get[-2]' is the second-to-last, etc.
+ *
+ * @Implements ListTag
  */
 public class ListTag implements AbstractTag {
 

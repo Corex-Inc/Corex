@@ -24,6 +24,8 @@ import org.bukkit.generator.WorldInfo;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
+
 /* @doc object
  *
  * @Name ChunkTag
@@ -66,21 +68,94 @@ public class ChunkTag implements AbstractTag, Flaggable {
             return tag.getWorld() != null ? tag : null;
         });
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) ->
-                new ElementTag(obj.x));
+        /* @doc tag
+         *
+         * @Name x
+         * @RawName <ChunkTag.x>
+         * @Object ChunkTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Retrieves the X-coordinate component of this chunk object.
+         * This value represents the horizontal position along the X-axis in a 3D space.
+         *
+         * @Implements ChunkTag.x
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.x));
 
-        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) ->
-                new ElementTag(obj.z));
+        /* @doc tag
+         *
+         * @Name z
+         * @RawName <ChunkTag.z>
+         * @Object ChunkTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Retrieves the Z-coordinate component of this chunk object.
+         * This value represents the horizontal position along the Z-axis in chunk coordinates.
+         *
+         * @Implements ChunkTag.z
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.z));
 
-        TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) ->
-                new WorldTag(obj.world));
+        /* @doc tag
+         *
+         * @Name world
+         * @RawName <ChunkTag.world>
+         * @Object ChunkTag
+         * @ReturnType WorldTag
+         * @NoArg
+         * @Description
+         * Retrieves the WorldTag representing the world this chunk belongs to.
+         *
+         * @Implements ChunkTag.world
+         */
+        TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> new WorldTag(obj.world));
 
+        /* @doc tag
+         *
+         * @Name isLoaded
+         * @RawName <ChunkTag.isLoaded>
+         * @Object ChunkTag
+         * @ReturnType ElementTag(Boolean)
+         * @NoArg
+         * @Description
+         * Returns true if this chunk is currently loaded in memory, false otherwise.
+         * Unloaded chunks are not actively ticked and their entities are inaccessible.
+         *
+         * @Implements ChunkTag.is_loaded
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLoaded", (attr, obj) ->
                 new ElementTag(obj.world != null && obj.world.isChunkLoaded(obj.x, obj.z)));
 
+        /* @doc tag
+         *
+         * @Name center
+         * @RawName <ChunkTag.center>
+         * @Object ChunkTag
+         * @ReturnType LocationTag
+         * @NoArg
+         * @Description
+         * Returns a LocationTag at the horizontal center of this chunk (Y=0).
+         * The center is always at local offset 8,8 within the 16x16 column,
+         * i.e. block coordinates (x*16+8, 0, z*16+8).
+         */
         TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) ->
                 new LocationTag(new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8)));
 
+        /* @doc tag
+         *
+         * @Name players
+         * @RawName <ChunkTag.players>
+         * @Object ChunkTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Description
+         * Returns a ListTag of all players currently inside this chunk.
+         * Returns an empty list if the chunk is not loaded.
+         *
+         * @Implements ChunkTag.players
+         */
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attr, obj) -> {
             ListTag listTag = new ListTag();
             if (obj.world == null || !obj.world.isChunkLoaded(obj.x, obj.z)) return listTag;
@@ -88,7 +163,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
             Location center = new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8);
             BukkitSchedulerAdapter.requireRegion(center);
 
-            for (Entity entity : obj.getChunk().getEntities()) {
+            for (Entity entity : Objects.requireNonNull(obj.getChunk()).getEntities()) {
                 if (entity instanceof Player player) {
                     listTag.addObject(new PlayerTag(player));
                 }
@@ -96,6 +171,19 @@ public class ChunkTag implements AbstractTag, Flaggable {
             return listTag;
         });
 
+        /* @doc tag
+         *
+         * @Name entities
+         * @RawName <ChunkTag.entities>
+         * @Object ChunkTag
+         * @ReturnType ListTag(EntityTag)
+         * @NoArg
+         * @Description
+         * Returns a ListTag of all entities currently inside this chunk, including players.
+         * Returns an empty list if the chunk is not loaded.
+         *
+         * @Implements ChunkTag.entities[(<entity>|...)]
+         */
         TAG_PROCESSOR.registerTag(ListTag.class, "entities", (attr, obj) -> {
             ListTag listTag = new ListTag();
             if (obj.world == null || !obj.world.isChunkLoaded(obj.x, obj.z)) return listTag;
@@ -103,15 +191,39 @@ public class ChunkTag implements AbstractTag, Flaggable {
             Location center = new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8);
             BukkitSchedulerAdapter.requireRegion(center);
 
-            for (Entity entity : obj.getChunk().getEntities()) {
+            for (Entity entity : Objects.requireNonNull(obj.getChunk()).getEntities()) {
                 listTag.addObject(new EntityTag(entity));
             }
             return listTag;
         });
 
-        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) ->
-                new RegionTag(obj.world, obj.x, obj.z));
+        /* @doc tag
+         *
+         * @Name region
+         * @RawName <ChunkTag.region>
+         * @Object ChunkTag
+         * @ReturnType RegionTag
+         * @NoArg
+         * @Description
+         * Returns the Folia RegionTag that owns this chunk.
+         * Useful for verifying region ownership before performing region-bound operations.
+         */
+        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> new RegionTag(obj.world, obj.x, obj.z));
 
+        /* @doc tag
+         *
+         * @Name cuboid
+         * @RawName <ChunkTag.cuboid>
+         * @Object ChunkTag
+         * @ReturnType CuboidTag
+         * @NoArg
+         * @Description
+         * Returns a CuboidTag spanning the full vertical extent of this chunk —
+         * from the world's minimum height to its maximum height across the 16x16 column.
+         * Returns null if the chunk's world is invalid.
+         *
+         * @Implements ChunkTag.cuboid
+         */
         TAG_PROCESSOR.registerTag(CuboidTag.class, "cuboid", (attr, obj) -> {
             if (obj.world == null) return null;
             int minX = obj.x << 4;

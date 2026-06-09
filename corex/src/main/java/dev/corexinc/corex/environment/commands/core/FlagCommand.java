@@ -55,7 +55,7 @@ import java.util.List;
  *
  * @Usage
  * // Remove a flag.
- * - flag <player> isVip!
+ * - flag <player> isVip:!
  */
 public class FlagCommand implements AbstractCommand {
 

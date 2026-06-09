@@ -53,7 +53,7 @@ import java.util.Objects;
  *
  * @Usage
  * // Use to place a 10-minute cooldown on a custom item.
- * - itemcooldown i@myCustomSword duration:10m
+ * - itemcooldown myCustomSword duration:10m
  *
  * @Usage
  * // Use to apply a 5-second cooldown via namespaced key.
@@ -61,7 +61,7 @@ import java.util.Objects;
  *
  * @Usage
  * // Use to apply cooldowns on a mix of types for all online players.
- * - itemcooldown ender_pearl|i@myItem|myplugin:key duration:5s targets:<server.onlinePlayers>
+ * - itemcooldown ender_pearl|<item[myItem]>|myplugin:key duration:5s targets:<server.onlinePlayers>
  *
  * @Usage
  * // Use to clear a cooldown immediately.

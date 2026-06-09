@@ -251,8 +251,8 @@ public class UtilTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name listNumbers
-         * @RawName <UtilTag.listNumbers[to=<#>;(from=<#>/{1});(every=<#>/{1})]>
+         * @Name range
+         * @RawName <UtilTag.range[to=<#>;(from=<#>/{1});(every=<#>/{1})]>
          * @Object UtilTag
          * @ReturnType ListTag
          * @ArgRequired
@@ -262,17 +262,17 @@ public class UtilTag implements AbstractTag {
          * Note that this generally should not be used as input to the 'foreach' command. Instead, use {@link command repeat}.
          * @example
          * // Narrates "1, 2, and 3"
-         * - narrate <util.listNumbers[to=3].formatted>
+         * - narrate <util.range[to=3].formatted>
          * @example
          * // Narrates "3, 4, and 5"
-         * - narrate <util.listNumbers[from=3;to=5].formatted>
+         * - narrate <util.range[from=3;to=5].formatted>
          * @example
          * // Narrates "4, 8, and 12"
-         * - narrate <util.listNumbers[from=4;to=12;every=4].formatted>
+         * - narrate <util.range[from=4;to=12;every=4].formatted>
          *
          * @Implements util.list_numbers
          */
-        TAG_PROCESSOR.registerTag(ListTag.class, "listNumbers", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "range", (attr, obj) -> {
             if (!attr.hasParam()) return new ListTag("");
 
             long from = 1;

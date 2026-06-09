@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  * @RequiredArgs 2
  * @MaxArgs 6
  * @ShortDescription Sets blocks in the world.
+ * @Waitable
  *
  * @Implements ModifyBlock
  *

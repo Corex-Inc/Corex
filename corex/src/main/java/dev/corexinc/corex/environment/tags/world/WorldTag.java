@@ -21,7 +21,9 @@ import java.util.UUID;
 /* @doc object
  * @Name WorldTag
  * @Prefix w
- * @Format The identity format for worlds is the name of the world. World names are case-insensitive.
+ * @Format
+ * The identity format for worlds is the name of the world. World names are case-insensitive.
+ *
  * @Description A WorldTag represents a world on the server.
  * This is a lazy object that stores the world identity and resolves the Bukkit world only when needed.
  */

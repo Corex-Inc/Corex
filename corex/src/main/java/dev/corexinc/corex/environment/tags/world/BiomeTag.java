@@ -40,6 +40,8 @@ import java.util.List;
  * @Usage
  * // Defines a BiomeTag for a custom biome 'terra:warm_river' in the world 'space'.
  * - define customBiome biome@space,terra:warm_river
+ *
+ * @Implements BiomeTag
  */
 public class BiomeTag implements AbstractTag, Adjustable {
 
@@ -60,7 +62,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          *
          * @Name name
          * @RawName <BiomeTag.name>
-         * @Returns ElementTag
+         * @ReturnType ElementTag
          * @Object BiomeTag
          * @NoArg
          *
@@ -80,13 +82,13 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name world
-         * @Syntax <BiomeTag.world>
-         * @Returns ElementTag
+         * @RawName <BiomeTag.world>
+         * @ReturnType ElementTag
          * @Object BiomeTag
          * @NoArg
          *
          * @Description
-         * Returns the name of the world in which this biome is located.
+         * ReturnType the name of the world in which this biome is located.
          * This allows distinguishing between biomes with the same key across different worlds.
          *
          * @Usage
@@ -99,10 +101,12 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name humidity
-         * @Syntax <BiomeTag.humidity>
-         * @Returns ElementTag(Decimal)
+         * @RawName <BiomeTag.humidity>
+         * @ReturnType ElementTag(Decimal)
          * @Object BiomeTag
          * @NoArg
+         *
+         * @Implements QuaternionTag
          *
          * @Implements BiomeTag.humidity
          *
@@ -120,8 +124,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name baseTemperature
-         * @Syntax <BiomeTag.baseTemperature>
-         * @Returns ElementTag(Decimal)
+         * @RawName <BiomeTag.baseTemperature>
+         * @ReturnType ElementTag(Decimal)
          * @NoArg
          * @Object BiomeTag
          *
@@ -141,8 +145,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name temperatureAt
-         * @Syntax <BiomeTag.temperatureAt[<location>]>
-         * @Returns ElementTag(Decimal)
+         * @RawName <BiomeTag.temperatureAt[<location>]>
+         * @ReturnType ElementTag(Decimal)
          * @Object BiomeTag
          * @ArgRequired
          *
@@ -173,8 +177,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name hasDownfall
-         * @Syntax <BiomeTag.hasDownfall>
-         * @Returns ElementTag(Boolean)
+         * @RawName <BiomeTag.hasDownfall>
+         * @ReturnType ElementTag(Boolean)
          * @Object BiomeTag
          * @NoArg
          *
@@ -182,7 +186,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          *
          * @Description
          * Indicates whether this biome is capable of experiencing any form of precipitation, such as rain or snow.
-         * Returns `true` if precipitation can occur, `false` otherwise.
+         * ReturnType `true` if precipitation can occur, `false` otherwise.
          *
          * @Usage
          * // Checks if the current biome has any precipitation.
@@ -195,8 +199,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name downfallAt[]
-         * @Syntax <BiomeTag.downfallAt[<location>]>
-         * @Returns ElementTag
+         * @RawName <BiomeTag.downfallAt[<location>]>
+         * @ReturnType ElementTag
          * @ArgRequired
          *
          * @Implements BiomeTag.downfallAt
@@ -228,8 +232,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name fogColor
-         * @Syntax <BiomeTag.fogColor>
-         * @Returns ColorTag
+         * @RawName <BiomeTag.fogColor>
+         * @ReturnType ColorTag
          * @NoArg
          * @Object BiomeTag
          *
@@ -250,13 +254,13 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name waterColor
-         * @Syntax <BiomeTag.waterColor>
-         * @Returns ColorTag
+         * @RawName <BiomeTag.waterColor>
+         * @ReturnType ColorTag
          * @NoArg
          * @Object BiomeTag
          *
          * @Description
-         * Returns the ColorTag defining the visual color of water within this biome.
+         * ReturnType the ColorTag defining the visual color of water within this biome.
          * This can vary significantly between different biomes, affecting aesthetics.
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "waterColor", (attr, obj) -> nms.getWaterColor(obj.world, obj.biomeKey)
@@ -266,8 +270,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name waterFogColor
-         * @Syntax <BiomeTag.waterFogColor>
-         * @Returns ColorTag
+         * @RawName <BiomeTag.waterFogColor>
+         * @ReturnType ColorTag
          * @NoArg
          * @Object BiomeTag
          *
@@ -288,8 +292,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name foliageColor
-         * @Syntax <BiomeTag.foliageColor>
-         * @Returns ColorTag
+         * @RawName <BiomeTag.foliageColor>
+         * @ReturnType ColorTag
          * @Nullable
          * @NoArg
          * @Object BiomeTag
@@ -314,8 +318,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name spawnableEntities
-         * @Syntax <BiomeTag.spawnableEntities[(<category>)]>
-         * @Returns ListTag(ElementTag)
+         * @RawName <BiomeTag.spawnableEntities[(<category>)]>
+         * @ReturnType ListTag(ElementTag)
          * @Object BiomeTag
          *
          * @Implements BiomeTag.spawnable_entities
@@ -353,8 +357,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name attribute[]
-         * @Syntax <BiomeTag.attribute[<attribute>]>
-         * @Returns ObjectTag
+         * @RawName <BiomeTag.attribute[<attribute>]>
+         * @ReturnType ObjectTag
          * @AvailableSince 1.21.11
          * @ArgRequired
          * @Object BiomeTag
@@ -384,8 +388,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
         /* @doc tag
          *
          * @Name attributeNames
-         * @Syntax <BiomeTag.attributeNames>
-         * @Returns ListTag(ElementTag)
+         * @RawName <BiomeTag.attributeNames>
+         * @ReturnType ListTag(ElementTag)
          * @AvailableSince 1.21.11
          * @Object BiomeTag
          * @NoArgs
@@ -444,7 +448,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Input ColorTag
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
-         * @Implements BiomeTag.foliage_color
+         * @Implements foliage_color
          *
          * @Description
          * Sets the hardcoded foliage color override for this biome.
@@ -468,7 +472,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Input ColorTag
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
-         * @Implements BiomeTag.fog_color
+         * @Implements fog_color
          *
          * @Description
          * Modifies the sky fog color for this biome.
@@ -491,6 +495,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Input ElementTag(Decimal)
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
+         * @Implements base_temperature
+         *
          * @Description
          * Adjusts the base temperature of this biome.
          * The input should be an ElementTag representing a decimal number, which will be used as the new default temperature.
@@ -512,6 +518,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Input ElementTag(Decimal)
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
+         * @Implements humidity
+         *
          * @Description
          * Modifies the base humidity level of this biome.
          * The input is an ElementTag (decimal) defining the new humidity value, which affects precipitation behavior.
@@ -532,6 +540,8 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Name hasDownfall
          * @Input ElementTag(Boolean)
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
+         *
+         * @Implements has_downfall
          *
          * @Description
          * Toggles whether this biome experiences precipitation (rain or snow).
@@ -575,7 +585,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Input ColorTag
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
-         * @Implements BiomeTag.water_fog_color
+         * @Implements water_fog_color
          *
          * @Description
          * Modifies the color of the underwater fog effect for this biome.

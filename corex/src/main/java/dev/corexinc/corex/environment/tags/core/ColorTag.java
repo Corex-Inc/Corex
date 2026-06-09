@@ -20,6 +20,8 @@ import org.jspecify.annotations.NonNull;
  * A ColorTag represents an RGBA color value.
  * Each channel (red, green, blue, alpha) is an integer from 0 to 255.
  * Alpha defaults to 255 (fully opaque) if not specified.
+ *
+ * @Implements ColorTag
  */
 public class ColorTag implements AbstractTag {
 
@@ -51,6 +53,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "255"
          * - narrate <color[255,0,0].red>
+         *
+         * @Implements ColorTag.red
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "red", (attr, obj) -> new ElementTag(obj.red));
 
@@ -66,6 +70,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "128"
          * - narrate <color[0,128,0].green>
+         *
+         * @Implements ColorTag.green
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "green", (attr, obj) -> new ElementTag(obj.green));
 
@@ -81,6 +87,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "200"
          * - narrate <color[0,0,200].blue>
+         *
+         * @Implements ColorTag.blue
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "blue", (attr, obj) -> new ElementTag(obj.blue));
 
@@ -96,6 +104,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "255"
          * - narrate <color[255,0,0].alpha>
+         *
+         * @Implements ColorTag.alpha
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "alpha", (attr, obj) -> new ElementTag(obj.alpha));
 
@@ -112,6 +122,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "#FF0000"
          * - narrate <color[255,0,0].hex>
+         *
+         * @Implements ColorTag.hex
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "hex", (attr, obj) -> {
             if (attr.matchesNext("withAlpha")) {
@@ -133,6 +145,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "16711680"
          * - narrate <color[255,0,0].rgb>
+         *
+         * @Implements ColorTag.rgb_integer
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "rgb", (attr, obj) ->
                 new ElementTag((obj.red << 16) | (obj.green << 8) | obj.blue));
@@ -146,6 +160,8 @@ public class ColorTag implements AbstractTag {
          * @NoArg
          * @Description
          * Returns the color as a packed ARGB integer (alpha in the highest byte).
+         *
+         * @Implements ColorTag.argb_integer
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "argb", (attr, obj) ->
                 new ElementTag((obj.alpha << 24) | (obj.red << 16) | (obj.green << 8) | obj.blue));
@@ -188,6 +204,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "color@128,0,0"
          * - narrate <color[255,0,0].withRed[128]>
+         *
+         * @Implements ColorTag.with_red[<red>]
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "withRed", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -203,6 +221,8 @@ public class ColorTag implements AbstractTag {
          * @ArgRequired
          * @Description
          * Returns a copy of this color with the green channel replaced by the given value.
+         *
+         * @Implements ColorTag.with_green[<green>]
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "withGreen", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -218,6 +238,8 @@ public class ColorTag implements AbstractTag {
          * @ArgRequired
          * @Description
          * Returns a copy of this color with the blue channel replaced by the given value.
+         *
+         * @Implements ColorTag.with_blue[<blue>]
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "withBlue", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -233,6 +255,8 @@ public class ColorTag implements AbstractTag {
          * @ArgRequired
          * @Description
          * Returns a copy of this color with the alpha channel replaced by the given value.
+         *
+         * @Implements ColorTag.with_alpha[<alpha>]
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "withAlpha", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -252,6 +276,8 @@ public class ColorTag implements AbstractTag {
          * @Usage
          * // Narrates "color@127,127,0,255"
          * - narrate <color[255,0,0].mix[color@0,255,0]>
+         *
+         * @Implements ColorTag.mix[<color>]
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "mix", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -339,28 +365,6 @@ public class ColorTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ColorTag.class, "grayscale", (attr, obj) -> {
             int luminance = clamp((int) (obj.red * 0.2126 + obj.green * 0.7152 + obj.blue * 0.0722));
             return new ColorTag(luminance, luminance, luminance, obj.alpha);
-        });
-
-        /* @doc tag
-         *
-         * @Name argbInteger
-         * @RawName <ColorTag.argbInteger>
-         * @Object ColorTag
-         * @ReturnType ElementTag
-         * @NoArg
-         * @Description
-         * Returns color as ARGB integer.
-         * @Usage
-         * // Narrates "-65536"
-         * - narrate <color[255,0,0].argbInteger>
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "argbInteger", (attr, obj) -> {
-            int argb = ((obj.alpha & 0xFF) << 24)
-                    | ((obj.red & 0xFF) << 16)
-                    | ((obj.green & 0xFF) << 8)
-                    | (obj.blue & 0xFF);
-
-            return new ElementTag(argb);
         });
     }
 

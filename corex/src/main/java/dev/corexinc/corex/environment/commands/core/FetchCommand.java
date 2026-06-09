@@ -33,6 +33,7 @@ import java.util.Map;
  * @RequiredArgs 1
  * @MaxArgs 7
  * @Aliases webget
+ * @Waitable
  * @ShortDescription Asynchronously fetches a webpage or API response.
  *
  * @Implements Fetch

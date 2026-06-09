@@ -28,6 +28,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/* @doc object
+ *
+ * @Name ItemTag
+ * @Prefix i
+ *
+ * @Format
+ * The identity format for items is `i@material` or `i@material[prop=val;...]`.
+ * Material names are lowercase Bukkit material names (e.g. `i@stone`, `i@diamond_sword`).
+ * Script-defined items are referenced by their script name (e.g. `i@my_sword`).
+ * Properties are separated by semicolons inside square brackets:
+ * `i@stone[amount=5;displayName=§aSpecial Stone]`.
+ *
+ * @Description
+ * An ItemTag represents a Minecraft ItemStack — a material type combined with optional
+ * metadata such as display name, lore, amount, and custom model data.
+ * Items can be constructed from raw material names, serialized identity strings, or
+ * script-defined item containers registered via ItemContainer.
+ */
 public class ItemTag implements AbstractTag, Adjustable {
 
     private static final String prefix = "i";

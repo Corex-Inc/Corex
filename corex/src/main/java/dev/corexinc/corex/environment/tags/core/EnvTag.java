@@ -8,7 +8,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.utils.scripts.EnvManager;
 import org.jspecify.annotations.NonNull;
 
-/* @[objecttype]
+/* @object
  *
  * @Name EnvTag
  * @Prefix env
@@ -35,6 +35,8 @@ import org.jspecify.annotations.NonNull;
  * There is intentionally no tag that can read the value of a secret.
  *
  * You can reload the secrets file via "/run reload"
+ *
+ * @Implements SecretTag
  */
 public class EnvTag implements AbstractTag {
 

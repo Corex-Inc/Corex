@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
  * @Usage
  * // Use for delay queue for 1 minute 10 ticks
  * - wait <duration[1s10t]>
+ *
+ * @Implements DurationTag
  */
 public class DurationTag implements AbstractTag {
 

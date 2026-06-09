@@ -54,6 +54,8 @@ import java.util.function.Function;
  *
  * Note that applying a mechanism to a spawned entity (via .with or the Adjust command) mutates the live entity in the world immediately.
  * Applying a mechanism to a blueprint only records it, to be applied by the next Spawn.
+ *
+ * @Implements EntityTag
  */
 public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
@@ -72,11 +74,11 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
     private static final Map<String, NbtMechanism> NBT_MECHANISMS = new LinkedHashMap<>();
 
-    private static void mechanism(String name, BiConsumer<Entity, AbstractTag> applier) {
-        mechanism(name, null, null, applier);
+    private static void registerMechanism(String name, BiConsumer<Entity, AbstractTag> applier) {
+        registerMechanism(name, null, null, applier);
     }
 
-    private static void mechanism(String name, String nbtKey, Function<AbstractTag, AbstractTag> nbtTransform, BiConsumer<Entity, AbstractTag> applier) {
+    private static void registerMechanism(String name, String nbtKey, Function<AbstractTag, AbstractTag> nbtTransform, BiConsumer<Entity, AbstractTag> applier) {
         MECHANISM_PROCESSOR.registerMechanism(name, (object, value) -> object.adjust(name, value, applier));
         if (nbtKey != null) NBT_MECHANISMS.put(nbtKey, new NbtMechanism(name, nbtTransform));
     }
@@ -199,6 +201,8 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * Returns the full raw NBT of a spawned entity as a MapTag of NBT key to SNBT value, for example 'map@[NoGravity=1b;Health=20.0f]'.
          * Each value keeps its exact NBT type, so the map round-trips losslessly through the nbt mechanism.
          * Returns an empty map for an unspawned blueprint, or when no NMS adapter is available for the server version.
+         *
+         * @Implements EntityTag.all_raw_nbt
          */
         TAG_PROCESSOR.registerTag(MapTag.class, "nbt", (attribute, object) -> object.readNbt()).ignoreTest();
 
@@ -211,7 +215,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @NoArg
          * @Description
          * Returns an unspawned blueprint of the entity - its type plus a snapshot of its mechanisms.
-         * For example a spawned 'e@<uuid>' becomes 'e@zombie[maxHealth=100;name=okak]'.
+         * For example a spawned 'e@<uuid>' becomes 'e@zombie[maxHealth=100;name=My zombiiieeeee]'.
          * The blueprint can be passed to the Spawn command to create fresh copies.
          */
         TAG_PROCESSOR.registerTag(EntityTag.class, "blueprint", (attribute, object) ->
@@ -227,7 +231,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.custom_name
          */
-        mechanism("name", (target, val) -> target.customName(val.asComponent()));
+        registerMechanism("name", (target, val) -> target.customName(val.asComponent()));
 
         /* @doc mechanism
          *
@@ -239,7 +243,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.custom_name_visible
          */
-        mechanism("customNameVisible", "CustomNameVisible", EntityTag::nbtByteToBool, (target, val) -> target.setCustomNameVisible(asBoolean(val)));
+        registerMechanism("customNameVisible", "CustomNameVisible", EntityTag::nbtByteToBool, (target, val) -> target.setCustomNameVisible(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -251,7 +255,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.max_health
          */
-        mechanism("maxHealth", (target, val) -> {
+        registerMechanism("maxHealth", (target, val) -> {
             if (target instanceof LivingEntity living) {
                 AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
                 if (attribute != null) attribute.setBaseValue(asDouble(val));
@@ -268,7 +272,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.health
          */
-        mechanism("health", "Health", EntityTag::nbtNumber, (target, val) -> {
+        registerMechanism("health", "Health", EntityTag::nbtNumber, (target, val) -> {
             if (target instanceof LivingEntity living) {
                 AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
                 double max = attribute != null ? attribute.getValue() : asDouble(val);
@@ -286,7 +290,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.glowing
          */
-        mechanism("glowing", "Glowing", EntityTag::nbtByteToBool, (target, val) -> target.setGlowing(asBoolean(val)));
+        registerMechanism("glowing", "Glowing", EntityTag::nbtByteToBool, (target, val) -> target.setGlowing(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -298,7 +302,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.gravity
          */
-        mechanism("gravity", "NoGravity", EntityTag::nbtInvertedByteToBool, (target, val) -> target.setGravity(asBoolean(val)));
+        registerMechanism("gravity", "NoGravity", EntityTag::nbtInvertedByteToBool, (target, val) -> target.setGravity(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -310,7 +314,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.invulnerable
          */
-        mechanism("invulnerable", "Invulnerable", EntityTag::nbtByteToBool, (target, val) -> target.setInvulnerable(asBoolean(val)));
+        registerMechanism("invulnerable", "Invulnerable", EntityTag::nbtByteToBool, (target, val) -> target.setInvulnerable(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -322,7 +326,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.silent
          */
-        mechanism("silent", "Silent", EntityTag::nbtByteToBool, (target, val) -> target.setSilent(asBoolean(val)));
+        registerMechanism("silent", "Silent", EntityTag::nbtByteToBool, (target, val) -> target.setSilent(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -334,7 +338,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.has_ai
          */
-        mechanism("ai", "NoAI", EntityTag::nbtInvertedByteToBool, (target, val) -> {
+        registerMechanism("ai", "NoAI", EntityTag::nbtInvertedByteToBool, (target, val) -> {
             if (target instanceof LivingEntity living) living.setAI(asBoolean(val));
         });
 
@@ -348,7 +352,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.fire_time
          */
-        mechanism("fireTicks", "Fire", EntityTag::nbtNumber, (target, val) -> target.setFireTicks(asInt(val)));
+        registerMechanism("fireTicks", "Fire", EntityTag::nbtNumber, (target, val) -> target.setFireTicks(asInt(val)));
 
         /* @doc mechanism
          *
@@ -360,7 +364,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.freeze_duration
          */
-        mechanism("freezeTicks", "TicksFrozen", EntityTag::nbtNumber, (target, val) -> target.setFreezeTicks(asInt(val)));
+        registerMechanism("freezeTicks", "TicksFrozen", EntityTag::nbtNumber, (target, val) -> target.setFreezeTicks(asInt(val)));
 
         /* @doc mechanism
          *
@@ -372,7 +376,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.oxygen
          */
-        mechanism("air", "Air", EntityTag::nbtNumber, (target, val) -> {
+        registerMechanism("air", "Air", EntityTag::nbtNumber, (target, val) -> {
             if (target instanceof LivingEntity living) living.setRemainingAir(asInt(val));
         });
 
@@ -386,7 +390,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.fall_distance
          */
-        mechanism("fallDistance", "FallDistance", EntityTag::nbtNumber, (target, val) -> target.setFallDistance((float) asDouble(val)));
+        registerMechanism("fallDistance", "FallDistance", EntityTag::nbtNumber, (target, val) -> target.setFallDistance((float) asDouble(val)));
 
         /* @doc mechanism
          *
@@ -398,7 +402,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.velocity
          */
-        mechanism("velocity", "Motion", EntityTag::nbtMotion, (target, val) -> target.setVelocity(new LocationTag(val.identify()).getLocation().toVector()));
+        registerMechanism("velocity", "Motion", EntityTag::nbtMotion, (target, val) -> target.setVelocity(new LocationTag(val.identify()).getLocation().toVector()));
 
         /* @doc mechanism
          *
@@ -410,7 +414,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.rotate
          */
-        mechanism("rotation", "Rotation", EntityTag::nbtRotation, (target, val) -> {
+        registerMechanism("rotation", "Rotation", EntityTag::nbtRotation, (target, val) -> {
             Location loc = new LocationTag(val.identify()).getLocation();
             target.setRotation(loc.getYaw(), loc.getPitch());
         });
@@ -427,7 +431,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.nbt
          */
-        mechanism("nbt", (target, val) -> {
+        registerMechanism("nbt", (target, val) -> {
             if (nms != null && val instanceof MapTag map) nms.applyNbt(target, map);
         });
     }
