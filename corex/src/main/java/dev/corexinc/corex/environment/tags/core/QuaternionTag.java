@@ -53,6 +53,10 @@ public class QuaternionTag implements AbstractTag {
 
     public static final TagProcessor<QuaternionTag> TAG_PROCESSOR = new TagProcessor<>();
 
+    private static QuaternionTag wrap(Quaterniond q) {
+        return new QuaternionTag(q, true);
+    }
+
     public static void register() {
         BaseTagProcessor.registerBaseTag("quaternion", attr -> {
             if (!attr.hasParam()) return new QuaternionTag(0, 0, 0, 1);
@@ -113,7 +117,7 @@ public class QuaternionTag implements AbstractTag {
          * @Description
          * Retrieves the raw W component value of this quaternion.
          *
-         * @Implements QuaternionTag.z
+         * @Implements QuaternionTag.w
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "w", (attr, obj) -> new ElementTag(obj.q.w));
 
@@ -179,7 +183,7 @@ public class QuaternionTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(QuaternionTag.class, "add", (attr, obj) -> {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
-            return new QuaternionTag(new Quaterniond(obj.q).add(other.q));
+            return new QuaternionTag(obj.q.x + other.q.x, obj.q.y + other.q.y, obj.q.z + other.q.z, obj.q.w + other.q.w);
         });
 
         /* @doc tag
@@ -198,7 +202,7 @@ public class QuaternionTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(QuaternionTag.class, "mul", (attr, obj) -> {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
-            return new QuaternionTag(new Quaterniond(obj.q).mul(other.q));
+            return wrap(new Quaterniond(obj.q).mul(other.q));
         });
 
         /* @doc tag
@@ -235,8 +239,7 @@ public class QuaternionTag implements AbstractTag {
          *
          * @Implements QuaternionTag.normalize
          */
-        TAG_PROCESSOR.registerTag(QuaternionTag.class, "normalize", (attr, obj) ->
-                new QuaternionTag(new Quaterniond(obj.q).normalize()));
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "normalize", (attr, obj) -> wrap(new Quaterniond(obj.q).normalize()));
 
         /* @doc tag
          *
@@ -282,7 +285,8 @@ public class QuaternionTag implements AbstractTag {
          * @Implements QuaternionTag.conjugate
          */
         TAG_PROCESSOR.registerTag(QuaternionTag.class, "conjugate", (attr, obj) ->
-                new QuaternionTag(new Quaterniond(obj.q).conjugate()));
+                // Conjugate is just component negation — no JOML needed.
+                new QuaternionTag(-obj.q.x, -obj.q.y, -obj.q.z, obj.q.w));
 
         /* @doc tag
          *
@@ -298,7 +302,7 @@ public class QuaternionTag implements AbstractTag {
          * @Implements QuaternionTag.inverse
          */
         TAG_PROCESSOR.registerTag(QuaternionTag.class, "inverse", (attr, obj) ->
-                new QuaternionTag(new Quaterniond(obj.q).invert()));
+                wrap(new Quaterniond(obj.q).invert()));
 
         /* @doc tag
          *
@@ -331,7 +335,7 @@ public class QuaternionTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(QuaternionTag.class, "quaternionBetween", (attr, obj) -> {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
-            return new QuaternionTag(new Quaterniond(obj.q).mul(new Quaterniond(other.q).conjugate()));
+            return wrap(new Quaterniond(obj.q).mul(new Quaterniond(other.q).conjugate()));
         });
 
         /* @doc tag
@@ -437,6 +441,8 @@ public class QuaternionTag implements AbstractTag {
          * @Description
          * Computes the Spherical Linear Interpolation (Slerp) between this quaternion and the target quaternion.
          * The `amount` dictates the progression (e.g. 0.5 represents exactly halfway between the two rotations).
+         * Slerp traces the shortest arc on the unit 4-sphere, giving perfectly constant-speed rotation.
+         * For cheaper (but slightly non-constant-speed) blending, see {@link tag QuaternionTag.nlerp}.
          */
         TAG_PROCESSOR.registerTag(QuaternionTag.class, "slerp", (attr, obj) -> {
             QuaternionTag end = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
@@ -446,12 +452,141 @@ public class QuaternionTag implements AbstractTag {
             if (!amountTag.isDouble()) return null;
 
             attr.fulfill(1);
-            return new QuaternionTag(new Quaterniond(obj.q).slerp(end.q, amountTag.asDouble()));
+            return wrap(new Quaterniond(obj.q).slerp(end.q, amountTag.asDouble()));
         });
+
+        /* @doc tag
+         *
+         * @Name dot[]
+         * @RawName <QuaternionTag.dot[<quaternion>]>
+         * @Object QuaternionTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the 4D dot product of this quaternion and another.
+         * The result is a value between -1 and 1 (assuming both quaternions are normalized).
+         * A result close to ±1 means the rotations are nearly identical; close to 0 means they are 90° apart.
+         * Squaring the result and passing it to `acos` gives half the angle between the rotations —
+         * but prefer the {@link tag QuaternionTag.angleTo} tag for that directly.
+         * This operation involves zero heap allocation and is extremely fast.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "dot", (attr, obj) -> {
+            QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
+            if (other == null) return null;
+            return new ElementTag(obj.q.x * other.q.x + obj.q.y * other.q.y + obj.q.z * other.q.z + obj.q.w * other.q.w);
+        });
+
+        /* @doc tag
+         *
+         * @Name angleTo[]
+         * @RawName <QuaternionTag.angleTo[<quaternion>]>
+         * @Object QuaternionTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Returns the smallest angle in radians between this rotation and the target rotation.
+         * Both quaternions must be normalized for the result to be accurate.
+         * Useful in scripts to check "are these two rotations more than X radians apart?" before
+         * deciding whether to animate or snap.
+         * Formula: `2 * acos(|q1 · q2|)`.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "angleTo", (attr, obj) -> {
+            QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
+            if (other == null) return null;
+            double dot = obj.q.x * other.q.x + obj.q.y * other.q.y + obj.q.z * other.q.z + obj.q.w * other.q.w;
+            double clamped = Math.min(1.0, Math.abs(dot));
+            return new ElementTag(2.0 * Math.acos(clamped));
+        });
+
+        /* @doc tag
+         *
+         * @Name nlerp[].amount[]
+         * @RawName <QuaternionTag.nlerp[<quaternion>].amount[<decimal>]>
+         * @Object QuaternionTag
+         * @ReturnType QuaternionTag
+         * @ArgRequired
+         * @Description
+         * Computes the Normalized Linear Interpolation (Nlerp) between this quaternion and the target.
+         * Nlerp is cheaper than {@link tag QuaternionTag.slerp} because it only does a linear blend
+         * followed by a normalization, skipping the trigonometry.
+         * The trade-off: rotation speed is not perfectly constant (slightly faster in the middle),
+         * which is usually imperceptible for small angles or fast animations.
+         * Use slerp when angular accuracy matters; use nlerp for performance-critical loops.
+         */
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "nlerp", (attr, obj) -> {
+            QuaternionTag end = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
+            if (end == null || !attr.matchesNext("amount") || !attr.hasNextParam()) return null;
+
+            ElementTag amountTag = new ElementTag(attr.getNextParam());
+            if (!amountTag.isDouble()) return null;
+
+            attr.fulfill(1);
+            return wrap(new Quaterniond(obj.q).nlerp(end.q, amountTag.asDouble()));
+        });
+
+        /* @doc tag
+         *
+         * @Name pow[]
+         * @RawName <QuaternionTag.pow[<decimal>]>
+         * @Object QuaternionTag
+         * @ReturnType QuaternionTag
+         * @ArgRequired
+         * @Description
+         * Raises this quaternion to the given power.
+         * Intuitively: `pow[0.5]` gives exactly half of the rotation, `pow[2]` doubles it,
+         * and `pow[-1]` is equivalent to the inverse.
+         * This is useful for easing animations — e.g. raise a per-frame delta quaternion to a
+         * smoothstep value to create ease-in/ease-out rotation without keyframe math.
+         * Both the input quaternion and the result are on the unit hypersphere, so normalize
+         * first if your quaternion may have accumulated drift.
+         */
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "pow", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ElementTag tTag = new ElementTag(attr.getParam());
+            if (!tTag.isDouble()) return null;
+            return powImpl(obj.q, tTag.asDouble());
+        });
+
+        /* @doc tag
+         *
+         * @Name toEulerAngles
+         * @RawName <QuaternionTag.toEulerAngles>
+         * @Object QuaternionTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Converts this quaternion into intrinsic XYZ Euler angles (radians), returned as
+         * a comma-separated string "roll,pitch,yaw" (X,Y,Z order).
+         * Euler angles are human-readable and convenient for display or interop, but
+         * avoid feeding them back into rotation math — use quaternions end-to-end to stay
+         * clear of Gimbal Lock and interpolation artefacts.
+         * The convention matches what JOML's `getEulerAnglesXYZ` produces, which aligns with
+         * Minecraft display entity rotation axes.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toEulerAngles", (attr, obj) -> {
+            Vector3d euler = new Vector3d();
+            obj.q.getEulerAnglesXYZ(euler);
+            return new ElementTag(cleanDouble(euler.x) + "," + cleanDouble(euler.y) + "," + cleanDouble(euler.z));
+        });
+    }
+
+    private static QuaternionTag powImpl(Quaterniond q, double t) {
+        double theta = Math.acos(Math.min(1.0, Math.max(-1.0, q.w)));
+        double sinTheta = Math.sin(theta);
+        if (sinTheta < 1e-10) {
+            return new QuaternionTag(q.x, q.y, q.z, q.w);
+        }
+        double newTheta = theta * t;
+        double scale = Math.sin(newTheta) / sinTheta;
+        return new QuaternionTag(q.x * scale, q.y * scale, q.z * scale, Math.cos(newTheta));
     }
 
     public QuaternionTag(Quaterniond q) {
         this.q = new Quaterniond(q);
+    }
+
+    private QuaternionTag(Quaterniond q, @SuppressWarnings("unused") boolean trusted) {
+        this.q = q;
     }
 
     public QuaternionTag(double x, double y, double z, double w) {
