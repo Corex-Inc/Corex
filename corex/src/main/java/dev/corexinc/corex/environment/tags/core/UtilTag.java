@@ -101,7 +101,7 @@ public class UtilTag implements AbstractTag {
          * @ReturnType ElementTag
          * @NoArg
          * @Description
-         * Returns the debug mode: NONE, ERROR, DEFAULT, VERBOSE
+         * Returns the debug mode: NONE, ERRORS, DEFAULT, ALL
          *
          * @Implements util.debug_enabled
          */
