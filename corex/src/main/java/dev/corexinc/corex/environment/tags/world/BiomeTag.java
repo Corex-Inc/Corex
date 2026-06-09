@@ -411,6 +411,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Input MapTag
          * @AvailableSince 1.21.11
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
+         * @Object BiomeTag
          *
          * @Description
          * Sets multiple dynamic attributes on the biome using a MapTag.
@@ -449,6 +450,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
          * @Implements foliage_color
+         * @Object BiomeTag
          *
          * @Description
          * Sets the hardcoded foliage color override for this biome.
@@ -473,6 +475,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
          * @Implements fog_color
+         * @Object BiomeTag
          *
          * @Description
          * Modifies the sky fog color for this biome.
@@ -496,6 +499,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
          * @Implements base_temperature
+         * @Object BiomeTag
          *
          * @Description
          * Adjusts the base temperature of this biome.
@@ -519,6 +523,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
          * @Implements humidity
+         * @Object BiomeTag
          *
          * @Description
          * Modifies the base humidity level of this biome.
@@ -542,6 +547,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
          *
          * @Implements has_downfall
+         * @Object BiomeTag
          *
          * @Description
          * Toggles whether this biome experiences precipitation (rain or snow).
@@ -563,6 +569,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Name waterColor
          * @Input ColorTag
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
+         * @Object BiomeTag
          *
          * @Description
          * Sets the visual color of water within this biome.
@@ -584,6 +591,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Name waterFogColor
          * @Input ColorTag
          * @Tip Use {@link mechanism PlayerTag.reconfigure} to reload biomes for player
+         * @Object BiomeTag
          *
          * @Implements water_fog_color
          *
