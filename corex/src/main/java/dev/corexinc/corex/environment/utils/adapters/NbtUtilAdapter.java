@@ -5,4 +5,6 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 public interface NbtUtilAdapter {
 
     MapTag toMap(Object compound);
+
+    Object toNbt(MapTag map);
 }

@@ -30,6 +30,7 @@ import org.bukkit.loot.Lootable;
 import org.bukkit.util.*;
 import org.bukkit.util.Vector;
 import org.bukkit.util.noise.SimplexNoiseGenerator;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 import org.jspecify.annotations.NonNull;
@@ -3023,7 +3024,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (loc.getWorld() == null) return null;
             BukkitSchedulerAdapter.requireRegion(loc);
 
-            Registry<PatternType> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN);
+            Registry<@NotNull PatternType> registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN);
             if (loc.getBlock().getState() instanceof Banner banner) {
                 ListTag list = new ListTag();
                 for (Pattern pattern : banner.getPatterns()) {
@@ -3827,6 +3828,10 @@ public class LocationTag implements AbstractTag, Flaggable {
 
     private LocationTag(Location location, boolean doClone) {
         this.location = doClone ? location.clone() : location;
+    }
+
+    public LocationTag(double x, double y, double z, float yaw, float pitch) {
+        this.location = new Location(null, x, y, z, yaw, pitch);
     }
 
     public LocationTag(String raw) {

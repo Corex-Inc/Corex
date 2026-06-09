@@ -11,12 +11,10 @@ import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.EntityAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -198,7 +196,8 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @ReturnType MapTag
          * @NoArg
          * @Description
-         * Returns the full raw NBT of a spawned entity as a nested MapTag of Corex tags.
+         * Returns the full raw NBT of a spawned entity as a MapTag of NBT key to SNBT value, for example 'map@[NoGravity=1b;Health=20.0f]'.
+         * Each value keeps its exact NBT type, so the map round-trips losslessly through the nbt mechanism.
          * Returns an empty map for an unspawned blueprint, or when no NMS adapter is available for the server version.
          */
         TAG_PROCESSOR.registerTag(MapTag.class, "nbt", (attribute, object) -> object.readNbt()).ignoreTest();
@@ -228,8 +227,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.custom_name
          */
-        mechanism("name", "CustomName", EntityTag::nbtNameToMechanism,
-                (target, val) -> target.customName(val.asComponent()));
+        mechanism("name", (target, val) -> target.customName(val.asComponent()));
 
         /* @doc mechanism
          *
@@ -241,8 +239,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.custom_name_visible
          */
-        mechanism("customNameVisible", "CustomNameVisible", EntityTag::nbtByteToBool,
-                (target, val) -> target.setCustomNameVisible(asBoolean(val)));
+        mechanism("customNameVisible", "CustomNameVisible", EntityTag::nbtByteToBool, (target, val) -> target.setCustomNameVisible(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -271,7 +268,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.health
          */
-        mechanism("health", "Health", Function.identity(), (target, val) -> {
+        mechanism("health", "Health", EntityTag::nbtNumber, (target, val) -> {
             if (target instanceof LivingEntity living) {
                 AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
                 double max = attribute != null ? attribute.getValue() : asDouble(val);
@@ -289,8 +286,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.glowing
          */
-        mechanism("glowing", "Glowing", EntityTag::nbtByteToBool,
-                (target, val) -> target.setGlowing(asBoolean(val)));
+        mechanism("glowing", "Glowing", EntityTag::nbtByteToBool, (target, val) -> target.setGlowing(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -302,8 +298,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.gravity
          */
-        mechanism("gravity", "NoGravity", EntityTag::nbtInvertedByteToBool,
-                (target, val) -> target.setGravity(asBoolean(val)));
+        mechanism("gravity", "NoGravity", EntityTag::nbtInvertedByteToBool, (target, val) -> target.setGravity(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -315,8 +310,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.invulnerable
          */
-        mechanism("invulnerable", "Invulnerable", EntityTag::nbtByteToBool,
-                (target, val) -> target.setInvulnerable(asBoolean(val)));
+        mechanism("invulnerable", "Invulnerable", EntityTag::nbtByteToBool, (target, val) -> target.setInvulnerable(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -328,8 +322,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.silent
          */
-        mechanism("silent", "Silent", EntityTag::nbtByteToBool,
-                (target, val) -> target.setSilent(asBoolean(val)));
+        mechanism("silent", "Silent", EntityTag::nbtByteToBool, (target, val) -> target.setSilent(asBoolean(val)));
 
         /* @doc mechanism
          *
@@ -355,8 +348,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.fire_time
          */
-        mechanism("fireTicks", "Fire", Function.identity(),
-                (target, val) -> target.setFireTicks(asInt(val)));
+        mechanism("fireTicks", "Fire", EntityTag::nbtNumber, (target, val) -> target.setFireTicks(asInt(val)));
 
         /* @doc mechanism
          *
@@ -368,8 +360,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.freeze_duration
          */
-        mechanism("freezeTicks", "TicksFrozen", Function.identity(),
-                (target, val) -> target.setFreezeTicks(asInt(val)));
+        mechanism("freezeTicks", "TicksFrozen", EntityTag::nbtNumber, (target, val) -> target.setFreezeTicks(asInt(val)));
 
         /* @doc mechanism
          *
@@ -381,7 +372,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.oxygen
          */
-        mechanism("air", "Air", Function.identity(), (target, val) -> {
+        mechanism("air", "Air", EntityTag::nbtNumber, (target, val) -> {
             if (target instanceof LivingEntity living) living.setRemainingAir(asInt(val));
         });
 
@@ -395,8 +386,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.fall_distance
          */
-        mechanism("fallDistance", "FallDistance", Function.identity(),
-                (target, val) -> target.setFallDistance((float) asDouble(val)));
+        mechanism("fallDistance", "FallDistance", EntityTag::nbtNumber, (target, val) -> target.setFallDistance((float) asDouble(val)));
 
         /* @doc mechanism
          *
@@ -408,8 +398,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.velocity
          */
-        mechanism("velocity", "Motion", EntityTag::nbtMotion,
-                (target, val) -> target.setVelocity(new LocationTag(val.identify()).getLocation().toVector()));
+        mechanism("velocity", "Motion", EntityTag::nbtMotion, (target, val) -> target.setVelocity(new LocationTag(val.identify()).getLocation().toVector()));
 
         /* @doc mechanism
          *
@@ -424,6 +413,22 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         mechanism("rotation", "Rotation", EntityTag::nbtRotation, (target, val) -> {
             Location loc = new LocationTag(val.identify()).getLocation();
             target.setRotation(loc.getYaw(), loc.getPitch());
+        });
+
+        /* @doc mechanism
+         *
+         * @Name nbt
+         * @Object EntityTag
+         * @Input MapTag
+         * @Description
+         * Merges the given MapTag of raw NBT into the entity. Keys are vanilla NBT keys, values are SNBT (see <@link tag EntityTag.nbt>).
+         * SNBT keeps the exact type, for example 'map@[NoGravity=1b;Health=20.0f]'. Pairs nicely with the output of the nbt tag.
+         * This is a low-level mechanism, prefer a dedicated mechanism where one exists.
+         *
+         * @Implements EntityTag.nbt
+         */
+        mechanism("nbt", (target, val) -> {
+            if (nms != null && val instanceof MapTag map) nms.applyNbt(target, map);
         });
     }
 
@@ -520,6 +525,9 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
             if (value != null) data.putObject(entry.getValue().mechanism(), value);
         }
 
+        if (entity.customName() != null) {
+            data.putObject("name", new ElementTag(CorexSerializer.LEGACY.serialize(entity.customName())));
+        }
         if (entity instanceof LivingEntity living) {
             AttributeInstance maxHealth = living.getAttribute(Attribute.MAX_HEALTH);
             if (maxHealth != null) data.putObject("maxHealth", new ElementTag(maxHealth.getBaseValue()));
@@ -528,29 +536,58 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         return data;
     }
 
-    private static AbstractTag nbtNameToMechanism(AbstractTag value) {
-        return new ElementTag(CorexSerializer.LEGACY.serialize(
-                GsonComponentSerializer.gson().deserialize(value.identify())));
+    private static String nbtNumeric(String snbt) {
+        if (!snbt.isEmpty() && "bslfdBSLFD".indexOf(snbt.charAt(snbt.length() - 1)) >= 0) {
+            String body = snbt.substring(0, snbt.length() - 1);
+            try {
+                Double.parseDouble(body);
+                return body;
+            } catch (NumberFormatException ignored) {}
+        }
+        return snbt;
+    }
+
+    private static double[] nbtNumberList(String snbt, int expected) {
+        String body = snbt.startsWith("[") && snbt.endsWith("]") ? snbt.substring(1, snbt.length() - 1) : snbt;
+        int semicolon = body.indexOf(';');
+        if (semicolon >= 0 && semicolon <= 2) body = body.substring(semicolon + 1);
+
+        String[] parts = body.split(",");
+        if (parts.length < expected) return null;
+
+        double[] values = new double[expected];
+        for (int i = 0; i < expected; i++) {
+            try {
+                values[i] = Double.parseDouble(nbtNumeric(parts[i].trim()));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return values;
+    }
+
+    private static AbstractTag nbtNumber(AbstractTag value) {
+        return new ElementTag(nbtNumeric(value.identify()));
     }
 
     private static AbstractTag nbtByteToBool(AbstractTag value) {
-        return new ElementTag(!value.identify().equals("0") && !value.identify().equalsIgnoreCase("false"));
+        String numeric = nbtNumeric(value.identify());
+        return new ElementTag(!numeric.equals("0") && !numeric.equalsIgnoreCase("false"));
     }
 
     private static AbstractTag nbtInvertedByteToBool(AbstractTag value) {
-        return new ElementTag(value.identify().equals("0") || value.identify().equalsIgnoreCase("false"));
+        String numeric = nbtNumeric(value.identify());
+        return new ElementTag(numeric.equals("0") || numeric.equalsIgnoreCase("false"));
     }
 
     private static AbstractTag nbtMotion(AbstractTag value) {
-        if (!(value instanceof ListTag list) || list.size() < 3) return value;
-        List<AbstractTag> parts = list.getList();
-        return new LocationTag(new Location(null, asDouble(parts.get(0)), asDouble(parts.get(1)), asDouble(parts.get(2))));
+        double[] motion = nbtNumberList(value.identify(), 3);
+        return motion != null ? new LocationTag(motion[0], motion[1], motion[2], 0, 0) : value;
     }
 
     private static AbstractTag nbtRotation(AbstractTag value) {
-        if (!(value instanceof ListTag list) || list.size() < 2) return value;
-        List<AbstractTag> parts = list.getList();
-        return new LocationTag(new Location(null, 0, 0, 0, (float) asDouble(parts.get(0)), (float) asDouble(parts.get(1))));
+        double[] rotation = nbtNumberList(value.identify(), 2);
+        return rotation != null ? new LocationTag(0, 0, 0, (float) rotation[0], (float) rotation[1]) : value;
     }
 
     private static EntityType matchEntityType(String name) {

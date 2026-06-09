@@ -6,4 +6,6 @@ import org.bukkit.entity.Entity;
 public interface EntityAdapter {
 
     MapTag readNbt(Entity entity);
+
+    void applyNbt(Entity entity, MapTag data);
 }
