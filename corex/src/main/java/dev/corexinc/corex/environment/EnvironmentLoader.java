@@ -120,6 +120,9 @@ public class EnvironmentLoader {
                 SwitchDefaultCommand.class, // Switch subcommand
                 IfCommand.class,
                 IfElseCommand.class, // If subcommand
+                TryCommand.class,
+                CatchCommand.class, // Try subcommand
+                FinallyCommand.class, // Try subcommand
                 InjectCommand.class,
                 ReturnCommand.class,
                 AdjustCommand.class,

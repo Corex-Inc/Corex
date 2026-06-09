@@ -108,6 +108,8 @@ public class ScriptQueue {
 
     /** Tracks errors encountered during the execution of the current instruction. */
     private final List<String> currentErrors = new ArrayList<>();
+    private final List<String> trappedErrors = new ArrayList<>();
+    private boolean errorTrapped = false;
     private boolean errorHeaderPrinted = false;
 
     /** Global registry of all active queues currently managed by the CVM. */
@@ -199,6 +201,11 @@ public class ScriptQueue {
                 if (bytecode == null) this.bytecode = new Instruction[0];
 
                 if (pointer < bytecode.length) {
+                    if (errorTrapped && !trappedErrors.isEmpty()) {
+                        this.pointer = bytecode.length;
+                        continue;
+                    }
+
                     Instruction inst = bytecode[pointer++];
                     int depth = callStack.size();
 
@@ -467,7 +474,8 @@ public class ScriptQueue {
     }
 
     public void addError(String message) {
-        currentErrors.add(message);
+        if (errorTrapped) trappedErrors.add(message);
+        else currentErrors.add(message);
     }
 
     public boolean hasErrors() {
@@ -477,6 +485,20 @@ public class ScriptQueue {
     public List<String> getAndClearErrors() {
         List<String> copy = new ArrayList<>(currentErrors);
         currentErrors.clear();
+        return copy;
+    }
+
+    public void setErrorTrapped(boolean trapped) {
+        this.errorTrapped = trapped;
+    }
+
+    public boolean hasTrappedErrors() {
+        return !trappedErrors.isEmpty();
+    }
+
+    public List<String> getAndClearTrappedErrors() {
+        List<String> copy = new ArrayList<>(trappedErrors);
+        trappedErrors.clear();
         return copy;
     }
 
