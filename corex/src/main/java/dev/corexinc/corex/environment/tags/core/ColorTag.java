@@ -429,7 +429,9 @@ public class ColorTag implements AbstractTag {
     }
 
     @Override
-    public @NonNull String getPrefix() { return prefix; }
+    public @NonNull String getPrefix() {
+        return prefix;
+    }
 
     @Override
     public @NonNull String identify() {
@@ -437,11 +439,17 @@ public class ColorTag implements AbstractTag {
     }
 
     @Override
-    public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return TAG_PROCESSOR.process(this, attribute);
+    }
 
     @Override
-    public @NonNull TagProcessor<ColorTag> getProcessor() { return TAG_PROCESSOR; }
+    public @NonNull TagProcessor<ColorTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
 
     @Override
-    public @NonNull String getTestValue() { return "color@255,0,0,255"; }
+    public @NonNull String getTestValue() {
+        return "color@255,0,0,255";
+    }
 }

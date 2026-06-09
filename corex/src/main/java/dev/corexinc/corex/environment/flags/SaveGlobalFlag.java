@@ -7,7 +7,10 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import org.jspecify.annotations.NonNull;
 
 public class SaveGlobalFlag implements AbstractGlobalFlag {
-    @Override public @NonNull String getName() { return "save"; }
+    @Override
+    public @NonNull String getName() {
+        return "save";
+    }
 
     @Override
     public boolean execute(@NonNull ScriptQueue queue, @NonNull Instruction instruction, @NonNull CompiledArgument value) {

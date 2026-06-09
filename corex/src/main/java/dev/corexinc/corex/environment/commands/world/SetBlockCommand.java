@@ -95,7 +95,9 @@ public class SetBlockCommand implements AbstractCommand {
     ) {}
 
     @Override
-    public @NonNull String getName() { return "setblock"; }
+    public @NonNull String getName() {
+        return "setblock";
+    }
 
     @Override
     public @NonNull String getSyntax() {
@@ -103,13 +105,19 @@ public class SetBlockCommand implements AbstractCommand {
     }
 
     @Override
-    public int getMinArgs() { return 2; }
+    public int getMinArgs() {
+        return 2;
+    }
 
     @Override
-    public int getMaxArgs() { return 6; }
+    public int getMaxArgs() {
+        return 6;
+    }
 
     @Override
-    public boolean setCanBeWaitable() { return true; }
+    public boolean setCanBeWaitable() {
+        return true;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

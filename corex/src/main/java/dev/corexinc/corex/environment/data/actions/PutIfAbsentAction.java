@@ -10,7 +10,10 @@ import org.jspecify.annotations.Nullable;
 
 public class PutIfAbsentAction implements AbstractDataAction {
 
-    @Override public @NonNull String getSymbol() { return "?:"; }
+    @Override
+    public @NonNull String getSymbol() {
+        return "?:";
+    }
 
     @Override
     public @Nullable AbstractTag apply(@Nullable AbstractTag current, @NonNull String param,
@@ -20,5 +23,8 @@ public class PutIfAbsentAction implements AbstractDataAction {
         return param.isEmpty() ? new ElementTag("") : ObjectFetcher.pickObject(param);
     }
 
-    @Override public boolean isPrefix() { return true; }
+    @Override
+    public boolean isPrefix() {
+        return true;
+    }
 }

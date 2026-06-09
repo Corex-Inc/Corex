@@ -34,8 +34,15 @@ public class GeneratorContainer implements AbstractContainer {
     private final Map<String, Instruction[]> scripts = new HashMap<>();
     private final Set<String> vanillaFirst = new HashSet<>();
 
-    @Override public @NotNull String getType() { return "generator"; }
-    @Override public @NotNull String getName() { return name != null ? name : ""; }
+    @Override
+    public @NotNull String getType() {
+        return "generator";
+    }
+
+    @Override
+    public @NotNull String getName() {
+        return name != null ? name : "";
+    }
 
     @Override
     public void init(@NotNull String name, @NotNull JsonObject section) {
@@ -44,7 +51,10 @@ public class GeneratorContainer implements AbstractContainer {
         parseVanillaFirst(section);
     }
 
-    @Override public @NotNull JsonObject getData() { return data; }
+    @Override
+    public @NotNull JsonObject getData() {
+        return data;
+    }
 
     @Override
     public @NotNull PathType resolvePath(@NotNull String path) {
@@ -72,8 +82,13 @@ public class GeneratorContainer implements AbstractContainer {
         return raw.isBlank() ? List.of() : List.of(raw.split("\\|"));
     }
 
-    public boolean hasSection(@NotNull String section) { return scripts.containsKey(section); }
-    public boolean isVanillaFirst(@NotNull String section) { return vanillaFirst.contains(section); }
+    public boolean hasSection(@NotNull String section) {
+        return scripts.containsKey(section);
+    }
+
+    public boolean isVanillaFirst(@NotNull String section) {
+        return vanillaFirst.contains(section);
+    }
 
     @Nullable
     public ScriptQueue createQueue(@NotNull String section, @Nullable ContextTag context) {

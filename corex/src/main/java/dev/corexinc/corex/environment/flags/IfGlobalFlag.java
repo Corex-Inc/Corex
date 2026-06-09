@@ -8,7 +8,10 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
 public class IfGlobalFlag implements AbstractGlobalFlag {
-    @Override public @NonNull String getName() { return "if"; }
+    @Override
+    public @NonNull String getName() {
+        return "if";
+    }
 
     @Override
     public boolean execute(@NonNull ScriptQueue queue, @NonNull Instruction instruction, @NonNull CompiledArgument value) {

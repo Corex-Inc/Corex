@@ -279,7 +279,9 @@ public class ChunkTag implements AbstractTag, Flaggable {
         return world != null ? world.getChunkAt(x, z) : null;
     }
 
-    public @Nullable World getWorld() { return world; }
+    public @Nullable World getWorld() {
+        return world;
+    }
 
     @Override
     public @NonNull String getPrefix() { return PREFIX; }
@@ -296,10 +298,14 @@ public class ChunkTag implements AbstractTag, Flaggable {
     }
 
     @Override
-    public @NonNull TagProcessor<ChunkTag> getProcessor() { return TAG_PROCESSOR; }
+    public @NonNull TagProcessor<ChunkTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
 
     @Override
-    public @NonNull String getTestValue() { return "ch@world,0,0"; }
+    public @NonNull String getTestValue() {
+        return "ch@world,0,0";
+    }
 
     @Override
     public AbstractFlagTracker getFlagTracker() {

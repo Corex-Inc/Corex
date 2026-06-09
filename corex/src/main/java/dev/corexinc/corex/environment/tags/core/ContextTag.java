@@ -64,8 +64,15 @@ public class ContextTag implements AbstractTag {
         return contextData.get(key);
     }
 
-    @Override public @NonNull String getPrefix() { return prefix; }
-    @Override public @NonNull String identify() { return prefix + "@"; }
+    @Override
+    public @NonNull String getPrefix() {
+        return prefix;
+    }
+
+    @Override
+    public @NonNull String identify() {
+        return prefix + "@";
+    }
 
     @Override
     public AbstractTag getAttribute(@NonNull Attribute attribute) {

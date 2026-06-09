@@ -340,9 +340,28 @@ public class UtilTag implements AbstractTag {
 
     private UtilTag() {}
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
-    @Override public @NonNull String identify() { return PREFIX + "@"; }
-    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
-    @Override public @NonNull TagProcessor<UtilTag> getProcessor() { return TAG_PROCESSOR; }
-    @Override public String getTestValue() { return PREFIX + "@"; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
+
+    @Override
+    public @NonNull String identify() {
+        return PREFIX + "@";
+    }
+
+    @Override
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return TAG_PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public @NonNull TagProcessor<UtilTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
+
+    @Override
+    public String getTestValue() {
+        return PREFIX + "@";
+    }
 }

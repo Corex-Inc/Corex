@@ -84,7 +84,10 @@ public class EnvTag implements AbstractTag {
         return hiddenValue;
     }
 
-    @Override public @NonNull String getPrefix() { return prefix; }
+    @Override
+    public @NonNull String getPrefix() {
+        return prefix;
+    }
 
     @Override
     public @NonNull String identify() {

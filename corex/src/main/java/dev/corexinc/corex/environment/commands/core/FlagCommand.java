@@ -59,11 +59,30 @@ import java.util.List;
  */
 public class FlagCommand implements AbstractCommand {
 
-    @Override public @NonNull String getName() { return "flag"; }
-    @Override public @NonNull List<String> getAlias() { return List.of(); }
-    @Override public @NonNull String getSyntax() { return "[<target>] [<flagName>(:action)] [<value>] (expire:<duration>)"; }
-    @Override public int getMinArgs() { return 2; }
-    @Override public int getMaxArgs() { return 3; }
+    @Override
+    public @NonNull String getName() {
+        return "flag";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of();
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<target>] [<flagName>(:action)] [<value>] (expire:<duration>)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 2;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 3;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

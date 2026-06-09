@@ -1440,9 +1440,13 @@ public class ListTag implements AbstractTag {
         return result;
     }
 
-    public List<AbstractTag> getList() { return new ArrayList<>(list); }
+    public List<AbstractTag> getList() {
+        return new ArrayList<>(list);
+    }
 
-    public int size() { return list.size(); }
+    public int size() {
+        return list.size();
+    }
 
     public String get(int index) {
         return (index >= 0 && index < list.size()) ? list.get(index).identify() : null;
@@ -1497,7 +1501,10 @@ public class ListTag implements AbstractTag {
         return Integer.compare(first.length() - posFirst, second.length() - posSecond);
     }
 
-    @Override public @NonNull String getPrefix() { return prefix; }
+    @Override
+    public @NonNull String getPrefix() {
+        return prefix;
+    }
 
     @Override
     public @NonNull String identify() {
@@ -1507,11 +1514,17 @@ public class ListTag implements AbstractTag {
     }
 
     @Override
-    public AbstractTag getAttribute(@NonNull Attribute attribute) { return TAG_PROCESSOR.process(this, attribute); }
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return TAG_PROCESSOR.process(this, attribute);
+    }
 
     @Override
-    public @NonNull TagProcessor<ListTag> getProcessor() { return TAG_PROCESSOR; }
+    public @NonNull TagProcessor<ListTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
 
     @Override
-    public @NonNull String getTestValue() { return "li@a|b|c"; }
+    public @NonNull String getTestValue() {
+        return "li@a|b|c";
+    }
 }

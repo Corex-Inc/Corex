@@ -259,14 +259,22 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
         return new SqlFlagTracker(dbFile, identify());
     }
 
-    public World getWorld() { return world; }
-    public List<double[][]> getMembers() { return members; }
+    public World getWorld() {
+        return world;
+    }
+
+    public List<double[][]> getMembers() {
+        return members;
+    }
 
     private static String cleanDouble(double d) {
         return d == (long) d ? String.format("%d", (long) d) : String.valueOf(d);
     }
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
 
     @Override
     public @NonNull String identify() {
@@ -290,8 +298,12 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
     }
 
     @Override
-    public @NonNull TagProcessor<CuboidTag> getProcessor() { return TAG_PROCESSOR; }
+    public @NonNull TagProcessor<CuboidTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
 
     @Override
-    public @NonNull String getTestValue() { return "cu@world,0,0,0,3,3,3"; }
+    public @NonNull String getTestValue() {
+        return "cu@world,0,0,0,3,3,3";
+    }
 }

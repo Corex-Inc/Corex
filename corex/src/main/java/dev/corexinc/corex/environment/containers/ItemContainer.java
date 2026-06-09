@@ -25,7 +25,10 @@ public class ItemContainer implements AbstractContainer {
     private String name;
     private JsonObject rawData;
 
-    @Override public @NonNull String getType() { return "item"; }
+    @Override
+    public @NonNull String getType() {
+        return "item";
+    }
 
     @Override
     public void init(@NonNull String name, @NonNull JsonObject section) {
@@ -110,10 +113,23 @@ public class ItemContainer implements AbstractContainer {
         }
     }
 
-    @Override public @NonNull String getName() { return name; }
-    @Override public @NonNull JsonObject getData() { return rawData; }
-    @Override public void addCompiledScript(@NonNull String path, Instruction[] bytecode) {}
-    @Override public Instruction[] getScript(@NonNull String path) { return null; }
+    @Override
+    public @NonNull String getName() {
+        return name;
+    }
+
+    @Override
+    public @NonNull JsonObject getData() {
+        return rawData;
+    }
+
+    @Override
+    public void addCompiledScript(@NonNull String path, Instruction[] bytecode) {}
+
+    @Override
+    public Instruction[] getScript(@NonNull String path) {
+        return null;
+    }
 
     public static class ItemCache {
         private static final Map<String, ItemTag> cache = new HashMap<>();

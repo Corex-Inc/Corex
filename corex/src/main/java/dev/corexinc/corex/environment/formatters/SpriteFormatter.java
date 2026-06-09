@@ -38,8 +38,15 @@ public class SpriteFormatter implements AbstractFormatter {
     private static final String DEFAULT_ATLAS = "minecraft:items";
     private static final ElementTag INSTANCE = new ElementTag("");
 
-    @Override public @NonNull String getName() { return "&sprite"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("&icon"); }
+    @Override
+    public @NonNull String getName() {
+        return "&sprite";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("&icon");
+    }
 
     @Override
     public @NonNull AbstractTag parse(@NonNull Attribute attribute) {

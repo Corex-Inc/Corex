@@ -27,6 +27,7 @@ import java.util.List;
  * @Name &0
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Black' color to the text.
  *
  * @Implements &0
@@ -37,6 +38,7 @@ import java.util.List;
  * @Name &1
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Dark Blue' color to the text.
  *
  * @Implements &1
@@ -47,6 +49,7 @@ import java.util.List;
  * @Name &2
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Dark Green' color to the text.
  *
  * @Implements &2
@@ -57,6 +60,7 @@ import java.util.List;
  * @Name &3
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Dark Aqua' (Cyan) color to the text.
  *
  * @Implements &3
@@ -67,6 +71,7 @@ import java.util.List;
  * @Name &4
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Dark Red' color to the text.
  *
  * @Implements &4
@@ -77,6 +82,7 @@ import java.util.List;
  * @Name &5
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Dark Purple' (Indigo) color to the text.
  *
  * @Implements &5
@@ -87,6 +93,7 @@ import java.util.List;
  * @Name &6
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Gold' color to the text.
  *
  * @Implements &6
@@ -97,6 +104,7 @@ import java.util.List;
  * @Name &7
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Gray' color to the text.
  *
  * @Implements &7
@@ -107,6 +115,7 @@ import java.util.List;
  * @Name &8
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Dark Gray' color to the text.
  *
  * @Implements &8
@@ -117,6 +126,7 @@ import java.util.List;
  * @Name &9
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Blue' color to the text.
  *
  * @Implements &9
@@ -127,6 +137,7 @@ import java.util.List;
  * @Name &a
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Green' color to the text.
  *
  * @Implements &a
@@ -137,6 +148,7 @@ import java.util.List;
  * @Name &b
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Aqua' (Light Cyan) color to the text.
  *
  * @Implements &b
@@ -147,6 +159,7 @@ import java.util.List;
  * @Name &c
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Red' color to the text.
  *
  * @Implements &c
@@ -157,6 +170,7 @@ import java.util.List;
  * @Name &d
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Light Purple' (Pink) color to the text.
  *
  * @Implements &d
@@ -167,6 +181,7 @@ import java.util.List;
  * @Name &e
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'Yellow' color to the text.
  *
  * @Implements &e
@@ -177,6 +192,7 @@ import java.util.List;
  * @Name &f
  * @Description
  * @NoArg
+ * @Description
  * Applies the 'White' color to the text.
  *
  * @Implements &f
@@ -187,6 +203,7 @@ import java.util.List;
  * @Name &l
  * @Description
  * @NoArg
+ * @Description
  * Applies 'Bold' formatting to the text.
  *
  * @Implements &l
@@ -197,6 +214,7 @@ import java.util.List;
  * @Name &m
  * @Description
  * @NoArg
+ * @Description
  * Applies 'Strikethrough' formatting to the text.
  *
  * @Implements &m
@@ -207,6 +225,7 @@ import java.util.List;
  * @Name &n
  * @Description
  * @NoArg
+ * @Description
  * Applies 'Underline' formatting to the text.
  *
  * @Implements &n
@@ -217,6 +236,7 @@ import java.util.List;
  * @Name &o
  * @Description
  * @NoArg
+ * @Description
  * Applies 'Italic' formatting to the text.
  *
  * @Implements &o
@@ -227,6 +247,7 @@ import java.util.List;
  * @Name &r
  * @Description
  * @NoArg
+ * @Description
  * Resets all previous color and formatting styles to default.
  *
  * @Implements &r

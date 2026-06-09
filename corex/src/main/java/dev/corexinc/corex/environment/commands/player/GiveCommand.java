@@ -83,12 +83,22 @@ public class GiveCommand implements AbstractCommand {
         }
     }
 
-    @Override public boolean isAsyncSafe() { return false; }
+    @Override
+    public boolean isAsyncSafe() {
+        return false;
+    }
 
-    @Override public @NonNull String getSyntax() {
+    @Override
+    public @NonNull String getSyntax() {
         return "[<player>|...] [<item>|...] (amount:<#>)";
     }
 
-    @Override public int getMinArgs() { return 2; }
-    @Override public int getMaxArgs() { return 2; }
+    @Override
+    public int getMinArgs() {
+        return 2;
+    }
+    @Override
+    public int getMaxArgs() {
+        return 2;
+    }
 }

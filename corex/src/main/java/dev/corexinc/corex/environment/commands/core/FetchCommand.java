@@ -68,10 +68,14 @@ public class FetchCommand implements AbstractCommand {
             .build();
 
     @Override
-    public @NonNull String getName() { return "fetch"; }
+    public @NonNull String getName() {
+        return "fetch";
+    }
 
     @Override
-    public @NonNull List<String> getAlias() { return List.of("webget"); }
+    public @NonNull List<String> getAlias() {
+        return List.of("webget");
+    }
 
     @Override
     public @NonNull String getSyntax() {
@@ -79,16 +83,24 @@ public class FetchCommand implements AbstractCommand {
     }
 
     @Override
-    public int getMinArgs() { return 1; }
+    public int getMinArgs() {
+        return 1;
+    }
 
     @Override
-    public int getMaxArgs() { return 7; }
+    public int getMaxArgs() {
+        return 7;
+    }
 
     @Override
-    public boolean isAsyncSafe() { return true; }
+    public boolean isAsyncSafe() {
+        return true;
+    }
 
     @Override
-    public boolean setCanBeWaitable() { return true; }
+    public boolean setCanBeWaitable() {
+        return true;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

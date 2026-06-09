@@ -41,8 +41,15 @@ public class CommandContainer implements AbstractContainer {
 
     private final Map<String, Instruction[]> scripts = new HashMap<>();
 
-    @Override public @NonNull String getType() { return "command"; }
-    @Override public @NonNull String getName() { return name != null ? name : ""; }
+    @Override
+    public @NonNull String getType() {
+        return "command";
+    }
+
+    @Override
+    public @NonNull String getName() {
+        return name != null ? name : "";
+    }
 
     @Override
     public void init(@NonNull String name, @NonNull JsonObject section) {
@@ -58,7 +65,10 @@ public class CommandContainer implements AbstractContainer {
         this.root = parseRoot(tree);
     }
 
-    @Override public @NonNull JsonObject getData() { return data; }
+    @Override
+    public @NonNull JsonObject getData() {
+        return data;
+    }
 
     @Override
     public @NonNull PathType resolvePath(@NonNull String path) {
@@ -85,10 +95,21 @@ public class CommandContainer implements AbstractContainer {
         return raw.isBlank() ? List.of() : List.of(raw.replace(" ", "").split("\\|"));
     }
 
-    public @NonNull String getDescription() { return description; }
-    public @NonNull List<String> getAliases() { return aliases; }
-    public boolean isOverride() { return override; }
-    public @NonNull CommandNode getTree() { return root; }
+    public @NonNull String getDescription() {
+        return description;
+    }
+
+    public @NonNull List<String> getAliases() {
+        return aliases;
+    }
+
+    public boolean isOverride() {
+        return override;
+    }
+
+    public @NonNull CommandNode getTree() {
+        return root;
+    }
 
     public @NonNull List<String> getAllAliases() {
         List<String> all = new ArrayList<>(aliases.size() + 1);

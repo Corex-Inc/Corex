@@ -75,10 +75,25 @@ public class ItemCooldownCommand implements AbstractCommand {
         record ByKey     (NamespacedKey key)  implements CooldownTarget {}
     }
 
-    @Override public @NonNull String getName()   { return "itemcooldown"; }
-    @Override public @NonNull String getSyntax() { return "[<material>|<item>|<key>|...] (duration:<duration>) (targets:<player>|...)"; }
-    @Override public int getMinArgs()            { return 1; }
-    @Override public int getMaxArgs()            { return 3; }
+    @Override
+    public @NonNull String getName() {
+        return "itemcooldown";
+    }
+
+    @Override
+    public @NonNull String getSyntax() {
+        return "[<material>|<item>|<key>|...] (duration:<duration>) (targets:<player>|...)";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 3;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

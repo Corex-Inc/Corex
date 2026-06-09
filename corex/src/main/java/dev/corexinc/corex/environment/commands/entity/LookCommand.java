@@ -64,7 +64,9 @@ public class LookCommand implements AbstractCommand {
     private static final float UNSET = Float.NaN;
 
     @Override
-    public @NonNull String getName() { return "look"; }
+    public @NonNull String getName() {
+        return "look";
+    }
 
     @Override
     public @NonNull String getSyntax() {
@@ -72,16 +74,24 @@ public class LookCommand implements AbstractCommand {
     }
 
     @Override
-    public int getMinArgs() { return 1; }
+    public int getMinArgs() {
+        return 1;
+    }
 
     @Override
-    public int getMaxArgs() { return 4; }
+    public int getMaxArgs() {
+        return 4;
+    }
 
     @Override
-    public boolean isAsyncSafe() { return false; }
+    public boolean isAsyncSafe() {
+        return false;
+    }
 
     @Override
-    public boolean setCanBeWaitable() { return true; }
+    public boolean setCanBeWaitable() {
+        return true;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

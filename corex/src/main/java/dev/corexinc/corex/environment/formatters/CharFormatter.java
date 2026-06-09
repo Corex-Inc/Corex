@@ -24,7 +24,10 @@ import org.jspecify.annotations.NonNull;
  * @Implements &chr[<character>]
  */
 public class CharFormatter implements AbstractFormatter {
-    @Override public @NonNull String getName() { return "&char"; }
+    @Override
+    public @NonNull String getName() {
+        return "&char";
+    }
 
     @Override
     public @NonNull AbstractTag parse(@NonNull Attribute attribute) {
@@ -38,5 +41,7 @@ public class CharFormatter implements AbstractFormatter {
         }
     }
 
-    @Override public String getTestParam() { return "65"; }
+    @Override public String getTestParam() {
+        return "65";
+    }
 }

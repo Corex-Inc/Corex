@@ -302,11 +302,18 @@ public class MaterialTag implements AbstractTag, Adjustable {
         return new MaterialTag(this.material, this.blockData);
     }
 
-    public Material getMaterial() { return material; }
-    public BlockData getBlockData() { return blockData; }
+    public Material getMaterial() {
+        return material;
+    }
+
+    public BlockData getBlockData() {
+        return blockData;
+    }
 
     @Override
-    public @NonNull String getPrefix() { return prefix; }
+    public @NonNull String getPrefix() {
+        return prefix;
+    }
 
     @Override
     public @NonNull String identify() {

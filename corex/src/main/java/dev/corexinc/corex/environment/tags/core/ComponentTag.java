@@ -26,13 +26,23 @@ public class ComponentTag implements AbstractTag {
         return CorexSerializer.LEGACY.serialize(component);
     }
 
-    @Override public @NonNull String getPrefix() { return "component"; }
-    @Override public AbstractTag getAttribute(@NonNull Attribute attribute) { return null; }
+    @Override
+    public @NonNull String getPrefix() {
+        return "component";
+    }
+
+    @Override
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return null;
+    }
 
     @Override
     public @Nullable String getTestValue() {
         return "";
     }
 
-    @Override public @NonNull TagProcessor<? extends AbstractTag> getProcessor() { return null; }
+    @Override
+    public @NonNull TagProcessor<? extends AbstractTag> getProcessor() {
+        return null;
+    }
 }

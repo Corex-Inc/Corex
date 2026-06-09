@@ -262,16 +262,30 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
         return inside;
     }
 
-    public World getWorld() { return world; }
-    public double getYMin() { return yMin; }
-    public double getYMax() { return yMax; }
-    public List<double[]> getPoints() { return points; }
+    public World getWorld() {
+        return world;
+    }
+
+    public double getYMin() {
+        return yMin;
+    }
+
+    public double getYMax() {
+        return yMax;
+    }
+
+    public List<double[]> getPoints() {
+        return points;
+    }
 
     private static String cleanDouble(double d) {
         return d == (long) d ? String.format("%d", (long) d) : String.valueOf(d);
     }
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
 
     @Override
     public @NonNull String identify() {
@@ -300,8 +314,12 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
     }
 
     @Override
-    public @NonNull TagProcessor<PolygonTag> getProcessor() { return TAG_PROCESSOR; }
+    public @NonNull TagProcessor<PolygonTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
 
     @Override
-    public @NonNull String getTestValue() { return "polygon@world,-1,2,0,0,5,0,5,5,0,5"; }
+    public @NonNull String getTestValue() {
+        return "polygon@world,-1,2,0,0,5,0,5,5,0,5";
+    }
 }

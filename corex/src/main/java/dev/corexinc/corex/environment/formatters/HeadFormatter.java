@@ -30,7 +30,11 @@ import java.util.UUID;
  * - narrate "Welcome, <&head[<player.name>]> <player.name>!"
  */
 public class HeadFormatter implements AbstractFormatter {
-    @Override public @NonNull String getName() { return "&head"; }
+    @Override
+    public @NonNull String getName() {
+        return "&head";
+    }
+
     private static final ElementTag INSTANCE = new ElementTag("");
 
     @Override

@@ -20,12 +20,21 @@ import java.util.List;
  * @Usage
  * // Narrates "Hello" on one line and "World!" on the next.
  * - narrate "Hello<n>World!"
+ *
+ * @Implements n
  */
 public class NewLineFormatter implements AbstractFormatter {
     private static final AbstractTag INSTANCE = new ElementTag("\n");
 
-    @Override public @NonNull String getName() { return "n"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("newline", "nl", "&nl"); }
+    @Override
+    public @NonNull String getName() {
+        return "n";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("newline", "nl", "&nl");
+    }
 
     @Override
     public @NonNull AbstractTag parse(@NonNull Attribute attribute) {

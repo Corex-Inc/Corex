@@ -199,19 +199,42 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
         return blocks;
     }
 
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getZ() { return z; }
-    public World getWorld() { return world; }
-    public double getRadiusX() { return radiusX; }
-    public double getRadiusY() { return radiusY; }
-    public double getRadiusZ() { return radiusZ; }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getZ() {
+        return z;
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public double getRadiusX() {
+        return radiusX;
+    }
+
+    public double getRadiusY() {
+        return radiusY;
+    }
+
+    public double getRadiusZ() {
+        return radiusZ;
+    }
 
     private static String cleanDouble(double d) {
         return d == (long) d ? String.format("%d", (long) d) : String.valueOf(d);
     }
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
 
     @Override
     public @NonNull String identify() {

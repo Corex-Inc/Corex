@@ -50,10 +50,14 @@ public class WebsocketCommand implements AbstractCommand {
     }
 
     @Override
-    public int getMinArgs() { return 2; }
+    public int getMinArgs() {
+        return 2;
+    }
 
     @Override
-    public int getMaxArgs() { return 3; }
+    public int getMaxArgs() {
+        return 3;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

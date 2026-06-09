@@ -46,10 +46,25 @@ public class StructureCommand implements AbstractCommand, Listener {
         }
     }
 
-    @Override public @NonNull String getName()     { return "structure"; }
-    @Override public int getMinArgs()              { return 1; }
-    @Override public int getMaxArgs()              { return 11; }
-    @Override public boolean setCanBeWaitable()    { return true; }
+    @Override
+    public @NonNull String getName() {
+        return "structure";
+    }
+
+    @Override
+    public int getMinArgs() {
+        return 1;
+    }
+
+    @Override
+    public int getMaxArgs() {
+        return 11;
+    }
+
+    @Override
+    public boolean setCanBeWaitable() {
+        return true;
+    }
 
     @Override
     public @NonNull String getSyntax() {

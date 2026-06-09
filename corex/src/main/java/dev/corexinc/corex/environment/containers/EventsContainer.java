@@ -12,7 +12,10 @@ public class EventsContainer implements AbstractContainer {
     private String name;
     private JsonObject rawData;
 
-    @Override public @NonNull String getType() { return "events"; }
+    @Override
+    public @NonNull String getType() {
+        return "events";
+    }
 
     @Override
     public void init(@NonNull String name, @NonNull JsonObject section) {
@@ -33,7 +36,18 @@ public class EventsContainer implements AbstractContainer {
         EventRegistry.mapScript(path.substring(7), bytecode);
     }
 
-    @Override public Instruction[] getScript(@NonNull String path) { return null; }
-    @Override public @NonNull JsonObject getData() { return rawData; }
-    @Override public @NonNull String getName() { return name; }
+    @Override
+    public Instruction[] getScript(@NonNull String path) {
+        return null;
+    }
+
+    @Override
+    public @NonNull JsonObject getData() {
+        return rawData;
+    }
+
+    @Override
+    public @NonNull String getName() {
+        return name;
+    }
 }

@@ -26,8 +26,15 @@ import java.util.List;
 public class SpaceFormatter implements AbstractFormatter {
     private static final AbstractTag INSTANCE = new ElementTag(" ");
 
-    @Override public @NonNull String getName() { return "sp"; }
-    @Override public @NonNull List<String> getAlias() { return List.of("&sp", "space"); }
+    @Override
+    public @NonNull String getName() {
+        return "sp";
+    }
+
+    @Override
+    public @NonNull List<String> getAlias() {
+        return List.of("&sp", "space");
+    }
 
     @Override
     public @NonNull AbstractTag parse(@NonNull Attribute attribute) {

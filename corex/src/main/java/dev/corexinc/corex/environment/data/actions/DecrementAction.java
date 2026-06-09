@@ -10,7 +10,10 @@ import org.jspecify.annotations.Nullable;
 
 public class DecrementAction implements AbstractDataAction {
 
-    @Override public @NonNull String getSymbol() { return "--"; }
+    @Override
+    public @NonNull String getSymbol() {
+        return "--";
+    }
 
     @Override
     public @Nullable AbstractTag apply(@Nullable AbstractTag current, @NonNull String param,

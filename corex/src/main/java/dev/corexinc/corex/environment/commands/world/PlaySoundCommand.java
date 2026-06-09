@@ -21,10 +21,14 @@ import java.util.List;
 public class PlaySoundCommand implements AbstractCommand {
 
     @Override
-    public @NonNull String getName() { return "playsound"; }
+    public @NonNull String getName() {
+        return "playsound";
+    }
 
     @Override
-    public @NonNull List<String> getAlias() { return List.of("sound"); }
+    public @NonNull List<String> getAlias() {
+        return List.of("sound");
+    }
 
     @Override
     public @NonNull String getSyntax() {
@@ -32,10 +36,14 @@ public class PlaySoundCommand implements AbstractCommand {
     }
 
     @Override
-    public int getMinArgs() { return 1; }
+    public int getMinArgs() {
+        return 1;
+    }
 
     @Override
-    public int getMaxArgs() { return 6; }
+    public int getMaxArgs() {
+        return 6;
+    }
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {

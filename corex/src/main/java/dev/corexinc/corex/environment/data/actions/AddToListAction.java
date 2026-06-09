@@ -11,7 +11,10 @@ import org.jspecify.annotations.Nullable;
 
 public class AddToListAction implements AbstractDataAction {
 
-    @Override public @NonNull String getSymbol() { return "|+:"; }
+    @Override
+    public @NonNull String getSymbol() {
+        return "|+:";
+    }
 
     @Override
     public @Nullable AbstractTag apply(@Nullable AbstractTag current, @NonNull String param,
@@ -22,5 +25,8 @@ public class AddToListAction implements AbstractDataAction {
         return list;
     }
 
-    @Override public boolean isPrefix() { return true; }
+    @Override
+    public boolean isPrefix() {
+        return true;
+    }
 }

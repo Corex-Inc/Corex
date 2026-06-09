@@ -12,7 +12,10 @@ import java.util.List;
 
 public class RemoveFromListAction implements AbstractDataAction {
 
-    @Override public @NonNull String getSymbol() { return "|-:"; }
+    @Override
+    public @NonNull String getSymbol() {
+        return "|-:";
+    }
 
     @Override
     public @Nullable AbstractTag apply(@Nullable AbstractTag current, @NonNull String param,
@@ -36,5 +39,8 @@ public class RemoveFromListAction implements AbstractDataAction {
         return result;
     }
 
-    @Override public boolean isPrefix() { return true; }
+    @Override
+    public boolean isPrefix() {
+        return true;
+    }
 }

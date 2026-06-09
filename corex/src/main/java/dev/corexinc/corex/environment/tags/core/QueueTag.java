@@ -156,9 +156,28 @@ public class QueueTag implements AbstractTag {
         this.queue = queue;
     }
 
-    @Override public @NonNull String getPrefix() { return PREFIX; }
-    @Override public @NonNull String identify() { return queue != null ? PREFIX + "@" + queue.getId() : "null"; }
-    @Override public @Nullable AbstractTag getAttribute(@NonNull Attribute attribute) { return PROCESSOR.process(this, attribute); }
-    @Override public @NonNull TagProcessor<QueueTag> getProcessor() { return PROCESSOR; }
-    @Override public @NonNull String getTestValue() { return "q@test_queue"; }
+    @Override
+    public @NonNull String getPrefix() {
+        return PREFIX;
+    }
+
+    @Override
+    public @NonNull String identify() {
+        return queue != null ? PREFIX + "@" + queue.getId() : "null";
+    }
+
+    @Override
+    public @Nullable AbstractTag getAttribute(@NonNull Attribute attribute) {
+        return PROCESSOR.process(this, attribute);
+    }
+
+    @Override
+    public @NonNull TagProcessor<QueueTag> getProcessor() {
+        return PROCESSOR;
+    }
+
+    @Override
+    public @NonNull String getTestValue() {
+        return "q@test_queue";
+    }
 }

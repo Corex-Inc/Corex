@@ -18,7 +18,10 @@ public class TaskContainer implements AbstractContainer {
     private final Map<String, Instruction[]> compiledScripts = new HashMap<>();
     private List<String> definitions = new ArrayList<>();
 
-    @Override public @NonNull String getType() { return "task"; }
+    @Override
+    public @NonNull String getType() {
+        return "task";
+    }
 
     @Override
     public void init(@NonNull String name, @NonNull JsonObject section) {
@@ -35,8 +38,15 @@ public class TaskContainer implements AbstractContainer {
         return definitions;
     }
 
-    @Override public @NonNull String getName() { return name; }
-    @Override public @NonNull JsonObject getData() { return rawData; }
+    @Override
+    public @NonNull String getName() {
+        return name;
+    }
+
+    @Override
+    public @NonNull JsonObject getData() {
+        return rawData;
+    }
 
     @Override
     public @NonNull PathType resolvePath(@NonNull String path) {

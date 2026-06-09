@@ -572,7 +572,10 @@ public class MapTag implements AbstractTag {
         putObject(parts[0], nested);
     }
 
-    @Override public @NonNull String getPrefix() { return prefix; }
+    @Override
+    public @NonNull String getPrefix() {
+        return prefix;
+    }
 
     @Override
     public @NonNull String identify() {

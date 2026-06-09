@@ -291,9 +291,13 @@ public class ItemTag implements AbstractTag, Adjustable {
         this.scriptName = name;
     }
 
-    public ItemStack getItemStack() { return item; }
+    public ItemStack getItemStack() {
+        return item;
+    }
 
-    @Override public @NonNull String getPrefix() { return prefix; }
+    @Override public @NonNull String getPrefix() {
+        return prefix;
+    }
 
     @Override
     public @NonNull String identify() {
@@ -322,19 +326,28 @@ public class ItemTag implements AbstractTag, Adjustable {
         return stringBuilder.toString();
     }
 
-    @Override public @Nullable AbstractTag getAttribute(@NonNull Attribute attribute) {
+    @Override
+    public @Nullable AbstractTag getAttribute(@NonNull Attribute attribute) {
         return TAG_PROCESSOR.process(this, attribute);
     }
 
-    @Override public @NonNull TagProcessor<ItemTag> getProcessor() { return TAG_PROCESSOR; }
+    @Override
+    public @NonNull TagProcessor<ItemTag> getProcessor() {
+        return TAG_PROCESSOR;
+    }
 
-    @Override public @NonNull MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
+    @Override
+    public @NonNull MechanismProcessor<? extends AbstractTag> getMechanismProcessor() {
         return MECHANISM_PROCESSOR;
     }
 
-    @Override public @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
+    @Override
+    public @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
         return MECHANISM_PROCESSOR.process(this, mechanism, value);
     }
 
-    @Override public @NonNull String getTestValue() { return "i@stone[customModelData=1]"; }
+    @Override
+    public @NonNull String getTestValue() {
+        return "i@stone[customModelData=1]";
+    }
 }
