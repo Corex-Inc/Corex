@@ -27,6 +27,7 @@ import dev.corexinc.corex.environment.formatters.*;
 import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.utils.*;
 import dev.corexinc.corex.environment.tags.entity.*;
+import dev.corexinc.corex.environment.tags.inventory.*;
 import dev.corexinc.corex.environment.tags.player.*;
 import dev.corexinc.corex.environment.tags.world.*;
 import dev.corexinc.corex.environment.tags.world.area.*;
@@ -72,6 +73,9 @@ public class EnvironmentLoader {
         nms.register(EntityAdapter.class, "1.21.6", "dev.corexinc.corex.nms.v1_21_6.EntityAdapterImpl");
         nms.register(EntityAdapter.class, "1.21.9", "dev.corexinc.corex.nms.v1_21_9.EntityAdapterImpl");
         nms.register(EntityAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.EntityAdapterImpl");
+
+        nms.register(InventoryAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.InventoryAdapterImpl");
+        nms.register(InventoryAdapter.class, "1.21.3", "dev.corexinc.corex.nms.v1_21_3.InventoryAdapterImpl");
 
         // ---------- NMS (Net.Minecraft.Server) ----------
 
@@ -148,6 +152,7 @@ public class EnvironmentLoader {
                 KillCommand.class,
                 SpawnCommand.class,
                 RemoveCommand.class,
+                InventoryCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -164,6 +169,7 @@ public class EnvironmentLoader {
                 UtilTag.class,
                 RandomTag.class,
                 ItemTag.class,
+                InventoryTag.class,
                 CuboidTag.class,
                 EllipsoidTag.class,
                 PolygonTag.class,
@@ -194,6 +200,7 @@ public class EnvironmentLoader {
                 TaskContainer.class,
                 EventsContainer.class,
                 ItemContainer.class,
+                InventoryContainer.class,
                 GeneratorContainer.class,
                 CommandContainer.class,
 

@@ -16,6 +16,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
+import dev.corexinc.corex.environment.tags.inventory.InventoryTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
@@ -192,6 +193,22 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          */
         TAG_PROCESSOR.registerTag(ItemTag.class, "itemInHand", ((attribute, object) ->
                 new ItemTag(object.getPlayer().getInventory().getItemInMainHand())));
+
+        /* @doc tag
+         *
+         * @Name inventory
+         * @RawName <PlayerTag.inventory>
+         * @Object PlayerTag
+         * @ReturnType InventoryTag
+         * @NoArg
+         * @Description
+         * Returns the player's live inventory.
+         * Reads (such as contents and size) reflect the real inventory, and its holder is the player.
+         *
+         * @Implements PlayerTag.inventory
+         */
+        TAG_PROCESSOR.registerTag(InventoryTag.class, "inventory", ((attribute, object) ->
+                new InventoryTag(object.getPlayer().getInventory()))).ignoreTest();
 
         /* @doc tag
          *

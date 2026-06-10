@@ -54,7 +54,7 @@ import java.util.Set;
  *
  * @Usage
  * // Clear all mobs inside an arena cuboid.
- * - remove * in:<[arena_cuboid]>
+ * - remove * in:<[arenaCuboid]>
  */
 public class RemoveCommand implements AbstractCommand {
 

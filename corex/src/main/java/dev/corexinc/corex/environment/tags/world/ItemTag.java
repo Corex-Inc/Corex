@@ -6,6 +6,9 @@ import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.ItemFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.containers.ItemContainer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -46,7 +49,7 @@ import java.util.Objects;
  * Items can be constructed from raw material names, serialized identity strings, or
  * script-defined item containers registered via ItemContainer.
  */
-public class ItemTag implements AbstractTag, Adjustable {
+public class ItemTag implements AbstractTag, Adjustable, Flaggable {
 
     private static final String prefix = "i";
     private ItemStack item;
@@ -344,6 +347,11 @@ public class ItemTag implements AbstractTag, Adjustable {
     @Override
     public @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
         return MECHANISM_PROCESSOR.process(this, mechanism, value);
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        return item != null ? new ItemFlagTracker(item) : null;
     }
 
     @Override
