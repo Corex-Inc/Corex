@@ -287,6 +287,7 @@ public class ScriptQueue {
                         }
 
                         isStopped = true;
+                        activeQueues.remove(id);
                         double elapsedMs = (System.nanoTime() - startNanos) / 1_000_000.0;
                         Debugger.queueStop(this, elapsedMs);
                         Debugger.releaseQueue(this);

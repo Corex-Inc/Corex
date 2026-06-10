@@ -76,6 +76,8 @@ public abstract class AbstractFlagTracker {
 
         if (durationMs > 0) {
             FlagManager.scheduleExpiration(getTrackerId(), keyPath, durationMs);
+        } else {
+            FlagManager.cancelExpiration(getTrackerId(), keyPath);
         }
     }
 

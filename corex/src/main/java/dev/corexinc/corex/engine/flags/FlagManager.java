@@ -7,12 +7,16 @@ import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
 
 import java.util.PriorityQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class FlagManager {
 
     private static final PriorityQueue<FlagTask> queue = new PriorityQueue<>();
     private static final Object monitor = new Object();
     private static Thread sleeperThread;
+
+    private static final ConcurrentHashMap<String, AtomicLong> versions = new ConcurrentHashMap<>();
 
     private static FlagExpirationHandler expirationHandler;
 
@@ -60,7 +64,9 @@ public class FlagManager {
 
     public static void scheduleExpiration(String trackerId, String flagPath, long durationMs) {
         long expireTime = System.currentTimeMillis() + durationMs;
-        FlagTask task = new FlagTask(trackerId, flagPath, expireTime);
+        long version = versions.computeIfAbsent(versionKey(trackerId, flagPath), k -> new AtomicLong())
+                .incrementAndGet();
+        FlagTask task = new FlagTask(trackerId, flagPath, expireTime, version);
 
         synchronized (monitor) {
             queue.add(task);
@@ -70,7 +76,19 @@ public class FlagManager {
         }
     }
 
+    public static void cancelExpiration(String trackerId, String flagPath) {
+        AtomicLong version = versions.get(versionKey(trackerId, flagPath));
+        if (version != null) version.incrementAndGet();
+    }
+
+    private static String versionKey(String trackerId, String flagPath) {
+        return trackerId + " " + flagPath;
+    }
+
     private static void handleExpiration(FlagTask task) {
+        AtomicLong version = versions.get(versionKey(task.trackerId, task.flagPath));
+        if (version == null || version.get() != task.version) return;
+
         AbstractFlagTracker tracker = AbstractFlagTracker.getTracker(task.trackerId);
         if (tracker == null) return;
 
@@ -116,8 +134,9 @@ public class FlagManager {
         final String trackerId;
         final String flagPath;
         final long expireTime;
+        final long version;
 
-        FlagTask(String t, String f, long e) { trackerId = t; flagPath = f; expireTime = e; }
+        FlagTask(String t, String f, long e, long v) { trackerId = t; flagPath = f; expireTime = e; version = v; }
 
         @Override
         public int compareTo(FlagTask o) { return Long.compare(this.expireTime, o.expireTime); }

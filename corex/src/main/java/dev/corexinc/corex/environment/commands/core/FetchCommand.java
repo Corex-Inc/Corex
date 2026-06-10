@@ -155,10 +155,12 @@ public class FetchCommand implements AbstractCommand {
                     if (bodyTag instanceof MapTag map) {
                         StringBuilder form = new StringBuilder();
                         for (String key : map.keySet()) {
+                            AbstractTag valueObj = map.getObject(key);
+                            if (valueObj == null) continue;
                             if (!form.isEmpty()) form.append("&");
                             form.append(URLEncoder.encode(key, StandardCharsets.UTF_8));
                             form.append("=");
-                            form.append(URLEncoder.encode(map.getObject(key).identify(), StandardCharsets.UTF_8));
+                            form.append(URLEncoder.encode(valueObj.identify(), StandardCharsets.UTF_8));
                         }
                         bodyString = form.toString();
                     } else {
@@ -177,7 +179,9 @@ public class FetchCommand implements AbstractCommand {
         boolean hasUserContentType = false;
         if (headersTag instanceof MapTag mapTag) {
             for (String key : mapTag.keySet()) {
-                requestBuilder.header(key, mapTag.getObject(key).identify());
+                AbstractTag headerValue = mapTag.getObject(key);
+                if (headerValue == null) continue;
+                requestBuilder.header(key, headerValue.identify());
                 if (key.equalsIgnoreCase("Content-Type")) hasUserContentType = true;
             }
         }
@@ -202,7 +206,9 @@ public class FetchCommand implements AbstractCommand {
             try {
                 File dataFolder = Corex.getInstance().getDataFolder();
                 File targetFile = new File(dataFolder, saveFile);
-                if (!targetFile.getCanonicalPath().startsWith(dataFolder.getCanonicalPath())) {
+                String basePath = dataFolder.getCanonicalPath();
+                String targetPath = targetFile.getCanonicalPath();
+                if (!targetPath.equals(basePath) && !targetPath.startsWith(basePath + File.separator)) {
                     Debugger.echoError(queue, "Security error: savefile path must be within the Corex plugin folder!");
                     return;
                 }
