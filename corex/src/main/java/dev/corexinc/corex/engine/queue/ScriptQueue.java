@@ -116,8 +116,18 @@ public class ScriptQueue {
     /** Global registry of all active queues currently managed by the CVM. */
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
 
-    /** Counter for generating unique ids for spawned asynchronous child queues. */
-    private static final AtomicLong asyncCounter = new AtomicLong();
+    /** Monotonic sequence backing every generated queue id - guarantees uniqueness across the whole CVM. */
+    private static final AtomicLong QUEUE_SEQUENCE = new AtomicLong();
+
+    /** Returns the next value of the global queue sequence. */
+    public static long nextSequence() {
+        return QUEUE_SEQUENCE.incrementAndGet();
+    }
+
+    /** Builds a collision-free queue id from a base name (e.g. a script name). */
+    public static String uniqueId(String base) {
+        return base + "_" + QUEUE_SEQUENCE.incrementAndGet();
+    }
 
     /**
      * The position this queue is "anchored" to (used for Folia region matching).
@@ -334,7 +344,7 @@ public class ScriptQueue {
      * When {@code waitable} is true, this queue pauses until the child finishes.
      */
     public void runAsyncChild(Instruction[] block, boolean waitable) {
-        ScriptQueue child = new ScriptQueue(id + "@async@" + asyncCounter.incrementAndGet(), block, true, linkedPlayer);
+        ScriptQueue child = new ScriptQueue(id + "@async@" + nextSequence(), block, true, linkedPlayer);
         child.definitions.putAll(this.definitions);
         child.context = this.context;
 

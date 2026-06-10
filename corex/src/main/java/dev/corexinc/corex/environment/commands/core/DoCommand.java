@@ -124,7 +124,7 @@ public class DoCommand implements AbstractCommand {
         }
 
         String queueId = instruction.getPrefix("id", queue);
-        ScriptQueue newQueue = new ScriptQueue(queueId != null ? queueId : scriptName + "_" + System.currentTimeMillis(), bytecode, false, queue.getPlayer());
+        ScriptQueue newQueue = new ScriptQueue(queueId != null ? queueId : ScriptQueue.uniqueId(scriptName), bytecode, false, queue.getPlayer());
 
         MapTag defsMap = new MapTag();
 

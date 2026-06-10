@@ -123,7 +123,7 @@ public class CommandContainer implements AbstractContainer {
         if (bytecode == null) return null;
 
         ScriptQueue queue = new ScriptQueue(
-                "MCCommand_" + name + "_" + section + "_" + System.nanoTime(),
+                ScriptQueue.uniqueId("MCCommand_" + name + "_" + section),
                 bytecode,
                 false,
                 player,

@@ -37,7 +37,7 @@ public class VRunCommand implements SimpleCommand {
         PlayerTag linkedPlayer = (source instanceof Player p) ? new PlayerTag(p) : null;
 
         ScriptQueue queue = new ScriptQueue(
-                "VRunQueue_" + System.currentTimeMillis(),
+                ScriptQueue.uniqueId("VRunQueue"),
                 instructions,
                 false,
                 linkedPlayer

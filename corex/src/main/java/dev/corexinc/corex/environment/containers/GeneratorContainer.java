@@ -99,7 +99,7 @@ public class GeneratorContainer implements AbstractContainer {
     public ScriptQueue createQueue(@NotNull String section, @Nullable ContextTag context, @NotNull MapTag instanceDefs) {
         Instruction[] bytecode = scripts.get(section);
         if (bytecode == null) return null;
-        ScriptQueue queue = new ScriptQueue("Generator_" + name + "_" + section + "_" + System.nanoTime(), bytecode, false, null, true);
+        ScriptQueue queue = new ScriptQueue(ScriptQueue.uniqueId("Generator_" + name + "_" + section), bytecode, false, null, true);
         if (context != null) queue.setContext(context);
         instanceDefs.keySet().forEach(k -> queue.define(k, instanceDefs.getObject(k)));
         return queue;

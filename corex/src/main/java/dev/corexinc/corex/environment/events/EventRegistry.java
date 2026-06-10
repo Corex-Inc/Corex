@@ -78,7 +78,7 @@ public class EventRegistry {
 
     public static ScriptQueue fire(EventData data, PlayerTag player, ContextTag context) {
         ScriptQueue queue = new ScriptQueue(
-                "Event_" + System.nanoTime(),
+                ScriptQueue.uniqueId("Event"),
                 data.bytecode,
                 false,
                 player

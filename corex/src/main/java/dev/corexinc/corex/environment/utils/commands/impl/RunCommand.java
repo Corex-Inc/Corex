@@ -40,7 +40,7 @@ public class RunCommand implements BasicCommand {
         PlayerTag linkedPlayer = (commandSourceStack.getSender() instanceof Player) ? new PlayerTag((Player) commandSourceStack.getSender()) : null;
 
         ScriptQueue queue = new ScriptQueue(
-                "RunQueue_" + System.currentTimeMillis(),
+                ScriptQueue.uniqueId("RunQueue"),
                 instructions,
                 false,
                 linkedPlayer
