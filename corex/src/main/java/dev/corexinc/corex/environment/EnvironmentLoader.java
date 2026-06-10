@@ -79,6 +79,8 @@ public class EnvironmentLoader {
         nms.register(InventoryAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.InventoryAdapterImpl");
         nms.register(InventoryAdapter.class, "1.21.3", "dev.corexinc.corex.nms.v1_21_3.InventoryAdapterImpl");
 
+        nms.register(DialogAdapter.class, "1.21.7", "dev.corexinc.corex.nms.v1_21_7.DialogAdapterImpl");
+
         // ---------- NMS (Net.Minecraft.Server) ----------
 
         // Global Tags
