@@ -147,6 +147,7 @@ public class EnvironmentLoader {
                 LeashCommand.class,
                 KillCommand.class,
                 SpawnCommand.class,
+                RemoveCommand.class,
 
                 // Tags
                 ElementTag.class,
