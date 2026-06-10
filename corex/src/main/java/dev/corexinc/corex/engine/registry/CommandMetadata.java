@@ -26,18 +26,24 @@ public class CommandMetadata {
 
             int colonIndex = part.indexOf(':');
             if (colonIndex > 0) {
-                allowedPrefixes.add(part.substring(0, colonIndex).toLowerCase());
+                allowedPrefixes.add(part.substring(0, colonIndex));
             }
         }
     }
 
     public boolean isAllowedPrefix(String prefix) {
-        String lower = prefix.toLowerCase();
-
-        if (command.getName().equals("run") && lower.startsWith("def.")) {
+        if (allowedPrefixes.contains(prefix)) {
             return true;
         }
 
-        return allowedPrefixes.contains(lower);
+        int dot = prefix.indexOf('.');
+        if (dot > 0) {
+            String family = prefix.substring(0, dot + 1);
+            for (String allowed : allowedPrefixes) {
+                if (allowed.startsWith(family)) return true;
+            }
+        }
+
+        return false;
     }
 }

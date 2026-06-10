@@ -74,6 +74,8 @@ public class EnvironmentLoader {
         nms.register(EntityAdapter.class, "1.21.9", "dev.corexinc.corex.nms.v1_21_9.EntityAdapterImpl");
         nms.register(EntityAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.EntityAdapterImpl");
 
+        nms.register(DialogAdapter.class, "1.21.9", "dev.corexinc.corex.nms.v1_21_9.DialogAdapterImpl");
+
         nms.register(InventoryAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.InventoryAdapterImpl");
         nms.register(InventoryAdapter.class, "1.21.3", "dev.corexinc.corex.nms.v1_21_3.InventoryAdapterImpl");
 
@@ -153,6 +155,7 @@ public class EnvironmentLoader {
                 SpawnCommand.class,
                 RemoveCommand.class,
                 InventoryCommand.class,
+                DialogCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -201,6 +204,7 @@ public class EnvironmentLoader {
                 EventsContainer.class,
                 ItemContainer.class,
                 InventoryContainer.class,
+                DialogContainer.class,
                 GeneratorContainer.class,
                 CommandContainer.class,
 

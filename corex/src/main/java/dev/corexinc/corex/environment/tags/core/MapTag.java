@@ -594,7 +594,7 @@ public class MapTag implements AbstractTag {
 
     public void remove(String key) {
         if (key != null) {
-            map.remove(key.toLowerCase());
+            map.remove(key);
         }
     }
 

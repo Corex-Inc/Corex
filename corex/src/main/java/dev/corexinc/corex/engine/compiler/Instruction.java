@@ -145,7 +145,7 @@ public class Instruction {
     @Nullable
     @AvailableSince("1.0.0")
     public AbstractTag getPrefixObject(@NotNull String prefix, @NotNull ScriptQueue queue) {
-        CompiledArgument arg = prefixArgs.get(prefix.toLowerCase());
+        CompiledArgument arg = prefixArgs.get(prefix);
         return arg != null ? arg.evaluate(queue) : null;
     }
 

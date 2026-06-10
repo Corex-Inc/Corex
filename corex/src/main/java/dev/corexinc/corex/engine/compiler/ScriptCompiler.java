@@ -73,7 +73,7 @@ public class ScriptCompiler {
                 }
 
                 if (meta.isAllowedPrefix(potentialPrefix)) {
-                    prefixArgs.put(potentialPrefix.toLowerCase(), parseArg(token.substring(colonIndex + 1)));
+                    prefixArgs.put(potentialPrefix, parseArg(token.substring(colonIndex + 1)));
                     continue;
                 }
             }
