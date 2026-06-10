@@ -84,6 +84,11 @@ public class SpawnCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         List<EntityTag> blueprints = resolveBlueprints(instruction.getLinearObject(0, queue));
         if (blueprints.isEmpty()) {

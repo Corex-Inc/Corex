@@ -60,6 +60,11 @@ public class WebsocketCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String action = instruction.getLinear(0, queue);
         String id = instruction.getLinear(1, queue);

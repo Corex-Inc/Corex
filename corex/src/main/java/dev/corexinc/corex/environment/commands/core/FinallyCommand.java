@@ -47,6 +47,11 @@ public class FinallyCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         queue.setTempData("corex_try_caught", null);
 

@@ -76,6 +76,11 @@ public class WhileCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
 
         if (instruction.innerBlock == null || instruction.innerBlock.length == 0) {

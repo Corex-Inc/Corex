@@ -55,6 +55,11 @@ public class CatchCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         if (!(queue.getTempData("corex_try_caught") instanceof List<?> errors)) {
             Debugger.echoError(queue, "Command 'catch' must follow a 'try'!");

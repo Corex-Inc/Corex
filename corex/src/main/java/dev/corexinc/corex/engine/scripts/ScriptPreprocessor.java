@@ -118,7 +118,14 @@ public class ScriptPreprocessor {
                 }
 
                 if (hasOffset) {
-                    result.append(line).append("\n");
+                    String key = trimmedContent.substring(0, trimmedContent.length() - 1);
+                    boolean alreadyQuoted = (key.startsWith("\"") && key.endsWith("\""))
+                            || (key.startsWith("'") && key.endsWith("'"));
+                    if (alreadyQuoted) {
+                        result.append(line).append("\n");
+                    } else {
+                        result.append(spaces).append("'").append(key.replace("'", "''")).append("':\n");
+                    }
                 } else {
                     result.append(spaces).append("'").append(content.replace("'", "''")).append("'\n");
                 }

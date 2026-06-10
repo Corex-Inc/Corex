@@ -80,6 +80,11 @@ public class ToastCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         AbstractTag textTag = instruction.getLinearObject(0, queue);
         if (textTag == null) {

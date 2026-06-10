@@ -74,6 +74,11 @@ public class TitleCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         AbstractTag titleTag = instruction.getPrefixObject("title", queue);
         if (titleTag == null) {

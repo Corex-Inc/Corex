@@ -72,6 +72,11 @@ public class StructureCommand implements AbstractCommand, Listener {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String action = instruction.getLinear(0, queue);
 

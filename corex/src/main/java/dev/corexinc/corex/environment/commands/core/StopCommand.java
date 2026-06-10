@@ -54,6 +54,11 @@ public class StopCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         Debugger.report(queue, instruction);
         queue.stopEntireQueue();

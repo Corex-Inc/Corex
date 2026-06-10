@@ -64,6 +64,11 @@ public class WaitCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction) {
         if (instruction.linearArgs != null && instruction.linearArgs.length > 0) {
             String raw = instruction.getLinear(0, queue);

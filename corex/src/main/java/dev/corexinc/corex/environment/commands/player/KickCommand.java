@@ -64,6 +64,11 @@ public class KickCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String firstArg = instruction.getLinear(0, queue);
         String secondArg = instruction.getPrefix("reason", queue);

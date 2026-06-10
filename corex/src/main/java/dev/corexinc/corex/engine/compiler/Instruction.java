@@ -60,6 +60,12 @@ public class Instruction {
     public final boolean isWaitable;
 
     /**
+     * Indicates whether the command was prefixed with {@code @}, meaning it should run
+     * in its own asynchronous queue. Order with {@code ~} is irrelevant.
+     */
+    public final boolean isAsync;
+
+    /**
      * A map of {@link AbstractGlobalFlag} modifiers applied to this specific instruction (e.g., {@code if:<condition>}).
      */
     @NotNull public final Map<AbstractGlobalFlag, CompiledArgument> globalFlags;
@@ -71,6 +77,7 @@ public class Instruction {
             @NotNull String[] flags,
             @Nullable Instruction[] innerBlock,
             boolean isWaitable,
+            boolean isAsync,
             @Nullable Map<AbstractGlobalFlag, CompiledArgument> globalFlags
     ) {
         this.command = command;
@@ -79,6 +86,7 @@ public class Instruction {
         this.flags = flags;
         this.innerBlock = innerBlock;
         this.isWaitable = isWaitable;
+        this.isAsync = isAsync;
         this.globalFlags = globalFlags;
     }
 

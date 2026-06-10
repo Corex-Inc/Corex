@@ -60,6 +60,11 @@ public class ForeachCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
 
         AbstractTag targetObj = instruction.getLinearObject(0, queue);

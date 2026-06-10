@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -115,6 +116,9 @@ public class ScriptQueue {
     /** Global registry of all active queues currently managed by the CVM. */
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
 
+    /** Counter for generating unique ids for spawned asynchronous child queues. */
+    private static final AtomicLong asyncCounter = new AtomicLong();
+
     /**
      * The position this queue is "anchored" to (used for Folia region matching).
      * <p>
@@ -207,6 +211,12 @@ public class ScriptQueue {
                     }
 
                     Instruction inst = bytecode[pointer++];
+
+                    if (inst.isAsync && !isAsync) {
+                        runAsyncChild(new Instruction[]{inst}, inst.isWaitable);
+                        continue;
+                    }
+
                     int depth = callStack.size();
 
                     try {
@@ -316,6 +326,24 @@ public class ScriptQueue {
         this.pointer = 0;
         this.onFinish = newOnFinish;
         this.loopCondition = loopCondition;
+    }
+
+    /**
+     * Spawns a new asynchronous child queue that runs the given block.
+     * Inherits a snapshot of this queue's definitions, linked player and context.
+     * When {@code waitable} is true, this queue pauses until the child finishes.
+     */
+    public void runAsyncChild(Instruction[] block, boolean waitable) {
+        ScriptQueue child = new ScriptQueue(id + "@async@" + asyncCounter.incrementAndGet(), block, true, linkedPlayer);
+        child.definitions.putAll(this.definitions);
+        child.context = this.context;
+
+        if (waitable) {
+            pause();
+            child.setOnFinish(() -> SchedulerAdapter.get().run(this::resume));
+        }
+
+        SchedulerAdapter.get().runAsync(child::start);
     }
 
     /**

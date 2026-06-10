@@ -46,6 +46,11 @@ public class PlaySoundCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String soundRaw = instruction.getLinear(0, queue);
         if (soundRaw == null) {

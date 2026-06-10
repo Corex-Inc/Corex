@@ -81,6 +81,11 @@ public class TeleportCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         int argCount = instruction.linearArgs.length;
 

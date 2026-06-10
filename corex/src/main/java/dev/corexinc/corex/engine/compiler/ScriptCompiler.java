@@ -34,8 +34,10 @@ public class ScriptCompiler {
         String cmdName = tokens.getFirst().toLowerCase();
 
         boolean isWaitable = false;
-        if (cmdName.startsWith("~")) {
-            isWaitable = true;
+        boolean isAsync = false;
+        while (!cmdName.isEmpty() && (cmdName.charAt(0) == '~' || cmdName.charAt(0) == '@')) {
+            if (cmdName.charAt(0) == '~') isWaitable = true;
+            else isAsync = true;
             cmdName = cmdName.substring(1);
         }
 
@@ -43,6 +45,12 @@ public class ScriptCompiler {
 
         if (meta == null) {
             CorexLogger.error("SCRIPT ERROR: Unknown script command '<yellow>" + cmdName + "</yellow>'!");
+            return null;
+        }
+
+        if (isAsync && !meta.command.isAsyncSafe()) {
+            CorexLogger.error("COMPILE ERROR: Command '<yellow>" + cmdName + "</yellow>' cannot run async (@) - it is not async-safe!");
+            CorexLogger.error("-> Line: " + rawLine);
             return null;
         }
 
@@ -85,7 +93,7 @@ public class ScriptCompiler {
             return null;
         }
 
-        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock, isWaitable, gFlags);
+        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock, isWaitable, isAsync, gFlags);
     }
 
     public static Instruction compile(String rawLine) {

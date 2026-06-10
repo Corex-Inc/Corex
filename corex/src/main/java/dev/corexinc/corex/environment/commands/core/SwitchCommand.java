@@ -89,6 +89,11 @@ public class SwitchCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String switchValue = instruction.getLinear(0, queue);

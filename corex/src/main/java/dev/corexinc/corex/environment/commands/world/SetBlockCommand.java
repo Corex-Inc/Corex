@@ -120,6 +120,11 @@ public class SetBlockCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String locationsRaw  = instruction.getLinear(0, queue);
         String materialsRaw  = instruction.getLinear(1, queue);

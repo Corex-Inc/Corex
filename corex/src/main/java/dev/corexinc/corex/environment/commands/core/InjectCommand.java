@@ -50,6 +50,11 @@ public class InjectCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String target = instruction.getLinear(0, queue);
         if (target == null) return;

@@ -75,6 +75,11 @@ public class ReturnCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String value = instruction.getLinear(0, queue);
 

@@ -29,6 +29,11 @@ public class SwitchCaseCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         Debugger.echoError(queue, "Command '" + getName() + "' can ONLY be used inside 'switch'!");
     }

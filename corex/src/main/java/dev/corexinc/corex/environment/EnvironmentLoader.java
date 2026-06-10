@@ -123,6 +123,7 @@ public class EnvironmentLoader {
                 TryCommand.class,
                 CatchCommand.class, // Try subcommand
                 FinallyCommand.class, // Try subcommand
+                AsyncCommand.class,
                 InjectCommand.class,
                 ReturnCommand.class,
                 AdjustCommand.class,

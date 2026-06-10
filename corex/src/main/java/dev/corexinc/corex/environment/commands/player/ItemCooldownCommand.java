@@ -96,6 +96,11 @@ public class ItemCooldownCommand implements AbstractCommand {
     }
 
     @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
+    @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String rawArg = instruction.getLinear(0, queue);
         if (rawArg == null) {
