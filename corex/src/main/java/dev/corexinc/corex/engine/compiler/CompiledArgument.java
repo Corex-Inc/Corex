@@ -7,3 +7,5 @@ public interface CompiledArgument {
     AbstractTag evaluate(ScriptQueue queue);
     String getRaw();
 }
+
+// .fliter[<[value].isOnline>]

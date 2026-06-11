@@ -46,7 +46,7 @@ import java.util.function.Function;
  */
 public final class ArgumentSchema {
 
-    private enum ArgumentKind { PREFIX, LINEAR }
+    private enum ArgumentKind { PREFIX, LINEAR, FLAG }
 
     private record ArgumentDef(
             ArgumentKind kind,
@@ -184,7 +184,7 @@ public final class ArgumentSchema {
          * this just makes the intent explicit in the schema for documentation purposes.
          */
         public Builder optionalFlag(String name) {
-            defs.add(new ArgDef(ArgKind.FLAG, name, -1, ElementTag.class, null, false, null));
+            defs.add(new ArgumentDef(ArgumentKind.FLAG, name, -1, ElementTag.class, null, false, null));
             return this;
         }
 

@@ -97,9 +97,14 @@ public class Attribute {
 
     @Contract(pure = true)
     public String getRawParam() {
+        return getRawParamCompiled().getRaw();
+    }
+
+    @Contract(pure = true)
+    public CompiledArgument getRawParamCompiled() {
         int index = Math.min(currentIndex, components.length - 1);
         if (index < 0 || components[index].param() == null) return null;
-        return components[index].param().getRaw();
+        return components[index].param();
     }
 
     /**

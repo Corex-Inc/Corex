@@ -40,25 +40,30 @@ public class Corex extends JavaPlugin {
     private static boolean IS_TEST   = false;
 
     @Override
+    public void onLoad() {
+        instance = this;
+        this.registry = new CorexRegistry();
+
+        ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
+        setupRuntimeFlags();
+
+        EnvironmentLoader.registerDefaults(this.registry);
+        EnvManager.load();
+        ScriptManager.setRegistry(registry);
+    }
+
+    @Override
     public void onEnable() {
         SchedulerAdapter.set(new BukkitSchedulerAdapter());
         CorexLogger.setConsole(Bukkit.getConsoleSender());
 
-        instance = this;
         silenceHikariLogs();
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
-        ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
 
         getConfig().options().copyDefaults(true);
         saveDefaultConfig();
         FlagManager.init();
         Debugger.updateDebugMode(getConfig().getString("logger.debug-mode", "default"));
-
-        setupRuntimeFlags();
-
-        this.registry = new CorexRegistry();
-        EnvironmentLoader.registerDefaults(this.registry);
-        EnvManager.load();
 
         int pluginId = 30505;
         new Metrics(this, pluginId);
@@ -66,7 +71,6 @@ public class Corex extends JavaPlugin {
         registerCommands();
 
         ScriptManager.setDataFolder(getDataFolder().toPath());
-        ScriptManager.setRegistry(registry);
         ScriptManager.loadScripts();
 
         CommandManager.INSTANCE.updateContainers(
