@@ -1,11 +1,14 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
@@ -50,6 +53,11 @@ public class NarrateCommand implements AbstractCommand {
         return "[<text>] (targets:<player>|...)";
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ElementTag.class)
+            .optionalPrefix("targets", ListTag.class)
+            .build();
+
     @Override
     public int getMinArgs() {
         return 1;
@@ -66,32 +74,29 @@ public class NarrateCommand implements AbstractCommand {
     }
 
     @Override
-    public void run(@NonNull ScriptQueue queue, @NonNull Instruction entry) {
-        AbstractTag text = entry.getLinearObject(0, queue);
-        if (text == null) {
-            Debugger.echoError(queue, "Empty text argument are not allowed");
-            return;
-        }
+    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
+        ArgumentSet ars = SCHEMA.bind(instruction, queue);
+        if (ars == null) return;
+        AbstractTag text = ars.linear(0);
 
         Component message = buildComponent(text);
 
-        String targets = entry.getPrefix("targets", queue);
+        String targets = instruction.getPrefix("targets", queue);
 
-        Debugger.report(queue, entry,
+        Debugger.report(queue, instruction,
                 "Narrating", text.identify(),
                 "Targets", targets
         );
 
         if (targets != null) {
-            sendToTargets(queue, entry, targets, message);
+            sendToTargets(queue, instruction, targets, message);
         } else {
             sendToQueuePlayerOrConsole(queue, message);
         }
     }
 
     private Component buildComponent(@NonNull AbstractTag text) {
-        Component component = text.asComponent();
-        return component;
+        return text.asComponent();
     }
 
     private void sendToTargets(@NonNull ScriptQueue queue, @NonNull Instruction entry,

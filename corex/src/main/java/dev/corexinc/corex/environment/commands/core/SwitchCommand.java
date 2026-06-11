@@ -121,7 +121,7 @@ public class SwitchCommand implements AbstractCommand {
                 if (child.command instanceof SwitchCaseCommand) {
                     if (child.innerBlock == null) continue;
                     for (int i = 0; i < child.linearArgs.length; i++) {
-                        String caseVal = child.getLinear(i, null);
+                        String caseVal = child.getLinear(i, queue);
                         if (caseVal != null) {
                             String key = caseVal.toLowerCase();
                             if (lookupTable.containsKey(key)) {
