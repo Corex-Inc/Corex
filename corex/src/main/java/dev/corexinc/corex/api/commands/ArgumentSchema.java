@@ -209,13 +209,19 @@ public final class ArgumentSchema {
         ArgumentSet result = new ArgumentSet();
 
         for (ArgumentDef def : defs) {
+
+            if (def.kind() == ArgumentKind.FLAG) {
+                result.putFlag(def.key(), instruction.hasFlag(def.key()));
+                continue;
+            }
+
             AbstractTag resolved = resolve(def, instruction, queue);
             if (resolved == null && def.required()) {
                 if (def.kind() == ArgumentKind.PREFIX) {
-                    CorexLogger.error("ARG ERROR: Command '" + instruction.command.getName()
+                    CorexLogger.error("Command '" + instruction.command.getName()
                             + "' requires prefix '" + def.key() + ":<" + def.type().getSimpleName() + ">'!");
                 } else {
-                    CorexLogger.error("ARG ERROR: Command '" + instruction.command.getName()
+                    CorexLogger.error("Command '" + instruction.command.getName()
                             + "' requires positional arg #" + def.linearIndex()
                             + " of type " + def.type().getSimpleName() + "!");
                 }
@@ -254,7 +260,7 @@ public final class ArgumentSchema {
                 T parsed = (T) ((Function<String, AbstractTag>) def.parser()).apply(raw.identify());
                 if (parsed != null) return parsed;
             } catch (Exception e) {
-                CorexLogger.error("ARG ERROR: Failed to parse '" + raw.identify()
+                CorexLogger.error("Failed to parse '" + raw.identify()
                         + "' as " + def.type().getSimpleName() + ": " + e.getMessage());
                 return null;
             }
@@ -264,9 +270,9 @@ public final class ArgumentSchema {
             return (T) new ElementTag(raw.identify());
         }
 
-        CorexLogger.error("ARG ERROR: Expected " + def.type().getSimpleName()
+        CorexLogger.error("Expected " + def.type().getSimpleName()
                 + " for arg '" + def.key() + "', got " + raw.getClass().getSimpleName()
-                + " ('" + raw.identify() + "'). Did you provide a parser?");
+                + " ('" + raw.identify() + "')");
         return null;
     }
 
