@@ -117,9 +117,9 @@ public class StructureCommand implements AbstractCommand, Listener {
         String paletteRaw   = instruction.getPrefix("palette",   queue);
         String integrityRaw = instruction.getPrefix("integrity", queue);
 
-        boolean includeEntities = instruction.hasFlag("include_entities");
+        boolean includeEntities = instruction.hasFlag("includeEntities");
         boolean centered        = instruction.hasFlag("centered");
-        boolean noPhysics       = instruction.hasFlag("no_physics");
+        boolean noPhysics       = instruction.hasFlag("noPhysics");
 
         if (locationRaw == null) {
             Debugger.echoError(queue, "location: is required for 'place'!");
@@ -240,8 +240,8 @@ public class StructureCommand implements AbstractCommand, Listener {
         String areaRaw          = instruction.getPrefix("area",             queue);
         String locationRaw      = instruction.getPrefix("location",         queue);
 
-        boolean saveToDisk      = instruction.hasFlag("save_to_disk");
-        boolean includeEntities = instruction.hasFlag("include_entities");
+        boolean saveToDisk      = instruction.hasFlag("saveToDisk");
+        boolean includeEntities = instruction.hasFlag("includeEntities");
 
         if (areaRaw == null) {
             Debugger.echoError(queue, "area: is required for 'create'!");
