@@ -1,10 +1,14 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
@@ -53,6 +57,11 @@ public class KickCommand implements AbstractCommand {
         return "[<player>|...] (reason:<text>)";
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ListTag.class)
+            .optionalPrefix("reason", ElementTag.class)
+            .build();
+
     @Override
     public int getMinArgs() {
         return 1;
@@ -70,17 +79,18 @@ public class KickCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String firstArg = instruction.getLinear(0, queue);
-        String secondArg = instruction.getPrefix("reason", queue);
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
+
+        ListTag targetList = args.linear(0);
+        ElementTag reasonRaw = args.prefix("reason");
         boolean failed = false;
 
-        final Component reason = (secondArg == null ? null : MiniMessage.miniMessage().deserialize(secondArg));
-
-        ListTag targetList = new ListTag(firstArg);
+        final Component reason = (reasonRaw == null ? null : reasonRaw.asComponent());
         List<PlayerTag> players = targetList.filter(PlayerTag.class, queue);
 
         if (players.isEmpty()) {
-            Debugger.echoError(queue, getName() + ": no players found in '" + firstArg + "'");
+            Debugger.echoError(queue, getName() + ": no players found in '" + targetList.identify() + "'");
             failed = true;
         }
 

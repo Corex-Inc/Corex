@@ -52,6 +52,7 @@ public final class ArgumentSet {
      * @return the resolved tag, or {@code null} if optional and absent
      */
     @SuppressWarnings("unchecked")
+    @Nullable
     public <T extends AbstractTag> T prefix(@NotNull String key) {
         return (T) data.get(NS_PREFIX + ":" + key);
     }
@@ -72,6 +73,7 @@ public final class ArgumentSet {
      * @return the resolved tag, or {@code null} if optional and absent
      */
     @SuppressWarnings("unchecked")
+    @Nullable
     public <T extends AbstractTag> T linear(int index) {
         return (T) data.get(NS_LINEAR + ":" + index);
     }

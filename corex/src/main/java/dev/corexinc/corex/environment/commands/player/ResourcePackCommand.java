@@ -2,11 +2,14 @@ package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
@@ -88,6 +91,15 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
         return true;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ElementTag.class)
+            .optionalPrefix("id", ElementTag.class)
+            .optionalPrefix("hash", ElementTag.class)
+            .optionalPrefix("prompt", ElementTag.class)
+            .optionalPrefix("targets", ListTag.class)
+            .optionalFlag("forced")
+            .build();
+
     @Override
     public @NonNull String getSyntax() {
         return "[set/add/remove] (id:<id>) (url:<url>) (hash:<hash>) (prompt:<text>) (targets:<player>|...) (forced)";
@@ -100,24 +112,28 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String actionRaw = instruction.getLinear(0, queue);
-        if (actionRaw == null) {
-            Debugger.echoError(queue, "Action must be specified: set, add, or remove.");
-            return;
-        }
-        String action = actionRaw.toLowerCase();
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
 
-        String idRaw = instruction.getPrefix("id", queue);
-        String urlRaw = instruction.getPrefix("url", queue);
-        String hashRaw = instruction.getPrefix("hash", queue);
-        AbstractTag promptTag = instruction.getPrefixObject("prompt", queue);
-        boolean forced = instruction.hasFlag("forced");
+        String action = args.linear(0).identify();
 
-        List<Player> targetPlayers = getTargets(queue, instruction);
+        ElementTag rawId = args.prefix("id");
+        String id = rawId == null ? null : rawId.identify();
+
+        ElementTag rawUrl = args.prefix("url");
+        String url = rawUrl == null ? null : rawUrl.identify();
+
+        ElementTag rawHash = args.prefix("hash");
+        String hash = rawHash == null ? null : rawHash.identify();
+
+        AbstractTag promptTag = args.prefix("prompt");
+        boolean forced = args.flag("forced");
+
+        List<Player> targetPlayers = getTargets(queue, args.prefix("targets"));
         if (targetPlayers.isEmpty()) return;
 
-        if (action.equals("remove")) {
-            UUID packUUID = idRaw != null ? parseUUID(idRaw) : null;
+        if (action.equalsIgnoreCase("remove")) {
+            UUID packUUID = id != null ? parseUUID(id) : null;
             for (Player player : targetPlayers) {
                 ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> {
                     if (packUUID == null) player.removeResourcePacks();
@@ -127,27 +143,27 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
             return;
         }
 
-        if (urlRaw == null || hashRaw == null) {
+        if (url == null || hash == null) {
             Debugger.echoError(queue, "Both 'url:' and 'hash:' are required for add/set.");
             return;
         }
 
         URI uri;
         try {
-            uri = new URI(urlRaw);
+            uri = new URI(url);
         } catch (URISyntaxException e) {
-            Debugger.echoError(queue, "Invalid URL format: " + urlRaw);
+            Debugger.echoError(queue, "Invalid URL format: " + url);
             return;
         }
 
-        UUID packUUID = idRaw != null ? parseUUID(idRaw) : UUID.nameUUIDFromBytes(urlRaw.getBytes(StandardCharsets.UTF_8));
+        UUID packUUID = id != null ? parseUUID(id) : UUID.nameUUIDFromBytes(url.getBytes(StandardCharsets.UTF_8));
         Component promptComp = promptTag != null ? promptTag.asComponent() : Component.empty();
 
         ResourcePackInfo packInfo;
         try {
-            packInfo = ResourcePackInfo.resourcePackInfo(packUUID, uri, hashRaw);
+            packInfo = ResourcePackInfo.resourcePackInfo(packUUID, uri, hash);
         } catch (IllegalArgumentException e) {
-            Debugger.echoError(queue, "Invalid resource pack hash (must be a 40-character hex string): " + hashRaw);
+            Debugger.echoError(queue, "Invalid resource pack hash (must be a 40-character hex string): " + hash);
             return;
         }
 
@@ -160,7 +176,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
         Debugger.report(queue, instruction,
                 "Action", action,
                 "ID", packUUID,
-                "URL", urlRaw,
+                "URL", rawUrl,
                 "Waitable", instruction.isWaitable
         );
 
@@ -178,18 +194,17 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
 
         for (Player player : targetPlayers) {
             ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> {
-                if (action.equals("set")) player.removeResourcePacks();
+                if (action.equalsIgnoreCase("set")) player.removeResourcePacks();
                 player.sendResourcePacks(request);
             });
         }
     }
 
-    private List<Player> getTargets(ScriptQueue queue, Instruction instruction) {
-        String targetsRaw = instruction.getPrefix("targets", queue);
+    private List<Player> getTargets(ScriptQueue queue, ListTag targets) {
         List<Player> targetPlayers = new ArrayList<>();
 
-        if (targetsRaw != null) {
-            new ListTag(targetsRaw).filter(PlayerTag.class, queue).forEach(p -> {
+        if (targets != null && targets.isEmpty()) {
+            targets.filter(PlayerTag.class, queue).forEach(p -> {
                 Player player = p.getPlayer();
                 if (player != null && player.isOnline()) targetPlayers.add(player);
             });
