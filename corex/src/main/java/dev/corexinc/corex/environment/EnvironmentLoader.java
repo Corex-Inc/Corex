@@ -4,7 +4,6 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
-import dev.corexinc.corex.environment.containers.commands.ArgumentTypeRegistry;
 import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // NMS

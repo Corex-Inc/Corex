@@ -44,12 +44,12 @@ public class ScriptCompiler {
         CommandMetadata meta = ScriptManager.getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) {
-            CorexLogger.error("SCRIPT ERROR: Unknown script command '<yellow>" + cmdName + "</yellow>'!");
+            CorexLogger.error("Unknown script command '<yellow>" + cmdName + "</yellow>'!");
             return null;
         }
 
         if (isAsync && !meta.command.isAsyncSafe()) {
-            CorexLogger.error("COMPILE ERROR: Command '<yellow>" + cmdName + "</yellow>' cannot run async (@) - it is not async-safe!");
+            CorexLogger.error("Command '<yellow>" + cmdName + "</yellow>' cannot run async (@) - it is not async-safe!");
             CorexLogger.error("-> Line: " + rawLine);
             return null;
         }
@@ -86,9 +86,24 @@ public class ScriptCompiler {
             }
         }
 
-        int argsCount = linearArgs.size();
-        if (argsCount < meta.command.getMinArgs() || (meta.command.getMaxArgs() != -1 && argsCount > meta.command.getMaxArgs())) {
-            CorexLogger.error("COMPILE ERROR: Command '" + cmdName + "' expect from " + meta.command.getMinArgs() + " to " + meta.command.getMaxArgs() + " args, but provided " + argsCount + "!");
+        List<String> missingPrefixes = meta.getMissingRequiredPrefixes(prefixArgs.keySet());
+        if (!missingPrefixes.isEmpty()) {
+            CorexLogger.error("Command '" + cmdName + "' is missing required prefix arg(s): " + String.join(", ", missingPrefixes) + "!");
+            CorexLogger.error("-> Line: " + rawLine);
+            return null;
+        }
+
+        if (!meta.isSyntaxLinearSatisfied(linearArgs.size())) {
+            CorexLogger.error("Command '" + cmdName + "' requires at least " + meta.syntaxRequiredLinear + " positional arg(s), but " + linearArgs.size() + " provided!");
+            CorexLogger.error("-> Line: " + rawLine);
+            return null;
+        }
+
+        if (!meta.isArgCountValid(linearArgs.size(), prefixArgs.size())) {
+            int min = meta.command.getMinArgs();
+            int max = meta.command.getMaxArgs();
+            int total = linearArgs.size() + prefixArgs.size();
+            CorexLogger.error("Command '" + cmdName + "' expects " + min + " to " + (max == -1 ? "∞" : max) + " arg(s) total, but " + total + " provided!");
             CorexLogger.error("-> Line: " + rawLine);
             return null;
         }
