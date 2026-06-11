@@ -75,21 +75,21 @@ public class NarrateCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        ArgumentSet ars = SCHEMA.bind(instruction, queue);
-        if (ars == null) return;
-        AbstractTag text = ars.linear(0);
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
+        AbstractTag text = args.linear(0);
 
         Component message = buildComponent(text);
 
-        String targets = instruction.getPrefix("targets", queue);
+        AbstractTag targets = args.prefix("targets");
 
         Debugger.report(queue, instruction,
                 "Narrating", text.identify(),
-                "Targets", targets
+                "Targets", targets != null ? targets.identify() : null
         );
 
         if (targets != null) {
-            sendToTargets(queue, instruction, targets, message);
+            sendToTargets(queue, (ListTag) targets, message);
         } else {
             sendToQueuePlayerOrConsole(queue, message);
         }
@@ -99,9 +99,9 @@ public class NarrateCommand implements AbstractCommand {
         return text.asComponent();
     }
 
-    private void sendToTargets(@NonNull ScriptQueue queue, @NonNull Instruction entry,
-                               @NonNull String targets, @NonNull Component message) {
-        List<PlayerTag> playerTags = new ListTag(targets).filter(PlayerTag.class, queue);
+    private void sendToTargets(@NonNull ScriptQueue queue,
+                               @NonNull ListTag targets, @NonNull Component message) {
+        List<PlayerTag> playerTags = targets.filter(PlayerTag.class, queue);
 
         List<Player> onlinePlayers = new ArrayList<>(playerTags.size());
         for (PlayerTag pTag : playerTags) {
