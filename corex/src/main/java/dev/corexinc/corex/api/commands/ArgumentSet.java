@@ -31,15 +31,18 @@ public final class ArgumentSet {
     static final String NS_LINEAR = "l";
 
     private final Map<String, AbstractTag> data = new HashMap<>();
+    private final Map<String, Boolean> flags = new HashMap<>();
 
     ArgumentSet() {}
 
     void putPrefix(String key, @Nullable AbstractTag value) {
         data.put(NS_PREFIX + ":" + key, value);
     }
-
     void putLinear(int index, @Nullable AbstractTag value) {
         data.put(NS_LINEAR + ":" + index, value);
+    }
+    void putFlag(String key, boolean value) {
+        flags.put(key.toLowerCase(), value);
     }
 
     /**
@@ -79,5 +82,12 @@ public final class ArgumentSet {
     public boolean hasLinear(int index) {
         AbstractTag v = data.get(NS_LINEAR + ":" + index);
         return v != null;
+    }
+
+    /**
+     * Returns {@code true} if the flag was present in the script line.
+     */
+    public boolean flag(@NotNull String name) {
+        return flags.getOrDefault(name.toLowerCase(), false);
     }
 }

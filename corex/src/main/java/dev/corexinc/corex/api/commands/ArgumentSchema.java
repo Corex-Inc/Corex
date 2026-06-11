@@ -178,6 +178,17 @@ public final class ArgumentSchema {
         }
 
         /**
+         * Declares an optional flag: {@code (forced)}.
+         * Access via {@link ArgumentSet#flag(String)} — returns {@code true} if present.
+         * Flags are not validated at compile time (the compiler already handles them),
+         * this just makes the intent explicit in the schema for documentation purposes.
+         */
+        public Builder optionalFlag(String name) {
+            defs.add(new ArgDef(ArgKind.FLAG, name, -1, ElementTag.class, null, false, null));
+            return this;
+        }
+
+        /**
          * Finalizes the schema.
          */
         public ArgumentSchema build() {
