@@ -19,7 +19,7 @@ subprojects {
     apply(plugin = "java")
 
     java {
-        toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+        toolchain.languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":v1_21_6"))
     implementation(project(":v1_21_9"))
     implementation(project(":v1_21_11"))
+    implementation(project(":v26_1_2"))
 }
 
 tasks {

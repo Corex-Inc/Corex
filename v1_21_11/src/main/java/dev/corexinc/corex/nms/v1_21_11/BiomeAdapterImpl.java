@@ -32,6 +32,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.entity.EntityType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -42,7 +43,7 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         ServerLevel serverLevel = ((CraftWorld) world).getHandle();
 
         Identifier nmsLocation = Identifier.fromNamespaceAndPath(key.getNamespace(), key.getKey());
-        ResourceKey<Biome> resourceKey = ResourceKey.create(Registries.BIOME, nmsLocation);
+        ResourceKey<@NotNull Biome> resourceKey = ResourceKey.create(Registries.BIOME, nmsLocation);
         return serverLevel.registryAccess().lookupOrThrow(Registries.BIOME)
                 .get(resourceKey)
                 .map(net.minecraft.core.Holder::value)
@@ -59,11 +60,11 @@ public class BiomeAdapterImpl implements BiomeAdapter {
                 .toList();
     }
 
-    public <T> T getEnvAttr(Biome biome, EnvironmentAttribute<T> attr) {
+    public <T> T getEnvAttr(Biome biome, EnvironmentAttribute<@NotNull T> attr) {
         return biome.getAttributes().applyModifier(attr, attr.defaultValue());
     }
 
-    public <T> void setEnvAttr(World world, NamespacedKey key, EnvironmentAttribute<T> attr, T value) {
+    public <T> void setEnvAttr(World world, NamespacedKey key, EnvironmentAttribute<@NotNull T> attr, T value) {
         Biome nmsBiome = getNmsBiome(world, key);
         if (nmsBiome == null) return;
 
@@ -84,11 +85,11 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         try {
             ServerLevel serverLevel = ((CraftWorld) world).getHandle();
 
-            var registry = (MappedRegistry<Biome>) serverLevel.registryAccess().lookupOrThrow(Registries.BIOME);
+            var registry = (MappedRegistry<@NotNull Biome>) serverLevel.registryAccess().lookupOrThrow(Registries.BIOME);
 
             Identifier nmsLocation = Identifier.parse(key.toString());
 
-            ResourceKey<Biome> nmsKey = ResourceKey.create(Registries.BIOME, nmsLocation);
+            ResourceKey<@NotNull Biome> nmsKey = ResourceKey.create(Registries.BIOME, nmsLocation);
 
             Map infos = (Map) ReflectionHelper.getFieldValue(
                     MappedRegistry.class, "registrationInfos", registry
@@ -147,7 +148,7 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         MobCategory nmsCategory = MobCategory.valueOf(category.name());
 
         MobSpawnSettings spawnSettings = nmsBiome.getMobSettings();
-        for (Weighted<MobSpawnSettings.SpawnerData> wrapper : spawnSettings.getMobs(nmsCategory).unwrap()) {
+        for (Weighted<MobSpawnSettings.@NotNull SpawnerData> wrapper : spawnSettings.getMobs(nmsCategory).unwrap()) {
             MobSpawnSettings.SpawnerData spawnerData = wrapper.value();
             String entityId = BuiltInRegistries.ENTITY_TYPE.getKey(spawnerData.type()).getPath();
             try {
@@ -399,7 +400,7 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         }
 
         @SuppressWarnings("unchecked")
-        EnvironmentAttribute<Object> attribute = (EnvironmentAttribute<Object>) holder.value();
+        EnvironmentAttribute<@NotNull Object> attribute = (EnvironmentAttribute<@NotNull Object>) holder.value();
 
         setEnvAttr(world, biomeKey, attribute, value);
     }
