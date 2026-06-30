@@ -2,17 +2,20 @@ package dev.corexinc.corex.environment.utils.commands.impl;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.utils.commands.CommandParser;
 import dev.corexinc.corex.environment.utils.commands.TabCompleter;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class RunsCommand implements BasicCommand {
 
@@ -47,24 +50,35 @@ public class RunsCommand implements BasicCommand {
         }
 
         ScriptQueue queue = activeQueues.get(senderId);
+        Player executor = (sender instanceof Player p) ? p : null;
 
         if (queue == null || queue.isCancelled() || queue.isStopped()) {
-            PlayerTag linkedPlayer = (sender instanceof Player) ? new PlayerTag((Player) sender) : null;
+            PlayerTag linkedPlayer = (executor != null) ? new PlayerTag(executor) : null;
+
+            Position anchor = (executor != null) ? toPosition(executor.getLocation()) : null;
 
             queue = new ScriptQueue(
                     "SessionQueue_" + sender.getName(),
                     new Instruction[0],
                     false,
-                    linkedPlayer
+                    linkedPlayer,
+                    anchor
             );
             queue.setKeepAlive(true);
             activeQueues.put(senderId, queue);
             queue.start();
             sender.sendMessage("§b[Corex] §7New queue session created. Use §f- stop§7 to kill it.");
+        } else if (executor != null) {
+            queue.setAnchorPosition(toPosition(executor.getLocation()));
         }
 
         for (Instruction inst : instructions) {
             queue.injectInstructions(inst);
         }
+    }
+
+    private static Position toPosition(Location loc) {
+        UUID worldId = (loc.getWorld() != null) ? loc.getWorld().getUID() : null;
+        return Position.of(worldId, loc.getX(), loc.getY(), loc.getZ());
     }
 }

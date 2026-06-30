@@ -71,7 +71,7 @@ public class FlagCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<target>] [<flagName>(:action)] [<value>] (expire:<duration>)";
+        return "[<target>] [<flagName>(:action)] (<value>) (expire:<duration>)";
     }
 
     @Override

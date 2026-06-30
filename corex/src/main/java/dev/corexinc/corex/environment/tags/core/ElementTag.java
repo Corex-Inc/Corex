@@ -853,6 +853,39 @@ public class ElementTag implements AbstractTag {
 
         /* @doc tag
          *
+         * @Name roundToPrecision[]
+         * @RawName <ElementTag.roundToPrecision[<#.#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag(Decimal)
+         * @ArgRequired
+         * @Description
+         * Snaps the element to the nearest multiple of the given step value, rather than to a fixed number of decimal places.
+         * Useful for grid-snapping or quantizing a value (e.g. positions, sensitivity steps).
+         * For example, <element[0.137].roundToPrecision[0.01]> returns 0.14, and <element[7].roundToPrecision[5]> returns 5.
+         * A step of 0 or less returns the element unchanged.
+         *
+         * @Usage
+         * // Narrates "0.14"
+         * - narrate <element[0.137].roundToPrecision[0.01]>
+         *
+         * @Implements ElementTag.round_to_precision[<#.#>]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "roundToPrecision", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            if (!obj.isDouble()) return null;
+            ElementTag stepTag = new ElementTag(attr.getParam());
+            if (!stepTag.isDouble()) return null;
+            double step = stepTag.asDouble();
+            if (step <= 0) return new ElementTag(obj.asDouble());
+            double snapped = Math.round(obj.asDouble() / step) * step;
+            return new ElementTag(BigDecimal.valueOf(snapped)
+                    .setScale(8, RoundingMode.HALF_UP)
+                    .stripTrailingZeros()
+                    .doubleValue());
+        }).test("0.01");
+
+        /* @doc tag
+         *
          * @Name floor
          * @RawName <ElementTag.floor>
          * @Object ElementTag

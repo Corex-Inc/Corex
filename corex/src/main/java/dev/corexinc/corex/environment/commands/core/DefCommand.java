@@ -101,7 +101,7 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<key>(:action)] [<value>]";
+        return "[<key>(:action)] (<value>)";
     }
 
     @Override

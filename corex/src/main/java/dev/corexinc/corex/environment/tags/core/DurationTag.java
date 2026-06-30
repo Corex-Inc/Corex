@@ -6,6 +6,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -227,6 +228,21 @@ public class DurationTag implements AbstractTag {
 
     public long getMilliseconds() {
         return Math.max(1L, Math.round(ticks * MS_PER_TICK));
+    }
+
+    public static boolean matches(String raw) {
+        if (raw == null) return false;
+        String expr = raw.trim().toLowerCase();
+        if (expr.startsWith(prefix + "@")) return true;
+        return SEGMENT.matcher(expr).find();
+    }
+
+    @Nullable
+    public static DurationTag tryParse(AbstractTag val) {
+        if (val instanceof DurationTag duration) return duration;
+        if (val == null) return null;
+        String raw = val.identify();
+        return matches(raw) ? new DurationTag(raw) : null;
     }
 
     private static double parse(String raw) {

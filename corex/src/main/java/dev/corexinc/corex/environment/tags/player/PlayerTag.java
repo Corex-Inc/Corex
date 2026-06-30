@@ -129,6 +129,22 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
 
         /* @doc tag
          *
+         * @Name eyeLocation
+         * @RawName <PlayerTag.eyeLocation>
+         * @Object PlayerTag
+         * @ReturnType LocationTag
+         * @NoArg
+         * @Description
+         * Returns the location of the player's eyes, including the pitch and yaw they are looking at.
+         * This sits above PlayerTag.location, roughly at head height.
+         *
+         * @Implements PlayerTag.eye_location
+         */
+        TAG_PROCESSOR.registerTag(LocationTag.class, "eyeLocation", (attribute, object) ->
+                new LocationTag(object.getPlayer().getEyeLocation()));
+
+        /* @doc tag
+         *
          * @Name health
          * @RawName <PlayerTag.health>
          * @Object PlayerTag
@@ -360,13 +376,28 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          */
         TAG_PROCESSOR.registerTag(LocationTag.class, "lastDeathLocation", (attribute, object) -> {
             try {
-                org.bukkit.Location loc = object.offlinePlayer.getLastDeathLocation();
+                Location loc = object.offlinePlayer.getLastDeathLocation();
                 if (loc == null || loc.getWorld() == null) return null;
                 return new LocationTag(loc);
             } catch (Exception e) {
                 return null;
             }
         }).ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name isInsideVehicle
+         * @RawName <PlayerTag.isInsideVehicle>
+         * @Object PlayerTag
+         * @ReturnType ElementTag(Boolean)
+         * @NoArg
+         * @Description
+         * Returns whether the player is currently riding a vehicle (boat, minecart, horse, another entity via the mount command, etc).
+         *
+         * @Implements PlayerTag.is_inside_vehicle
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isInsideVehicle", (attribute, object) ->
+                new ElementTag(object.getPlayer().isInsideVehicle()));
 
         /* @doc tag
          *
@@ -383,7 +414,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.respawn_location
          */
         TAG_PROCESSOR.registerTag(LocationTag.class, "respawnLocation", (attribute, object) -> {
-            org.bukkit.Location loc = object.offlinePlayer.getRespawnLocation();
+            Location loc = object.offlinePlayer.getRespawnLocation();
             return loc != null ? new LocationTag(loc) : null;
         }).ignoreTest();
 
@@ -916,7 +947,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
                 AbstractTag val = mapTag.getObject(key);
                 if (!(val instanceof ElementTag el) || !el.isInt()) continue;
                 try {
-                    org.bukkit.Statistic stat = org.bukkit.Statistic.valueOf(key.toUpperCase());
+                    Statistic stat = Statistic.valueOf(key.toUpperCase());
                     int clamped = Math.max(0, el.asInt());
                     playerTag.offlinePlayer.setStatistic(stat, clamped);
                 } catch (IllegalArgumentException ignored) {}
@@ -1227,6 +1258,41 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
                 }
             }
             return playerTag;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name spectate
+         * @Object PlayerTag
+         * @Input EntityTag
+         * @Description
+         * Forces the player to spectate from the entity's point of view, using a packet (meaning, the player
+         * starts spectating clientside, but not serverside). The player will not move from their existing
+         * location serverside.
+         * Note that in some cases you may want to force the player into the spectator gamemode prior to using
+         * this mechanism.
+         * Note: the player cannot cancel the spectating without a re-log -- you must make them spectate
+         * themselves (i.e. adjust the player to spectate themselves) to cancel the effect.
+         *
+         * @Implements PlayerTag.spectate
+         */
+        MECHANISM_PROCESSOR.registerMechanism("spectate", (obj, value) -> {
+            Player player = obj.getPlayer();
+            Entity target;
+            if (value instanceof EntityTag entityTag)
+                target = entityTag.getEntity();
+            else if (value instanceof PlayerTag playerTag) {
+                target = playerTag.getPlayer();
+            } else {
+                return obj;
+            }
+            if (player != null && target != null) {
+                PlayerAdapter nms = NMSHandler.get().get(PlayerAdapter.class);
+                if (nms != null) {
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> nms.forceSpectate(player, target));
+                }
+            }
+            return obj;
         });
     }
 

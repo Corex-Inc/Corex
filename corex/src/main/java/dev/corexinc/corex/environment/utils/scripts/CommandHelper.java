@@ -11,7 +11,7 @@ import java.util.Map;
 public class CommandHelper {
 
     public static void saveResult(ScriptQueue queue, Instruction instruction, MapTag result) {
-        if (instruction.globalFlags == null || instruction.globalFlags.isEmpty()) return;
+        if (instruction.globalFlags.isEmpty()) return;
 
         for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : instruction.globalFlags.entrySet()) {
             if (entry.getKey().getName().equalsIgnoreCase("save")) {

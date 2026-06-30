@@ -45,6 +45,11 @@ public class GlobalTagProcessor {
             return ObjectFetcher.pickObject(forceCastString);
         });
 
+        PROCESSOR.registerTag(ElementTag.class, "not", (attr, obj) -> {
+            if (!(obj instanceof ElementTag element)) return null;
+            return new ElementTag(!element.asBoolean());
+        });
+
         PROCESSOR.registerTag(AbstractTag.class, "with", (attr, obj) -> {
             if (!(obj instanceof Adjustable adj)) return null;
             if (!attr.hasParam()) return null;

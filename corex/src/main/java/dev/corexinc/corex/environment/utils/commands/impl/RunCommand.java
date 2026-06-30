@@ -2,14 +2,17 @@ package dev.corexinc.corex.environment.utils.commands.impl;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.utils.commands.CommandParser;
 import dev.corexinc.corex.environment.utils.commands.TabCompleter;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import java.util.Collection;
+import java.util.UUID;
 
 public class RunCommand implements BasicCommand {
 
@@ -37,14 +40,22 @@ public class RunCommand implements BasicCommand {
             return;
         }
 
-        PlayerTag linkedPlayer = (commandSourceStack.getSender() instanceof Player) ? new PlayerTag((Player) commandSourceStack.getSender()) : null;
+        Player executor = (commandSourceStack.getSender() instanceof Player p) ? p : null;
+        PlayerTag linkedPlayer = (executor != null) ? new PlayerTag(executor) : null;
+        Position anchor = (executor != null) ? toPosition(executor.getLocation()) : null;
 
         ScriptQueue queue = new ScriptQueue(
                 ScriptQueue.uniqueId("RunQueue"),
                 instructions,
                 false,
-                linkedPlayer
+                linkedPlayer,
+                anchor
         );
         queue.start();
+    }
+
+    private static Position toPosition(Location loc) {
+        UUID worldId = (loc.getWorld() != null) ? loc.getWorld().getUID() : null;
+        return Position.of(worldId, loc.getX(), loc.getY(), loc.getZ());
     }
 }

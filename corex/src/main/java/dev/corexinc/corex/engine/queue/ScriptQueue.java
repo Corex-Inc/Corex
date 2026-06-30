@@ -177,6 +177,42 @@ public class ScriptQueue {
     }
 
     /**
+     * Creates a new queue that inherits the player and Folia region context of {@code parent}.
+     * <p>
+     * <b>Always prefer this over the raw constructors when a queue is spawned as a side effect
+     * of another queue's execution</b> (e.g. the {@code do} command starting a task container,
+     * {@link #runAsyncChild}, or any other "queue spawns queue" path). The plain constructors
+     * leave {@link #anchorPosition} and {@link #targetRegionPosition} at {@code null} unless the
+     * caller remembers to pass/set them explicitly — and on Folia, a queue with no region context
+     * resumes {@code wait}/{@code delay} calls on the global scheduler thread, which throws
+     * "Accessing entity state off owning region's thread" the moment the next instruction touches
+     * a live entity. Going through this factory makes that mistake structurally impossible.
+     *
+     * @param parent may be {@code null} (e.g. a queue triggered by a console command with no
+     *               script context); the child then behaves like the no-anchor constructor.
+     */
+    /**
+     * Resolves the region this queue should resume on: a pending {@link #targetRegionPosition}
+     * shift takes priority, falling back to the queue's {@link #anchorPosition}. Shared by
+     * {@link #delay(long)} and {@link #runAsyncChild} so the two never drift out of sync.
+     */
+    @Nullable
+    private Position resolveRegion() {
+        return targetRegionPosition != null ? targetRegionPosition : anchorPosition;
+    }
+
+    public static ScriptQueue spawnChild(String id, Instruction[] bytecode, boolean isAsync,
+                                         @Nullable ScriptQueue parent) {
+        ScriptQueue child = new ScriptQueue(
+                id, bytecode, isAsync,
+                parent != null ? parent.getPlayer() : null,
+                parent != null ? parent.anchorPosition : null
+        );
+        if (parent != null) child.targetRegionPosition = parent.targetRegionPosition;
+        return child;
+    }
+
+    /**
      * Starts the queue execution.
      * <p>
      * Initializes the start timer, logs the start event, and begins the instruction loop.
@@ -345,13 +381,17 @@ public class ScriptQueue {
      * When {@code waitable} is true, this queue pauses until the child finishes.
      */
     public void runAsyncChild(Instruction[] block, boolean waitable) {
-        ScriptQueue child = new ScriptQueue(id + "@async@" + nextSequence(), block, true, linkedPlayer);
+        ScriptQueue child = ScriptQueue.spawnChild(id + "@async@" + nextSequence(), block, true, this);
         child.definitions.putAll(this.definitions);
         child.context = this.context;
 
         if (waitable) {
             pause();
-            child.setOnFinish(() -> SchedulerAdapter.get().run(this::resume));
+            Position region = resolveRegion();
+            child.setOnFinish(() -> {
+                if (region != null) SchedulerAdapter.get().runAt(region, this::resume);
+                else SchedulerAdapter.get().run(this::resume);
+            });
         }
 
         SchedulerAdapter.get().runAsync(child::start);
@@ -402,14 +442,31 @@ public class ScriptQueue {
 
     /**
      * Pauses the queue and schedules a resume after the specified duration.
+     * <p>
+     * For sync queues, resumes on the region that owns {@link #anchorPosition}
+     * (or {@link #targetRegionPosition} if a relocation is already pending) rather
+     * than the global thread. Instructions that run right after a wait/delay very
+     * often touch live entity state immediately (e.g. {@code adjust <[entity]> ...}),
+     * which throws "Accessing entity state off owning region's thread" on Folia if
+     * the resume happens on the global region scheduler instead of the owning region.
      *
      * @param ticks Time to wait in server ticks (1 tick = 50 ms).
      */
     @AvailableSince("1.0.0")
     public void delay(long ticks) {
         pause();
-        if (isAsync) SchedulerAdapter.get().runAsyncLater(this::resume, Math.max(1, ticks));
-        else         SchedulerAdapter.get().runLater(this::resume, Math.max(1, ticks));
+
+        if (isAsync) {
+            SchedulerAdapter.get().runAsyncLater(this::resume, Math.max(1, ticks));
+            return;
+        }
+
+        Position region = resolveRegion();
+        if (region != null) {
+            SchedulerAdapter.get().runLaterAt(region, this::resume, Math.max(1, ticks));
+        } else {
+            SchedulerAdapter.get().runLater(this::resume, Math.max(1, ticks));
+        }
     }
 
     public void injectInstructions(Instruction... insts) {

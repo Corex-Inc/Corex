@@ -10,14 +10,13 @@ import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.CorexSerializer;
-import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.core.MapTag;
-import dev.corexinc.corex.environment.tags.core.QuaternionTag;
+import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.EntityAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -27,12 +26,16 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -243,6 +246,187 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
                 return new ElementTag(display.getViewRange());
             }
             return null;
+        });
+
+        /* @doc tag
+         *
+         * @Name translation
+         * @RawName <EntityTag.translation>
+         * @Object EntityTag
+         * @ReturnType LocationTag
+         * @NoArg
+         * @Description
+         * Returns the translation (positional offset) component of a Display entity's current transformation.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.translation
+         */
+        TAG_PROCESSOR.registerTag(LocationTag.class, "translation", (attribute, object) -> {
+            if (!(object.entity instanceof Display display)) return null;
+            Vector3f translation = display.getTransformation().getTranslation();
+            return new LocationTag(translation.x(), translation.y(), translation.z(), 0, 0);
+        });
+
+        /* @doc tag
+         *
+         * @Name scale
+         * @RawName <EntityTag.scale>
+         * @Object EntityTag
+         * @ReturnType LocationTag
+         * @NoArg
+         * @Description
+         * Returns the scale component of a Display entity's current transformation.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.scale
+         */
+        TAG_PROCESSOR.registerTag(LocationTag.class, "scale", (attribute, object) -> {
+            if (!(object.entity instanceof Display display)) return null;
+            Vector3f scale = display.getTransformation().getScale();
+            return new LocationTag(scale.x(), scale.y(), scale.z(), 0, 0);
+        });
+
+        /* @doc tag
+         *
+         * @Name leftRotation
+         * @RawName <EntityTag.leftRotation>
+         * @Object EntityTag
+         * @ReturnType QuaternionTag
+         * @NoArg
+         * @Description
+         * Returns the left rotation (applied before scale) component of a Display entity's current transformation.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.left_rotation
+         */
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "leftRotation", (attribute, object) -> {
+            if (!(object.entity instanceof Display display)) return null;
+            Quaternionf rotation = display.getTransformation().getLeftRotation();
+            return new QuaternionTag(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+        });
+
+        /* @doc tag
+         *
+         * @Name rightRotation
+         * @RawName <EntityTag.rightRotation>
+         * @Object EntityTag
+         * @ReturnType QuaternionTag
+         * @NoArg
+         * @Description
+         * Returns the right rotation (applied after scale) component of a Display entity's current transformation.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.right_rotation
+         */
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "rightRotation", (attribute, object) -> {
+            if (!(object.entity instanceof Display display)) return null;
+            Quaternionf rotation = display.getTransformation().getRightRotation();
+            return new QuaternionTag(rotation.x(), rotation.y(), rotation.z(), rotation.w());
+        });
+
+        /* @doc tag
+         *
+         * @Name billboard
+         * @RawName <EntityTag.billboard>
+         * @Object EntityTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Returns the billboard mode of a Display entity - the axes/point it automatically pivots around to face the viewer.
+         * Possible outputs: FIXED, VERTICAL, HORIZONTAL, CENTER. Only applies to Display entities.
+         *
+         * @Implements EntityTag.pivot
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "billboard", (attribute, object) -> {
+            if (!(object.entity instanceof Display display)) return null;
+            return new ElementTag(display.getBillboard().name());
+        });
+
+        /* @doc tag
+         *
+         * @Name textShadowed
+         * @RawName <EntityTag.textShadowed>
+         * @Object EntityTag
+         * @ReturnType ElementTag(Boolean)
+         * @NoArg
+         * @Description
+         * Returns whether a text_display entity's text has a drop shadow. Only applies to TextDisplay entities.
+         *
+         * @Implements EntityTag.text_shadowed
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "textShadowed", (attribute, object) -> {
+            if (!(object.entity instanceof TextDisplay textDisplay)) return null;
+            return new ElementTag(textDisplay.isShadowed());
+        });
+
+        /* @doc tag
+         *
+         * @Name backgroundColor
+         * @RawName <EntityTag.backgroundColor>
+         * @Object EntityTag
+         * @ReturnType ColorTag
+         * @NoArg
+         * @Description
+         * Returns the background color behind a text_display entity's text. Only applies to TextDisplay entities.
+         *
+         * @Implements EntityTag.background_color
+         */
+        TAG_PROCESSOR.registerTag(ColorTag.class, "backgroundColor", (attribute, object) -> {
+            if (!(object.entity instanceof TextDisplay textDisplay)) return null;
+            Color color = textDisplay.getBackgroundColor();
+            if (color == null) return null;
+            return new ColorTag(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        });
+
+        /* @doc tag
+         *
+         * @Name text
+         * @RawName <EntityTag.text>
+         * @Object EntityTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Returns the displayed text of a text_display entity. Only applies to TextDisplay entities.
+         *
+         * @Implements EntityTag.text
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "text", (attribute, object) -> {
+            if (!(object.entity instanceof TextDisplay textDisplay)) return null;
+            return new ElementTag(CorexSerializer.LEGACY.serialize(textDisplay.text()));
+        });
+
+        /* @doc tag
+         *
+         * @Name width
+         * @RawName <EntityTag.width>
+         * @Object EntityTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the width of the interaction bounding box. Only applies to Interaction entities.
+         *
+         * @Implements EntityTag.width
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "width", (attribute, object) -> {
+            if (!(object.entity instanceof Interaction interaction)) return null;
+            return new ElementTag(interaction.getInteractionWidth());
+        });
+
+        /* @doc tag
+         *
+         * @Name height
+         * @RawName <EntityTag.height>
+         * @Object EntityTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the height of the interaction bounding box. Only applies to Interaction entities.
+         *
+         * @Implements EntityTag.height
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "height", (attribute, object) -> {
+            if (!(object.entity instanceof Interaction interaction)) return null;
+            return new ElementTag(interaction.getInteractionHeight());
         });
 
         /* @doc mechanism
@@ -458,7 +642,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Implements EntityTag.interpolation_duration
          */
         registerMechanism("interpolationDuration", (target, val) -> {
-            if (target instanceof Display display) display.setInterpolationDuration(asInt(val));
+            if (target instanceof Display display) display.setInterpolationDuration(resolveTicks(val));
         });
 
         /* @doc mechanism
@@ -473,7 +657,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Implements EntityTag.interpolation_start
          */
         registerMechanism("interpolationStart", (target, val) -> {
-            if (target instanceof Display display) display.setInterpolationDelay(asInt(val));
+            if (target instanceof Display display) display.setInterpolationDelay(resolveTicks(val));
         });
 
         /* @doc mechanism
@@ -566,6 +750,38 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
         /* @doc mechanism
          *
+         * @Name width
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets the width of the interaction bounding box. Only applies to Interaction entities.
+         *
+         * @Implements EntityTag.width
+         */
+        registerMechanism("width", "width", EntityTag::nbtNumber, (target, val) -> {
+            if (target instanceof Interaction interaction) {
+                interaction.setInteractionWidth((float) asDouble(val));
+            }
+        });
+
+        /* @doc mechanism
+         *
+         * @Name height
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets the height of the interaction bounding box. Only applies to Interaction entities.
+         *
+         * @Implements EntityTag.height
+         */
+        registerMechanism("height", "height", EntityTag::nbtNumber, (target, val) -> {
+            if (target instanceof Interaction interaction) {
+                interaction.setInteractionHeight((float) asDouble(val));
+            }
+        });
+
+        /* @doc mechanism
+         *
          * @Name nbt
          * @Object EntityTag
          * @Input MapTag
@@ -594,6 +810,105 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
             if (target instanceof Display display) {
                 display.setViewRange((float) asDouble(val));
             }
+        });
+
+        /* @doc mechanism
+         *
+         * @Name forceNoPersist
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Forces whether the entity is allowed to persist (survive a chunk unload or server restart, and be saved to disk).
+         * Setting this to 'true' calls setPersistent(false) on the entity, forcing it to NOT persist.
+         * Setting this to 'false' calls setPersistent(true), allowing it to persist normally.
+         *
+         * @Implements EntityTag.force_no_persist
+         */
+        registerMechanism("forceNoPersist", (target, val) -> target.setPersistent(!asBoolean(val)));
+
+        /* @doc mechanism
+         *
+         * @Name brightness
+         * @Object EntityTag
+         * @Input MapTag
+         * @Description
+         * Sets the brightness override of a Display entity, bypassing the world's natural lighting.
+         * Input is a MapTag with 'sky' and 'block' keys, each 0-15, for example 'map[sky=15;block=15]'.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.brightness
+         */
+        registerMechanism("brightness", (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            if (!(val instanceof MapTag map)) return;
+            AbstractTag skyValue = map.getObject("sky");
+            AbstractTag blockValue = map.getObject("block");
+            int sky = skyValue != null ? asInt(skyValue) : 0;
+            int block = blockValue != null ? asInt(blockValue) : 0;
+            display.setBrightness(new Display.Brightness(block, sky));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name billboard
+         * @Object EntityTag
+         * @Input ElementTag
+         * @Description
+         * Sets the billboard mode of a Display entity - the axes/point it automatically pivots around to face the viewer.
+         * Valid inputs: FIXED (no rotation, default), VERTICAL, HORIZONTAL, CENTER.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.pivot
+         */
+        registerMechanism("billboard", (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            try {
+                display.setBillboard(Display.Billboard.valueOf(val.identify().toUpperCase()));
+            } catch (IllegalArgumentException ignored) {}
+        });
+
+        /* @doc mechanism
+         *
+         * @Name textShadowed
+         * @Object EntityTag
+         * @Input ElementTag(Boolean)
+         * @Description
+         * Controls whether a text_display entity's text has a drop shadow. Only applies to TextDisplay entities.
+         *
+         * @Implements EntityTag.text_shadowed
+         */
+        registerMechanism("textShadowed", (target, val) -> {
+            if (target instanceof TextDisplay textDisplay) textDisplay.setShadowed(asBoolean(val));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name backgroundColor
+         * @Object EntityTag
+         * @Input ColorTag
+         * @Description
+         * Sets the background color behind a text_display entity's text. Only applies to TextDisplay entities.
+         *
+         * @Implements EntityTag.background_color
+         */
+        registerMechanism("backgroundColor", (target, val) -> {
+            if (!(target instanceof TextDisplay textDisplay)) return;
+            if (!(val instanceof ColorTag colorTag)) return;
+            textDisplay.setBackgroundColor(Color.fromARGB(colorTag.alpha, colorTag.red, colorTag.green, colorTag.blue));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name text
+         * @Object EntityTag
+         * @Input ElementTag
+         * @Description
+         * Sets the displayed text of a text_display entity. Only applies to TextDisplay entities.
+         *
+         * @Implements EntityTag.text
+         */
+        registerMechanism("text", (target, val) -> {
+            if (target instanceof TextDisplay textDisplay) textDisplay.text(val.asComponent());
         });
     }
 
@@ -671,6 +986,11 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
     public MapTag readNbt() {
         if (entity == null || nms == null) return new MapTag();
         return nms.readNbt(entity);
+    }
+
+    private static int resolveTicks(AbstractTag val) {
+        DurationTag asDuration = DurationTag.tryParse(val);
+        return asDuration != null ? (int) Math.round(asDuration.getTicks()) : asInt(val);
     }
 
     public MapTag describe() {
