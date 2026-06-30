@@ -9,6 +9,7 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -264,6 +265,9 @@ public final class ArgumentSchema {
                         + "' as " + def.type().getSimpleName() + ": " + e.getMessage());
                 return null;
             }
+        } else {
+            T converted = convertViaStringConstructor(def.type(), raw.identify());
+            if (converted != null) return converted;
         }
 
         if (def.type().isAssignableFrom(ElementTag.class)) {
@@ -276,14 +280,43 @@ public final class ArgumentSchema {
         return null;
     }
 
+    /**
+     * Attempts to build an instance of {@code type} via its {@code (String)} constructor,
+     * mirroring the convention used everywhere else in CoreX for "loose" tag conversion
+     * (e.g. {@code ListTag::new}, {@code PlayerTag::new}, {@code LocationTag::new}).
+     *
+     * @return the converted instance, or {@code null} if no such constructor exists,
+     *         it threw, or it returned {@code null}.
+     */
+    @SuppressWarnings("unchecked")
+    @Nullable
+    private static <T extends AbstractTag> T convertViaStringConstructor(Class<? extends AbstractTag> type, String raw) {
+        try {
+            Constructor<? extends AbstractTag> ctor = type.getConstructor(String.class);
+            ctor.setAccessible(true);
+            Object instance = ctor.newInstance(raw);
+            return (T) instance;
+        } catch (NoSuchMethodException e) {
+            return null;
+        } catch (Exception e) {
+            CorexLogger.error("Failed to convert '" + raw + "' to " + type.getSimpleName()
+                    + " via its String constructor: " + e.getMessage());
+            return null;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private <T extends AbstractTag> T defaultOf(ArgumentDef def) {
         if (def.defaultRaw() == null) return null;
 
         if (def.parser() != null) {
             try {
-                return (T) ((Function<String, AbstractTag>) def.parser()).apply(def.defaultRaw());
+                T parsed = (T) ((Function<String, AbstractTag>) def.parser()).apply(def.defaultRaw());
+                if (parsed != null) return parsed;
             } catch (Exception ignored) {}
+        } else {
+            T converted = convertViaStringConstructor(def.type(), def.defaultRaw());
+            if (converted != null) return converted;
         }
 
         if (def.type().isAssignableFrom(ElementTag.class)) {

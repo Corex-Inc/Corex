@@ -94,6 +94,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
     private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
             .requireLinear(0, ElementTag.class)
             .optionalPrefix("id", ElementTag.class)
+            .optionalPrefix("url", ElementTag.class)
             .optionalPrefix("hash", ElementTag.class)
             .optionalPrefix("prompt", ElementTag.class)
             .optionalPrefix("targets", ListTag.class)
