@@ -2,8 +2,10 @@ package dev.corexinc.corex.api.processors;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.ServerVersion;
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +42,7 @@ import java.util.function.BiFunction;
  * @param <T> the type of {@link AbstractTag} this processor is associated with.
  * @since 1.0.0
  */
-@ApiStatus.AvailableSince("1.0.0")
+@AvailableSince("1.0.0")
 public final class TagProcessor<T extends AbstractTag> {
 
     /**
@@ -48,15 +50,29 @@ public final class TagProcessor<T extends AbstractTag> {
      */
     private final Map<String, TagData<T>> registeredTags = new HashMap<>();
 
+    /**
+     * Whether {@link #process} should fall back to {@link GlobalTagProcessor#PROCESSOR}
+     * when no local sub-tag matches the attribute name. {@code true} by default.
+     */
     private boolean useGlobalTags = true;
 
+    /**
+     * Disables fallthrough to {@link GlobalTagProcessor} for this processor instance.
+     *
+     * <p>By default, if no locally registered sub-tag matches an attribute name,
+     * {@link #process} delegates to {@link GlobalTagProcessor#PROCESSOR}. Calling this
+     * restricts the processor to only its own registered tags.</p>
+     *
+     * @return {@code this} for chaining.
+     */
     public TagProcessor<T> disableGlobalTags() {
         this.useGlobalTags = false;
         return this;
     }
 
     /**
-     * Default constructor for the TagProcessor.
+     * Default constructor for the TagProcessor. Global tag fallthrough is enabled by default;
+     * call {@link #disableGlobalTags()} to opt out.
      */
     public TagProcessor() {}
 
@@ -101,18 +117,33 @@ public final class TagProcessor<T extends AbstractTag> {
      * Version compatibility is already guaranteed at registration time —
      * if a tag is present in the registry, it has passed all version checks.</p>
      *
+     * <p>If the resolving queue ({@link Attribute#getQueue()}) is asynchronous and the
+     * matched sub-tag was not marked safe via {@link TagRegistration#setAsyncSafe()},
+     * the handler is skipped: an error is reported through {@link Debugger#echoError}
+     * and {@code null} is returned instead of invoking it.</p>
+     *
      * @param object    the tag instance being processed.
      * @param attribute the current attribute data from the tag chain.
-     * @return the resulting {@link AbstractTag} from the handler, or {@code null}
-     *         if no sub-tag matches the attribute name.
+     * @return the resulting {@link AbstractTag} from the handler, {@code null}
+     *         if no sub-tag matches the attribute name, or {@code null} if the matched
+     *         sub-tag is not async-safe and the queue is running asynchronously.
      */
     @Nullable
     @Contract(pure = true)
-    @ApiStatus.Internal
-    @ApiStatus.AvailableSince("1.0.0")
+    @Internal
+    @AvailableSince("1.0.0")
     public AbstractTag process(@NotNull final T object, @NotNull final Attribute attribute) {
         final TagData<T> data = registeredTags.get(attribute.getName());
         if (data != null) {
+            final ScriptQueue queue = attribute.getQueue();
+            if (queue != null && queue.isAsync() && !data.isAsyncSafe) {
+                Debugger.echoError(queue, "Attempt to evaluate a <aqua>sync</aqua> tag '" + attribute.getName()
+                        + "' in an <purple>async</purple> queue!");
+                Debugger.echoError(queue,
+                        "Queue halted immediately for safety.");
+                queue.stopEntireQueue();
+                return null;
+            }
             return data.action.apply(attribute, object);
         }
         if (useGlobalTags && this != GlobalTagProcessor.PROCESSOR) {
@@ -131,9 +162,38 @@ public final class TagProcessor<T extends AbstractTag> {
         /** The expected return type of this handler. */
         public final Class<? extends AbstractTag> returnType;
 
-        public boolean isStatic = false;
+        /**
+         * Whether this sub-tag is safe to evaluate on an asynchronous {@link ScriptQueue}.
+         *
+         * <p>{@code false} by default — a tag must explicitly opt in via
+         * {@link TagRegistration#setAsyncSafe()}. Tags that touch live Bukkit/world state
+         * (e.g. {@code location.power}, anything reading block/entity data off the main
+         * thread) must <b>not</b> opt in. Pure computation on already-resolved data
+         * (string/number/list manipulation, etc.) is generally safe.</p>
+         *
+         * <p>Enforced in {@link #process}: if the owning queue is async
+         * ({@link ScriptQueue#isAsync()}) and this is {@code false}, the handler is not
+         * invoked — an error is logged via {@link Debugger#echoError} and {@code null}
+         * is returned instead.</p>
+         */
+        public boolean isAsyncSafe = false;
+
+        /**
+         * Sample input value used by the auto-testing framework,
+         * set via {@link TagRegistration#test}.
+         */
         public String testParam = null;
+
+        /**
+         * Expected attribute chain the auto-testing framework should traverse,
+         * set via {@link TagRegistration#test}.
+         */
         public String[] testChain = null;
+
+        /**
+         * If {@code true}, this sub-tag is excluded from auto-testing.
+         * Set via {@link TagRegistration#ignoreTest()}.
+         */
         public boolean skipTest = false;
 
         /**
@@ -247,6 +307,32 @@ public final class TagProcessor<T extends AbstractTag> {
         public TagRegistration<T> setAvailableSince(@NotNull String version) {
             this.data.availableSince = version;
             commit();
+            return this;
+        }
+
+        /**
+         * Marks this sub-tag as safe to evaluate on an asynchronous {@link ScriptQueue}.
+         *
+         * <p>Only call this for handlers that don't touch live Bukkit/world state —
+         * pure computation on already-resolved tag data. Do <b>not</b> call it for tags
+         * like {@code location.power} that read live block/chunk/entity state, since
+         * that's unsafe (and often crash-prone) off the main thread.</p>
+         *
+         * <p>Example:</p>
+         * <pre>{@code
+         * // Safe: pure string math, no world access.
+         * PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> ...)
+         *          .setAsyncSafe();
+         *
+         * // Unsafe (default): reads live block state, never call setAsyncSafe() here.
+         * PROCESSOR.registerTag(ElementTag.class, "power", (attr, obj) ->
+         *          new ElementTag(obj.getBlock().getBlockPower()));
+         * }</pre>
+         *
+         * @return {@code this} for chaining.
+         */
+        public TagRegistration<T> setAsyncSafe() {
+            this.data.isAsyncSafe = true;
             return this;
         }
 
