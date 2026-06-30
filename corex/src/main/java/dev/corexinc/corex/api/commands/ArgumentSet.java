@@ -38,9 +38,11 @@ public final class ArgumentSet {
     void putPrefix(String key, @Nullable AbstractTag value) {
         data.put(NS_PREFIX + ":" + key, value);
     }
+
     void putLinear(int index, @Nullable AbstractTag value) {
         data.put(NS_LINEAR + ":" + index, value);
     }
+
     void putFlag(String key, boolean value) {
         flags.put(key.toLowerCase(), value);
     }
