@@ -12,6 +12,8 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
+import dev.corexinc.corex.environment.tags.core.QuaternionTag;
+import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.EntityAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
@@ -22,10 +24,13 @@ import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
@@ -417,6 +422,127 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         registerMechanism("rotation", "Rotation", EntityTag::nbtRotation, (target, val) -> {
             Location loc = new LocationTag(val.identify()).getLocation();
             target.setRotation(loc.getYaw(), loc.getPitch());
+        });
+
+        /* @doc mechanism
+         *
+         * @Name interpolationDuration
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets, in ticks, how long a Display entity (block_display, item_display, text_display) takes to
+         * animate from its old transformation to its new one once <@link mechanism EntityTag.transformation>,
+         * <@link mechanism EntityTag.translation>, <@link mechanism EntityTag.scale>,
+         * <@link mechanism EntityTag.leftRotation>, or <@link mechanism EntityTag.rightRotation> is applied.
+         * A value of 0 snaps instantly. Only applies to Display entities, ignored otherwise.
+         *
+         * @Implements EntityTag.interpolation_duration
+         */
+        registerMechanism("interpolationDuration", (target, val) -> {
+            if (target instanceof Display display) display.setInterpolationDuration(asInt(val));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name start
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets, in ticks, how long a Display entity waits after receiving a transformation update before it
+         * starts animating towards it (vanilla NBT key 'start_interpolation'). Only applies to Display entities.
+         *
+         * @Implements EntityTag.interpolation_start
+         */
+        registerMechanism("interpolationStart", (target, val) -> {
+            if (target instanceof Display display) display.setInterpolationDelay(asInt(val));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name translation
+         * @Object EntityTag
+         * @Input LocationTag
+         * @Description
+         * Sets the translation (positional offset) component of a Display entity's transformation, leaving
+         * scale and rotation untouched. Only applies to Display entities.
+         *
+         * @Implements EntityTag.translation
+         */
+        registerMechanism("translation", (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            if (!(val instanceof LocationTag locationTag)) return;
+            Transformation current = display.getTransformation();
+            display.setTransformation(new Transformation(locationTag.getVector().toVector3f(), current.getLeftRotation(), current.getScale(), current.getRightRotation()));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name scale
+         * @Object EntityTag
+         * @Input LocationTag
+         * @Description
+         * Sets the scale component of a Display entity's transformation, leaving translation and rotation untouched.
+         * Only applies to Display entities.
+         *
+         * @Implements EntityTag.scale
+         */
+        registerMechanism("scale", (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            if (!(val instanceof LocationTag locationTag)) return;
+            Transformation current = display.getTransformation();
+            display.setTransformation(new Transformation(current.getTranslation(), current.getLeftRotation(), locationTag.getVector().toVector3f(), current.getRightRotation()));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name leftRotation
+         * @Object EntityTag
+         * @Input QuaternionTag
+         * @Description
+         * Sets the left rotation (applied before scale) component of a Display entity's transformation, leaving
+         * translation, scale, and right rotation untouched. Only applies to Display entities.
+         *
+         * @Implements EntityTag.left_rotation
+         */
+        registerMechanism("leftRotation", (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            if (!(val instanceof QuaternionTag quaternionTag)) return;
+            Transformation current = display.getTransformation();
+            display.setTransformation(new Transformation(current.getTranslation(), quaternionTag.getQuaternionf(), current.getScale(), current.getRightRotation()));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name rightRotation
+         * @Object EntityTag
+         * @Input QuaternionTag
+         * @Description
+         * Sets the right rotation (applied after scale) component of a Display entity's transformation, leaving
+         * translation, scale, and left rotation untouched. Only applies to Display entities.
+         *
+         * @Implements EntityTag.right_rotation
+         */
+        registerMechanism("rightRotation", (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            if (!(val instanceof QuaternionTag quaternionTag)) return;
+            Transformation current = display.getTransformation();
+            display.setTransformation(new Transformation(current.getTranslation(), current.getLeftRotation(), current.getScale(), quaternionTag.getQuaternionf()));
+        });
+
+        /* @doc mechanism
+         *
+         * @Name item
+         * @Object EntityTag
+         * @Input ItemTag
+         * @Description
+         * Sets the ItemStack shown by an item_display entity. Only applies to ItemDisplay entities.
+         *
+         * @Implements EntityTag.item_display
+         */
+        registerMechanism("item", (target, val) -> {
+            if (target instanceof ItemDisplay itemDisplay && val instanceof ItemTag itemTag) {
+                itemDisplay.setItemStack(itemTag.getItemStack());
+            }
         });
 
         /* @doc mechanism

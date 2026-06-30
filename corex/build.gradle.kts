@@ -8,13 +8,13 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://maven.canvasmc.io/snapshots")
+    maven("https://maven.canvasmc.io/releases")
     maven("https://maven.pulsemc.dev/snapshots")
 }
 
 dependencies {
     @SuppressWarnings("deprecation")
-    compileOnly("io.canvasmc.canvas:canvas-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.canvasmc.canvas:canvas-api:26.1.2.build.714-experimental")
     compileOnly("org.jetbrains:annotations:24.1.0")
 
     // Other Libs
@@ -25,7 +25,7 @@ dependencies {
 
     // Tests
     @SuppressWarnings("deprecation")
-    testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.0.0")
+    testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v26.1.2:4.+")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
@@ -34,11 +34,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+
+    dependsOn(tasks.jar)
+    classpath = files(tasks.jar) + (classpath - sourceSets.main.get().output)
 }
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 

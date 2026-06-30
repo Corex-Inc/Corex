@@ -11,6 +11,7 @@ import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.ItemFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.containers.ItemContainer;
+import dev.corexinc.corex.environment.tags.core.ColorTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
@@ -18,10 +19,12 @@ import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -115,6 +118,30 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
                 return new MapTag((Map<String, ?>) map);
             } else if (data instanceof Integer integer) {
                 return new ElementTag(integer);
+            }
+            return null;
+        }).ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name color
+         * @RawName <ItemTag.color>
+         * @Object ItemTag
+         * @ReturnType ColorTag
+         * @NoArg
+         * @Mechanism ItemTag.color
+         * @Description
+         * Returns the dye color of the item, as a ColorTag.
+         * Only applies to items that use leather-based coloring, such as leather armor
+         * or leather horse armor.
+         * Returns null if the item has no color data.
+         *
+         * @Implements ItemTag.color
+         */
+        TAG_PROCESSOR.registerTag(ColorTag.class, "color", (attr, obj) -> {
+            ItemMeta meta = obj.item.getItemMeta();
+            if (meta instanceof LeatherArmorMeta leatherMeta) {
+                return new ColorTag(leatherMeta.getColor().asRGB());
             }
             return null;
         }).ignoreTest();
@@ -226,16 +253,38 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
 
         /* @doc mechanism
          *
-         * @Name customModel
+         * @Name color
+         * @Object ItemTag
+         * @Input ColorTag
+         * @Description
+         * Sets the dye color of the item.
+         * Only applies to items that use leather-based coloring, such as leather armor
+         * or leather horse armor.
+         *
+         * @Implements ItemTag.color
+         */
+        MECHANISM_PROCESSOR.registerMechanism("color", (obj, val) -> {
+            ItemMeta meta = obj.item.getItemMeta();
+            if (meta instanceof LeatherArmorMeta leatherMeta) {
+                ColorTag colorTag = val instanceof ColorTag ct ? ct : new ColorTag(val.identify());
+                leatherMeta.setColor(Color.fromRGB(colorTag.asRGB()));
+                obj.item.setItemMeta(leatherMeta);
+            }
+            return obj;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name itemModel
          * @object ItemTag
          * @input ElementTag
          * @description
          * Sets the custom model for the item using a NamespacedKey.
-         * This is an alternative to custom_model_data, and generally preferred.
+         * This is an alternative to customModelData, and generally preferred.
          *
-         * @Implements ItemTag.customModel
+         * @Implements ItemTag.item_model
          */
-        MECHANISM_PROCESSOR.registerMechanism("customModel", (obj, val) -> {
+        MECHANISM_PROCESSOR.registerMechanism("itemModel", (obj, val) -> {
             ItemMeta meta = obj.item.getItemMeta();
             if (meta != null) {
                 NamespacedKey key = NamespacedKey.fromString(val.identify());
@@ -318,8 +367,17 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
         if (meta != null) {
             if (meta.hasDisplayName() && meta.displayName() != null) {
                 String nameStr = LegacyComponentSerializer.legacySection().serialize(Objects.requireNonNull(meta.displayName()));
-                propertiesList.add("displayName=" + nameStr.replace(";", "\\;").replace("=", "\\=")); // FIX #2: имя механизма приведено к camelCase
+                propertiesList.add("displayName=" + nameStr.replace(";", "\\;").replace("=", "\\="));
             }
+        }
+
+        Object customModelData = nms.getCustomModelData(item);
+        if (customModelData instanceof Integer integer) {
+            propertiesList.add("customModelData=" + integer);
+        } else if (customModelData instanceof Map<?, ?> rawMap && !rawMap.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            MapTag mapTag = new MapTag((Map<String, ?>) rawMap);
+            propertiesList.add("customModelData=" + mapTag.identify());
         }
 
         if (!propertiesList.isEmpty()) {

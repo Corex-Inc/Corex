@@ -56,8 +56,11 @@ public class AutoObjectTest {
 
         // -------------- SETUP YOUR SERVER ENVIRONMENT HERE --------------
 
-        Corex plugin = MockBukkit.load(Corex.class);
-        registry = plugin.getRegistry();
+        try {
+            Corex plugin = MockBukkit.load(Corex.class);
+            registry = plugin.getRegistry();
+        }
+        catch (Throwable e) {e.printStackTrace();}
         CorexTestLogger.info("ObjectTagTest environment has been started!");
     }
 

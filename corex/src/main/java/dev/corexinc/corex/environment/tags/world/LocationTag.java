@@ -3889,6 +3889,10 @@ public class LocationTag implements AbstractTag, Flaggable {
         return location;
     }
 
+    public Vector getVector() {
+        return new Vector(location.x(), location.y(), location.z());
+    }
+
     @Override public @NonNull String getPrefix() { return prefix; }
 
     @Override

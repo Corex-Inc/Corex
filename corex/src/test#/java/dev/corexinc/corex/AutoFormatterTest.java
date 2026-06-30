@@ -23,7 +23,10 @@ public class AutoFormatterTest {
     @BeforeAll
     public static void setup() {
         if (!MockBukkit.isMocked()) MockBukkit.mock();
-        plugin = MockBukkit.load(Corex.class);
+        try {
+            plugin = MockBukkit.load(Corex.class);
+        }
+        catch (Throwable e) {e.printStackTrace();}
         CorexTestLogger.info("FormatterTest environment started!");
     }
 

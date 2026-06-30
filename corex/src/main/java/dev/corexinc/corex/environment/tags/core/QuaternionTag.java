@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Location;
 import org.joml.Quaterniond;
+import org.joml.Quaternionf;
 import org.joml.Vector3d;
 import org.jspecify.annotations.NonNull;
 
@@ -618,8 +619,12 @@ public class QuaternionTag implements AbstractTag {
         this.q = tempQ;
     }
 
-    public Quaterniond getQuaternion() {
+    public Quaterniond getQuaterniond() {
         return new Quaterniond(q);
+    }
+
+    public Quaternionf getQuaternionf() {
+        return new Quaternionf(q);
     }
 
     private static String cleanDouble(double d) {
