@@ -364,6 +364,10 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
         }
 
         ItemMeta meta = item.getItemMeta();
+        if (meta instanceof LeatherArmorMeta leatherMeta) {
+            propertiesList.add("color=" + new ColorTag(leatherMeta.getColor().asRGB()).identify());
+        }
+
         if (meta != null) {
             if (meta.hasDisplayName() && meta.displayName() != null) {
                 String nameStr = LegacyComponentSerializer.legacySection().serialize(Objects.requireNonNull(meta.displayName()));

@@ -2569,6 +2569,26 @@ public class LocationTag implements AbstractTag, Flaggable {
 
         /* @doc tag
          *
+         * @Name chunk
+         * @RawName <LocationTag.chunk>
+         * @Object LocationTag
+         * @ReturnType ChunkTag
+         * @NoArg
+         * @Description
+         * Returns the chunk on that location
+         *
+         * @Implements LocationTag.chunk
+         */
+        TAG_PROCESSOR.registerTag(ChunkTag.class, "chunk", (attr, obj) -> {
+            Location loc = obj.getLocation();
+            if (loc.getWorld() == null) return null;
+            BukkitSchedulerAdapter.requireRegion(loc);
+
+            return new ChunkTag(loc.getChunk());
+        }).ignoreTest();
+
+        /* @doc tag
+         *
          * @Name hiveBeeCount
          * @RawName <LocationTag.hiveBeeCount>
          * @Object LocationTag

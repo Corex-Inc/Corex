@@ -7,6 +7,8 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
@@ -205,6 +207,30 @@ public class MaterialTag implements AbstractTag, Adjustable {
                 }
             }
             return new ListTag(keys.toString());
+        });
+
+        MECHANISM_PROCESSOR.registerMechanism("properties", (obj, val) -> {
+            if (val instanceof MapTag mapTag) {
+                BlockData data = obj.blockData.clone();
+
+                for (String key : mapTag.keySet()) {
+                    AbstractTag value = mapTag.getObject(key);
+                    try {
+                        BlockData merge = Bukkit.createBlockData(
+                                obj.material,
+                                "[" + key + "=" + value.identify() + "]"
+                        );
+                        data = data.merge(merge);
+                    }
+                    catch (Exception e) {
+                        CorexLogger.error(e.toString());
+                    }
+                }
+
+                return new MaterialTag(data);
+            }
+
+            return obj;
         });
     }
 

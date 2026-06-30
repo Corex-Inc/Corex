@@ -226,6 +226,25 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         TAG_PROCESSOR.registerTag(EntityTag.class, "blueprint", (attribute, object) ->
                 new EntityTag(null, object.getEntityType(), object.describe()));
 
+        /* @doc tag
+         *
+         * @Name viewRange
+         * @RawName <EntityTag.viewRange>
+         * @Object EntityTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Returns the view range of a Display entity.
+         *
+         * @Implements EntityTag.view_range
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "viewRange", (attribute, object) -> {
+            if (object.entity instanceof Display display) {
+                return new ElementTag(display.getViewRange());
+            }
+            return null;
+        });
+
         /* @doc mechanism
          *
          * @Name name
@@ -559,6 +578,22 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          */
         registerMechanism("nbt", (target, val) -> {
             if (nms != null && val instanceof MapTag map) nms.applyNbt(target, map);
+        });
+
+        /* @doc mechanism
+         *
+         * @Name viewRange
+         * @Object EntityTag
+         * @Input ElementTag(Number)
+         * @Description
+         * Sets the view range of a Display entity.
+         *
+         * @Implements EntityTag.view_range
+         */
+        registerMechanism("viewRange", "view_range", EntityTag::nbtNumber, (target, val) -> {
+            if (target instanceof Display display) {
+                display.setViewRange((float) asDouble(val));
+            }
         });
     }
 
