@@ -37,10 +37,14 @@ import java.util.function.BooleanSupplier;
  */
 public class ScriptQueue {
 
-    /** The unique identifier of this queue. */
+    /**
+     * The unique identifier of this queue.
+     */
     private final String id;
 
-    /** Whether this queue is running asynchronously. */
+    /**
+     * Whether this queue is running asynchronously.
+     */
     private final boolean isAsync;
 
     /**
@@ -53,22 +57,34 @@ public class ScriptQueue {
     @Nullable
     private final PlayerIdentity linkedPlayer;
 
-    /** Local variables (definitions) stored in this queue. */
+    /**
+     * Local variables (definitions) stored in this queue.
+     */
     private final Map<String, AbstractTag> definitions;
 
-    /** List of values returned by the queue via 'return' or 'determine' commands. */
+    /**
+     * List of values returned by the queue via 'return' or 'determine' commands.
+     */
     private final List<AbstractTag> returnValues = new ArrayList<>();
 
-    /** The current block of instructions being executed. */
+    /**
+     * The current block of instructions being executed.
+     */
     private Instruction[] bytecode;
 
-    /** The instruction pointer (Program Counter) for the current block. */
+    /**
+     * The instruction pointer (Program Counter) for the current block.
+     */
     private int pointer = 0;
 
-    /** A callback executed when the current stack frame or the entire queue finishes. */
+    /**
+     * A callback executed when the current stack frame or the entire queue finishes.
+     */
     private Runnable onFinish;
 
-    /** A condition used by loops (e.g., 'while' or 'repeat') to determine if the block should restart. */
+    /**
+     * A condition used by loops (e.g., 'while' or 'repeat') to determine if the block should restart.
+     */
     private BooleanSupplier loopCondition;
 
     /**
@@ -82,13 +98,19 @@ public class ScriptQueue {
             BooleanSupplier loopCondition
     ) {}
 
-    /** The internal Call Stack used to handle nested blocks (if, repeat, try-catch). */
+    /**
+     * The internal Call Stack used to handle nested blocks (if, repeat, try-catch).
+     */
     private final ArrayDeque<QueueFrame> callStack = new ArrayDeque<>();
 
-    /** Temporary data storage for internal command communication. */
+    /**
+     * Temporary data storage for internal command communication.
+     */
     private final Map<String, Object> tempData = new HashMap<>();
 
-    /** The contextual data object provided to this queue (e.g., event data). */
+    /**
+     * The contextual data object provided to this queue (e.g., event data).
+     */
     private AbstractTag context;
 
     private volatile boolean isPaused = false;
@@ -104,27 +126,39 @@ public class ScriptQueue {
     private boolean keepAlive = false;
     private boolean isWaitingForInstructions = false;
 
-    /** Nanosecond timestamp of when the queue started. */
+    /**
+     * Nanosecond timestamp of when the queue started.
+     */
     private long startNanos;
 
-    /** Tracks errors encountered during the execution of the current instruction. */
+    /**
+     * Tracks errors encountered during the execution of the current instruction.
+     */
     private final List<String> currentErrors = new ArrayList<>();
     private final List<String> trappedErrors = new ArrayList<>();
     private boolean errorTrapped = false;
     private boolean errorHeaderPrinted = false;
 
-    /** Global registry of all active queues currently managed by the CVM. */
+    /**
+     * Global registry of all active queues currently managed by the CVM.
+     */
     private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
 
-    /** Monotonic sequence backing every generated queue id - guarantees uniqueness across the whole CVM. */
+    /**
+     * Monotonic sequence backing every generated queue id - guarantees uniqueness across the whole CVM.
+     */
     private static final AtomicLong QUEUE_SEQUENCE = new AtomicLong();
 
-    /** Returns the next value of the global queue sequence. */
+    /**
+     * Returns the next value of the global queue sequence.
+     */
     public static long nextSequence() {
         return QUEUE_SEQUENCE.incrementAndGet();
     }
 
-    /** Builds a collision-free queue id from a base name (e.g. a script name). */
+    /**
+     * Builds a collision-free queue id from a base name (e.g. a script name).
+     */
     public static String uniqueId(String base) {
         return base + "_" + QUEUE_SEQUENCE.incrementAndGet();
     }
@@ -148,7 +182,7 @@ public class ScriptQueue {
     private Position targetRegionPosition = null;
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync,
-                       @Nullable PlayerIdentity linkedPlayer, Position anchorPosition) {
+                       @Nullable PlayerIdentity linkedPlayer, @Nullable Position anchorPosition) {
         this.id = id;
         this.bytecode = bytecode;
         this.isAsync = isAsync;
@@ -232,8 +266,10 @@ public class ScriptQueue {
                     try {
                         if (isAsync && !inst.command.isAsyncSafe()) {
                             Debugger.error(this,
-                                    "Attempt to execute a sync command '"
-                                            + inst.command.getName() + "' in an async queue!", depth);
+                                    "Attempt to execute a <aqua>sync</aqua> command '"
+                                            + inst.command.getName() + "' in an <purple>async</purple> queue!", depth);
+                            Debugger.error(this,
+                                    "Queue halted immediately for safety.", depth);
                             stopEntireQueue();
                             return;
                         }
