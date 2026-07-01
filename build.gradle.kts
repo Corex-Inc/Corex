@@ -3,6 +3,10 @@ plugins {
     id("com.gradleup.shadow") version "9.4.1"
 }
 
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+
 allprojects {
     group = "dev.corexinc.corex"
     version = "1.0-SNAPSHOT"

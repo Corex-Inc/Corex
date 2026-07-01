@@ -7,3 +7,9 @@ dependencies {
 
     paperweight.paperDevBundle("26.1.2.build.+")
 }
+
+paperweight {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
