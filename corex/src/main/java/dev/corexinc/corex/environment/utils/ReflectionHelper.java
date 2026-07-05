@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.utils;
 
+import dev.corexinc.corex.engine.utils.CorexLogger;
 import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
@@ -14,21 +15,23 @@ public class ReflectionHelper {
             f.setAccessible(true);
             unsafe = (Unsafe) f.get(null);
         } catch (Exception e) {
-            e.printStackTrace();
+            CorexLogger.error("Failed to access sun.misc.Unsafe - NMS field patching disabled: " + e.getMessage());
         }
     }
 
     public static void setFinalField(Object target, String fieldName, Object value) {
+        if (unsafe == null) return;
         try {
             Field field = target.getClass().getDeclaredField(fieldName);
             long offset = unsafe.objectFieldOffset(field);
             unsafe.putObject(target, offset, value);
         } catch (Exception e) {
-            e.printStackTrace();
+            CorexLogger.error("Failed to set field '" + fieldName + "' on " + target.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
 
     public static void setFinalFieldByType(Object target, Class<?> fieldType, Object value) {
+        if (unsafe == null) return;
         try {
             for (Field field : target.getClass().getDeclaredFields()) {
                 if (field.getType().equals(fieldType)) {
@@ -38,7 +41,7 @@ public class ReflectionHelper {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            CorexLogger.error("Failed to set field of type " + fieldType.getSimpleName() + " on " + target.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
 

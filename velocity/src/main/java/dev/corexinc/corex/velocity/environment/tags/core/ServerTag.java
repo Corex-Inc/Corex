@@ -67,9 +67,7 @@ public class ServerTag implements AbstractTag {
 
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attribute, object) -> {
             ListTag list = new ListTag();
-            for (var player : object.server.getPlayersConnected()) {
-                list.addObject(new PlayerTag(player));
-            }
+            object.server.getPlayersConnected().forEach(player -> list.addObject(new PlayerTag(player)));
             return list;
         });
     }

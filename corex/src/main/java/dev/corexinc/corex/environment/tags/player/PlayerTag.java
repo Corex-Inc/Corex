@@ -853,7 +853,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             Player player = playerTag.getPlayer();
             if (player == null) return playerTag;
 
-            var attribute = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            org.bukkit.attribute.AttributeInstance attribute = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
             if (attribute == null) return playerTag;
 
             double targetMax;
@@ -1189,8 +1189,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             if (value instanceof ElementTag el) {
                 Player player = playerTag.getPlayer();
                 if (player != null) {
-                    var component = MINI_MESSAGE.deserialize(el.asString());
-                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.displayName(component));
+                    ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.displayName(MINI_MESSAGE.deserialize(el.asString())));
                 }
             }
             return playerTag;

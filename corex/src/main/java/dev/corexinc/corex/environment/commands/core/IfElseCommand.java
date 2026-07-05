@@ -10,6 +10,42 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
+/* @doc command
+ *
+ * @Name Else
+ * @Syntax else (if <condition>)
+ * @RequiredArgs 0
+ * @MaxArgs -1
+ * @ShortDescription Runs its block when the preceding 'if' did not.
+ *
+ * @Implements Else
+ *
+ * @Description
+ * Only valid directly after an 'if' block (or another 'else if'). Runs its block
+ * when the check before it came out false.
+ *
+ * Write 'else if <condition>' to chain another check. The chain stops at the
+ * first branch that runs, and a bare 'else' at the end catches everything that
+ * fell through.
+ *
+ * Using 'else' with no 'if' above it logs an error and does nothing.
+ *
+ * @Usage
+ * // Two-way branch.
+ * - if <player.health> < 5:
+ *   - narrate "Careful, you're almost dead!"
+ * - else:
+ *   - narrate "You're fine."
+ *
+ * @Usage
+ * // Chained checks, top to bottom.
+ * - if <[score]> >= 100:
+ *   - narrate "Gold rank"
+ * - else if <[score]> >= 50:
+ *   - narrate "Silver rank"
+ * - else:
+ *   - narrate "Bronze rank"
+ */
 public class IfElseCommand implements AbstractCommand {
 
     @Override

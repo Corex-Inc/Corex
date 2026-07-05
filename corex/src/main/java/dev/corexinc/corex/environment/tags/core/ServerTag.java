@@ -374,9 +374,8 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "loadedStructures", (attr, obj) -> {
             ListTag list = new ListTag();
-            for (var entry : Bukkit.getStructureManager().getStructures().entrySet()) {
-                list.addObject(new StructureTag(entry.getValue(), entry.getKey()));
-            }
+            Bukkit.getStructureManager().getStructures().forEach((key, structure) ->
+                    list.addObject(new StructureTag(structure, key)));
             return list;
         });
 

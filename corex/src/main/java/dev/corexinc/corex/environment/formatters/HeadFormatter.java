@@ -62,7 +62,7 @@ public class HeadFormatter implements AbstractFormatter {
             String json = "{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net/texture/" + hash + "\"}}}";
             String base64 = Base64.getEncoder().encodeToString(json.getBytes());
 
-            var headContents = ObjectContents.playerHead()
+            PlayerHeadObjectContents headContents = ObjectContents.playerHead()
                     .id(UUID.nameUUIDFromBytes(hash.getBytes()))
                     .name("CustomHead")
                     .profileProperty(new SimpleProfileProperty("textures", base64))

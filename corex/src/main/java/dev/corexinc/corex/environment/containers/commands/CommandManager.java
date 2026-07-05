@@ -48,7 +48,7 @@ public final class CommandManager {
     private volatile Collection<CommandContainer> containers = List.of();
     private volatile Set<String> registeredNames = Set.of();
     private final Map<String, CachedAllowedEntry> allowedCache = new ConcurrentHashMap<>();
-    private final Map<String, CachedTabEntry>     tabCache     = new ConcurrentHashMap<>();
+    private final Map<String, CachedTabEntry> tabCache = new ConcurrentHashMap<>();
 
     private CommandManager() {}
 

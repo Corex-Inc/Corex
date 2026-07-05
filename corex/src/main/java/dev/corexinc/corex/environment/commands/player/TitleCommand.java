@@ -1,6 +1,8 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -78,14 +80,27 @@ public class TitleCommand implements AbstractCommand {
         return true;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .optionalLinear(0, AbstractTag.class, null)
+            .optionalPrefix("title", AbstractTag.class)
+            .optionalPrefix("subtitle", AbstractTag.class)
+            .optionalPrefix("fadeIn", DurationTag.class, "1s")
+            .optionalPrefix("stay", DurationTag.class, "3s")
+            .optionalPrefix("fadeOut", DurationTag.class, "1s")
+            .optionalPrefix("targets", ListTag.class)
+            .build();
+
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        AbstractTag titleTag = instruction.getPrefixObject("title", queue);
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
+
+        AbstractTag titleTag = args.prefix("title");
         if (titleTag == null) {
-            titleTag = instruction.getLinearObject(0, queue);
+            titleTag = args.linear(0);
         }
 
-        AbstractTag subTitleTag = instruction.getPrefixObject("subtitle", queue);
+        AbstractTag subTitleTag = args.prefix("subtitle");
 
         if (titleTag == null && subTitleTag == null) {
             Debugger.echoError(queue, "Must specify a title or subtitle!");
@@ -95,9 +110,9 @@ public class TitleCommand implements AbstractCommand {
         Component titleComp = buildComponent(titleTag);
         Component subTitleComp = buildComponent(subTitleTag);
 
-        long fadeInMs = parseDuration(queue, instruction, "fadeIn", 1000L);
-        long stayMs = parseDuration(queue, instruction, "stay", 3000L);
-        long fadeOutMs = parseDuration(queue, instruction, "fadeOut", 1000L);
+        long fadeInMs = durationMs(args.prefix("fadeIn"), 1000L);
+        long stayMs = durationMs(args.prefix("stay"), 3000L);
+        long fadeOutMs = durationMs(args.prefix("fadeOut"), 1000L);
 
         Title.Times times = Title.Times.times(
                 Duration.ofMillis(fadeInMs),
@@ -107,12 +122,12 @@ public class TitleCommand implements AbstractCommand {
 
         final Title title = Title.title(titleComp, subTitleComp, times);
 
+        ListTag targetsList = args.prefix("targets");
         List<Player> targetPlayers = null;
-        String targetsRaw = instruction.getPrefix("targets", queue);
 
-        if (targetsRaw != null) {
+        if (targetsList != null) {
             targetPlayers = new ArrayList<>();
-            for (PlayerTag pTag : new ListTag(targetsRaw).filter(PlayerTag.class, queue)) {
+            for (PlayerTag pTag : targetsList.filter(PlayerTag.class, queue)) {
                 Player player = pTag.getPlayer();
                 if (player != null && player.isOnline()) {
                     targetPlayers.add(player);
@@ -126,7 +141,7 @@ public class TitleCommand implements AbstractCommand {
                 "FadeIn", fadeInMs + "ms",
                 "Stay", stayMs + "ms",
                 "FadeOut", fadeOutMs + "ms",
-                "Targets", targetsRaw != null ? targetsRaw : "Linked Player"
+                "Targets", targetsList != null ? targetsList.identify() : "Linked Player"
         );
 
         if (targetPlayers != null) {
@@ -146,18 +161,8 @@ public class TitleCommand implements AbstractCommand {
         }
     }
 
-    private long parseDuration(ScriptQueue queue, Instruction instruction, String prefix, long defaultMs) {
-        AbstractTag tag = instruction.getPrefixObject(prefix, queue);
-        if (tag == null) return defaultMs;
-
-        if (tag instanceof DurationTag dt) return dt.getMilliseconds();
-
-        try {
-            return new DurationTag(tag.identify()).getMilliseconds();
-        } catch (Exception e) {
-            Debugger.echoError(queue, "Invalid duration format for '" + prefix + "': " + tag.identify());
-            return defaultMs;
-        }
+    private long durationMs(DurationTag duration, long defaultMs) {
+        return duration != null ? duration.getMilliseconds() : defaultMs;
     }
 
     private Component buildComponent(AbstractTag text) {

@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.compiler.args.PreSlicedDynamicArg;
 import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.compiler.math.MathCompiler;
 import dev.corexinc.corex.engine.registry.CommandMetadata;
+import dev.corexinc.corex.engine.registry.FormatRegistry;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -187,7 +188,7 @@ public class ScriptCompiler {
         TagNode[] nodes = parseTagNodes(mainTag);
 
         if (nodes.length == 1 && fallback == null) {
-            var formats = ScriptManager.getRegistry().getFormats();
+            FormatRegistry formats = ScriptManager.getRegistry().getFormats();
             if (formats.isFormat(nodes[0].name())) {
                 if (nodes[0].param() == null || nodes[0].param() instanceof StaticArg) {
                     Attribute mockAttr = new Attribute(nodes, null);

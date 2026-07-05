@@ -1,6 +1,8 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -100,15 +102,20 @@ public class ItemCooldownCommand implements AbstractCommand {
         return true;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ListTag.class)
+            .optionalPrefix("duration", DurationTag.class)
+            .optionalPrefix("targets", ListTag.class)
+            .build();
+
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String rawArg = instruction.getLinear(0, queue);
-        if (rawArg == null) {
-            Debugger.echoError(queue, "First argument cannot be null!");
-            return;
-        }
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
 
-        List<CooldownTarget> cooldownTargets = new ListTag(rawArg).getList().stream()
+        ListTag targetItems = args.linear(0);
+
+        List<CooldownTarget> cooldownTargets = targetItems.getList().stream()
                 .map(tag -> resolveTarget(tag, queue))
                 .filter(Objects::nonNull)
                 .toList();
@@ -118,20 +125,21 @@ public class ItemCooldownCommand implements AbstractCommand {
             return;
         }
 
-        int durationTicks = resolveDuration(instruction, queue);
-        if (durationTicks < 0) return;
+        DurationTag duration = args.prefix("duration");
+        if (duration == null && instruction.prefixArgs.containsKey("duration")) return;
+        int durationTicks = duration != null ? Math.max(0, (int) duration.getTicks()) : 20;
 
-        List<Player> targetPlayers = resolvePlayers(instruction, queue);
+        ListTag targetsList = args.prefix("targets");
+        List<Player> targetPlayers = resolvePlayers(queue, targetsList);
         if (targetPlayers.isEmpty()) {
             Debugger.echoError(queue, "No valid targets found to apply cooldown.");
             return;
         }
 
-        String targetsRaw = instruction.getPrefix("targets", queue);
         Debugger.report(queue, instruction,
-                "Arg",           rawArg,
-                "Duration",      durationTicks + "t",
-                "Targets",       targetsRaw != null ? targetsRaw : "Linked Player",
+                "Arg", targetItems.identify(),
+                "Duration", durationTicks + "t",
+                "Targets", targetsList != null ? targetsList.identify() : "Linked Player",
                 "Targets_Count", targetPlayers.size()
         );
 
@@ -185,22 +193,9 @@ public class ItemCooldownCommand implements AbstractCommand {
         return new CooldownTarget.ByKey(key);
     }
 
-    private int resolveDuration(Instruction instruction, ScriptQueue queue) {
-        AbstractTag durationTag = instruction.getPrefixObject("duration", queue);
-        if (durationTag == null) return 20;
-        try {
-            DurationTag dt = durationTag instanceof DurationTag d ? d : new DurationTag(durationTag.identify());
-            return Math.max(0, (int) dt.getTicks());
-        } catch (Exception e) {
-            Debugger.echoError(queue, "Invalid duration: " + durationTag.identify());
-            return -1;
-        }
-    }
-
-    private List<Player> resolvePlayers(Instruction instruction, ScriptQueue queue) {
-        String targetsRaw = instruction.getPrefix("targets", queue);
-        if (targetsRaw != null) {
-            return new ListTag(targetsRaw).filter(PlayerTag.class, queue).stream()
+    private List<Player> resolvePlayers(ScriptQueue queue, ListTag targetsList) {
+        if (targetsList != null) {
+            return targetsList.filter(PlayerTag.class, queue).stream()
                     .map(PlayerTag::getPlayer)
                     .filter(p -> p != null && p.isOnline())
                     .toList();

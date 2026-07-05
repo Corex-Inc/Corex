@@ -8,16 +8,28 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SqlFlagTracker extends AbstractFlagTracker {
 
+    private record CachedFlag(long expireTime, String value) {}
+
+    private static final CachedFlag ABSENT = new CachedFlag(0, null);
+    private static final Map<String, CachedFlag> CACHE = new ConcurrentHashMap<>();
+
     private final String trackerId;
     private final HikariDataSource dbPool;
+    private final String cachePrefix;
 
     public SqlFlagTracker(File dbFile, String trackerId) {
         this.trackerId = trackerId;
         this.dbPool = DatabaseManager.getPool(dbFile);
-        this.registerTracker();
+        this.cachePrefix = dbFile.getAbsolutePath() + '\0' + trackerId + '\0';
+    }
+
+    public static void clearCache() {
+        CACHE.clear();
     }
 
     @Override
@@ -30,16 +42,39 @@ public class SqlFlagTracker extends AbstractFlagTracker {
         return trackerId;
     }
 
+    private String cacheKey(String rootKey) {
+        return cachePrefix + rootKey;
+    }
+
     @Override
     protected String readRaw(String rootKey) {
-        String sql = "SELECT value FROM flags WHERE tracker_id = ? AND key_name = ?";
+        String cacheKey = cacheKey(rootKey);
+        CachedFlag cached = CACHE.get(cacheKey);
+        if (cached != null) {
+            if (cached.value() == null) return null;
+            if (cached.expireTime() > 0 && System.currentTimeMillis() >= cached.expireTime()) {
+                deleteRaw(rootKey);
+                return null;
+            }
+            return cached.value();
+        }
+
+        String sql = "SELECT value, expire_time FROM flags WHERE tracker_id = ? AND key_name = ?";
         try (Connection conn = dbPool.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, trackerId);
             ps.setString(2, rootKey);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("value");
+                String value = rs.getString("value");
+                long expireTime = rs.getLong("expire_time");
+                if (expireTime > 0 && System.currentTimeMillis() >= expireTime) {
+                    deleteRaw(rootKey);
+                    return null;
+                }
+                CACHE.put(cacheKey, new CachedFlag(expireTime, value));
+                return value;
             }
+            CACHE.put(cacheKey, ABSENT);
         } catch (Exception e) {
             CorexLogger.error("SQL Read Error: " + e.getMessage());
         }
@@ -55,6 +90,7 @@ public class SqlFlagTracker extends AbstractFlagTracker {
             ps.setString(3, value);
             ps.setLong(4, expireTimeMs);
             ps.executeUpdate();
+            CACHE.put(cacheKey(rootKey), new CachedFlag(expireTimeMs, value));
         } catch (Exception e) {
             CorexLogger.error("SQL Write Error: " + e.getMessage());
         }
@@ -67,6 +103,7 @@ public class SqlFlagTracker extends AbstractFlagTracker {
             ps.setString(1, trackerId);
             ps.setString(2, rootKey);
             ps.executeUpdate();
+            CACHE.put(cacheKey(rootKey), ABSENT);
         } catch (Exception e) {
             CorexLogger.error("SQL Delete Error: " + e.getMessage());
         }

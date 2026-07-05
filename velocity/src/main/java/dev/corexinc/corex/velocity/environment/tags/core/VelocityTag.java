@@ -27,17 +27,13 @@ public class VelocityTag implements AbstractTag {
 
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attribute, object) -> {
             ListTag list = new ListTag();
-            for (var player : proxy().getAllPlayers()) {
-                list.addObject(new PlayerTag(player));
-            }
+            proxy().getAllPlayers().forEach(player -> list.addObject(new PlayerTag(player)));
             return list;
         });
 
         TAG_PROCESSOR.registerTag(ListTag.class, "servers", (attribute, object) -> {
             ListTag list = new ListTag();
-            for (var server : proxy().getAllServers()) {
-                list.addObject(new ServerTag(server));
-            }
+            proxy().getAllServers().forEach(server -> list.addObject(new ServerTag(server)));
             return list;
         });
 

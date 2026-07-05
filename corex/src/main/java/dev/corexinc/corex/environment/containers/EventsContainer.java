@@ -27,7 +27,7 @@ public class EventsContainer implements AbstractContainer {
     public @NonNull PathType resolvePath(@NonNull String path) {
         if (path.equalsIgnoreCase("type")) return PathType.IGNORE;
         if (path.equalsIgnoreCase("events")) return PathType.IGNORE;
-        if (path.startsWith("events.") && !path.substring(7).contains(".")) return PathType.SCRIPT;
+        if (path.startsWith("events.")) return PathType.SCRIPT;
         return PathType.IGNORE;
     }
 

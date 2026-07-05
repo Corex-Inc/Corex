@@ -77,7 +77,9 @@ public class ScriptPreprocessor {
             char c = line.charAt(i);
 
             if (c == '\'' && !inDoubleQuote) {
-                inSingleQuote = !inSingleQuote;
+                if (inSingleQuote || i == 0 || !Character.isLetterOrDigit(line.charAt(i - 1))) {
+                    inSingleQuote = !inSingleQuote;
+                }
                 continue;
             }
             if (c == '"' && !inSingleQuote) {

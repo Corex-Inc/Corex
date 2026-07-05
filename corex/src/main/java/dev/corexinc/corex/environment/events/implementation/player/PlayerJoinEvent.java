@@ -16,6 +16,43 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/* @doc event
+ *
+ * @Name PlayerJoin
+ *
+ * @Events
+ * player join
+ * player joins
+ *
+ * @Description
+ * Fires when a player finishes joining the server. The linked player is the one
+ * who joined, so tags like <player.name> work directly in the block.
+ *
+ * Return a value to replace the join message everyone sees. The returned text is
+ * parsed as MiniMessage. Return "none" to hide the join message entirely.
+ *
+ * @Context
+ * <context.message> - returns an ElementTag of the default join message that would be shown.
+ *
+ * @Returns
+ * ElementTag - Replaces the join message with the returned text (parsed as MiniMessage).
+ * ElementTag(none) - Hides the join message.
+ *
+ * @Usage
+ * // Greet the player in chat.
+ * on player joins:
+ * - narrate "<&a>Welcome back, <player.name>!"
+ *
+ * @Usage
+ * // Replace the vanilla join broadcast with a custom one.
+ * on player joins:
+ * - return "<green><player.name> slipped into the server."
+ *
+ * @Usage
+ * // Silence join messages completely.
+ * on player joins:
+ * - return none
+ */
 public class PlayerJoinEvent implements AbstractEvent {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();

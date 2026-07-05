@@ -10,6 +10,39 @@ import org.jspecify.annotations.NonNull;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/* @doc event
+ *
+ * @Name DeltaTime
+ *
+ * @Events
+ * delta time secondly
+ * delta time minutely
+ * delta time hourly
+ *
+ * @Switches
+ * every:<#> - Only fire on every Nth tick of the chosen interval (e.g. every:5 with secondly runs once every 5 seconds).
+ *
+ * @Description
+ * A repeating clock. Pick secondly, minutely, or hourly and the block runs on that
+ * beat for as long as the server is up. The counter starts when scripts load and
+ * resets on reload, so 'every:' counts from the last reload, not from midnight.
+ *
+ * There is no player attached to these queues, so use them for world-wide upkeep:
+ * saving data, ticking a global timer, announcing something on a schedule.
+ *
+ * @Context
+ * <context.second> - returns an ElementTag(Number) of how many seconds have passed since the clock started.
+ *
+ * @Usage
+ * // Announce a reminder once a minute.
+ * on delta time minutely:
+ * - narrate "Don't forget to vote for the server!" targets:<server.onlinePlayers>
+ *
+ * @Usage
+ * // Run cleanup every 5 minutes instead of every minute.
+ * on delta time minutely every:5:
+ * - run cleanupTask
+ */
 public class DeltaTimeEvent implements AbstractEvent {
 
     private boolean isRegistered = false;

@@ -954,9 +954,8 @@ public class LocationTag implements AbstractTag, Flaggable {
             BukkitSchedulerAdapter.requireRegion(loc);
             if (loc.getBlock().getState() instanceof DecoratedPot pot) {
                 MapTag map = new MapTag();
-                for (var entry : pot.getSherds().entrySet()) {
-                    map.putObject(entry.getKey().name().toLowerCase(), new MaterialTag(entry.getValue()));
-                }
+                pot.getSherds().forEach((side, material) ->
+                        map.putObject(side.name().toLowerCase(), new MaterialTag(material)));
                 return map;
             }
             return null;

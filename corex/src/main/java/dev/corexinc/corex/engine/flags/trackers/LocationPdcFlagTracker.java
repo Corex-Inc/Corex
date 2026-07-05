@@ -18,7 +18,6 @@ public class LocationPdcFlagTracker extends AbstractFlagTracker {
     public LocationPdcFlagTracker(Location loc, String trackerId) {
         this.loc = loc;
         this.trackerId = trackerId;
-        this.registerTracker();
     }
 
     @Override

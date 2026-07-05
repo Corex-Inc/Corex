@@ -9,8 +9,9 @@ import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.environment.events.EventReturn;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
-import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -18,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /* @doc event
  *
@@ -87,26 +90,20 @@ public class PlayerChatEvent implements AbstractEvent {
 
     @EventHandler
     public void onPlayerChat(AsyncChatEvent event) {
-        Component message = event.message();
+        String plainMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
 
         PlayerTag player = new PlayerTag(event.getPlayer());
         ContextTag context = null;
 
         for (EventData data : scripts) {
-            if (!data.isGenericMatch("message", 0, String.valueOf(message))) {
-                continue;
-            }
-
             String containsSwitch = data.getSwitch("contains");
-            if (containsSwitch != null) {
-                if (!String.valueOf(message).toLowerCase().contains(containsSwitch.toLowerCase())) {
-                    continue;
-                }
+            if (containsSwitch != null && !plainMessage.toLowerCase().contains(containsSwitch.toLowerCase())) {
+                continue;
             }
 
             if (context == null) {
                 context = new ContextTag();
-                context.put("message", new ElementTag(message));
+                context.put("message", new ElementTag(event.message()));
                 context.put("originalMessage", new ElementTag(event.originalMessage()));
             }
 
@@ -123,10 +120,18 @@ public class PlayerChatEvent implements AbstractEvent {
             };
 
             if (event.isAsynchronous()) {
+                CompletableFuture<Void> completion = new CompletableFuture<>();
+                SchedulerAdapter.get().run(() -> {
+                    try {
+                        logic.run();
+                    } finally {
+                        completion.complete(null);
+                    }
+                });
                 try {
-                    SchedulerAdapter.get().run(logic);
+                    completion.get(2, TimeUnit.SECONDS);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Debugger.error("Chat script for '" + data.rawLine + "' did not finish in time - event left unmodified", e);
                 }
             } else {
                 logic.run();

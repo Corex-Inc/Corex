@@ -327,7 +327,7 @@ public class ScriptQueue {
                                 throw rre;
                             } catch (Exception e) {
                                 this.addError("Internal Java Exception: " + e.getMessage());
-                                e.printStackTrace();
+                                Debugger.error("Internal Java Exception in '" + inst.command.getName() + "'", e);
                             }
                             Debugger.flushErrors(this, inst);
                         }
@@ -668,7 +668,7 @@ public class ScriptQueue {
     @AvailableSince("1.0.0")
     public void setTempData(String key, Object value) {
         if (value == null) tempData.remove(key);
-        else               tempData.put(key, value);
+        else tempData.put(key, value);
     }
 
     @Nullable

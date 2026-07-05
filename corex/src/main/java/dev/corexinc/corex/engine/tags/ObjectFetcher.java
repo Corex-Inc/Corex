@@ -11,10 +11,14 @@ public class ObjectFetcher {
     private static final Map<String, Function<String, AbstractTag>> fetchers = new HashMap<>();
     private static final Map<String, String> typeNamesToPrefixes = new HashMap<>();
 
+    private static final StackWalker CALLER_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
     public static void registerFetcher(String prefix, Function<String, AbstractTag> constructor) {
         fetchers.put(prefix.toLowerCase(), constructor);
-        String defaultName = constructor.getClass().getSimpleName().toLowerCase().replace("tag", "");
-        typeNamesToPrefixes.put(defaultName, prefix.toLowerCase());
+        String callerName = CALLER_WALKER.getCallerClass().getSimpleName().toLowerCase();
+        if (callerName.endsWith("tag")) {
+            typeNamesToPrefixes.put(callerName.substring(0, callerName.length() - 3), prefix.toLowerCase());
+        }
     }
 
     public static String getPrefixForName(String name) {

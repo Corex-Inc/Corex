@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.containers;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
@@ -76,7 +77,7 @@ public class GeneratorContainer implements AbstractContainer {
     @Override
     public @NotNull List<String> getDefinitions() {
         if (data == null) return List.of();
-        var el = data.get("definitions");
+        JsonElement el = data.get("definitions");
         if (el == null || !el.isJsonPrimitive()) return List.of();
         String raw = el.getAsString().replace(" ", "");
         return raw.isBlank() ? List.of() : List.of(raw.split("\\|"));
@@ -119,7 +120,7 @@ public class GeneratorContainer implements AbstractContainer {
     }
 
     private void parseVanillaFirst(@NotNull JsonObject section) {
-        var el = section.get("vanillaFirst");
+        JsonElement el = section.get("vanillaFirst");
         if (el == null || !el.isJsonPrimitive()) return;
         String raw = el.getAsString().replace(" ", "");
         if (raw.isBlank()) return;

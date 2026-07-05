@@ -1,11 +1,13 @@
 package dev.corexinc.corex.environment.commands.world;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
-import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
@@ -18,6 +20,43 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+/* @doc command
+ *
+ * @Name PlaySound
+ * @Syntax playsound [<sound>] (at:<location>|...) (targets:<player>|...) (volume:<#.#>) (pitch:<#.#>) (category:<category>)
+ * @RequiredArgs 1
+ * @MaxArgs 6
+ * @Aliases sound
+ * @ShortDescription Plays a sound to players or at world locations.
+ *
+ * @Implements PlaySound
+ *
+ * @Description
+ * Plays a minecraft sound by its key. Both spellings work: "entity.player.levelup"
+ * and "ENTITY_PLAYER_LEVELUP". Custom sounds from resource packs work too, written
+ * as a namespaced key like "mypack:my.sound".
+ *
+ * With targets: the sound plays only for those players. With at: it plays at the
+ * given world locations for anyone in range. Give both and each target hears the
+ * sound coming from those positions. Give neither and it plays for the linked player.
+ *
+ * volume: defaults to 1.0; values above 1.0 don't get louder but carry further.
+ * pitch: defaults to 1.0, clients accept 0.5 to 2.0.
+ * category: picks which client sound slider applies (master, music, record, weather,
+ * block, hostile, neutral, player, ambient, voice). Defaults to master.
+ *
+ * @Usage
+ * // Level-up chime for the linked player.
+ * - playsound entity.player.levelup
+ *
+ * @Usage
+ * // An explosion at a stored location, audible to anyone nearby.
+ * - playsound entity.generic.explode at:<[explosionSpot]>
+ *
+ * @Usage
+ * // A quiet, low cave noise for two specific players.
+ * - playsound ambient.cave targets:<[p1]>|<[p2]> volume:0.4 pitch:0.8
+ */
 public class PlaySoundCommand implements AbstractCommand {
 
     @Override
@@ -50,13 +89,22 @@ public class PlaySoundCommand implements AbstractCommand {
         return true;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ElementTag.class)
+            .optionalPrefix("volume", ElementTag.class, "1")
+            .optionalPrefix("pitch", ElementTag.class, "1")
+            .optionalPrefix("category", ElementTag.class)
+            .optionalPrefix("at", ListTag.class)
+            .optionalPrefix("targets", ListTag.class)
+            .build();
+
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String soundRaw = instruction.getLinear(0, queue);
-        if (soundRaw == null) {
-            Debugger.echoError(queue, "Sound argument cannot be null!");
-            return;
-        }
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
+
+        ElementTag soundTag = args.linear(0);
+        String soundRaw = soundTag.asString();
 
         Key soundKey;
         try {
@@ -66,13 +114,14 @@ public class PlaySoundCommand implements AbstractCommand {
             return;
         }
 
-        float volume          = parseFloat(queue, instruction, "volume");
-        float pitch           = parseFloat(queue, instruction, "pitch");
-        Sound.Source category = parseCategory(queue, instruction);
-        Sound sound           = Sound.sound(soundKey, category, volume, pitch);
+        float volume = parseFloat(queue, args.prefix("volume"), "volume");
+        float pitch = parseFloat(queue, args.prefix("pitch"), "pitch");
+        Sound.Source category = parseCategory(queue, args.prefix("category"));
+        Sound sound = Sound.sound(soundKey, category, volume, pitch);
 
-        List<LocationTag> locations = parseLocations(queue, instruction);
-        List<Player> targets        = parseTargets(queue, instruction, locations);
+        ListTag atList = args.prefix("at");
+        List<LocationTag> locations = atList != null ? atList.filter(LocationTag.class, queue) : List.of();
+        List<Player> targets = parseTargets(queue, args.prefix("targets"), locations);
 
         if (locations.isEmpty() && targets.isEmpty()) {
             Debugger.echoError(queue, "No valid locations or targets found to play the sound.");
@@ -80,12 +129,12 @@ public class PlaySoundCommand implements AbstractCommand {
         }
 
         Debugger.report(queue, instruction,
-                "Sound",     soundKey.asString(),
-                "Volume",    volume,
-                "Pitch",     pitch,
-                "Category",  category.name(),
+                "Sound", soundKey.asString(),
+                "Volume", volume,
+                "Pitch", pitch,
+                "Category", category.name(),
                 "Locations", locations.size(),
-                "Targets",   targets.size()
+                "Targets", targets.size()
         );
 
         if (!targets.isEmpty()) {
@@ -107,28 +156,20 @@ public class PlaySoundCommand implements AbstractCommand {
                 : Key.key(Key.MINECRAFT_NAMESPACE, normalized);
     }
 
-    private Sound.Source parseCategory(ScriptQueue queue, Instruction instruction) {
-        String raw = instruction.getPrefix("category", queue);
-        if (raw == null) return Sound.Source.MASTER;
+    private Sound.Source parseCategory(ScriptQueue queue, ElementTag categoryTag) {
+        if (categoryTag == null) return Sound.Source.MASTER;
 
         try {
-            return Sound.Source.valueOf(raw.toUpperCase());
+            return Sound.Source.valueOf(categoryTag.asString().toUpperCase());
         } catch (IllegalArgumentException e) {
-            Debugger.echoError(queue, "Invalid sound category: " + raw + ". Falling back to MASTER.");
+            Debugger.echoError(queue, "Invalid sound category: " + categoryTag.asString() + ". Falling back to MASTER.");
             return Sound.Source.MASTER;
         }
     }
 
-    private List<LocationTag> parseLocations(ScriptQueue queue, Instruction instruction) {
-        String raw = instruction.getPrefix("at", queue);
-        return raw != null ? new ListTag(raw).filter(LocationTag.class, queue) : List.of();
-    }
-
-    private List<Player> parseTargets(ScriptQueue queue, Instruction instruction, List<LocationTag> locations) {
-        String raw = instruction.getPrefix("targets", queue);
-
-        if (raw != null) {
-            return new ListTag(raw).filter(PlayerTag.class, queue).stream()
+    private List<Player> parseTargets(ScriptQueue queue, ListTag targetsList, List<LocationTag> locations) {
+        if (targetsList != null) {
+            return targetsList.filter(PlayerTag.class, queue).stream()
                     .map(PlayerTag::getPlayer)
                     .filter(p -> p != null && p.isOnline())
                     .toList();
@@ -168,12 +209,11 @@ public class PlaySoundCommand implements AbstractCommand {
         }
     }
 
-    private float parseFloat(ScriptQueue queue, Instruction instruction, String prefix) {
-        AbstractTag tag = instruction.getPrefixObject(prefix, queue);
+    private float parseFloat(ScriptQueue queue, ElementTag tag, String prefix) {
         if (tag == null) return 1.0f;
 
         try {
-            return Float.parseFloat(tag.identify());
+            return Float.parseFloat(tag.asString());
         } catch (NumberFormatException e) {
             Debugger.echoError(queue, "Invalid number for '" + prefix + "': " + tag.identify());
             return 1.0f;

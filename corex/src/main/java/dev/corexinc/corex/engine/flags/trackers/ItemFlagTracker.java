@@ -22,7 +22,7 @@ public class ItemFlagTracker extends AbstractFlagTracker {
 
     @Override
     public String getTrackerId() {
-        return "item@" + item.getType().name().toLowerCase();
+        return "item@" + item.getType().name().toLowerCase() + "@" + Integer.toHexString(System.identityHashCode(item));
     }
 
     private NamespacedKey getKey(String rootKey) {

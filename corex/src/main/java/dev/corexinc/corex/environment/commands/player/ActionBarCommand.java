@@ -1,6 +1,8 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -73,22 +75,24 @@ public class ActionBarCommand implements AbstractCommand {
         return true;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, AbstractTag.class)
+            .optionalPrefix("targets", ListTag.class)
+            .build();
+
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        AbstractTag textTag = instruction.getLinearObject(0, queue);
-        if (textTag == null) {
-            Debugger.echoError(queue, "Cannot send an empty actionbar! Text is required.");
-            return;
-        }
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
 
+        AbstractTag textTag = args.linear(0);
         final Component message = buildComponent(textTag);
-        String targetsRaw = instruction.getPrefix("targets", queue);
+        ListTag targetsList = args.prefix("targets");
 
         List<Player> targetPlayers = new ArrayList<>();
 
-        if (targetsRaw != null) {
-            List<PlayerTag> playerTags = new ListTag(targetsRaw).filter(PlayerTag.class, queue);
-            for (PlayerTag pTag : playerTags) {
+        if (targetsList != null) {
+            for (PlayerTag pTag : targetsList.filter(PlayerTag.class, queue)) {
                 Player player = pTag.getPlayer();
                 if (player != null && player.isOnline()) {
                     targetPlayers.add(player);
@@ -103,12 +107,12 @@ public class ActionBarCommand implements AbstractCommand {
 
         Debugger.report(queue, instruction,
                 "Message", textTag.identify(),
-                "Targets", targetsRaw != null ? targetsRaw : "Attached Player",
+                "Targets", targetsList != null ? targetsList.identify() : "Attached Player",
                 "Targets_Count", targetPlayers.size()
         );
 
         if (targetPlayers.isEmpty()) {
-            if (targetsRaw == null) {
+            if (targetsList == null) {
                 Debugger.echoError(queue, "No valid targets found and no player attached to the queue.");
             }
             return;

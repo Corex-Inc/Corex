@@ -4,7 +4,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +12,9 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -219,10 +222,10 @@ public final class ArgumentSchema {
             AbstractTag resolved = resolve(def, instruction, queue);
             if (resolved == null && def.required()) {
                 if (def.kind() == ArgumentKind.PREFIX) {
-                    CorexLogger.error("Command '" + instruction.command.getName()
+                    Debugger.echoError(queue, "Command '" + instruction.command.getName()
                             + "' requires prefix '" + def.key() + ":<" + def.type().getSimpleName() + ">'!");
                 } else {
-                    CorexLogger.error("Command '" + instruction.command.getName()
+                    Debugger.echoError(queue, "Command '" + instruction.command.getName()
                             + "' requires positional arg #" + def.linearIndex()
                             + " of type " + def.type().getSimpleName() + "!");
                 }
@@ -242,13 +245,13 @@ public final class ArgumentSchema {
         if (def.kind() == ArgumentKind.PREFIX) {
             CompiledArgument compiled = instruction.prefixArgs.get(def.key());
             if (compiled == null) {
-                return defaultOf(def);
+                return defaultOf(def, queue);
             }
             raw = compiled.evaluate(queue);
         } else {
             raw = instruction.getLinearObject(def.linearIndex(), queue);
             if (raw == null) {
-                return defaultOf(def);
+                return defaultOf(def, queue);
             }
         }
 
@@ -261,12 +264,12 @@ public final class ArgumentSchema {
                 T parsed = (T) ((Function<String, AbstractTag>) def.parser()).apply(raw.identify());
                 if (parsed != null) return parsed;
             } catch (Exception e) {
-                CorexLogger.error("Failed to parse '" + raw.identify()
+                Debugger.echoError(queue, "Failed to parse '" + raw.identify()
                         + "' as " + def.type().getSimpleName() + ": " + e.getMessage());
                 return null;
             }
         } else {
-            T converted = convertViaStringConstructor(def.type(), raw.identify());
+            T converted = convertViaStringConstructor(def.type(), raw.identify(), queue);
             if (converted != null) return converted;
         }
 
@@ -274,39 +277,47 @@ public final class ArgumentSchema {
             return (T) new ElementTag(raw.identify());
         }
 
-        CorexLogger.error("Expected " + def.type().getSimpleName()
+        Debugger.echoError(queue, "Expected " + def.type().getSimpleName()
                 + " for arg '" + def.key() + "', got " + raw.getClass().getSimpleName()
                 + " ('" + raw.identify() + "')");
         return null;
     }
 
+    private static final Map<Class<? extends AbstractTag>, Optional<Constructor<? extends AbstractTag>>> STRING_CONSTRUCTORS = new ConcurrentHashMap<>();
+
     /**
      * Attempts to build an instance of {@code type} via its {@code (String)} constructor,
-     * mirroring the convention used everywhere else in CoreX for "loose" tag conversion
+     * mirroring the convention used everywhere else in Corex for "loose" tag conversion
      * (e.g. {@code ListTag::new}, {@code PlayerTag::new}, {@code LocationTag::new}).
+     *
+     * <p>Constructor lookups are cached per type, so repeated binds pay no reflection cost.
      *
      * @return the converted instance, or {@code null} if no such constructor exists,
      *         it threw, or it returned {@code null}.
      */
     @SuppressWarnings("unchecked")
     @Nullable
-    private static <T extends AbstractTag> T convertViaStringConstructor(Class<? extends AbstractTag> type, String raw) {
+    private static <T extends AbstractTag> T convertViaStringConstructor(Class<? extends AbstractTag> type, String raw, ScriptQueue queue) {
+        Constructor<? extends AbstractTag> ctor = STRING_CONSTRUCTORS.computeIfAbsent(type, key -> {
+            try {
+                return Optional.of(key.getConstructor(String.class));
+            } catch (NoSuchMethodException e) {
+                return Optional.empty();
+            }
+        }).orElse(null);
+        if (ctor == null) return null;
+
         try {
-            Constructor<? extends AbstractTag> ctor = type.getConstructor(String.class);
-            ctor.setAccessible(true);
-            Object instance = ctor.newInstance(raw);
-            return (T) instance;
-        } catch (NoSuchMethodException e) {
-            return null;
+            return (T) ctor.newInstance(raw);
         } catch (Exception e) {
-            CorexLogger.error("Failed to convert '" + raw + "' to " + type.getSimpleName()
+            Debugger.echoError(queue, "Failed to convert '" + raw + "' to " + type.getSimpleName()
                     + " via its String constructor: " + e.getMessage());
             return null;
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends AbstractTag> T defaultOf(ArgumentDef def) {
+    private <T extends AbstractTag> T defaultOf(ArgumentDef def, ScriptQueue queue) {
         if (def.defaultRaw() == null) return null;
 
         if (def.parser() != null) {
@@ -315,7 +326,7 @@ public final class ArgumentSchema {
                 if (parsed != null) return parsed;
             } catch (Exception ignored) {}
         } else {
-            T converted = convertViaStringConstructor(def.type(), def.defaultRaw());
+            T converted = convertViaStringConstructor(def.type(), def.defaultRaw(), queue);
             if (converted != null) return converted;
         }
 

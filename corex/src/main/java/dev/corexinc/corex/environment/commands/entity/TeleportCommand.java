@@ -17,7 +17,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
-/* @[command]
+/* @doc command
  *
  * @Name Teleport
  * @Syntax teleport [<entity>|...] [<location>] (cause:<TeleportCause>)
@@ -77,7 +77,7 @@ public class TeleportCommand implements AbstractCommand {
 
     @Override
     public int getMaxArgs() {
-        return 2;
+        return 3;
     }
 
     @Override

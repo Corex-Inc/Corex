@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.containers;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
@@ -27,7 +28,7 @@ public class TaskContainer implements AbstractContainer {
     public void init(@NonNull String name, @NonNull JsonObject section) {
         this.name = name;
         this.rawData = section;
-        var defsElement = section.get("definitions");
+        JsonElement defsElement = section.get("definitions");
         if (defsElement != null && defsElement.isJsonPrimitive()) {
             this.definitions = List.of(defsElement.getAsString().replace(" ", "").split("\\|"));
         }

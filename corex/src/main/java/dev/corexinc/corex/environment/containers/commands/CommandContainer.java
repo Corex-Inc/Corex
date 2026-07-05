@@ -53,11 +53,11 @@ public class CommandContainer implements AbstractContainer {
 
     @Override
     public void init(@NonNull String name, @NonNull JsonObject section) {
-        this.name        = name;
-        this.data        = section;
+        this.name = name;
+        this.data = section;
         this.description = getString(section, "description", "");
-        this.aliases     = parseTagList(section, "aliases");
-        this.override    = getBoolean(section, "override", false);
+        this.aliases = parseTagList(section, "aliases");
+        this.override = getBoolean(section, "override", false);
 
         JsonObject tree = section.has("tree") && section.get("tree").isJsonObject()
                 ? section.getAsJsonObject("tree")

@@ -161,9 +161,7 @@ public class StructureTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "entities", (attr, obj) -> {
             ListTag result = new ListTag();
             if (obj.structure == null) return result;
-            for (var entity : obj.structure.getEntities()) {
-                result.addObject(new EntityTag(entity));
-            }
+            obj.structure.getEntities().forEach(entity -> result.addObject(new EntityTag(entity)));
             return result;
         });
     }

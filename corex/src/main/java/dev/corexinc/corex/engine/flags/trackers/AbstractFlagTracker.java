@@ -6,9 +6,8 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 public abstract class AbstractFlagTracker {
 
@@ -18,12 +17,12 @@ public abstract class AbstractFlagTracker {
     protected abstract void deleteRaw(String rootKey);
     public abstract boolean isAsyncSafeCleanup();
 
-    private static final Map<String, AbstractFlagTracker> activeTrackers = new ConcurrentHashMap<>();
+    private static final Pattern DOT = Pattern.compile("\\.");
 
     public AbstractFlagTracker() {}
 
     public AbstractTag getFlag(String keyPath) {
-        String[] parts = keyPath.split("\\.");
+        String[] parts = DOT.split(keyPath);
         String rootKey = parts[0];
 
         String raw = readRaw(rootKey);
@@ -46,7 +45,7 @@ public abstract class AbstractFlagTracker {
     }
 
     public void setFlag(String keyPath, AbstractTag value, long durationMs) {
-        String[] parts = keyPath.split("\\.");
+        String[] parts = DOT.split(keyPath);
         String rootKey = parts[0];
 
         long expireTimeMs = durationMs > 0 ? System.currentTimeMillis() + durationMs : 0;
@@ -75,18 +74,10 @@ public abstract class AbstractFlagTracker {
         }
 
         if (durationMs > 0) {
-            FlagManager.scheduleExpiration(getTrackerId(), keyPath, durationMs);
+            FlagManager.scheduleExpiration(this, keyPath, durationMs);
         } else {
             FlagManager.cancelExpiration(getTrackerId(), keyPath);
         }
-    }
-
-    protected void registerTracker() {
-        activeTrackers.put(getTrackerId().toLowerCase(), this);
-    }
-
-    public static AbstractFlagTracker getTracker(String id) {
-        return activeTrackers.get(id.toLowerCase());
     }
 
     public void cleanUpExpiredFlag(String keyPath) {

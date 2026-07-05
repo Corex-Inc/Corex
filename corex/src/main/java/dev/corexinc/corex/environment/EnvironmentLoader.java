@@ -159,6 +159,7 @@ public class EnvironmentLoader {
                 RemoveCommand.class,
                 InventoryCommand.class,
                 DialogCommand.class,
+                TimeCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -172,6 +173,7 @@ public class EnvironmentLoader {
                 DurationTag.class,
                 WorldTag.class,
                 ContextTag.class,
+                QuaternionTag.class,
                 UtilTag.class,
                 RandomTag.class,
                 ItemTag.class,

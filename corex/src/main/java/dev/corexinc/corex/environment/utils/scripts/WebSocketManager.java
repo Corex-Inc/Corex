@@ -34,7 +34,7 @@ public class WebSocketManager {
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     SchedulerAdapter.get().runLater(() -> WebsocketScriptEvent.fireClose(id, code, reason), 1L);
-                    clients.remove(id);
+                    clients.remove(id, this);
                 }
 
                 @Override

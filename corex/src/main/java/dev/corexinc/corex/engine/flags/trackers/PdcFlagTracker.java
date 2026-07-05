@@ -1,10 +1,15 @@
 package dev.corexinc.corex.engine.flags.trackers;
 
 import dev.corexinc.corex.Corex;
+import dev.corexinc.corex.engine.utils.Position;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.persistence.PersistentDataType;
+
+import java.util.Optional;
 
 public class PdcFlagTracker extends AbstractFlagTracker {
 
@@ -14,7 +19,6 @@ public class PdcFlagTracker extends AbstractFlagTracker {
     public PdcFlagTracker(PersistentDataHolder holder, String trackerId) {
         this.holder = holder;
         this.trackerId = trackerId;
-        this.registerTracker();
     }
 
     @Override
@@ -25,6 +29,14 @@ public class PdcFlagTracker extends AbstractFlagTracker {
     @Override
     public String getTrackerId() {
         return trackerId;
+    }
+
+    @Override
+    public Optional<Position> getSchedulerPosition() {
+        if (holder instanceof Entity entity) {
+            return Optional.of(BukkitSchedulerAdapter.toPosition(entity.getLocation()));
+        }
+        return Optional.empty();
     }
 
     private NamespacedKey getKey(String rootKey) {

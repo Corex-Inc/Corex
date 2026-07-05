@@ -1,11 +1,14 @@
 package dev.corexinc.corex.environment.commands.player;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.MaterialTag;
@@ -84,27 +87,31 @@ public class ToastCommand implements AbstractCommand {
         return true;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, AbstractTag.class)
+            .optionalPrefix("frame", ElementTag.class, "task")
+            .optionalPrefix("icon", MaterialTag.class)
+            .optionalPrefix("targets", ListTag.class)
+            .build();
+
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        AbstractTag textTag = instruction.getLinearObject(0, queue);
-        if (textTag == null) {
-            Debugger.echoError(queue, "Toast message cannot be empty!");
-            return;
-        }
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
 
-        String frameRaw = instruction.getPrefix("frame", queue);
-        final String frame = frameRaw != null ? frameRaw.toLowerCase() : "task";
+        AbstractTag textTag = args.linear(0);
+
+        ElementTag frameTag = args.prefix("frame");
+        final String frame = frameTag.asString().toLowerCase();
         if (!frame.equals("task") && !frame.equals("challenge") && !frame.equals("goal")) {
             Debugger.echoError(queue, "Invalid frame '" + frame + "'. Valid frames are: task, challenge, goal.");
             return;
         }
 
-        AbstractTag iconTag = instruction.getPrefixObject("icon", queue);
+        MaterialTag iconTag = args.prefix("icon");
         Material tempIcon = Material.DIAMOND;
         if (iconTag != null) {
-            MaterialTag matTag = iconTag instanceof MaterialTag ? (MaterialTag) iconTag : new MaterialTag(iconTag.identify());
-            Material parsed = matTag.getMaterial();
-
+            Material parsed = iconTag.getMaterial();
             if (parsed != null && parsed.isItem()) {
                 tempIcon = parsed;
             } else {
@@ -113,7 +120,7 @@ public class ToastCommand implements AbstractCommand {
         }
         final Material iconMaterial = tempIcon;
 
-        List<Player> targetPlayers = getTargets(queue, instruction);
+        List<Player> targetPlayers = getTargets(queue, args.prefix("targets"));
         if (targetPlayers.isEmpty()) return;
 
         final Component message = textTag.asComponent() != null ? textTag.asComponent() : Component.text(textTag.identify());
@@ -136,12 +143,11 @@ public class ToastCommand implements AbstractCommand {
         }
     }
 
-    private List<Player> getTargets(ScriptQueue queue, Instruction instruction) {
-        String targetsRaw = instruction.getPrefix("targets", queue);
+    private List<Player> getTargets(ScriptQueue queue, ListTag targetsList) {
         List<Player> targetPlayers = new ArrayList<>();
 
-        if (targetsRaw != null) {
-            new ListTag(targetsRaw).filter(PlayerTag.class, queue).forEach(p -> {
+        if (targetsList != null) {
+            targetsList.filter(PlayerTag.class, queue).forEach(p -> {
                 Player player = p.getPlayer();
                 if (player != null && player.isOnline()) targetPlayers.add(player);
             });
@@ -153,7 +159,7 @@ public class ToastCommand implements AbstractCommand {
         }
 
         if (targetPlayers.isEmpty()) {
-            if (targetsRaw == null) {
+            if (targetsList == null) {
                 Debugger.echoError(queue, "No online targets found and no player attached to the queue.");
             }
         }

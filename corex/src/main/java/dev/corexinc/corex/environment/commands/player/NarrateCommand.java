@@ -54,7 +54,7 @@ public class NarrateCommand implements AbstractCommand {
     }
 
     private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
-            .requireLinear(0, ElementTag.class)
+            .requireLinear(0, AbstractTag.class)
             .optionalPrefix("targets", ListTag.class)
             .build();
 

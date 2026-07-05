@@ -35,9 +35,9 @@ public class Corex extends JavaPlugin {
 
     private CorexRegistry registry;
 
-    private static boolean IS_FOLIA  = false;
+    private static boolean IS_FOLIA = false;
     private static boolean IS_CANVAS = false;
-    private static boolean IS_TEST   = false;
+    private static boolean IS_TEST = false;
 
     @Override
     public void onLoad() {
@@ -121,7 +121,7 @@ public class Corex extends JavaPlugin {
         if (!isTest()) {
             try {
                 getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-                    event.registrar().register("run",  new RunCommand());
+                    event.registrar().register("run", new RunCommand());
                     event.registrar().register("runs", new RunsCommand());
                     CommandManager.INSTANCE.syncAll(event.registrar());
                 });
@@ -163,7 +163,7 @@ public class Corex extends JavaPlugin {
         IS_TEST = Bukkit.getName().equalsIgnoreCase("ServerMock");
     }
 
-    public static boolean isFolia()  { return IS_FOLIA; }
-    public static boolean isTest()   { return IS_TEST; }
+    public static boolean isFolia() { return IS_FOLIA; }
+    public static boolean isTest() { return IS_TEST; }
     public static boolean isCanvas() { return IS_CANVAS; }
 }

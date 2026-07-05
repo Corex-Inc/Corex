@@ -30,6 +30,49 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+/* @doc command
+ *
+ * @Name Structure
+ * @Syntax structure [place/delete/create] [structure:<structure>] (location:<location>) (offset:<location>) (centered) (rotation:<rotation>) (mirror:<mirror>) (palette:<#>) (integrity:<#>) (saveToDisk) (includeEntities) (noPhysics) (area:<area>)
+ * @RequiredArgs 1
+ * @MaxArgs 11
+ * @Waitable
+ * @ShortDescription Places, captures or deletes structures.
+ *
+ * @Implements Structure
+ *
+ * @Description
+ * Works with vanilla structure templates, the same format structure blocks use.
+ * The template can be named via structure:<structure> or as the second argument.
+ *
+ * "place" pastes a template into the world at location:. Optional tweaks:
+ * offset: shifts the paste, "centered" centers it on the location, rotation:
+ * (none/clockwise_90/180/counterclockwise_90) and mirror: (none/left_right/front_back)
+ * transform it, palette: picks a variant for multi-palette templates, integrity:
+ * from 0.0 to 1.0 randomly skips blocks for a decayed look, "includeEntities"
+ * pastes stored entities too, and "noPhysics" suppresses block updates during
+ * the paste so torches and rails don't pop off.
+ *
+ * "create" captures the blocks inside area: (a CuboidTag, EllipsoidTag or
+ * PolygonTag) into a new template under the given key. Pass "saveToDisk" to
+ * write it into the world's structure folder so it survives restarts.
+ *
+ * "delete" unregisters a template and removes its file from disk.
+ *
+ * All three actions can be held with ~ to pause the queue until the work finishes.
+ *
+ * @Usage
+ * // Paste a saved arena at a marker location.
+ * - ~structure place structure:myserver:arena location:<[arenaOrigin]> noPhysics
+ *
+ * @Usage
+ * // Capture a build between two corners and keep it on disk.
+ * - structure create structure:myserver:house area:<[cornerA].toCuboid[<[cornerB]>]> saveToDisk
+ *
+ * @Usage
+ * // Throw the template away.
+ * - structure delete structure:myserver:house
+ */
 public class StructureCommand implements AbstractCommand, Listener {
 
     private record Bounds(Location origin, BlockVector size) {}

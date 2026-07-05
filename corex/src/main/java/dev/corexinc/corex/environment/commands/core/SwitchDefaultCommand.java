@@ -6,6 +6,29 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import org.jspecify.annotations.NonNull;
 
+/* @doc command
+ *
+ * @Name Default
+ * @Syntax default
+ * @RequiredArgs 0
+ * @MaxArgs 0
+ * @ShortDescription The fallback branch of a 'switch' block.
+ *
+ * @Implements Default
+ *
+ * @Description
+ * The branch a 'switch' falls into when no 'case' matched. At most one per switch,
+ * conventionally written last. Like 'case', it only means something inside a
+ * switch block; anywhere else it logs an error.
+ *
+ * @Usage
+ * // Catch unrecognized input.
+ * - switch <[command]>:
+ *   - case start:
+ *     - narrate "Starting..."
+ *   - default:
+ *     - narrate "Unknown subcommand '<[command]>'."
+ */
 public class SwitchDefaultCommand implements AbstractCommand {
 
     @Override

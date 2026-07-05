@@ -10,6 +10,7 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -31,6 +32,9 @@ import java.util.List;
  *
  * Use dot-notation to store nested data inside a map flag (e.g. "flag <player> stats.kills 5").
  *
+ * Providing only a flag name with no value sets the flag to true, so "flag <player> isVip"
+ * is the same as "flag <player> isVip true".
+ *
  * Optionally specify "expire:<duration>" to automatically remove the flag after the given time.
  * When a flag expires, the FlagExpireEvent fires and scripts listening to it can intercept removal.
  *
@@ -44,6 +48,10 @@ import java.util.List;
  * @Usage
  * // Set a flag on the player.
  * - flag <player> isVip true
+ *
+ * @Usage
+ * // Same thing - a bare flag name defaults to true.
+ * - flag <player> isVip
  *
  * @Usage
  * // Increment a numeric flag.
@@ -81,7 +89,7 @@ public class FlagCommand implements AbstractCommand {
 
     @Override
     public int getMaxArgs() {
-        return 3;
+        return 4;
     }
 
     @Override
@@ -133,7 +141,7 @@ public class FlagCommand implements AbstractCommand {
         AbstractTag finalValue;
 
         if (action == null) {
-            finalValue = valueObj;
+            finalValue = valueObj != null ? valueObj : new ElementTag(true);
         } else {
             AbstractTag currentFlag = tracker.getFlag(keyPath);
             finalValue = action.apply(currentFlag, param, valueObj, queue);

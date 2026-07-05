@@ -32,6 +32,10 @@ public class Debugger {
     public static Mode getMode() { return mode; }
     public static void setMode(Mode value) { mode = value; }
 
+    public static boolean shouldReport(ScriptQueue queue) {
+        return mode == Mode.ALL && (queue == null || !queue.isSilent());
+    }
+
     public static void updateDebugMode(String raw) {
         Mode debugMode;
         try {

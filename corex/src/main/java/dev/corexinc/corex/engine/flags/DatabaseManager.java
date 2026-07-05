@@ -2,6 +2,7 @@ package dev.corexinc.corex.engine.flags;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 
 import java.io.File;
@@ -46,6 +47,7 @@ public class DatabaseManager {
 
         try (Connection conn = ds.getConnection(); Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
+            stmt.executeUpdate("DELETE FROM flags WHERE expire_time > 0 AND expire_time <= " + System.currentTimeMillis());
         } catch (Exception e) {
             CorexLogger.error("Error creating SQL table: " + e.getMessage());
         }
@@ -56,5 +58,6 @@ public class DatabaseManager {
             if (!ds.isClosed()) ds.close();
         }
         pools.clear();
+        SqlFlagTracker.clearCache();
     }
 }

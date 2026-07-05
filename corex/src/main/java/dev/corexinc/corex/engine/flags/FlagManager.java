@@ -62,11 +62,15 @@ public class FlagManager {
         sleeperThread.start();
     }
 
-    public static void scheduleExpiration(String trackerId, String flagPath, long durationMs) {
+    public static void scheduleExpiration(AbstractFlagTracker tracker, String flagPath, long durationMs) {
         long expireTime = System.currentTimeMillis() + durationMs;
-        long version = versions.computeIfAbsent(versionKey(trackerId, flagPath), k -> new AtomicLong())
-                .incrementAndGet();
-        FlagTask task = new FlagTask(trackerId, flagPath, expireTime, version);
+        long[] version = new long[1];
+        versions.compute(versionKey(tracker.getTrackerId(), flagPath), (key, current) -> {
+            AtomicLong counter = current != null ? current : new AtomicLong();
+            version[0] = counter.incrementAndGet();
+            return counter;
+        });
+        FlagTask task = new FlagTask(tracker, flagPath, expireTime, version[0]);
 
         synchronized (monitor) {
             queue.add(task);
@@ -77,66 +81,93 @@ public class FlagManager {
     }
 
     public static void cancelExpiration(String trackerId, String flagPath) {
-        AtomicLong version = versions.get(versionKey(trackerId, flagPath));
-        if (version != null) version.incrementAndGet();
+        versions.computeIfPresent(versionKey(trackerId, flagPath), (key, version) -> {
+            version.incrementAndGet();
+            return version;
+        });
     }
 
     private static String versionKey(String trackerId, String flagPath) {
         return trackerId + " " + flagPath;
     }
 
-    private static void handleExpiration(FlagTask task) {
+    private static boolean isCurrent(FlagTask task) {
         AtomicLong version = versions.get(versionKey(task.trackerId, task.flagPath));
-        if (version == null || version.get() != task.version) return;
+        return version != null && version.get() == task.version;
+    }
 
-        AbstractFlagTracker tracker = AbstractFlagTracker.getTracker(task.trackerId);
-        if (tracker == null) return;
+    private static void forget(FlagTask task) {
+        versions.computeIfPresent(versionKey(task.trackerId, task.flagPath),
+                (key, version) -> version.get() == task.version ? null : version);
+    }
 
-        AbstractTag value = tracker.getFlag(task.flagPath);
-        if (value == null) return;
+    private static void handleExpiration(FlagTask task) {
+        if (!isCurrent(task)) return;
 
-        AbstractTag decision = null;
-        if (expirationHandler != null) {
-            decision = expirationHandler.onExpired(task.trackerId, task.flagPath, value);
-        }
+        Runnable handling = () -> {
+            if (!isCurrent(task)) return;
 
-        if (decision != null) {
-            String result = decision.identify().toLowerCase();
-
-            if (result.equals("true")) {
-                tracker.setFlag(task.flagPath, value, 0);
+            AbstractFlagTracker tracker = task.tracker;
+            AbstractTag value = tracker.getFlag(task.flagPath);
+            if (value == null) {
+                forget(task);
                 return;
             }
 
-            if (decision instanceof DurationTag dt) {
-                tracker.setFlag(task.flagPath, value, dt.getMilliseconds());
-                return;
+            AbstractTag decision = null;
+            if (expirationHandler != null) {
+                decision = expirationHandler.onExpired(task.trackerId, task.flagPath, value);
             }
-        }
 
-        if (tracker.isAsyncSafeCleanup()) {
-            SchedulerAdapter.get().runAsync(() -> {
-                try {
-                    tracker.deleteFlagPhysically(task.flagPath);
-                } catch (Exception e) {
-                    CorexLogger.error("Error clearing flag in background " + task.flagPath + ": " + e.getMessage());
+            if (decision != null) {
+                String result = decision.identify().toLowerCase();
+
+                if (result.equals("true")) {
+                    tracker.setFlag(task.flagPath, value, 0);
+                    return;
                 }
-            });
-        } else {
-            tracker.getSchedulerPosition().ifPresentOrElse(
-                    pos -> SchedulerAdapter.get().runAt(pos, () -> tracker.deleteFlagPhysically(task.flagPath)),
-                    () -> SchedulerAdapter.get().run(() -> tracker.deleteFlagPhysically(task.flagPath))
-            );
-        }
+
+                if (decision instanceof DurationTag dt) {
+                    tracker.setFlag(task.flagPath, value, dt.getMilliseconds());
+                    return;
+                }
+            }
+
+            if (tracker.isAsyncSafeCleanup()) {
+                SchedulerAdapter.get().runAsync(() -> {
+                    try {
+                        tracker.deleteFlagPhysically(task.flagPath);
+                    } catch (Exception e) {
+                        CorexLogger.error("Error clearing flag in background " + task.flagPath + ": " + e.getMessage());
+                    }
+                    forget(task);
+                });
+            } else {
+                tracker.deleteFlagPhysically(task.flagPath);
+                forget(task);
+            }
+        };
+
+        task.tracker.getSchedulerPosition().ifPresentOrElse(
+                pos -> SchedulerAdapter.get().runAt(pos, handling),
+                () -> SchedulerAdapter.get().run(handling)
+        );
     }
 
     private static class FlagTask implements Comparable<FlagTask> {
+        final AbstractFlagTracker tracker;
         final String trackerId;
         final String flagPath;
         final long expireTime;
         final long version;
 
-        FlagTask(String t, String f, long e, long v) { trackerId = t; flagPath = f; expireTime = e; version = v; }
+        FlagTask(AbstractFlagTracker tracker, String flagPath, long expireTime, long version) {
+            this.tracker = tracker;
+            this.trackerId = tracker.getTrackerId();
+            this.flagPath = flagPath;
+            this.expireTime = expireTime;
+            this.version = version;
+        }
 
         @Override
         public int compareTo(FlagTask o) { return Long.compare(this.expireTime, o.expireTime); }

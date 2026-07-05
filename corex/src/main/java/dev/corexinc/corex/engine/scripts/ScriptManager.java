@@ -17,7 +17,7 @@ import java.util.*;
 
 public class ScriptManager {
 
-    private static final Map<String, AbstractContainer> containers = new HashMap<>();
+    private static volatile Map<String, AbstractContainer> containers = Map.of();
     private static final Gson GSON = new Gson();
     public static long lastReloadTime = System.currentTimeMillis();
 
@@ -25,7 +25,7 @@ public class ScriptManager {
     private static CorexRegistry registry;
 
     public static void loadScripts() {
-        containers.clear();
+        Map<String, AbstractContainer> loaded = new HashMap<>();
         File scriptsFolder = new File(dataFolder.toFile(), "scripts");
         if (!scriptsFolder.exists()) {
             scriptsFolder.mkdirs();
@@ -72,13 +72,17 @@ public class ScriptManager {
                         }
                     }
 
-                    containers.put(scriptName, container);
+                    AbstractContainer previous = loaded.put(scriptName, container);
+                    if (previous != null) {
+                        CorexLogger.warn("Duplicate script name '" + scriptName + "' - the definition in " + file.getName() + " overrides an earlier one!");
+                    }
                     loadedCount++;
                 }
             } catch (Exception e) {
                 CorexLogger.error("ERROR while reloading script " + file.getName() + ": " + e.getMessage());
             }
         }
+        containers = loaded;
         CorexLogger.success("Loaded <aqua>" + loadedCount + "</aqua> containers!");
     }
 
@@ -96,14 +100,23 @@ public class ScriptManager {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static List<?> getNestedList(Map<String, Object> root, String path) {
-        Object current = root;
-        for (String part : path.split("\\.")) {
-            if (!(current instanceof Map<?, ?> map)) return null;
-            current = ((Map<String, Object>) map).get(part);
-        }
+        Object current = resolveNested(root, path);
         return current instanceof List<?> list ? list : null;
+    }
+
+    private static Object resolveNested(Map<?, ?> map, String path) {
+        if (map.containsKey(path)) return map.get(path);
+
+        int dotIndex = path.length();
+        while ((dotIndex = path.lastIndexOf('.', dotIndex - 1)) > 0) {
+            Object child = map.get(path.substring(0, dotIndex));
+            if (child instanceof Map<?, ?> childMap) {
+                Object resolved = resolveNested(childMap, path.substring(dotIndex + 1));
+                if (resolved != null) return resolved;
+            }
+        }
+        return null;
     }
 
     private static void findScriptsRecursively(File folder, List<File> list) {

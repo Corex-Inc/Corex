@@ -1,6 +1,8 @@
 package dev.corexinc.corex.environment.commands.entity;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -69,19 +71,20 @@ public class MountCommand implements AbstractCommand {
 
     @Override
     public int getMaxArgs() {
-        return 1;
+        return 2;
     }
+
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ListTag.class)
+            .optionalFlag("cancel")
+            .build();
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
 
-        AbstractTag listArg = instruction.getLinearObject(0, queue);
-        if (listArg == null) {
-            Debugger.echoError(queue, "Mount: entity list cannot be null.");
-            return;
-        }
-
-        ListTag list = listArg instanceof ListTag lt ? lt : new ListTag(listArg.identify());
+        ListTag list = args.linear(0);
 
         List<Entity> entities = new ArrayList<>();
         for (AbstractTag item : list.getList()) {
@@ -94,14 +97,14 @@ public class MountCommand implements AbstractCommand {
             entities.add(entity);
         }
 
-        boolean cancel = instruction.hasFlag("cancel");
+        boolean cancel = args.flag("cancel");
 
         if (cancel) {
             for (Entity entity : entities) entity.leaveVehicle();
             Debugger.report(queue, instruction,
-                    "List",    list.identify(),
+                    "List", list.identify(),
                     "Entities", String.valueOf(entities.size()),
-                    "Action",  "cancel"
+                    "Action", "cancel"
             );
             return;
         }
@@ -125,10 +128,10 @@ public class MountCommand implements AbstractCommand {
         }
 
         Debugger.report(queue, instruction,
-                "List",    list.identify(),
-                "Chain",   String.valueOf(entities.size()),
+                "List", list.identify(),
+                "Chain", String.valueOf(entities.size()),
                 "Mounted", mounted + "/" + (entities.size() - 1),
-                "Action",  "mount"
+                "Action", "mount"
         );
     }
 
