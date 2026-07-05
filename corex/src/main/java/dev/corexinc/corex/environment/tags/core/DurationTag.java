@@ -67,7 +67,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.in_ticks
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "ticks", (attr, obj) ->
-                new ElementTag(obj.ticks));
+                new ElementTag(obj.ticks)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -82,7 +82,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.in_seconds
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "seconds", (attr, obj) ->
-                new ElementTag(obj.ticks / TICKS_PER_SECOND));
+                new ElementTag(obj.ticks / TICKS_PER_SECOND)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -97,7 +97,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.in_minutes
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "minutes", (attr, obj) ->
-                new ElementTag(obj.ticks / TICKS_PER_MINUTE));
+                new ElementTag(obj.ticks / TICKS_PER_MINUTE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -112,7 +112,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.in_hours
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "hours", (attr, obj) ->
-                new ElementTag(obj.ticks / TICKS_PER_HOUR));
+                new ElementTag(obj.ticks / TICKS_PER_HOUR)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -127,7 +127,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.in_milliseconds
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "milliseconds", (attr, obj) ->
-                new ElementTag(obj.ticks * MS_PER_TICK));
+                new ElementTag(obj.ticks * MS_PER_TICK)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -143,7 +143,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.formatted
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "formatted", (attr, obj) ->
-                new ElementTag(obj.format()));
+                new ElementTag(obj.format())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -158,7 +158,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.add[<duration>]
          */
         TAG_PROCESSOR.registerTag(DurationTag.class, "add", (attr, obj) ->
-                new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks())).test("4s");
+                new DurationTag(obj.ticks + new DurationTag(attr.getParam()).getTicks())).test("4s").setAsyncSafe();
 
         /* @doc tag
          *
@@ -173,7 +173,7 @@ public class DurationTag implements AbstractTag {
          * @Implements DurationTag.sub[<duration>]
          */
         TAG_PROCESSOR.registerTag(DurationTag.class, "sub", (attr, obj) ->
-                new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks()))).test("4s");
+                new DurationTag(Math.max(0.0, obj.ticks - new DurationTag(attr.getParam()).getTicks()))).test("4s").setAsyncSafe();
 
         /* @doc tag
          *
@@ -189,7 +189,7 @@ public class DurationTag implements AbstractTag {
             String param = attr.getParam();
             if (param == null || param.isBlank()) return obj;
             return new DurationTag(obj.ticks * new DurationTag(param).getTicks());
-        }).test("4s");
+        }).test("4s").setAsyncSafe();
 
         /* @doc tag
          *
@@ -206,7 +206,7 @@ public class DurationTag implements AbstractTag {
             if (param == null || param.isBlank()) return obj;
             double divisor = new DurationTag(param).getTicks();
             return divisor != 0 ? new DurationTag(obj.ticks / divisor) : new DurationTag(0.0);
-        }).test("4s");
+        }).test("4s").setAsyncSafe();
     }
 
     public DurationTag(String raw) {

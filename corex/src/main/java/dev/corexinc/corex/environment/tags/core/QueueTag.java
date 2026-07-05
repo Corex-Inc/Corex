@@ -34,7 +34,7 @@ public class QueueTag implements AbstractTag {
     private static final String PREFIX = "q";
     private final ScriptQueue queue;
 
-    public static final TagProcessor<QueueTag> PROCESSOR = new TagProcessor<>();
+    public static final TagProcessor<QueueTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("queue", attr -> {
@@ -54,7 +54,7 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns the unique identifier of the queue.
          */
-        PROCESSOR.registerTag(ElementTag.class, "id", (attr, obj) -> new ElementTag(obj.queue.getId()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "id", (attr, obj) -> new ElementTag(obj.queue.getId())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -66,7 +66,7 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns 'true' if the queue is running asynchronously (not on the main/region thread).
          */
-        PROCESSOR.registerTag(ElementTag.class, "isAsync", (attr, obj) -> new ElementTag(obj.queue.isAsync()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isAsync", (attr, obj) -> new ElementTag(obj.queue.isAsync())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -78,7 +78,7 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns 'true' if the queue has been cancelled.
          */
-        PROCESSOR.registerTag(ElementTag.class, "isCancelled", (attr, obj) -> new ElementTag(obj.queue.isCancelled()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isCancelled", (attr, obj) -> new ElementTag(obj.queue.isCancelled())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -91,12 +91,12 @@ public class QueueTag implements AbstractTag {
          * Returns the region (thread) that this queue belongs to.
          * If the queue has no anchor location, it returns the global region ('reg@global').
          */
-        PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> {
             Position anchor = obj.queue.getAnchorPosition();
             if (anchor == null) return new RegionTag("global");
             Location loc = BukkitSchedulerAdapter.toLocation(anchor);
             return new RegionTag(loc.getWorld(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -108,11 +108,11 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns a ListTag of all values returned by the queue using the 'determine' command.
          */
-        PROCESSOR.registerTag(ListTag.class, "returns", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "returns", (attr, obj) -> {
             ListTag list = new ListTag("");
             for (AbstractTag tag : obj.queue.getReturns()) list.addObject(tag);
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -124,10 +124,10 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns the value of a specific definition (variable) stored within the queue.
          */
-        PROCESSOR.registerTag(AbstractTag.class, "definition", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "definition", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return obj.queue.getDefinition(attr.getParam());
-        }).test("testDef");
+        }).test("testDef").setAsyncSafe();
 
         /* @doc tag
          *
@@ -139,13 +139,13 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns a MapTag of all definitions (variables) currently stored in the queue.
          */
-        PROCESSOR.registerTag(MapTag.class, "definitions", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(MapTag.class, "definitions", (attr, obj) -> {
             MapTag map = new MapTag("");
             for (Map.Entry<String, AbstractTag> def : obj.queue.getDefinitionsMap().entrySet()) {
                 map.putObject(def.getKey(), def.getValue());
             }
             return map;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -157,7 +157,7 @@ public class QueueTag implements AbstractTag {
          * @Description
          * Returns a linked player of the queue.
          */
-        PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer())).ignoreTest();
+        TAG_PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer())).ignoreTest().setAsyncSafe();
     }
 
     public QueueTag(String id) {
@@ -181,12 +181,12 @@ public class QueueTag implements AbstractTag {
 
     @Override
     public @Nullable AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return PROCESSOR.process(this, attribute);
+        return TAG_PROCESSOR.process(this, attribute);
     }
 
     @Override
     public @NonNull TagProcessor<QueueTag> getProcessor() {
-        return PROCESSOR;
+        return TAG_PROCESSOR;
     }
 
     @Override

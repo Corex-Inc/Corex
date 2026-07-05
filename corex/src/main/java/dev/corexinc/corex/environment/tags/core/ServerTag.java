@@ -104,7 +104,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * - narrate "CPU threads available: <server.availableProcessors>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "availableProcessors", (attr, obj) ->
-                new ElementTag(Runtime.getRuntime().availableProcessors()));
+                new ElementTag(Runtime.getRuntime().availableProcessors())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -123,7 +123,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * - narrate "Running Java: <server.javaVersion>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "javaVersion", (attr, obj) ->
-                new ElementTag(System.getProperty("java.version", "unknown")));
+                new ElementTag(System.getProperty("java.version", "unknown"))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -143,7 +143,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * - narrate "Max heap: <server.ramMax.div[1048576]> MB"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "ramMax", (attr, obj) ->
-                new ElementTag(Runtime.getRuntime().maxMemory()));
+                new ElementTag(Runtime.getRuntime().maxMemory())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -163,7 +163,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * - narrate "Committed heap: <server.ramAllocated.div[1048576]> MB"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "ramAllocated", (attr, obj) ->
-                new ElementTag(Runtime.getRuntime().totalMemory()));
+                new ElementTag(Runtime.getRuntime().totalMemory())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -186,7 +186,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "ramUsage", (attr, obj) -> {
             Runtime r = Runtime.getRuntime();
             return new ElementTag(r.totalMemory() - r.freeMemory());
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -210,7 +210,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "ramFree", (attr, obj) -> {
             Runtime r = Runtime.getRuntime();
             return new ElementTag(r.maxMemory() - r.totalMemory() + r.freeMemory());
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -229,7 +229,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * - narrate "Disk total: <server.diskTotal.div[1073741824]> GB"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "diskTotal", (attr, obj) ->
-                new ElementTag(new File(".").getTotalSpace()));
+                new ElementTag(new File(".").getTotalSpace())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -250,7 +250,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          *   - narrate "Critical: less than 5 GB disk space remaining!"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "diskFree", (attr, obj) ->
-                new ElementTag(new File(".").getUsableSpace()));
+                new ElementTag(new File(".").getUsableSpace())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -275,7 +275,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             if (total == 0) return new ElementTag(0.0);
             long used = total - root.getUsableSpace();
             return new ElementTag((double) used / total);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -296,7 +296,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "hasFile", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return new ElementTag(new File(attr.getParam()).exists());
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -324,7 +324,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             if (entries == null) return list;
             for (File entry : entries) list.addString(entry.getName());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -355,7 +355,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 }
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -377,7 +377,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             Bukkit.getStructureManager().getStructures().forEach((key, structure) ->
                     list.addObject(new StructureTag(structure, key)));
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -403,7 +403,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 list.addObject(new ElementTag(type.getKey().toString()));
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -425,7 +425,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 listTag.addObject(new PlayerTag(player));
             }
             return listTag;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -448,7 +448,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 if (player.isOp()) list.addObject(new PlayerTag(player));
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -472,7 +472,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 list.addObject(new PlayerTag(player.getUniqueId()));
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -495,7 +495,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 if (player.isOp()) list.addObject(new PlayerTag(player.getUniqueId()));
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -525,7 +525,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 }
             }
             return best == null ? null : new PlayerTag(best);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -542,7 +542,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * // Show the configured MOTD
          * - narrate "MOTD: <server.motd>"
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "motd", (attr, obj) -> new ElementTag(Bukkit.motd()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "motd", (attr, obj) -> new ElementTag(Bukkit.motd())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -559,7 +559,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * // Show current slots usage
          * - narrate "<server.onlinePlayers.size>/<server.maxPlayers>"
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "maxPlayers", (attr, obj) -> new ElementTag(Bukkit.getMaxPlayers()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "maxPlayers", (attr, obj) -> new ElementTag(Bukkit.getMaxPlayers())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -581,7 +581,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (Material material : Material.values()) list.addObject(new MaterialTag(material));
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -602,7 +602,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (Particle particle : Particle.values()) list.addString(particle.name().toLowerCase());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -624,7 +624,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (EntityType type : EntityType.values()) list.addString(type.name());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -658,7 +658,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 list.addObject(new BiomeTag(world.getName() + "," + key.toString()));
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -682,7 +682,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             Iterator<Advancement> it = Bukkit.advancementIterator();
             while (it.hasNext()) list.addString(it.next().getKey().toString());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -704,7 +704,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (Art art : Registry.ART) list.addString(art.assetId().toString());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -731,7 +731,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             }
 
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -760,7 +760,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 }
             }
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -799,7 +799,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             Date expiration = entry.getExpiration();
             map.putObject("expirationTime", new ElementTag(expiration != null ? expiration.toInstant().toString() : "never"));
             return map;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -815,7 +815,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Usage
          * - narrate "Running on: <server.platform>"
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "platform", (attr, obj) -> new ElementTag(Bukkit.getName()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "platform", (attr, obj) -> new ElementTag(Bukkit.getName())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -832,7 +832,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Usage
          * - narrate "Bukkit API: <server.platformVersion>"
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "platformVersion", (attr, obj) -> new ElementTag(Bukkit.getBukkitVersion()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "platformVersion", (attr, obj) -> new ElementTag(Bukkit.getBukkitVersion())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -849,7 +849,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Usage
          * - narrate "MC version: <server.version>"
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "version", (attr, obj) -> new ElementTag(Bukkit.getMinecraftVersion()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "version", (attr, obj) -> new ElementTag(Bukkit.getMinecraftVersion())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -866,7 +866,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * - narrate "CoreX v<server.corexVersion>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "corexVersion", (attr, obj) ->
-                new ElementTag(Corex.getInstance().getPluginMeta().getVersion()));
+                new ElementTag(Corex.getInstance().getPluginMeta().getVersion())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -890,7 +890,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             for (EntityDamageEvent.DamageCause cause : EntityDamageEvent.DamageCause.values())
                 list.addString(cause.name().toLowerCase());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -913,7 +913,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (PotionEffectType type : Registry.EFFECT) list.addString(type.getKey().toString());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -935,7 +935,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (Enchantment ench : Registry.ENCHANTMENT) list.addString(ench.getKey().toString());
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -961,7 +961,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             if (worlds.isEmpty()) return list;
             for (String rule : worlds.getFirst().getGameRules()) list.addString(rule);
             return list;
-        });
+        }).setAsyncSafe();
 
         /* @doc mechanism
          *

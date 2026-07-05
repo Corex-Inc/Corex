@@ -83,7 +83,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
             Object fetched = ObjectFetcher.pickObject(attr.getParam());
             LocationTag lt = fetched instanceof LocationTag ? (LocationTag) fetched : new LocationTag(attr.getParam());
             return new ElementTag(obj.contains(lt.getLocation()));
-        }).test("l@5,64,5,world");
+        }).test("l@5,64,5,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -98,7 +98,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
          *
          * @Implements AreaObject.center
          */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> obj.getCenter());
+        TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> obj.getCenter()).setAsyncSafe();
 
         /* @doc tag
          *
@@ -116,7 +116,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
             ListTag result = new ListTag();
             for (LocationTag loc : obj.getBlocks()) result.addObject(loc);
             return result;
-        });
+        }).setAsyncSafe();
     }
 
     public PolygonTag(World world, double yMin, double yMax, List<double[]> points) {

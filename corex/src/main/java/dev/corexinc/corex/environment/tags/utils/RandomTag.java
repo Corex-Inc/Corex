@@ -62,7 +62,7 @@ public class RandomTag implements AbstractTag {
          * @Implements util.random_uuid
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
-                new ElementTag(UUID.randomUUID().toString()));
+                new ElementTag(UUID.randomUUID().toString())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -111,7 +111,7 @@ public class RandomTag implements AbstractTag {
             }
 
             return new ElementTag(r.nextInt(Math.max(1, min)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -157,7 +157,7 @@ public class RandomTag implements AbstractTag {
             }
 
             return new ElementTag(r.nextDouble() * min);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -172,7 +172,7 @@ public class RandomTag implements AbstractTag {
          * @Implements util.random_boolean
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "boolean", (attr, obj) ->
-                new ElementTag(obj.getRandom().nextBoolean()));
+                new ElementTag(obj.getRandom().nextBoolean())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -211,7 +211,7 @@ public class RandomTag implements AbstractTag {
             }
 
             return new ElementTag(SimplexNoiseGenerator.getNoise(x, y, z));
-        }).test("x=1;y=2;z=14");
+        }).test("x=1;y=2;z=14").setAsyncSafe();
     }
 
     public RandomTag(String raw) {

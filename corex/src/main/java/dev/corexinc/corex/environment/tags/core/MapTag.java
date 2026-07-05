@@ -59,7 +59,7 @@ public class MapTag implements AbstractTag {
          *
          * @Implements MapTag.size
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.map.size()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) -> new ElementTag(obj.map.size())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -76,7 +76,7 @@ public class MapTag implements AbstractTag {
          *
          * @Implements MapTag.is_empty
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isEmpty", (attr, obj) -> new ElementTag(obj.map.isEmpty()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isEmpty", (attr, obj) -> new ElementTag(obj.map.isEmpty())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -97,7 +97,7 @@ public class MapTag implements AbstractTag {
             ListTag result = new ListTag();
             obj.map.keySet().forEach(result::addString);
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -138,7 +138,7 @@ public class MapTag implements AbstractTag {
                         .ifPresent(e -> result.addString(e.getKey()));
             }
             return result;
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -162,7 +162,7 @@ public class MapTag implements AbstractTag {
             result.map.putAll(obj.map);
             result.map.putAll(new MapTag(attr.getParam()).map);
             return result;
-        }).test("<map[testKey=testValue]>");
+        }).test("<map[testKey=testValue]>").setAsyncSafe();
 
         /* @doc tag
          *
@@ -185,7 +185,7 @@ public class MapTag implements AbstractTag {
             MapTag result = new MapTag();
             entries.forEach(e -> result.map.put(e.getKey(), e.getValue()));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -211,7 +211,7 @@ public class MapTag implements AbstractTag {
             ListTag result = new ListTag();
             obj.map.forEach((k, v) -> result.addString(k + sep + v));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -239,7 +239,7 @@ public class MapTag implements AbstractTag {
                 result.addObject(pair);
             });
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -260,7 +260,7 @@ public class MapTag implements AbstractTag {
             ListTag result = new ListTag();
             obj.map.values().forEach(v -> result.addObject(ObjectFetcher.pickObject(v)));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -287,7 +287,7 @@ public class MapTag implements AbstractTag {
                 if (!obj.map.containsKey(key.identify())) return new ElementTag(false);
             }
             return new ElementTag(true);
-        }).test("a");
+        }).test("a").setAsyncSafe();
 
         /* @doc tag
          *
@@ -345,7 +345,7 @@ public class MapTag implements AbstractTag {
                 current = mapTag.getObject(key);
             }
             return current;
-        }).test("a");
+        }).test("a").setAsyncSafe();
 
         /* @doc tag
          *
@@ -372,7 +372,7 @@ public class MapTag implements AbstractTag {
                 if (val != null) result.map.put(k, val);
             }
             return result;
-        }).test("a");
+        }).test("a").setAsyncSafe();
 
         /* @doc tag
          *
@@ -400,7 +400,7 @@ public class MapTag implements AbstractTag {
             result.map.putAll(obj.map);
             param.map.forEach((k, v) -> result.putDeepObject(k, ObjectFetcher.pickObject(v)));
             return result;
-        }).test("c=3");
+        }).test("c=3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -429,7 +429,7 @@ public class MapTag implements AbstractTag {
                 result.map.remove(key.identify());
             }
             return result;
-        }).test("b");
+        }).test("b").setAsyncSafe();
 
         /* @doc tag
          *
@@ -451,7 +451,7 @@ public class MapTag implements AbstractTag {
             MapTag result = new MapTag();
             obj.map.forEach((k, v) -> result.putObject(v, new ElementTag(k)));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -474,7 +474,7 @@ public class MapTag implements AbstractTag {
             MapTag result = new MapTag();
             entries.forEach(e -> result.map.put(e.getKey(), e.getValue()));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -506,7 +506,7 @@ public class MapTag implements AbstractTag {
                 return new ElementTag(JsonHelper.toPrettyString(json));
             }
             return new ElementTag(json.toString());
-        });
+        }).setAsyncSafe();
     }
 
     public MapTag() {}

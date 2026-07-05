@@ -61,7 +61,7 @@ public class UtilTag implements AbstractTag {
          * @Implements util.current_tick
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "serverTick", (attr, obj) ->
-                new ElementTag(Bukkit.getServer().getCurrentTick()));
+                new ElementTag(Bukkit.getServer().getCurrentTick())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -76,7 +76,7 @@ public class UtilTag implements AbstractTag {
          * @Implements util.current_time_millis
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "timeMillis", (attr, obj) ->
-                new ElementTag(System.currentTimeMillis()));
+                new ElementTag(System.currentTimeMillis())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -91,7 +91,7 @@ public class UtilTag implements AbstractTag {
          * @Implements util.real_time_since_start
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uptime", (attr, obj) ->
-                new ElementTag(java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime()));
+                new ElementTag(java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -106,7 +106,7 @@ public class UtilTag implements AbstractTag {
          * @Implements util.debug_enabled
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "debugMode", (attr, obj) ->
-                new ElementTag(Debugger.getMode().name()));
+                new ElementTag(Debugger.getMode().name())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -121,7 +121,7 @@ public class UtilTag implements AbstractTag {
          * @Implements util.default_encoding
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "defaultEncoding", (attr, obj) ->
-                new ElementTag(Charset.defaultCharset().name()));
+                new ElementTag(Charset.defaultCharset().name())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -135,7 +135,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.pi
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "pi", (attr, obj) -> new ElementTag(Math.PI));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "pi", (attr, obj) -> new ElementTag(Math.PI)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -149,7 +149,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.e
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "e", (attr, obj) -> new ElementTag(Math.E));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "e", (attr, obj) -> new ElementTag(Math.E)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -163,7 +163,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.tau
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "tau", (attr, obj) -> new ElementTag(Math.PI * 2));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "tau", (attr, obj) -> new ElementTag(Math.PI * 2)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -177,7 +177,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.int_max
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "intMax", (attr, obj) -> new ElementTag(Integer.MAX_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "intMax", (attr, obj) -> new ElementTag(Integer.MAX_VALUE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -191,7 +191,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.int_min
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "intMin", (attr, obj) -> new ElementTag(Integer.MIN_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "intMin", (attr, obj) -> new ElementTag(Integer.MIN_VALUE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -205,7 +205,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.long_max
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "longMax", (attr, obj) -> new ElementTag(Long.MAX_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "longMax", (attr, obj) -> new ElementTag(Long.MAX_VALUE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -219,7 +219,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.long_min
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "longMin", (attr, obj) -> new ElementTag(Long.MIN_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "longMin", (attr, obj) -> new ElementTag(Long.MIN_VALUE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -233,7 +233,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.short_max
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "shortMax", (attr, obj) -> new ElementTag(Short.MAX_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "shortMax", (attr, obj) -> new ElementTag(Short.MAX_VALUE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -247,7 +247,7 @@ public class UtilTag implements AbstractTag {
          *
          * @Implements util.short_min
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "shortMin", (attr, obj) -> new ElementTag(Short.MIN_VALUE));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "shortMin", (attr, obj) -> new ElementTag(Short.MIN_VALUE)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -314,7 +314,7 @@ public class UtilTag implements AbstractTag {
             }
 
             return resultList;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -333,7 +333,7 @@ public class UtilTag implements AbstractTag {
                 catch (NumberFormatException ignored) {}
             }
             return RandomTag.getShared();
-        });
+        }).setAsyncSafe();
     }
 
     public UtilTag(String raw) {}

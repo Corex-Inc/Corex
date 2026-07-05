@@ -67,7 +67,7 @@ public class EnvTag implements AbstractTag {
          *
          * @Implements SecretTag.key
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> new ElementTag(obj.getKey()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) -> new ElementTag(obj.getKey())).setAsyncSafe();
     }
 
     public EnvTag(String key) {

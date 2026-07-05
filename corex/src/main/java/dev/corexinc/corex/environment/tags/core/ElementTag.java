@@ -145,7 +145,7 @@ public class ElementTag implements AbstractTag {
     public static void register() {
         BaseTagProcessor.registerBaseTag("element", (attribute) -> new ElementTag(attribute.getParam()));
 
-        TAG_PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj);
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj).setAsyncSafe();
 
         /* @doc tag
          *
@@ -159,7 +159,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.to_uppercase
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -173,7 +173,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.to_lowercase
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -187,7 +187,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.length
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -201,7 +201,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.is_integer
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isInteger", (attr, obj) -> new ElementTag(obj.isInt())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -215,7 +215,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.is_decimal
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isDecimal", (attr, obj) -> new ElementTag(obj.isDouble())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -229,7 +229,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.is_boolean
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isBoolean", (attr, obj) -> new ElementTag(obj.isBoolean())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -249,7 +249,7 @@ public class ElementTag implements AbstractTag {
                 return new ElementTag(obj.asDouble() + new ElementTag(attr.getParam()).asDouble());
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -269,7 +269,7 @@ public class ElementTag implements AbstractTag {
                 return new ElementTag(obj.asDouble() - new ElementTag(attr.getParam()).asDouble());
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -289,7 +289,7 @@ public class ElementTag implements AbstractTag {
                 return new ElementTag(obj.asDouble() * new ElementTag(attr.getParam()).asDouble());
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -311,7 +311,7 @@ public class ElementTag implements AbstractTag {
                 Debugger.error("Element '" + obj + "' or '" + attr.getParam() + "is not a valid decimal number!");
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -333,7 +333,7 @@ public class ElementTag implements AbstractTag {
                 Debugger.error("Element '" + obj + "' or '" + attr.getParam() + "is not a valid decimal number!");
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -356,7 +356,7 @@ public class ElementTag implements AbstractTag {
             if (degree == 0) return new ElementTag(1);
 
             return new ElementTag(Math.pow(value, 1.0 / degree));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -376,7 +376,7 @@ public class ElementTag implements AbstractTag {
             double exponent = new ElementTag(attr.getParam()).asDouble();
 
             return new ElementTag(Math.pow(base, exponent));
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -390,7 +390,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.abs
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "abs", (attr, obj) -> new ElementTag(Math.abs(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "abs", (attr, obj) -> new ElementTag(Math.abs(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -407,7 +407,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLessThan", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() < param.asDouble());
-        }).test("22");
+        }).test("22").setAsyncSafe();
 
         /* @doc tag
          *
@@ -424,7 +424,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isMoreThan", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() > param.asDouble());
-        }).test("22");
+        }).test("22").setAsyncSafe();
 
         /* @doc tag
          *
@@ -441,7 +441,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isLessOrEqual", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() <= param.asDouble());
-        }).test("22");
+        }).test("22").setAsyncSafe();
 
         /* @doc tag
          *
@@ -458,7 +458,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "isMoreOrEqual", (attr, obj) -> {
             if (!attr.hasParam() || !(attr.getParamObject() instanceof ElementTag param) || !param.isDouble()) return null;
             return new ElementTag(obj.asDouble() >= param.asDouble());
-        }).test("22");
+        }).test("22").setAsyncSafe();
 
         /* @doc tag
          *
@@ -492,7 +492,7 @@ public class ElementTag implements AbstractTag {
             }
 
             return new ElementTag(resultText);
-        }).test("This is true", "ifFalse[This is false!]");
+        }).test("This is true", "ifFalse[This is false!]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -511,7 +511,7 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "repeat", (attribute, elementTag) -> {
             if (!attribute.hasParam()) return null;
             return new ElementTag(elementTag.element.repeat(new ElementTag(attribute.getParam()).asInt()));
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -535,7 +535,7 @@ public class ElementTag implements AbstractTag {
                 Debugger.echoError(attr.getQueue(), "Failed to parse JSON: " + e.getMessage());
                 return null;
             }
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          * @Name urlEncode
@@ -553,7 +553,7 @@ public class ElementTag implements AbstractTag {
          * - ~fetch "https://api.com/search?q=<[search_query]>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "urlEncode", (attr, obj) ->
-                new ElementTag(URLEncoder.encode(obj.asString(), StandardCharsets.UTF_8).replace("+", "%20")));
+                new ElementTag(URLEncoder.encode(obj.asString(), StandardCharsets.UTF_8).replace("+", "%20"))).setAsyncSafe();
 
         /* @doc tag
          * @Name urlDecode
@@ -571,7 +571,7 @@ public class ElementTag implements AbstractTag {
             } catch (Exception e) {
                 return obj;
             }
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          * @Name cos
@@ -583,7 +583,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the cosine of the specified object
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "cos", (attr, obj) -> new ElementTag(Math.cos(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "cos", (attr, obj) -> new ElementTag(Math.cos(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name acos
@@ -595,7 +595,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the arccosine of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "acos", (attr, obj) -> new ElementTag(Math.acos(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "acos", (attr, obj) -> new ElementTag(Math.acos(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name sin
@@ -607,7 +607,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the sinus of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "sin", (attr, obj) -> new ElementTag(Math.sin(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "sin", (attr, obj) -> new ElementTag(Math.sin(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name asin
@@ -619,7 +619,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the arcsine of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "asin", (attr, obj) -> new ElementTag(Math.asin(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "asin", (attr, obj) -> new ElementTag(Math.asin(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name tgn
@@ -631,7 +631,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the tangent of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "tg", (attr, obj) -> new ElementTag(Math.tan(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "tg", (attr, obj) -> new ElementTag(Math.tan(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name tgh
@@ -643,7 +643,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the hyperbolic tangent of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "tgh", (attr, obj) -> new ElementTag(Math.tanh(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "tgh", (attr, obj) -> new ElementTag(Math.tanh(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name atgn
@@ -655,7 +655,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the atan of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "atg", (attr, obj) -> new ElementTag(Math.atan(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "atg", (attr, obj) -> new ElementTag(Math.atan(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name atg2[]
@@ -673,7 +673,7 @@ public class ElementTag implements AbstractTag {
                 return new ElementTag(Math.atan2(obj.asDouble(), new ElementTag(attr.getParam()).asDouble()));
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          * @Name ctg
@@ -685,7 +685,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the cotangent of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "ctg", (attr, obj) -> new ElementTag(1 / Math.tan(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ctg", (attr, obj) -> new ElementTag(1 / Math.tan(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name actg
@@ -697,7 +697,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the arccotangent of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "actg", (attr, obj) -> new ElementTag(Math.PI / 2 - Math.atan(1 / Math.tan(obj.asDouble()))));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "actg", (attr, obj) -> new ElementTag(Math.PI / 2 - Math.atan(1 / Math.tan(obj.asDouble())))).setAsyncSafe();
 
         /* @doc tag
          * @Name factorial
@@ -715,7 +715,7 @@ public class ElementTag implements AbstractTag {
                 result *= i;
             }
             return new ElementTag(result);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          * @Name ln
@@ -727,7 +727,7 @@ public class ElementTag implements AbstractTag {
          * @Description
          * Returns the natural logarithm of the specified object.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "ln", (attr, obj) -> new ElementTag(Math.log(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ln", (attr, obj) -> new ElementTag(Math.log(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          * @Name log[]
@@ -745,7 +745,7 @@ public class ElementTag implements AbstractTag {
                 return new ElementTag(Math.log(obj.asDouble()) / Math.log(new ElementTag(attr.getParam()).asDouble()));
             }
             return null;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -760,7 +760,7 @@ public class ElementTag implements AbstractTag {
          * // Narrates "ff"
          * - narrate <element[255].numberToHex>
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "numberToHex", (attr, obj) -> new ElementTag(Integer.toHexString(obj.asInt())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "numberToHex", (attr, obj) -> new ElementTag(Integer.toHexString(obj.asInt()))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -780,7 +780,7 @@ public class ElementTag implements AbstractTag {
             ElementTag param = new ElementTag(attr.getParam());
             if (!obj.isDouble() || !param.isDouble()) return null;
             return new ElementTag(Math.max(obj.asDouble(), param.asDouble()));
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -800,7 +800,7 @@ public class ElementTag implements AbstractTag {
             ElementTag param = new ElementTag(attr.getParam());
             if (!obj.isDouble() || !param.isDouble()) return null;
             return new ElementTag(Math.min(obj.asDouble(), param.asDouble()));
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -816,7 +816,7 @@ public class ElementTag implements AbstractTag {
          * @Implements ElementTag.round
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "round", (attr, obj) ->
-                new ElementTag(Math.round(obj.asDouble())));
+                new ElementTag(Math.round(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -849,7 +849,7 @@ public class ElementTag implements AbstractTag {
                     .setScale(places, RoundingMode.HALF_UP)
                     .doubleValue();
             return new ElementTag(rounded);
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -882,7 +882,7 @@ public class ElementTag implements AbstractTag {
                     .setScale(8, RoundingMode.HALF_UP)
                     .stripTrailingZeros()
                     .doubleValue());
-        }).test("0.01");
+        }).test("0.01").setAsyncSafe();
 
         /* @doc tag
          *
@@ -901,7 +901,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.round_down
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "floor", (attr, obj) -> new ElementTag((long) Math.floor(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "floor", (attr, obj) -> new ElementTag((long) Math.floor(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -920,7 +920,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.round_up
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "ceil", (attr, obj) -> new ElementTag((long) Math.ceil(obj.asDouble())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "ceil", (attr, obj) -> new ElementTag((long) Math.ceil(obj.asDouble()))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -950,7 +950,7 @@ public class ElementTag implements AbstractTag {
             if (value.length() >= targetLength) return new ElementTag(value);
             String pad = fill.repeat((targetLength - value.length() + fill.length() - 1) / fill.length());
             return new ElementTag(pad.substring(0, targetLength - value.length()) + value);
-        }).test("2", "with[0]");
+        }).test("2", "with[0]").setAsyncSafe();
     }
 
     @Override

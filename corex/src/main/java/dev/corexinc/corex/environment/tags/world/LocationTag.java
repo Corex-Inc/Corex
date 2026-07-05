@@ -87,7 +87,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          *
          * @Implements LocationTag.x
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.location.getX()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.location.getX())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -102,7 +102,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          *
          * @Implements LocationTag.y
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "y", (attr, obj) -> new ElementTag(obj.location.getY()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "y", (attr, obj) -> new ElementTag(obj.location.getY())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -117,7 +117,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          *
          * @Implements LocationTag.z
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.location.getZ()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.location.getZ())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -138,7 +138,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             obj.appendCleanDouble(sb, obj.location.getY()).append(",");
             obj.appendCleanDouble(sb, obj.location.getZ());
             return new ElementTag(sb.toString());
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -169,7 +169,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             float yaw = obj.location.getYaw() % 360;
             if (yaw < 0) yaw += 360;
             return new ElementTag(yaw);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -183,7 +183,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          *
          * @Implements LocationTag.yaw.raw
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "rawYaw", (attr, obj) -> new ElementTag(obj.location.getYaw()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "rawYaw", (attr, obj) -> new ElementTag(obj.location.getYaw())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -205,7 +205,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (yaw >= 45 && yaw < 135) return new ElementTag("west");
             if (yaw >= 135 && yaw < 225) return new ElementTag("north");
             return new ElementTag("east");
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -220,7 +220,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          *
          * @Implements LocationTag.pitch
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "pitch", (attr, obj) -> new ElementTag(obj.location.getPitch()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "pitch", (attr, obj) -> new ElementTag(obj.location.getPitch())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -249,7 +249,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                     .replace("by", String.valueOf(loc.getBlockY()))
                     .replace("bz", String.valueOf(loc.getBlockZ()));
             return new ElementTag(format);
-        }).test("X: bx, Y: by, Z: bz");
+        }).test("X: bx, Y: by, Z: bz").setAsyncSafe();
 
         /* @doc tag
          *
@@ -268,7 +268,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation();
             String world = loc.getWorld() != null ? "," + loc.getWorld().getName() : "";
             return new ElementTag(loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ() + world);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -289,7 +289,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.setX(num.asDouble());
             return new LocationTag(loc, false);
-        }).test("8");
+        }).test("8").setAsyncSafe();
 
         /* @doc tag
          *
@@ -310,7 +310,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.setY(num.asDouble());
             return new LocationTag(loc, false);
-        }).test("7");
+        }).test("7").setAsyncSafe();
 
         /* @doc tag
          *
@@ -331,7 +331,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.setZ(num.asDouble());
             return new LocationTag(loc, false);
-        }).test("4");
+        }).test("4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -350,7 +350,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setYaw(((float) new ElementTag(attr.getParam()).asDouble()));
             return new LocationTag(loc, false);
-        }).test("14");
+        }).test("14").setAsyncSafe();
 
         /* @doc tag
          *
@@ -369,7 +369,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(((float) new ElementTag(attr.getParam()).asDouble()));
             return new LocationTag(loc, false);
-        }).test("8");
+        }).test("8").setAsyncSafe();
 
         /* @doc tag
          *
@@ -391,7 +391,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setPitch(((float) new ElementTag(parts[0]).asDouble()));
             loc.setYaw(((float) new ElementTag(parts[1]).asDouble()));
             return new LocationTag(loc, false);
-        }).test("80,22");
+        }).test("80,22").setAsyncSafe();
 
         /* @doc tag
          *
@@ -410,7 +410,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             LocationTag other = attr.getParamObject(LocationTag.class, LocationTag::new);
             if (other == null) return null;
             return new CuboidTag(obj.location, other.getLocation());
-        }).test("1,1,1,world");
+        }).test("1,1,1,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -449,7 +449,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.add(other.getLocation().getX(), other.getLocation().getY(), other.getLocation().getZ());
             return new LocationTag(loc, false);
-        }).test("l@1,1,1");
+        }).test("l@1,1,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -470,7 +470,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.subtract(other.getLocation().getX(), other.getLocation().getY(), other.getLocation().getZ());
             return new LocationTag(loc, false);
-        }).test("1,1,1");
+        }).test("1,1,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -493,7 +493,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.multiply(num.asDouble());
             return new LocationTag(loc, false);
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -516,7 +516,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.location.clone();
             loc.multiply(1.0 / num.asDouble());
             return new LocationTag(loc, false);
-        }).test("0.1");
+        }).test("0.1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -540,7 +540,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setY(vec.getY());
             loc.setZ(vec.getZ());
             return new LocationTag(loc, false);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -556,7 +556,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) ->
                 new ElementTag(obj.location.toVector().length())
-        );
+        ).setAsyncSafe();
 
         /* @doc tag
          *
@@ -573,7 +573,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "lengthSquared", (attr, obj) ->
                 new ElementTag(obj.location.toVector().lengthSquared())
-        );
+        ).setAsyncSafe();
 
 
         /* @doc tag
@@ -634,7 +634,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             double dy = obj.getLocation().getY() - other.getLocation().getY();
             double dz = obj.getLocation().getZ() - other.getLocation().getZ();
             return new ElementTag(Math.sqrt(dx * dx + dy * dy + dz * dz));
-        }).test("3,4,5");
+        }).test("3,4,5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -652,7 +652,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             LocationTag other = attr.getParamObject(LocationTag.class, LocationTag::new);
             if (other == null) return null;
             return new ElementTag(obj.location.toVector().distanceSquared(other.getLocation().toVector()));
-        }).test("3,4,5");
+        }).test("3,4,5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -669,7 +669,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             LocationTag other = attr.getParamObject(LocationTag.class, LocationTag::new);
             if (other == null) return null;
             return new ElementTag(obj.location.toVector().dot(other.getLocation().toVector()));
-        }).test("2,3,4");
+        }).test("2,3,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -691,7 +691,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setY(cross.getY());
             loc.setZ(cross.getZ());
             return new LocationTag(loc, false);
-        }).test("1,1,3");
+        }).test("1,1,3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -717,7 +717,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setY(otherVec.getY() * scalar);
             loc.setZ(otherVec.getZ() * scalar);
             return new LocationTag(loc, false);
-        }).test("l@2,2,2");
+        }).test("l@2,2,2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -765,7 +765,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 obj.location.getBlockX(),
                 obj.location.getBlockY(),
                 obj.location.getBlockZ()
-        )));
+        ))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -857,7 +857,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             ).normalize();
 
             return new QuaternionTag(new Quaterniond().fromAxisAngleRad(axis, angleEl.asDouble()));
-        }).test("45");
+        }).test("45").setAsyncSafe();
 
         /* @doc tag
          *
@@ -888,7 +888,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             ).normalize();
 
             return new QuaternionTag(new Quaterniond().rotationTo(v1, v2));
-        }).test("2,3,4");
+        }).test("2,3,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1033,7 +1033,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (yaw >= 202.5 && yaw < 247.5) return new ElementTag("NORTH_EAST");
             if (yaw >= 247.5 && yaw < 292.5) return new ElementTag("EAST");
             return new ElementTag("SOUTH_EAST");
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1054,7 +1054,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 return new ElementTag(cuboid.contains(obj.getLocation()));
             }
             return new ElementTag(false);
-        }).test("world,2,2,2,2,2,2");
+        }).test("world,2,2,2,2,2,2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1070,7 +1070,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "above", (attr, obj) -> {
             double distance = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 1.0;
             return new LocationTag(obj.getLocation().clone().add(0, distance, 0));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1086,7 +1086,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "below", (attr, obj) -> {
             double distance = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 1.0;
             return new LocationTag(obj.getLocation().clone().subtract(0, distance, 0));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1102,7 +1102,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "forward", (attr, obj) -> {
             double distance = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 1.0;
             return new LocationTag(obj.getLocation().clone().add(obj.getLocation().getDirection().multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1118,7 +1118,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "backward", (attr, obj) -> {
             double distance = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 1.0;
             return new LocationTag(obj.getLocation().clone().subtract(obj.getLocation().getDirection().multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1136,7 +1136,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(0);
             return new LocationTag(obj.getLocation().clone().add(loc.getDirection().multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1154,7 +1154,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(0);
             return new LocationTag(obj.getLocation().clone().subtract(loc.getDirection().multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1172,7 +1172,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(0);
             return new LocationTag(loc.add(loc.getDirection().rotateAroundY(Math.PI / 2).multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1190,7 +1190,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(0);
             return new LocationTag(loc.subtract(loc.getDirection().rotateAroundY(Math.PI / 2).multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1208,7 +1208,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(loc.getPitch() - 90);
             return new LocationTag(obj.getLocation().clone().add(loc.getDirection().multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1226,7 +1226,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setPitch(loc.getPitch() - 90);
             return new LocationTag(obj.getLocation().clone().subtract(loc.getDirection().multiply(distance)));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1243,7 +1243,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> {
             Location loc = obj.getLocation();
             return new LocationTag(new Location(loc.getWorld(), loc.getBlockX() + 0.5, loc.getBlockY() + 0.5, loc.getBlockZ() + 0.5));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1272,7 +1272,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (yaw >= 45 && yaw < 135) return new ElementTag("West");
             if (yaw >= 135 && yaw < 225) return new ElementTag("North");
             return new ElementTag("East");
-        }).test("1,1,4");
+        }).test("1,1,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1291,7 +1291,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                         obj.getLocation().getDirection().getX(),
                         obj.getLocation().getDirection().getY(),
                         obj.getLocation().getDirection().getZ()))
-        );
+        ).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1315,7 +1315,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             yaw = yaw % 360;
             if (yaw < 0) yaw += 360;
             return new ElementTag(yaw);
-        }).test("2,3,4");
+        }).test("2,3,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1337,7 +1337,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (dir.lengthSquared() == 0) return new ElementTag(0);
             double xz = Math.sqrt(dir.getX() * dir.getX() + dir.getZ() * dir.getZ());
             return new ElementTag((float) Math.toDegrees(Math.atan2(-dir.getY(), xz)));
-        }).test("2,3,4");
+        }).test("2,3,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1358,7 +1358,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setDirection(target.getLocation().toVector().subtract(loc.toVector()));
             return new LocationTag(loc, false);
-        }).test("1,2,3");
+        }).test("1,2,3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1424,7 +1424,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             double threshold = Math.cos(Math.toRadians(degrees));
 
             return new ElementTag(dot >= threshold);
-        }).test("3,3,3");
+        }).test("3,3,3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1483,7 +1483,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 list.addObject(new LocationTag(obj.getLocation().clone().add(0, y, z)));
             }
             return list;
-        }).test("1,4");
+        }).test("1,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1512,7 +1512,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 list.addObject(new LocationTag(obj.getLocation().clone().add(x, 0, z)));
             }
             return list;
-        }).test("1,4");
+        }).test("1,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1541,7 +1541,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 list.addObject(new LocationTag(obj.getLocation().clone().add(x, y, 0)));
             }
             return list;
-        }).test("1,4");
+        }).test("1,4").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1609,7 +1609,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                 list.addObject(new LocationTag(new Location(w, currentX, currentY, currentZ, yaw, pitch)));
             }
             return list;
-        }).test("l@1,3,1,world");
+        }).test("l@1,3,1,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1640,7 +1640,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             double oy = (r.nextDouble() * 2 - 1) * limit.getY();
             double oz = (r.nextDouble() * 2 - 1) * limit.getZ();
             return new LocationTag(obj.getLocation().clone().add(ox, oy, oz));
-        }).test("3");
+        }).test("3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1668,7 +1668,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             offset.add(loc.getDirection().rotateAroundY(Math.PI / 2).multiply(offsetLoc.getLocation().getX()));
 
             return new LocationTag(obj.getLocation().clone().add(offset));
-        }).test("1,-1,2");
+        }).test("1,-1,2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1691,7 +1691,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setY((y * cos) - (z * sin));
             loc.setZ((y * sin) + (z * cos));
             return new LocationTag(loc, false);
-        }).test("1,2,1");
+        }).test("1,2,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1714,7 +1714,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setX((x * cos) + (z * sin));
             loc.setZ((x * -sin) + (z * cos));
             return new LocationTag(loc, false);
-        }).test("1,2,1");
+        }).test("1,2,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1737,7 +1737,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setX((x * cos) - (y * sin));
             loc.setY((x * sin) + (y * cos));
             return new LocationTag(loc, false);
-        }).test("1,2,1");
+        }).test("1,2,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1757,7 +1757,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             float pitch = loc.getPitch() + ((float) new ElementTag(attr.getParam()).asDouble());
             loc.setPitch(Math.max(-90, Math.min(90, pitch)));
             return new LocationTag(loc, false);
-        }).test("22");
+        }).test("22").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1776,7 +1776,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             Location loc = obj.getLocation().clone();
             loc.setYaw(loc.getYaw() + ((float) new ElementTag(attr.getParam()).asDouble()));
             return new LocationTag(loc, false);
-        }).test("14");
+        }).test("14").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1798,7 +1798,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setYaw(Math.round(loc.getYaw()));
             loc.setPitch(Math.round(loc.getPitch()));
             return new LocationTag(loc, false);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1820,7 +1820,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setYaw((float) Math.floor(loc.getYaw()));
             loc.setPitch((float) Math.floor(loc.getPitch()));
             return new LocationTag(loc, false);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1842,7 +1842,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setYaw((float) Math.ceil(loc.getYaw()));
             loc.setPitch((float) Math.ceil(loc.getPitch()));
             return new LocationTag(loc, false);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1867,7 +1867,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setYaw((float) (Math.round(loc.getYaw() * scale) / scale));
             loc.setPitch((float) (Math.round(loc.getPitch() * scale) / scale));
             return new LocationTag(loc, false);
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1893,7 +1893,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setYaw((float) (Math.round(loc.getYaw() * scale) / scale));
             loc.setPitch((float) (Math.round(loc.getPitch() * scale) / scale));
             return new LocationTag(loc, false);
-        }).test("0.05");
+        }).test("0.05").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1910,7 +1910,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "simplex3d", (attr, obj) -> {
             Location loc = obj.getLocation();
             return new ElementTag(SimplexNoiseGenerator.getNoise(loc.getX(), loc.getY(), loc.getZ()));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *

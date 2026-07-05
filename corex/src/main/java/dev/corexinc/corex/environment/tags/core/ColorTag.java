@@ -56,7 +56,7 @@ public class ColorTag implements AbstractTag {
          *
          * @Implements ColorTag.red
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "red", (attr, obj) -> new ElementTag(obj.red));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "red", (attr, obj) -> new ElementTag(obj.red)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -73,7 +73,7 @@ public class ColorTag implements AbstractTag {
          *
          * @Implements ColorTag.green
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "green", (attr, obj) -> new ElementTag(obj.green));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "green", (attr, obj) -> new ElementTag(obj.green)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -90,7 +90,7 @@ public class ColorTag implements AbstractTag {
          *
          * @Implements ColorTag.blue
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "blue", (attr, obj) -> new ElementTag(obj.blue));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "blue", (attr, obj) -> new ElementTag(obj.blue)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -107,7 +107,7 @@ public class ColorTag implements AbstractTag {
          *
          * @Implements ColorTag.alpha
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "alpha", (attr, obj) -> new ElementTag(obj.alpha));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "alpha", (attr, obj) -> new ElementTag(obj.alpha)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -131,7 +131,7 @@ public class ColorTag implements AbstractTag {
                 return new ElementTag(obj.getHex(true));
             }
             return new ElementTag(obj.getHex(false));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -149,7 +149,7 @@ public class ColorTag implements AbstractTag {
          * @Implements ColorTag.rgb_integer
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "rgb", (attr, obj) ->
-                new ElementTag((obj.red << 16) | (obj.green << 8) | obj.blue));
+                new ElementTag((obj.red << 16) | (obj.green << 8) | obj.blue)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -164,7 +164,7 @@ public class ColorTag implements AbstractTag {
          * @Implements ColorTag.argb_integer
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "argb", (attr, obj) ->
-                new ElementTag((obj.alpha << 24) | (obj.red << 16) | (obj.green << 8) | obj.blue));
+                new ElementTag((obj.alpha << 24) | (obj.red << 16) | (obj.green << 8) | obj.blue)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -190,7 +190,7 @@ public class ColorTag implements AbstractTag {
                 result.addString(String.valueOf(obj.alpha));
             }
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -210,7 +210,7 @@ public class ColorTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ColorTag.class, "withRed", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return new ColorTag(clamp(new ElementTag(attr.getParam()).asInt()), obj.green, obj.blue, obj.alpha);
-        }).test("128");
+        }).test("128").setAsyncSafe();
 
         /* @doc tag
          *
@@ -227,7 +227,7 @@ public class ColorTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ColorTag.class, "withGreen", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return new ColorTag(obj.red, clamp(new ElementTag(attr.getParam()).asInt()), obj.blue, obj.alpha);
-        }).test("200");
+        }).test("200").setAsyncSafe();
 
         /* @doc tag
          *
@@ -244,7 +244,7 @@ public class ColorTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ColorTag.class, "withBlue", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return new ColorTag(obj.red, obj.green, clamp(new ElementTag(attr.getParam()).asInt()), obj.alpha);
-        }).test("200");
+        }).test("200").setAsyncSafe();
 
         /* @doc tag
          *
@@ -261,7 +261,7 @@ public class ColorTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ColorTag.class, "withAlpha", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return new ColorTag(obj.red, obj.green, obj.blue, clamp(new ElementTag(attr.getParam()).asInt()));
-        }).test("128");
+        }).test("128").setAsyncSafe();
 
         /* @doc tag
          *
@@ -294,7 +294,7 @@ public class ColorTag implements AbstractTag {
                     clamp(Math.round(obj.blue  + (other.blue  - obj.blue)  * factor)),
                     clamp(Math.round(obj.alpha + (other.alpha - obj.alpha) * factor))
             );
-        }).test("color@0,255,0");
+        }).test("color@0,255,0").setAsyncSafe();
 
         /* @doc tag
          *
@@ -315,7 +315,7 @@ public class ColorTag implements AbstractTag {
                         clamp(obj.green + (255 - obj.green) / 2),
                         clamp(obj.blue  + (255 - obj.blue)  / 2),
                         obj.alpha
-                ));
+                )).setAsyncSafe();
 
         /* @doc tag
          *
@@ -331,7 +331,7 @@ public class ColorTag implements AbstractTag {
          * - narrate <color[255,0,0].darker>
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "darker", (attr, obj) ->
-                new ColorTag(obj.red / 2, obj.green / 2, obj.blue / 2, obj.alpha));
+                new ColorTag(obj.red / 2, obj.green / 2, obj.blue / 2, obj.alpha)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -347,7 +347,7 @@ public class ColorTag implements AbstractTag {
          * - narrate <color[255,0,0].inverted>
          */
         TAG_PROCESSOR.registerTag(ColorTag.class, "inverted", (attr, obj) ->
-                new ColorTag(255 - obj.red, 255 - obj.green, 255 - obj.blue, obj.alpha));
+                new ColorTag(255 - obj.red, 255 - obj.green, 255 - obj.blue, obj.alpha)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -365,7 +365,7 @@ public class ColorTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ColorTag.class, "grayscale", (attr, obj) -> {
             int luminance = clamp((int) (obj.red * 0.2126 + obj.green * 0.7152 + obj.blue * 0.0722));
             return new ColorTag(luminance, luminance, luminance, obj.alpha);
-        });
+        }).setAsyncSafe();
     }
 
     public ColorTag(int red, int green, int blue) {

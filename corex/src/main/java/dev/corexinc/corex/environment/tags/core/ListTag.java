@@ -67,7 +67,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.size
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) ->
-                new ElementTag(obj.list.size()));
+                new ElementTag(obj.list.size())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -86,7 +86,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.is_empty
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isEmpty", (attr, obj) ->
-                new ElementTag(obj.list.isEmpty()));
+                new ElementTag(obj.list.isEmpty())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -137,7 +137,7 @@ public class ListTag implements AbstractTag {
                 if (index >= 0) result.addObject(obj.list.get(index));
             }
             return result;
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -168,7 +168,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (int index = 0; index < count; index++) result.addObject(obj.list.get(index));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -200,7 +200,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (int index = size - count; index < size; index++) result.addObject(obj.list.get(index));
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -245,7 +245,7 @@ public class ListTag implements AbstractTag {
                 if (!matchAny && !found) return new ElementTag(false);
             }
             return new ElementTag(!matchAny);
-        }).test("b");
+        }).test("b").setAsyncSafe();
 
         /* @doc tag
          *
@@ -346,7 +346,7 @@ public class ListTag implements AbstractTag {
                 if (partial ? value.contains(needle) : value.equals(needle)) return new ElementTag(index + 1);
             }
             return new ElementTag(-1);
-        }).test("b");
+        }).test("b").setAsyncSafe();
 
         /* @doc tag
          *
@@ -369,7 +369,7 @@ public class ListTag implements AbstractTag {
             String needle = attr.getParam();
             long matches = obj.list.stream().filter(tag -> tag.identify().equals(needle)).count();
             return new ElementTag((int) matches);
-        }).test("1");
+        }).test("1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -396,7 +396,7 @@ public class ListTag implements AbstractTag {
             List<String> strings = new ArrayList<>();
             for (AbstractTag tag : obj.list) strings.add(tag.identify());
             return new ElementTag(String.join(separator, strings));
-        }).test(", ");
+        }).test(", ").setAsyncSafe();
 
         /* @doc tag
          *
@@ -420,7 +420,7 @@ public class ListTag implements AbstractTag {
             for (AbstractTag tag : obj.list) result.addObject(tag);
             for (AbstractTag tag : new ListTag(attr.getParam()).getList()) result.addObject(tag);
             return result;
-        }).test("d|e");
+        }).test("d|e").setAsyncSafe();
 
         /* @doc tag
          *
@@ -476,7 +476,7 @@ public class ListTag implements AbstractTag {
                 }
             }
             return result;
-        }).test("b");
+        }).test("b").setAsyncSafe();
 
         /* @doc tag
          *
@@ -509,7 +509,7 @@ public class ListTag implements AbstractTag {
             }
             if (insertAt >= obj.list.size()) for (AbstractTag tag : toInsert) result.addObject(tag);
             return result;
-        }).test("x", "at[2]");
+        }).test("x", "at[2]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -544,7 +544,7 @@ public class ListTag implements AbstractTag {
                 else result.addObject(obj.list.get(index));
             }
             return result;
-        }).test("x", "at[2]");
+        }).test("x", "at[2]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -578,7 +578,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
             return result;
-        }).test("x|y", "at[2]");
+        }).test("x|y", "at[2]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -639,7 +639,7 @@ public class ListTag implements AbstractTag {
                 if (!toRemove.contains(index)) result.addObject(obj.list.get(index));
             }
             return result;
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -675,7 +675,7 @@ public class ListTag implements AbstractTag {
                 }
             }
             return result;
-        }).test("b", "with[lol]");
+        }).test("b", "with[lol]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -700,7 +700,7 @@ public class ListTag implements AbstractTag {
                 if (seen.add(tag.identify())) result.addObject(tag);
             }
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -730,7 +730,7 @@ public class ListTag implements AbstractTag {
                 if (other.contains(id) && seen.add(id)) result.addObject(tag);
             }
             return result;
-        }).test("b|c");
+        }).test("b|c").setAsyncSafe();
 
         /* @doc tag
          *
@@ -778,7 +778,7 @@ public class ListTag implements AbstractTag {
             for (int padding = obj.list.size(); padding < targetSize; padding++) result.addString(fill);
             for (AbstractTag tag : obj.list) result.addObject(tag);
             return result;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -822,7 +822,7 @@ public class ListTag implements AbstractTag {
             for (AbstractTag tag : obj.list) result.addObject(tag);
             for (int padding = obj.list.size(); padding < targetSize; padding++) result.addString(fill);
             return result;
-        }).test("5");
+        }).test("5").setAsyncSafe();
 
         /* @doc tag
          *
@@ -846,7 +846,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -891,7 +891,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -910,7 +910,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -944,7 +944,7 @@ public class ListTag implements AbstractTag {
             ListTag result = new ListTag();
             for (int index = 0; index < limit; index++) result.addObject(copy.get(index));
             return result;
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -969,7 +969,7 @@ public class ListTag implements AbstractTag {
                 if (element.isDouble()) total += element.asDouble();
             }
             return new ElementTag(total);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -993,7 +993,7 @@ public class ListTag implements AbstractTag {
                 if (element.isDouble()) total *= element.asDouble();
             }
             return new ElementTag(total);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1020,7 +1020,7 @@ public class ListTag implements AbstractTag {
                 if (element.isDouble()) { total += element.asDouble(); count++; }
             }
             return new ElementTag(count == 0 ? 0 : total / count);
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1055,7 +1055,7 @@ public class ListTag implements AbstractTag {
             for (int index = 0; index < limit; index++) result.addObject(copy.get(index));
 
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1090,7 +1090,7 @@ public class ListTag implements AbstractTag {
             for (int index = 0; index < limit; index++) result.addObject(copy.get(index));
 
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1115,7 +1115,7 @@ public class ListTag implements AbstractTag {
                 for (AbstractTag subTag : new ListTag(tag.identify()).getList()) result.addObject(subTag);
             }
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1147,7 +1147,7 @@ public class ListTag implements AbstractTag {
                 result.addString(chunk.identify());
             }
             return result;
-        }).test("2");
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1176,7 +1176,7 @@ public class ListTag implements AbstractTag {
                 result.putObject(obj.list.get(index).identify(), values.get(index));
             }
             return result;
-        }).test("1|2|3");
+        }).test("1|2|3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -1210,7 +1210,7 @@ public class ListTag implements AbstractTag {
                 );
             }
             return result;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1242,7 +1242,7 @@ public class ListTag implements AbstractTag {
                 return new ElementTag(JsonHelper.toPrettyString(json));
             }
             return new ElementTag(json.toString());
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -1274,7 +1274,7 @@ public class ListTag implements AbstractTag {
                 sum += a * b;
             }
             return new ElementTag(sum);
-        }).ignoreTest();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -1317,7 +1317,7 @@ public class ListTag implements AbstractTag {
             }
 
             return applyActivationRecursively(obj, type);
-        }).ignoreTest();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -1354,7 +1354,7 @@ public class ListTag implements AbstractTag {
             }
 
             return result;
-        }).ignoreTest();
+        }).ignoreTest().setAsyncSafe();
     }
 
     public ListTag() {}

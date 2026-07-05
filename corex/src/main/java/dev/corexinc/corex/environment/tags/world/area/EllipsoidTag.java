@@ -74,7 +74,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
             Object fetched = ObjectFetcher.pickObject(attr.getParam());
             LocationTag lt = fetched instanceof LocationTag ? (LocationTag) fetched : new LocationTag(attr.getParam());
             return new ElementTag(obj.contains(lt.getLocation()));
-        }).test("l@0,64,0,world");
+        }).test("l@0,64,0,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -88,7 +88,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
          *
          * @Implements AreaObject.center
          */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> obj.getCenter());
+        TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> obj.getCenter()).setAsyncSafe();
 
         /* @doc tag
          *
@@ -105,7 +105,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
             ListTag result = new ListTag();
             for (LocationTag loc : obj.getBlocks()) result.addObject(loc);
             return result;
-        });
+        }).setAsyncSafe();
     }
 
     public EllipsoidTag(double x, double y, double z, World world, double radiusX, double radiusY, double radiusZ) {

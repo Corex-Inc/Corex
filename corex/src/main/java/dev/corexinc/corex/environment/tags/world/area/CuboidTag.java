@@ -75,7 +75,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
             Object fetched = ObjectFetcher.pickObject(attr.getParam());
             LocationTag lt = fetched instanceof LocationTag ? (LocationTag) fetched : new LocationTag(attr.getParam());
             return new ElementTag(obj.contains(lt.getLocation()));
-        }).test("l@3,3,3,world");
+        }).test("l@3,3,3,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -90,7 +90,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
          *
          * @Implements AreaObject.center
          */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> obj.getCenter());
+        TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) -> obj.getCenter()).setAsyncSafe();
 
         /* @doc tag
          *
@@ -108,7 +108,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
             ListTag result = new ListTag();
             for (LocationTag loc : obj.getBlocks()) result.addObject(loc);
             return result;
-        });
+        }).setAsyncSafe();
     }
 
     public CuboidTag(World world, @NonNull List<double[][]> members) {
