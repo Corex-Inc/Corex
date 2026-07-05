@@ -5,8 +5,11 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class MixedArg implements CompiledArgument {
     private final CompiledArgument[] parts;
@@ -17,38 +20,27 @@ public class MixedArg implements CompiledArgument {
 
     @Override
     public AbstractTag evaluate(ScriptQueue queue) {
-        TextComponent.Builder builder = Component.text();
-        StringBuilder textBuffer = new StringBuilder();
-        String lastColors = "";
+        StringBuilder markupBuffer = new StringBuilder();
+        TagResolver.Builder placeholders = TagResolver.builder();
+        int placeholderIndex = 0;
 
         for (CompiledArgument part : parts) {
             AbstractTag tag = part.evaluate(queue);
 
-            if (tag instanceof ComponentTag) {
-                if (!textBuffer.isEmpty()) {
-                    String flushedText = textBuffer.toString();
-                    builder.append(CorexSerializer.LEGACY.deserialize(flushedText));
-
-                    lastColors = extractLastColors(flushedText);
-                    textBuffer.setLength(0);
-                }
-
-                builder.append(tag.asComponent());
-
-                textBuffer.append(lastColors);
+            if (tag instanceof MarkupTag markupTag) {
+                markupBuffer.append(markupTag.identify());
+            } else if (tag instanceof ComponentTag componentTag) {
+                String placeholderKey = "corexInsert" + (placeholderIndex++);
+                placeholders.resolver(Placeholder.component(placeholderKey, componentTag.asComponent()));
+                markupBuffer.append('<').append(placeholderKey).append('>');
             } else {
-                textBuffer.append(tag.identify());
+                Component legacyPiece = CorexSerializer.LEGACY.deserialize(tag.identify());
+                markupBuffer.append(MiniMessage.miniMessage().serialize(legacyPiece));
             }
         }
 
-        if (!textBuffer.isEmpty()) {
-            String remaining = textBuffer.toString();
-            if (!remaining.equals(lastColors)) {
-                builder.append(CorexSerializer.LEGACY.deserialize(remaining));
-            }
-        }
-
-        return new ComponentTag(builder.build());
+        Component result = MiniMessage.miniMessage().deserialize(markupBuffer.toString(), placeholders.build());
+        return new ComponentTag(result);
     }
 
     @Override
@@ -56,35 +48,5 @@ public class MixedArg implements CompiledArgument {
         StringBuilder sb = new StringBuilder();
         for (CompiledArgument part : parts) sb.append(part.getRaw());
         return sb.toString();
-    }
-
-    private String extractLastColors(String text) {
-        StringBuilder result = new StringBuilder();
-        int length = text.length();
-        for (int i = 0; i < length; i++) {
-            char c = text.charAt(i);
-            if (c == '§' && i + 1 < length) {
-                char code = text.charAt(i + 1);
-                if (code == 'x' && i + 13 < length) {
-                    result.setLength(0);
-                    result.append(text, i, i + 14);
-                    i += 13;
-                } else if (isColorCode(code)) {
-                    result.setLength(0);
-                    result.append('§').append(code);
-                } else if (isFormatCode(code)) {
-                    result.append('§').append(code);
-                }
-            }
-        }
-        return result.toString();
-    }
-
-    private boolean isColorCode(char c) {
-        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == 'r' || c == 'R';
-    }
-
-    private boolean isFormatCode(char c) {
-        return (c >= 'k' && c <= 'o') || (c >= 'K' && c <= 'O');
     }
 }

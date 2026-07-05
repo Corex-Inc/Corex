@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.object.ObjectContents;
@@ -46,19 +47,19 @@ public class HeadFormatter implements AbstractFormatter {
             if (safeParam.length() > 20 && safeParam.matches("^[a-fA-F0-9]+$")) {
                 try {
                     Class.forName("net.kyori.adventure.text.object.PlayerHeadObjectContents");
-                    return new ComponentTag(ModernHeadHandler.create(safeParam));
+                    return new MarkupTag(ModernHeadHandler.create(safeParam));
                 } catch (ClassNotFoundException e) {
                     return INSTANCE;
                 }
             }
-            return new ComponentTag(MiniMessage.miniMessage().deserialize("<head:" + safeParam + ">"));
+            return new MarkupTag("<head:" + safeParam + ">");
         } catch (Exception e) {
             return INSTANCE;
         }
     }
 
     private static class ModernHeadHandler {
-        static Component create(String hash) {
+        static String create(String hash) {
             String json = "{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net/texture/" + hash + "\"}}}";
             String base64 = Base64.getEncoder().encodeToString(json.getBytes());
 
@@ -68,7 +69,7 @@ public class HeadFormatter implements AbstractFormatter {
                     .profileProperty(new SimpleProfileProperty("textures", base64))
                     .build();
 
-            return Component.object(headContents);
+            return MiniMessage.miniMessage().serialize(Component.object(headContents));
         }
 
         private record SimpleProfileProperty(String name, String value)

@@ -6,6 +6,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
@@ -79,7 +80,7 @@ public class SpriteFormatter implements AbstractFormatter {
         String safeSprite = sprite.replace("<", "").replace(">", "");
 
         try {
-            return new ComponentTag(MiniMessage.miniMessage().deserialize("<sprite:\"" + safeAtlas + "\":" + safeSprite + ">"));
+            return new MarkupTag("<sprite:\"" + safeAtlas + "\":" + safeSprite + ">");
         } catch (Exception e) {
             return INSTANCE;
         }

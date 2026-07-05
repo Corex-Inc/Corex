@@ -3,10 +3,9 @@ package dev.corexinc.corex.environment.formatters;
 import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
-import dev.corexinc.corex.environment.tags.core.ColorTag;
-import dev.corexinc.corex.environment.tags.core.ComponentTag;
-import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.environment.tags.core.MapTag;
+import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.*;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
@@ -114,7 +113,7 @@ public class GradientFormatter implements AbstractFormatter {
         }
         sb.append('>');
 
-        return new ComponentTag(MiniMessage.miniMessage().deserialize(sb.toString()));
+        return new MarkupTag(sb.toString());
     }
 
     private String resolveColor(String input) {

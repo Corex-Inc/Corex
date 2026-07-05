@@ -6,9 +6,11 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TranslatableComponent;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -76,7 +78,7 @@ public class TranslateFormatter implements AbstractFormatter {
                 builder.arguments(args);
             }
 
-            return new ComponentTag(builder.build());
+            return new MarkupTag(MiniMessage.miniMessage().serialize(builder.build()));
         } catch (Exception e) {
             return INSTANCE;
         }

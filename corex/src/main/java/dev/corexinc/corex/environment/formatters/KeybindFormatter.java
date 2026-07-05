@@ -5,7 +5,9 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
 /* @doc formatter
@@ -42,7 +44,7 @@ public class KeybindFormatter implements AbstractFormatter {
         String key = attribute.getParam().strip();
         if (key.isBlank()) return INSTANCE;
         try {
-            return new ComponentTag(Component.keybind(key));
+            return new MarkupTag(MiniMessage.miniMessage().serialize(Component.keybind(key)));
         } catch (Exception e) {
             return INSTANCE;
         }

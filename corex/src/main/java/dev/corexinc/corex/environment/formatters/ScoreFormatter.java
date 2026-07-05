@@ -5,7 +5,9 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
 /* @doc formatter
@@ -55,7 +57,7 @@ public class ScoreFormatter implements AbstractFormatter {
         if (name.isBlank() || objective.isBlank()) return INSTANCE;
 
         try {
-            return new ComponentTag(Component.score(name, objective));
+            return new MarkupTag(MiniMessage.miniMessage().serialize(Component.score(name, objective)));
         } catch (Exception e) {
             return INSTANCE;
         }

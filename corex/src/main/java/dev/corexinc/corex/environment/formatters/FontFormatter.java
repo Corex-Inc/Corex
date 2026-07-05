@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
@@ -46,7 +47,7 @@ public class FontFormatter implements AbstractFormatter {
                 .replace("<", "")
                 .replace(">", "");
         if (font.isBlank()) return INSTANCE;
-        return new ComponentTag(MiniMessage.miniMessage().deserialize("<font:" + font + ">"));
+        return new MarkupTag("<font:" + font + ">");
     }
 
     @Override
