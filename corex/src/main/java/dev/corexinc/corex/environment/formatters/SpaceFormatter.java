@@ -20,6 +20,8 @@ import java.util.List;
  *
  * @Usage
  * - narrate <&nbsp>
+ *
+ * @Implements &nbsp
  */
 
 /* @doc formatter
@@ -35,7 +37,7 @@ import java.util.List;
  * // Narrates "Hello World" with a guaranteed space between.
  * - narrate "Hello<sp>World"
  *
- * @Implements &sp, &nbsp
+ * @Implements &sp
  */
 public class SpaceFormatter implements AbstractFormatter {
     private static final AbstractTag INSTANCE = new ElementTag(" ");

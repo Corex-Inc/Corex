@@ -48,14 +48,14 @@ import java.util.Map;
  *
  * @Usage
  * // Send JSON to an API
- * - definemap my_data:
+ * - def my_data:
  *     username: Notch
  *     action: ban
  * - ~fetch "https://api.example.com/punish" body:<[my_data]> type:json method:POST save:res
  *
  * @Usage
  * // Send Form-Data (like a standard HTML form)
- * - definemap login_form:
+ * - def login_form:
  *     login: admin
  *     password: super#secret!password
  * - ~fetch "https://api.example.com/auth" body:<[login_form]> type:form method:POST
