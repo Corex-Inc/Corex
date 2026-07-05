@@ -49,7 +49,7 @@ import java.util.List;
  *
  * @Usage
  * // Spawn a named, high-health zombie blueprint at a location.
- * - spawn <entity[zombie].with[maxHealth=100;name=okak]> <player.location>
+ * - spawn <entity[zombie].with[maxHealth=100;name=MyTestZombie]> <player.location>
  *
  * @Usage
  * // Spawn an entity and keep a reference to it.

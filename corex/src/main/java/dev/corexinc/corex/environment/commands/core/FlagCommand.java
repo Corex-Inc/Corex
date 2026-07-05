@@ -2,6 +2,8 @@ package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.ArgumentSchema;
+import dev.corexinc.corex.api.commands.ArgumentSet;
 import dev.corexinc.corex.api.data.actions.AbstractDataAction;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.api.tags.Flaggable;
@@ -11,6 +13,7 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.ListTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
@@ -92,8 +95,17 @@ public class FlagCommand implements AbstractCommand {
         return 4;
     }
 
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ListTag.class)
+            .requireLinear(1, ElementTag.class)
+            .optionalLinear(2, ElementTag.class, null)
+            .optionalPrefix("expire", DurationTag.class)
+            .build();
+
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
+
+        ArgumentSet args = SCHEMA.bind(instruction, queue);
 
         AbstractTag targetObj = instruction.getLinearObject(0, queue);
         if (!(targetObj instanceof Flaggable flaggable)) {
@@ -133,9 +145,9 @@ public class FlagCommand implements AbstractCommand {
         AbstractTag valueObj = instruction.getLinearObject(2, queue);
 
         long durationMs = 0;
-        AbstractTag expireTag = instruction.getPrefixObject("expire", queue);
-        if (expireTag instanceof DurationTag dt) {
-            durationMs = dt.getMilliseconds();
+        DurationTag expire = args.prefix("expire");
+        if (expire != null) {
+            durationMs = expire.getMilliseconds();
         }
 
         AbstractTag finalValue;

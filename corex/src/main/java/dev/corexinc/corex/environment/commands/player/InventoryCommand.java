@@ -123,7 +123,7 @@ public class InventoryCommand implements AbstractCommand {
 
     @Override
     public int getMaxArgs() {
-        return 2;
+        return -1;
     }
 
     @Override
