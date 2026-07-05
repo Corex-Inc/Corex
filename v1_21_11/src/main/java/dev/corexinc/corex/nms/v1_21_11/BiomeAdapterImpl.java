@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.RegistrationInfo;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundChunksBiomesPacket;
@@ -18,6 +19,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.random.Weighted;
+import net.minecraft.world.attribute.AmbientAdditionsSettings;
 import net.minecraft.world.attribute.AmbientSounds;
 import net.minecraft.world.attribute.EnvironmentAttribute;
 import net.minecraft.world.attribute.EnvironmentAttributeMap;
@@ -53,9 +55,9 @@ public class BiomeAdapterImpl implements BiomeAdapter {
     @Override
     public List<NamespacedKey> getAllBiomeKeys(World world) {
         ServerLevel serverLevel = ((CraftWorld) world).getHandle();
-        var registry = serverLevel.registryAccess().lookupOrThrow(Registries.BIOME);
+        Registry<Biome> biomeRegistry = serverLevel.registryAccess().lookupOrThrow(Registries.BIOME);
 
-        return registry.listElementIds()
+        return biomeRegistry.listElementIds()
                 .map(resourceKey -> new NamespacedKey(resourceKey.identifier().getNamespace(), resourceKey.identifier().getPath()))
                 .toList();
     }
@@ -85,30 +87,32 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         try {
             ServerLevel serverLevel = ((CraftWorld) world).getHandle();
 
-            var registry = (MappedRegistry<@NotNull Biome>) serverLevel.registryAccess().lookupOrThrow(Registries.BIOME);
+            MappedRegistry<@NotNull Biome> mappedRegistry = (MappedRegistry<@NotNull Biome>) serverLevel.registryAccess().lookupOrThrow(Registries.BIOME);
 
             Identifier nmsLocation = Identifier.parse(key.toString());
 
             ResourceKey<@NotNull Biome> nmsKey = ResourceKey.create(Registries.BIOME, nmsLocation);
 
-            Map infos = (Map) ReflectionHelper.getFieldValue(
-                    MappedRegistry.class, "registrationInfos", registry
+            Map<ResourceKey<Biome>, RegistrationInfo> registrationInfos = (Map<ResourceKey<Biome>, RegistrationInfo>) ReflectionHelper.getFieldValue(
+                    MappedRegistry.class, "registrationInfos", mappedRegistry
             );
 
-            if (infos != null) {
-                infos.put(nmsKey, RegistrationInfo.BUILT_IN);
+            if (registrationInfos != null) {
+                registrationInfos.put(nmsKey, RegistrationInfo.BUILT_IN);
             }
         } catch (Throwable ignored) {}
     }
 
     private void modifyClimate(Biome nmsBiome, Float temperature, Float humidity, Boolean hasDownfall) {
-        Biome.ClimateSettings old = nmsBiome.climateSettings;
+        Biome.ClimateSettings oldClimate = nmsBiome.climateSettings;
 
-        boolean down = hasDownfall != null ? hasDownfall : old.hasPrecipitation();
-        float temp = temperature != null ? temperature : old.temperature();
-        float hum = humidity != null ? humidity : old.downfall();
+        boolean resolvedHasDownfall = hasDownfall != null ? hasDownfall : oldClimate.hasPrecipitation();
+        float resolvedTemperature = temperature != null ? temperature : oldClimate.temperature();
+        float resolvedHumidity = humidity != null ? humidity : oldClimate.downfall();
 
-        Biome.ClimateSettings newClimate = new Biome.ClimateSettings(down, temp, old.temperatureModifier(), hum);
+        Biome.ClimateSettings newClimate = new Biome.ClimateSettings(
+                resolvedHasDownfall, resolvedTemperature, oldClimate.temperatureModifier(), resolvedHumidity
+        );
 
         ReflectionHelper.setFinalField(nmsBiome, "climateSettings", newClimate);
     }
@@ -208,7 +212,7 @@ public class BiomeAdapterImpl implements BiomeAdapter {
 
             chunk.markUnsaved();
 
-            var biomeData = new ClientboundChunksBiomesPacket.ChunkBiomeData(chunk);
+            ClientboundChunksBiomesPacket.ChunkBiomeData biomeData = new ClientboundChunksBiomesPacket.ChunkBiomeData(chunk);
 
             ClientboundChunksBiomesPacket packet = new ClientboundChunksBiomesPacket(List.of(biomeData));
 
@@ -258,7 +262,19 @@ public class BiomeAdapterImpl implements BiomeAdapter {
 
     @Override
     public void setFoliageColor(World world, NamespacedKey biomeKey, int color) {
-        setEnvAttr(world, biomeKey, EnvironmentAttributes.WATER_FOG_COLOR, color);
+        Biome nmsBiome = getNmsBiome(world, biomeKey);
+        if (nmsBiome == null) return;
+
+        BiomeSpecialEffects old = nmsBiome.getSpecialEffects();
+        BiomeSpecialEffects newEffects = new BiomeSpecialEffects(
+                old.waterColor(),
+                Optional.of(color),
+                old.dryFoliageColorOverride(),
+                old.grassColorOverride(),
+                old.grassColorModifier()
+        );
+
+        applySpecialEffects(world, biomeKey, nmsBiome, newEffects);
     }
 
     @Override
@@ -272,7 +288,6 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         if (nmsBiome == null) return;
 
         BiomeSpecialEffects old = nmsBiome.getSpecialEffects();
-
         BiomeSpecialEffects newEffects = new BiomeSpecialEffects(
                 color,
                 old.foliageColorOverride(),
@@ -281,6 +296,10 @@ public class BiomeAdapterImpl implements BiomeAdapter {
                 old.grassColorModifier()
         );
 
+        applySpecialEffects(world, biomeKey, nmsBiome, newEffects);
+    }
+
+    private void applySpecialEffects(World world, NamespacedKey biomeKey, Biome nmsBiome, BiomeSpecialEffects newEffects) {
         ReflectionHelper.setFinalFieldByType(nmsBiome, BiomeSpecialEffects.class, newEffects);
         syncBiome(world, biomeKey);
     }
@@ -315,65 +334,53 @@ public class BiomeAdapterImpl implements BiomeAdapter {
     }
 
     private AbstractTag normalize(Object value) {
-        switch (value) {
-            case null -> {
-                return null;
-            }
-            case Holder<?> holder -> {
-                return normalize(holder.value());
-            }
-            case Optional<?> opt -> {
-                return opt.map(this::normalize).orElse(null);
-            }
-            case Identifier id -> {
-                return new ElementTag(id.toString());
-            }
-            case Integer color -> {
-                return new ColorTag(
-                        (color >> 16) & 0xFF,
-                        (color >> 8) & 0xFF,
-                        color & 0xFF
-                );
-            }
+        return switch (value) {
+            case null -> null;
+            case Holder<?> holder -> normalize(holder.value());
+            case Optional<?> optional -> optional.map(this::normalize).orElse(null);
+            case Identifier identifier -> new ElementTag(identifier.toString());
+            case Integer color -> new ColorTag(
+                    (color >> 16) & 0xFF,
+                    (color >> 8) & 0xFF,
+                    color & 0xFF
+            );
             case List<?> list -> {
-                List<Object> out = new ArrayList<>();
-                for (Object o : list) {
-                    out.add(normalize(o));
+                List<Object> normalized = new ArrayList<>();
+                for (Object element : list) {
+                    normalized.add(normalize(element));
                 }
-                return new ListTag(out);
+                yield new ListTag(normalized);
             }
-            case AmbientSounds sounds -> {
-                MapTag map = new MapTag();
+            case AmbientSounds sounds -> normalizeAmbientSounds(sounds);
+            default -> new ElementTag(value.toString());
+        };
+    }
 
-                sounds.loop().ifPresent(loop ->
-                        map.putObject("loop", normalize(loop.value().location()))
-                );
+    private MapTag normalizeAmbientSounds(AmbientSounds sounds) {
+        MapTag map = new MapTag();
 
-                sounds.mood().ifPresent(mood -> {
-                    MapTag m = new MapTag();
-                    m.putObject("sound", normalize(mood.soundEvent().value().location()));
-                    m.putObject("delay", new ElementTag(mood.tickDelay()));
-                    m.putObject("offset", new ElementTag(mood.soundPositionOffset()));
-                    map.putObject("mood", m);
-                });
+        sounds.loop().ifPresent(loop ->
+                map.putObject("loop", normalize(loop.value().location()))
+        );
 
-                ListTag additions = new ListTag();
-                for (var add : sounds.additions()) {
-                    MapTag m = new MapTag();
-                    m.putObject("sound", normalize(add.soundEvent().value().location()));
-                    m.putObject("chance", new ElementTag(add.tickChance()));
-                    additions.addObject(m);
-                }
+        sounds.mood().ifPresent(mood -> {
+            MapTag moodMap = new MapTag();
+            moodMap.putObject("sound", normalize(mood.soundEvent().value().location()));
+            moodMap.putObject("delay", new ElementTag(mood.tickDelay()));
+            moodMap.putObject("offset", new ElementTag(mood.soundPositionOffset()));
+            map.putObject("mood", moodMap);
+        });
 
-                map.putObject("additions", additions);
-
-                return map;
-            }
-            default -> {
-            }
+        ListTag additions = new ListTag();
+        for (AmbientAdditionsSettings addition : sounds.additions()) {
+            MapTag additionMap = new MapTag();
+            additionMap.putObject("sound", normalize(addition.soundEvent().value().location()));
+            additionMap.putObject("chance", new ElementTag(addition.tickChance()));
+            additions.addObject(additionMap);
         }
 
-        return new ElementTag(value.toString());
+        map.putObject("additions", additions);
+        return map;
     }
 
     @Override
@@ -381,8 +388,8 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         Biome nmsBiome = getNmsBiome(world, biomeKey);
         if (nmsBiome == null) return null;
 
-        var optional = BuiltInRegistries.ENVIRONMENT_ATTRIBUTE.get(Identifier.parse(attrName));
-        var holder = optional.orElse(null);
+        Optional<Holder.Reference<EnvironmentAttribute<?>>> attributeHolder = BuiltInRegistries.ENVIRONMENT_ATTRIBUTE.get(Identifier.parse(attrName));
+        Holder.Reference<EnvironmentAttribute<?>> holder = attributeHolder.orElse(null);
         if (holder == null) return null;
 
         Object raw = applyDynamic(nmsBiome, holder);
@@ -392,9 +399,9 @@ public class BiomeAdapterImpl implements BiomeAdapter {
 
     @Override
     public void setDynamicAttribute(World world, NamespacedKey biomeKey, String attrName, Object value) {
-        var optional = BuiltInRegistries.ENVIRONMENT_ATTRIBUTE.get(Identifier.parse(attrName));
+        Optional<Holder.Reference<EnvironmentAttribute<?>>> attributeHolder = BuiltInRegistries.ENVIRONMENT_ATTRIBUTE.get(Identifier.parse(attrName));
 
-        var holder = optional.orElse(null);
+        Holder.Reference<EnvironmentAttribute<?>> holder = attributeHolder.orElse(null);
         if (holder == null) {
             return;
         }
