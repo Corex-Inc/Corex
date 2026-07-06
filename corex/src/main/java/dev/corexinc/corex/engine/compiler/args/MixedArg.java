@@ -30,7 +30,7 @@ public class MixedArg implements CompiledArgument {
             if (tag instanceof MarkupTag markupTag) {
                 markupBuffer.append(markupTag.identify());
             } else if (tag instanceof ComponentTag componentTag) {
-                String placeholderKey = "corexInsert" + (placeholderIndex++);
+                String placeholderKey = "corex_insert_" + (placeholderIndex++);
                 placeholders.resolver(Placeholder.component(placeholderKey, componentTag.asComponent()));
                 markupBuffer.append('<').append(placeholderKey).append('>');
             } else {

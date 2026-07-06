@@ -25,17 +25,21 @@ public class MarkupTag implements AbstractTag {
     }
 
     @Override
-    public AbstractTag getAttribute(@NonNull Attribute attribute) {
-        return null;
-    }
-
-    @Override
     public @Nullable String getTestValue() {
         return null;
     }
 
     @Override
+    public AbstractTag getAttribute(@NonNull Attribute attribute) {
+        AbstractTag result = new ElementTag(markup).getAttribute(attribute);
+        if (result instanceof ElementTag) {
+            return new MarkupTag(result.identify());
+        }
+        return result;
+    }
+
+    @Override
     public @NonNull TagProcessor<? extends AbstractTag> getProcessor() {
-        return null;
+        return new ElementTag(markup).getProcessor();
     }
 }

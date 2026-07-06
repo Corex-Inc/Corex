@@ -57,7 +57,7 @@ public interface AbstractFormatter {
      *
      * @see Attribute#getParam()
      */
-    @NotNull
+    @Nullable
     @OverrideOnly
     @AvailableSince("1.0.0")
     AbstractTag parse(@NotNull Attribute attribute);

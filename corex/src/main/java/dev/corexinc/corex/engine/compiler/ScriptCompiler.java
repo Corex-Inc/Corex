@@ -128,6 +128,7 @@ public class ScriptCompiler {
         if (!text.contains("<")) return new StaticArg(unescape(text));
 
         List<CompiledArgument> parts = new ArrayList<>();
+        List<Boolean> formatterFlags = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
 
         List<Integer> scope = new ArrayList<>();
@@ -147,6 +148,7 @@ public class ScriptCompiler {
                 if (scope.isEmpty()) {
                     if (!buffer.isEmpty()) {
                         parts.add(new StaticArg(unescape(buffer.toString())));
+                        formatterFlags.add(false);
                         buffer.setLength(0);
                     }
                     scope.add(0);
@@ -158,7 +160,7 @@ public class ScriptCompiler {
                 if (top == 0) {
                     scope.removeLast();
                     if (scope.isEmpty()) {
-                        parts.add(compileSingleTag(buffer.toString()));
+                        parts.add(compileSingleTag(buffer.toString(), formatterFlags));
                         buffer.setLength(0);
                         continue;
                     }
@@ -171,11 +173,16 @@ public class ScriptCompiler {
 
             buffer.append(c);
         }
-        if (!buffer.isEmpty()) parts.add(new StaticArg(unescape(buffer.toString())));
-        return parts.size() == 1 ? parts.getFirst() : new MixedArg(parts.toArray(new CompiledArgument[0]));
+        if (!buffer.isEmpty()) {
+            parts.add(new StaticArg(unescape(buffer.toString())));
+            formatterFlags.add(false);
+        }
+
+        boolean needsMixedArg = parts.size() > 1 || formatterFlags.stream().anyMatch(Boolean::booleanValue);
+        return needsMixedArg ? new MixedArg(parts.toArray(new CompiledArgument[0])) : parts.getFirst();
     }
 
-    private static CompiledArgument compileSingleTag(String rawTag) {
+    private static CompiledArgument compileSingleTag(String rawTag, List<Boolean> formatterFlagOut) {
         String mainTag = rawTag;
         CompiledArgument fallback = null;
 
@@ -186,16 +193,15 @@ public class ScriptCompiler {
         }
 
         TagNode[] nodes = parseTagNodes(mainTag);
+        FormatRegistry formats = ScriptManager.getRegistry().getFormats();
+        boolean isFormatterCall = formats.isFormat(nodes[0].name());
+        formatterFlagOut.add(isFormatterCall);
 
-        if (nodes.length == 1 && fallback == null) {
-            FormatRegistry formats = ScriptManager.getRegistry().getFormats();
-            if (formats.isFormat(nodes[0].name())) {
-                if (nodes[0].param() == null || nodes[0].param() instanceof StaticArg) {
-                    Attribute mockAttr = new Attribute(nodes, null);
-                    AbstractTag result = formats.get(nodes[0].name()).parse(mockAttr);
-                    return new StaticArg(result);
-                }
-            }
+        if (nodes.length == 1 && fallback == null && isFormatterCall
+                && (nodes[0].param() == null || nodes[0].param() instanceof StaticArg)) {
+            Attribute mockAttr = new Attribute(nodes, null);
+            AbstractTag result = formats.get(nodes[0].name()).parse(mockAttr);
+            return new StaticArg(result);
         }
         return new PreSlicedDynamicArg(nodes, fallback, rawTag);
     }
