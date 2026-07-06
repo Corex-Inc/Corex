@@ -1627,7 +1627,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(LocationTag.class, "randomOffset", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             Vector limit;
-            LocationTag limitTag = attr.getParamObject(LocationTag.class, LocationTag::new);
+            LocationTag limitTag = attr.getParamObject(LocationTag.class);
             if (limitTag != null) {
                 limit = limitTag.getLocation().toVector();
             } else {

@@ -24,6 +24,7 @@ public class ScriptManager {
     private static Path dataFolder;
     private static CorexRegistry registry;
 
+    @SuppressWarnings("unchecked")
     public static void loadScripts() {
         Map<String, AbstractContainer> loaded = new HashMap<>();
         File scriptsFolder = new File(dataFolder.toFile(), "scripts");
@@ -47,11 +48,12 @@ public class ScriptManager {
                 Map<String, Object> parsed = new Yaml().load(cleanYaml);
                 if (parsed == null) continue;
 
+                parsed = (Map<String, Object>) restoreHashes(parsed);
+
                 for (Map.Entry<String, Object> entry : parsed.entrySet()) {
                     String scriptName = entry.getKey();
                     if (!(entry.getValue() instanceof Map<?, ?> rawSection)) continue;
 
-                    @SuppressWarnings("unchecked")
                     Map<String, Object> section = (Map<String, Object>) rawSection;
 
                     if (!(section.get("type") instanceof String type)) continue;
@@ -198,5 +200,43 @@ public class ScriptManager {
         if (inst == null) return;
         inst.customData = innerMap;
         bytecode.add(inst);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object restoreHashes(Object obj) {
+        if (obj instanceof String str) {
+            return str.contains("\uE000") ? str.replace('\uE000', '#') : str;
+        } else if (obj instanceof List<?> list) {
+            boolean changed = false;
+            List<Object> newList = new ArrayList<>(list.size());
+            for (Object item : list) {
+                Object restored = restoreHashes(item);
+                if (restored != item) changed = true;
+                newList.add(restored);
+            }
+            return changed ? newList : list;
+        } else if (obj instanceof Set<?> set) {
+            boolean changed = false;
+            Set<Object> newSet = new LinkedHashSet<>(set.size());
+            for (Object item : set) {
+                Object restored = restoreHashes(item);
+                if (restored != item) changed = true;
+                newSet.add(restored);
+            }
+            return changed ? newSet : set;
+        } else if (obj instanceof Map<?, ?> map) {
+            boolean changed = false;
+            Map<Object, Object> newMap = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                Object key = entry.getKey();
+                Object val = entry.getValue();
+                Object newKey = restoreHashes(key);
+                Object newVal = restoreHashes(val);
+                if (newKey != key || newVal != val) changed = true;
+                newMap.put(newKey, newVal);
+            }
+            return changed ? newMap : map;
+        }
+        return obj;
     }
 }

@@ -12,6 +12,7 @@ public class ScriptPreprocessor {
         for (String line : rawLines) {
 
             line = line.replace("\t", "    ");
+            line = line.replace("#", "\uE000");
 
             if (inBlockComment) {
                 int endIdx = line.indexOf("*/");

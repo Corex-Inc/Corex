@@ -176,6 +176,40 @@ public class RandomTag implements AbstractTag {
 
         /* @doc tag
          *
+         * @Name chance[]
+         * @RawName <RandomTag.chance[<#.#>]>
+         * @Object RandomTag
+         * @ReturnType ElementTag(Boolean)
+         * @ArgRequired
+         * @Description
+         * Returns true with the specified percentage chance (0 to 100).
+         * For example, <random.chance[25]> has a 25% chance to return true.
+         *
+         * @Implements util.random_chance
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "chance", (attr, obj) -> {
+            if (!attr.hasParam()) return new ElementTag(false);
+            double chancePercent = new ElementTag(attr.getParam()).asDouble();
+            return new ElementTag((obj.getRandom().nextDouble() * 100.0) < chancePercent);
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name gauss
+         * @RawName <RandomTag.gauss>
+         * @Object RandomTag
+         * @ReturnType ElementTag(Decimal)
+         * @NoArg
+         * @Description
+         * Returns a random decimal number from a Gaussian (normal) distribution with mean 0.0 and standard deviation 1.0.
+         *
+         * @Implements util.random_gauss
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "gauss", (attr, obj) ->
+                new ElementTag(obj.getRandom().nextGaussian())).setAsyncSafe();
+
+        /* @doc tag
+         *
          * @Name simplex[]
          * @RawName <util.random_simplex[x=<#.#>;(y=<#.#>);(z=<#.#>)]>
          * @Object util
