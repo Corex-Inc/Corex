@@ -194,16 +194,20 @@ public class LookCommand implements AbstractCommand {
         float relYaw   = normaliseAngle(targetYaw - player.getLocation().getYaw());
         float relPitch = targetPitch - player.getLocation().getPitch();
 
-        player.setRotation(targetYaw, targetPitch);
+        if (offthreadRepeats <= 0 || adapter == null) {
+            player.setRotation(targetYaw, targetPitch);
+            onComplete.run();
+            return;
+        }
 
-        if (offthreadRepeats <= 0 || adapter == null) return;
+        adapter.sendRelativeLookPacket(player, relYaw, relPitch);
 
         long intervalMs = Math.max(1L, 50L / (offthreadRepeats + 1));
 
         SchedulerAdapter.get().runAsync(() -> {
             for (int i = 0; i < offthreadRepeats; i++) {
                 try {
-                    Thread.sleep(intervalMs * (i + 1));
+                    Thread.sleep(intervalMs);
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     break;
