@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
@@ -62,12 +63,12 @@ public class TitleCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<text>] (title:<text>) (subtitle:<text>) (fadeIn:<duration>) (stay:<duration>) (fadeOut:<duration>) (targets:<player>|...)";
+        return "(<text>) (title:<text>) (subtitle:<text>) (fadeIn:<duration>) (stay:<duration>) (fadeOut:<duration>) (targets:<player>|...)";
     }
 
     @Override
     public int getMinArgs() {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -81,9 +82,9 @@ public class TitleCommand implements AbstractCommand {
     }
 
     private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
-            .optionalLinear(0, AbstractTag.class, null)
-            .optionalPrefix("title", AbstractTag.class)
-            .optionalPrefix("subtitle", AbstractTag.class)
+            .optionalLinear(0, ElementTag.class, null)
+            .optionalPrefix("title", ElementTag.class, null)
+            .optionalPrefix("subtitle", AbstractTag.class, null)
             .optionalPrefix("fadeIn", DurationTag.class, "1s")
             .optionalPrefix("stay", DurationTag.class, "3s")
             .optionalPrefix("fadeOut", DurationTag.class, "1s")
@@ -95,7 +96,7 @@ public class TitleCommand implements AbstractCommand {
         ArgumentSet args = SCHEMA.bind(instruction, queue);
         if (args == null) return;
 
-        AbstractTag titleTag = args.prefix("title");
+        ElementTag titleTag = args.prefix("title");
         if (titleTag == null) {
             titleTag = args.linear(0);
         }
