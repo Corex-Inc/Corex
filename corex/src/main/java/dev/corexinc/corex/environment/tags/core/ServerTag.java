@@ -459,14 +459,39 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @NoArg
          * @Implements server.offline_players
          * @Description
+         * Returns a list of all players that are currently offline.
+         *
+         * @Usage
+         * // Count everyone who is now offline
+         * - narrate "Total known offline players: <server.offlinePlayers.size>"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "offlinePlayers", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+                if (!player.isOnline()) {
+                    list.addObject(new PlayerTag(player.getUniqueId()));
+                }
+            }
+            return list;
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name players
+         * @RawName <server.players>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Implements server.players
+         * @Description
          * Returns a list of all players that have ever joined the server, including those
          * currently offline.
          *
          * @Usage
          * // Count everyone who has ever played
-         * - narrate "Total known players: <server.offlinePlayers.size>"
+         * - narrate "Total known players: <server.players.size>"
          */
-        TAG_PROCESSOR.registerTag(ListTag.class, "offlinePlayers", (attr, obj) -> {
+        TAG_PROCESSOR.registerTag(ListTag.class, "players", (attr, obj) -> {
             ListTag list = new ListTag();
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                 list.addObject(new PlayerTag(player.getUniqueId()));
@@ -483,16 +508,43 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @NoArg
          * @Implements server.offline_ops
          * @Description
-         * Returns a list of all players that are server operators, including those currently offline.
+         * Returns a list of all server operators that are currently offline.
          *
          * @Usage
-         * // List every operator's name
+         * // List every offline operator's name
          * - narrate <server.offlineOps.parse[name].join[, ]>
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "offlineOps", (attr, obj) -> {
             ListTag list = new ListTag();
-            for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-                if (player.isOp()) list.addObject(new PlayerTag(player.getUniqueId()));
+            for (OfflinePlayer player : Bukkit.getOperators()) {
+                if (player.isOp() && !player.isOnline()) {
+                    list.addObject(new PlayerTag(player.getUniqueId()));
+                }
+            }
+            return list;
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name offlineOps
+         * @RawName <server.ops>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Implements server.ops
+         * @Description
+         * Returns a list of all server operators.
+         *
+         * @Usage
+         * // List every operator's name
+         * - narrate <server.ops.parse[name].join[, ]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "ops", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (OfflinePlayer player : Bukkit.getOperators()) {
+                if (player.isOp()) {
+                    list.addObject(new PlayerTag(player.getUniqueId()));
+                }
             }
             return list;
         }).setAsyncSafe();
