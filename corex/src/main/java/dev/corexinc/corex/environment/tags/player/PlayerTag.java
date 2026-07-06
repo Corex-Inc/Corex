@@ -24,6 +24,7 @@ import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -193,6 +194,32 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             Entity entity = object.getPlayer().getTargetEntity(50, false);
             if (entity == null) return null;
             return new EntityTag(entity);
+        })).ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name cursorOn
+         * @RawName <PlayerTag.cursorOn[(<range>)]>
+         * @Object PlayerTag
+         * @ReturnType LocationTag
+         * @NoArg
+         * @Description
+         * Returns the location of the block the player is looking at, within a default range of 50 blocks,
+         * or null if the player is not looking at a block.
+         * Optionally, specify a maximum range to check.
+         *
+         * @Implements PlayerTag.cursor_on
+         */
+        TAG_PROCESSOR.registerTag(LocationTag.class, "cursorOn", ((attribute, object) -> {
+            Player player = object.getPlayer();
+            if (player == null) return null;
+            int range = 50;
+            if (attribute.hasParam()) {
+                range = attribute.getParamObject(ElementTag.class).asInt();
+            }
+            Block block = player.getTargetBlockExact(range);
+            if (block == null) return null;
+            return new LocationTag(block.getLocation());
         })).ignoreTest();
 
         /* @doc tag

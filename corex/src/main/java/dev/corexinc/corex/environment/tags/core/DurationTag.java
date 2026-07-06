@@ -217,7 +217,6 @@ public class DurationTag implements AbstractTag {
         this.ticks = Math.max(0.0, ticks);
     }
 
-
     public double getTicks() {
         return ticks;
     }

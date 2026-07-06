@@ -107,10 +107,10 @@ public class PlayerAdapterImpl implements PlayerAdapter {
         ClientboundPlayerPositionPacket packet = ClientboundPlayerPositionPacket.of(
                 0,
                 new PositionMoveRotation(Vec3.ZERO, Vec3.ZERO, relYaw, relPitch),
-                EnumSet.allOf(Relative.class)
+                EnumSet.complementOf(EnumSet.of(Relative.ROTATE_DELTA))
         );
 
-        nmsPlayer.connection.send(packet);
+        nmsPlayer.connection.connection.channel.writeAndFlush(packet);
     }
 
     @Override
