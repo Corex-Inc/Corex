@@ -7,25 +7,30 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import org.jspecify.annotations.NonNull;
 
+import java.util.HexFormat;
+
 /* @doc object
  *
  * @Name ColorTag
  * @Prefix color
  * @Format
- * The identity format for ColorTags is 'color@R,G,B' or 'color@R,G,B,A' where each channel is 0-255.
- * For example, red would be 'color@255,0,0' and half-transparent blue would be 'color@0,0,255,127'.
- * Hex input is also accepted as '#RRGGBB' or '#RRGGBBAA'.
+ * The basic syntax for instantiating a ColorTag is 'color@R,G,B' or 'color@R,G,B,A'.
+ * The color channels (red, green, blue, alpha) must be integer values from 0 to 255.
+ * Additionally, standard hex strings like '#RRGGBB' and '#RRGGBBAA' are natively supported.
+ * For example, a fully opaque red is 'color@255,0,0', and a semi-transparent blue could be 'color@0,0,255,128'.
  *
  * @Description
- * A ColorTag represents an RGBA color value.
- * Each channel (red, green, blue, alpha) is an integer from 0 to 255.
- * Alpha defaults to 255 (fully opaque) if not specified.
+ * A ColorTag is an optimized wrapper representing an RGBA color model.
+ * Each of the four channels (Red, Green, Blue, Alpha) is strictly clamped to an 8-bit range (0-255).
+ * If the alpha channel is not explicitly provided during construction, it defaults to 255 (completely opaque).
+ * This tag provides highly performant conversions to various color spaces like RGB, ARGB integers, and HSV/HSB.
  *
  * @Implements ColorTag
  */
 public class ColorTag implements AbstractTag {
 
-    private static final String prefix = "color";
+    private static final String PREFIX = "color";
+    private static final HexFormat HEX_FORMAT = HexFormat.of().withUpperCase();
 
     public final int red;
     public final int green;
@@ -35,11 +40,11 @@ public class ColorTag implements AbstractTag {
     public static final TagProcessor<ColorTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag(prefix, attr -> {
+        BaseTagProcessor.registerBaseTag(PREFIX, attr -> {
             if (!attr.hasParam()) return null;
             return new ColorTag(attr.getParam());
         });
-        ObjectFetcher.registerFetcher(prefix, ColorTag::new);
+        ObjectFetcher.registerFetcher(PREFIX, ColorTag::new);
 
         /* @doc tag
          *
@@ -49,10 +54,7 @@ public class ColorTag implements AbstractTag {
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Description
-         * Returns the red channel of this color (0-255).
-         * @Usage
-         * // Narrates "255"
-         * - narrate <color[255,0,0].red>
+         * Retrieves the red component of this color, constrained between 0 and 255.
          *
          * @Implements ColorTag.red
          */
@@ -66,10 +68,7 @@ public class ColorTag implements AbstractTag {
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Description
-         * Returns the green channel of this color (0-255).
-         * @Usage
-         * // Narrates "128"
-         * - narrate <color[0,128,0].green>
+         * Retrieves the green component of this color, constrained between 0 and 255.
          *
          * @Implements ColorTag.green
          */
@@ -83,10 +82,7 @@ public class ColorTag implements AbstractTag {
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Description
-         * Returns the blue channel of this color (0-255).
-         * @Usage
-         * // Narrates "200"
-         * - narrate <color[0,0,200].blue>
+         * Retrieves the blue component of this color, constrained between 0 and 255.
          *
          * @Implements ColorTag.blue
          */
@@ -100,10 +96,7 @@ public class ColorTag implements AbstractTag {
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Description
-         * Returns the alpha channel of this color (0-255). 255 is fully opaque, 0 is fully transparent.
-         * @Usage
-         * // Narrates "255"
-         * - narrate <color[255,0,0].alpha>
+         * Retrieves the alpha (opacity) component of this color. 255 means fully visible, 0 means invisible.
          *
          * @Implements ColorTag.alpha
          */
@@ -117,54 +110,140 @@ public class ColorTag implements AbstractTag {
          * @ReturnType ElementTag
          * @NoArg
          * @Description
-         * Returns the color as an uppercase hex string in '#RRGGBB' format.
-         * Append '.withAlpha' to include the alpha channel as '#RRGGBBAA'.
-         * @Usage
-         * // Narrates "#FF0000"
-         * - narrate <color[255,0,0].hex>
+         * Yields the hexadecimal string representation of the color in '#RRGGBB' format.
+         * Using the sub-tag '.withAlpha' appends the alpha channel, resulting in '#RRGGBBAA'.
          *
          * @Implements ColorTag.hex
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "hex", (attr, obj) -> {
-            if (attr.matchesNext("withAlpha")) {
-                attr.fulfill(1);
-                return new ElementTag(obj.getHex(true));
-            }
-            return new ElementTag(obj.getHex(false));
+            boolean hasAlpha = attr.matchesNext("withAlpha");
+            if (hasAlpha) attr.fulfill(1);
+            return new ElementTag(obj.getHex(hasAlpha));
         }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name rgbInteger
+         * @RawName <ColorTag.rgbInteger>
+         * @Object ColorTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Packs the Red, Green, and Blue channels into a single 24-bit integer.
+         * This format is often required by low-level server APIs or NMS tools.
+         *
+         * @Implements ColorTag.rgb_integer
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "rgbInteger", (attr, obj) ->
+                new ElementTag((obj.red << 16) | (obj.green << 8) | obj.blue)).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name argbInteger
+         * @RawName <ColorTag.argbInteger>
+         * @Object ColorTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Packs the Alpha, Red, Green, and Blue channels into a single 32-bit integer.
+         * Alpha occupies the highest-order bytes.
+         *
+         * @Implements ColorTag.argb_integer
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "argbInteger", (attr, obj) ->
+                new ElementTag((obj.alpha << 24) | (obj.red << 16) | (obj.green << 8) | obj.blue)).setAsyncSafe();
 
         /* @doc tag
          *
          * @Name rgb
          * @RawName <ColorTag.rgb>
          * @Object ColorTag
-         * @ReturnType ElementTag(Number)
+         * @ReturnType ElementTag
          * @NoArg
          * @Description
-         * Returns the color as a packed RGB integer (as used by Bukkit/NMS color APIs).
-         * @Usage
-         * // Narrates "16711680"
-         * - narrate <color[255,0,0].rgb>
+         * Outputs a simple comma-separated string containing the red, green, and blue values (e.g., '255,0,0').
          *
-         * @Implements ColorTag.rgb_integer
+         * @Implements ColorTag.rgb
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "rgb", (attr, obj) ->
-                new ElementTag((obj.red << 16) | (obj.green << 8) | obj.blue)).setAsyncSafe();
+                new ElementTag(obj.red + "," + obj.green + "," + obj.blue)).setAsyncSafe();
 
         /* @doc tag
          *
-         * @Name argb
-         * @RawName <ColorTag.argb>
+         * @Name rgba
+         * @RawName <ColorTag.rgba>
+         * @Object ColorTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Outputs a comma-separated string containing the red, green, blue, and alpha values.
+         *
+         * @Implements ColorTag.rgba
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "rgba", (attr, obj) ->
+                new ElementTag(obj.red + "," + obj.green + "," + obj.blue + "," + obj.alpha)).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name hue
+         * @RawName <ColorTag.hue>
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Description
-         * Returns the color as a packed ARGB integer (alpha in the highest byte).
+         * Extracts the hue component from the color's HSV model, converted to a 0-255 scale.
          *
-         * @Implements ColorTag.argb_integer
+         * @Implements ColorTag.hue
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "argb", (attr, obj) ->
-                new ElementTag((obj.alpha << 24) | (obj.red << 16) | (obj.green << 8) | obj.blue)).setAsyncSafe();
+        TAG_PROCESSOR.registerTag(ElementTag.class, "hue", (attr, obj) ->
+                new ElementTag(obj.toHSV()[0])).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name saturation
+         * @RawName <ColorTag.saturation>
+         * @Object ColorTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Extracts the saturation value from the color's HSV model, converted to a 0-255 scale.
+         *
+         * @Implements ColorTag.saturation
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "saturation", (attr, obj) ->
+                new ElementTag(obj.toHSV()[1])).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name brightness
+         * @RawName <ColorTag.brightness>
+         * @Object ColorTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Description
+         * Extracts the brightness (value) component from the color's HSV model, converted to a 0-255 scale.
+         *
+         * @Implements ColorTag.brightness
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "brightness", (attr, obj) ->
+                new ElementTag(obj.toHSV()[2])).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name hsv
+         * @RawName <ColorTag.hsv>
+         * @Object ColorTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Description
+         * Retrieves a comma-separated string of the Hue, Saturation, and Brightness metrics, each scaled 0-255.
+         *
+         * @Implements ColorTag.hsv
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "hsv", (attr, obj) -> {
+            int[] hsv = obj.toHSV();
+            return new ElementTag(hsv[0] + "," + hsv[1] + "," + hsv[2]);
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -174,36 +253,32 @@ public class ColorTag implements AbstractTag {
          * @ReturnType ListTag
          * @NoArg
          * @Description
-         * Returns the color channels as a ListTag in R|G|B or R|G|B|A order.
-         * Append '.withAlpha' to include the alpha channel.
-         * @Usage
-         * // Narrates "255|0|0"
-         * - narrate <color[255,0,0].toList>
+         * Transforms the RGB channels into a ListTag formatted as R|G|B.
+         * Appending '.withAlpha' modifies the output to R|G|B|A.
+         *
+         * @Implements ColorTag.to_list
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "toList", (attr, obj) -> {
             ListTag result = new ListTag();
-            result.addString(String.valueOf(obj.red));
-            result.addString(String.valueOf(obj.green));
-            result.addString(String.valueOf(obj.blue));
+            result.addString(Integer.toString(obj.red));
+            result.addString(Integer.toString(obj.green));
+            result.addString(Integer.toString(obj.blue));
             if (attr.matchesNext("withAlpha")) {
                 attr.fulfill(1);
-                result.addString(String.valueOf(obj.alpha));
+                result.addString(Integer.toString(obj.alpha));
             }
             return result;
         }).setAsyncSafe();
 
         /* @doc tag
          *
-         * @Name withRed[]
+         * @Name withRed
          * @RawName <ColorTag.withRed[<#>]>
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
          * @Description
-         * Returns a copy of this color with the red channel replaced by the given value.
-         * @Usage
-         * // Narrates "color@128,0,0"
-         * - narrate <color[255,0,0].withRed[128]>
+         * Returns a cloned ColorTag with its red channel substituted by the specified value (0-255).
          *
          * @Implements ColorTag.with_red[<red>]
          */
@@ -214,13 +289,13 @@ public class ColorTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name withGreen[]
+         * @Name withGreen
          * @RawName <ColorTag.withGreen[<#>]>
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
          * @Description
-         * Returns a copy of this color with the green channel replaced by the given value.
+         * Returns a cloned ColorTag with its green channel substituted by the specified value (0-255).
          *
          * @Implements ColorTag.with_green[<green>]
          */
@@ -231,13 +306,13 @@ public class ColorTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name withBlue[]
+         * @Name withBlue
          * @RawName <ColorTag.withBlue[<#>]>
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
          * @Description
-         * Returns a copy of this color with the blue channel replaced by the given value.
+         * Returns a cloned ColorTag with its blue channel substituted by the specified value (0-255).
          *
          * @Implements ColorTag.with_blue[<blue>]
          */
@@ -248,13 +323,13 @@ public class ColorTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name withAlpha[]
+         * @Name withAlpha
          * @RawName <ColorTag.withAlpha[<#>]>
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
          * @Description
-         * Returns a copy of this color with the alpha channel replaced by the given value.
+         * Returns a cloned ColorTag with its alpha channel substituted by the specified value (0-255).
          *
          * @Implements ColorTag.with_alpha[<alpha>]
          */
@@ -265,17 +340,68 @@ public class ColorTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name mix[]
+         * @Name withHue
+         * @RawName <ColorTag.withHue[<#>]>
+         * @Object ColorTag
+         * @ReturnType ColorTag
+         * @ArgRequired
+         * @Description
+         * Generates a new ColorTag using a replaced hue value (0-255), keeping the original saturation and brightness intact.
+         *
+         * @Implements ColorTag.with_hue[<hue>]
+         */
+        TAG_PROCESSOR.registerTag(ColorTag.class, "withHue", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            int[] hsv = obj.toHSV();
+            return fromHSV(clamp(new ElementTag(attr.getParam()).asInt()), hsv[1], hsv[2], obj.alpha);
+        }).test("150").setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name withSaturation
+         * @RawName <ColorTag.withSaturation[<#>]>
+         * @Object ColorTag
+         * @ReturnType ColorTag
+         * @ArgRequired
+         * @Description
+         * Generates a new ColorTag using a replaced saturation value (0-255), keeping original hue and brightness.
+         *
+         * @Implements ColorTag.with_saturation[<saturation>]
+         */
+        TAG_PROCESSOR.registerTag(ColorTag.class, "withSaturation", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            int[] hsv = obj.toHSV();
+            return fromHSV(hsv[0], clamp(new ElementTag(attr.getParam()).asInt()), hsv[2], obj.alpha);
+        }).test("150").setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name withBrightness
+         * @RawName <ColorTag.withBrightness[<#>]>
+         * @Object ColorTag
+         * @ReturnType ColorTag
+         * @ArgRequired
+         * @Description
+         * Generates a new ColorTag using a replaced brightness value (0-255), keeping original hue and saturation.
+         *
+         * @Implements ColorTag.with_brightness[<brightness>]
+         */
+        TAG_PROCESSOR.registerTag(ColorTag.class, "withBrightness", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            int[] hsv = obj.toHSV();
+            return fromHSV(hsv[0], hsv[1], clamp(new ElementTag(attr.getParam()).asInt()), obj.alpha);
+        }).test("150").setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name mix
          * @RawName <ColorTag.mix[<color>]>
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
          * @Description
-         * Returns a new color that is the average of this color and the given color, channel by channel.
-         * Optionally append '.by[<0.0-1.0>]' to control the blend factor (0.0 = fully this, 1.0 = fully other).
-         * @Usage
-         * // Narrates "color@127,127,0,255"
-         * - narrate <color[255,0,0].mix[color@0,255,0]>
+         * Computes the blended result of this color mixed with another.
+         * You can chain '.by[<0.0-1.0>]' to set a custom blending ratio (the default is 0.5 for an exact 50/50 split).
          *
          * @Implements ColorTag.mix[<color>]
          */
@@ -284,8 +410,7 @@ public class ColorTag implements AbstractTag {
             ColorTag other = new ColorTag(attr.getParam());
             float factor = 0.5f;
             if (attr.matchesNext("by") && attr.hasNextParam()) {
-                factor = (float) new ElementTag(attr.getNextParam()).asDouble();
-                factor = Math.max(0.0f, Math.min(1.0f, factor));
+                factor = (float) Math.clamp(new ElementTag(attr.getNextParam()).asDouble(), 0.0, 1.0);
                 attr.fulfill(1);
             }
             return new ColorTag(
@@ -295,77 +420,6 @@ public class ColorTag implements AbstractTag {
                     clamp(Math.round(obj.alpha + (other.alpha - obj.alpha) * factor))
             );
         }).test("color@0,255,0").setAsyncSafe();
-
-        /* @doc tag
-         *
-         * @Name lighter
-         * @RawName <ColorTag.lighter>
-         * @Object ColorTag
-         * @ReturnType ColorTag
-         * @NoArg
-         * @Description
-         * Returns a lighter version of this color by blending it 50% toward white.
-         * @Usage
-         * // Narrates "color@255,127,127,255"
-         * - narrate <color[255,0,0].lighter>
-         */
-        TAG_PROCESSOR.registerTag(ColorTag.class, "lighter", (attr, obj) ->
-                new ColorTag(
-                        clamp(obj.red   + (255 - obj.red)   / 2),
-                        clamp(obj.green + (255 - obj.green) / 2),
-                        clamp(obj.blue  + (255 - obj.blue)  / 2),
-                        obj.alpha
-                )).setAsyncSafe();
-
-        /* @doc tag
-         *
-         * @Name darker
-         * @RawName <ColorTag.darker>
-         * @Object ColorTag
-         * @ReturnType ColorTag
-         * @NoArg
-         * @Description
-         * Returns a darker version of this color by halving each channel.
-         * @Usage
-         * // Narrates "color@127,0,0,255"
-         * - narrate <color[255,0,0].darker>
-         */
-        TAG_PROCESSOR.registerTag(ColorTag.class, "darker", (attr, obj) ->
-                new ColorTag(obj.red / 2, obj.green / 2, obj.blue / 2, obj.alpha)).setAsyncSafe();
-
-        /* @doc tag
-         *
-         * @Name inverted
-         * @RawName <ColorTag.inverted>
-         * @Object ColorTag
-         * @ReturnType ColorTag
-         * @NoArg
-         * @Description
-         * Returns the inverse of this color (255 - each channel). Alpha is preserved.
-         * @Usage
-         * // Narrates "color@0,255,255,255"
-         * - narrate <color[255,0,0].inverted>
-         */
-        TAG_PROCESSOR.registerTag(ColorTag.class, "inverted", (attr, obj) ->
-                new ColorTag(255 - obj.red, 255 - obj.green, 255 - obj.blue, obj.alpha)).setAsyncSafe();
-
-        /* @doc tag
-         *
-         * @Name grayscale
-         * @RawName <ColorTag.grayscale>
-         * @Object ColorTag
-         * @ReturnType ColorTag
-         * @NoArg
-         * @Description
-         * Returns a grayscale version of this color using standard luminance weights.
-         * @Usage
-         * // Narrates "color@54,54,54,255"
-         * - narrate <color[255,0,0].grayscale>
-         */
-        TAG_PROCESSOR.registerTag(ColorTag.class, "grayscale", (attr, obj) -> {
-            int luminance = clamp((int) (obj.red * 0.2126 + obj.green * 0.7152 + obj.blue * 0.0722));
-            return new ColorTag(luminance, luminance, luminance, obj.alpha);
-        }).setAsyncSafe();
     }
 
     public ColorTag(int red, int green, int blue) {
@@ -384,10 +438,16 @@ public class ColorTag implements AbstractTag {
     }
 
     public ColorTag(String raw) {
-        if (raw == null || raw.isEmpty()) { red = green = blue = 0; alpha = 255; return; }
-        if (raw.startsWith(prefix + "@")) raw = raw.substring(prefix.length() + 1);
-        if (raw.startsWith("#")) {
-            String hex = raw.substring(1);
+        if (raw == null || raw.isBlank()) {
+            this.red = this.green = this.blue = 0;
+            this.alpha = 255;
+            return;
+        }
+
+        String cleanRaw = raw.startsWith(PREFIX + "@") ? raw.substring(PREFIX.length() + 1) : raw;
+
+        if (cleanRaw.startsWith("#")) {
+            String hex = cleanRaw.substring(1);
             int r = 0, g = 0, b = 0, a = 255;
             try {
                 if (hex.length() >= 6) {
@@ -399,10 +459,11 @@ public class ColorTag implements AbstractTag {
                     a = Integer.parseInt(hex.substring(6, 8), 16);
                 }
             } catch (NumberFormatException ignored) {}
-            red = r; green = g; blue = b; alpha = a;
+            this.red = clamp(r); this.green = clamp(g); this.blue = clamp(b); this.alpha = clamp(a);
             return;
         }
-        String[] parts = raw.split(",", 4);
+
+        String[] parts = cleanRaw.split(",", 4);
         int r = 0, g = 0, b = 0, a = 255;
         try {
             if (parts.length > 0) r = Integer.parseInt(parts[0].trim());
@@ -410,32 +471,91 @@ public class ColorTag implements AbstractTag {
             if (parts.length > 2) b = Integer.parseInt(parts[2].trim());
             if (parts.length > 3) a = Integer.parseInt(parts[3].trim());
         } catch (NumberFormatException ignored) {}
-        red = clamp(r); green = clamp(g); blue = clamp(b); alpha = clamp(a);
+        this.red = clamp(r); this.green = clamp(g); this.blue = clamp(b); this.alpha = clamp(a);
     }
 
     public String getHex(boolean hasAlpha) {
         if (hasAlpha) {
-            return String.format("#%02X%02X%02X%02X", red, green, blue, alpha);
+            return "#" + HEX_FORMAT.formatHex(new byte[]{(byte) red, (byte) green, (byte) blue, (byte) alpha});
+        } else {
+            return "#" + HEX_FORMAT.formatHex(new byte[]{(byte) red, (byte) green, (byte) blue});
         }
-        return String.format("#%02X%02X%02X", red, green, blue);
     }
 
     public int asRGB() {
-        return red << 16 | green << 8 | blue;
+        return (red << 16) | (green << 8) | blue;
+    }
+
+    public int[] toHSV() {
+        float r = red / 255.0f;
+        float g = green / 255.0f;
+        float b = blue / 255.0f;
+        float max = Math.max(r, Math.max(g, b));
+        float min = Math.min(r, Math.min(g, b));
+        float delta = max - min;
+
+        float h = 0f;
+        if (delta != 0f) {
+            if (max == r) {
+                h = (g - b) / delta;
+            } else if (max == g) {
+                h = 2f + (b - r) / delta;
+            } else {
+                h = 4f + (r - g) / delta;
+            }
+        }
+
+        h /= 6.0f;
+        if (h < 0f) h += 1.0f;
+
+        float s = (max == 0f) ? 0f : delta / max;
+        return new int[]{
+                Math.round(h * 255f),
+                Math.round(s * 255f),
+                Math.round(max * 255f)
+        };
+    }
+
+    public static ColorTag fromHSV(int h, int s, int v, int alpha) {
+        float hue = h / 255.0f;
+        float sat = s / 255.0f;
+        float val = v / 255.0f;
+
+        int r = 0, g = 0, b = 0;
+        if (sat == 0f) {
+            r = g = b = Math.round(val * 255f);
+        } else {
+            float hueScaled = (hue - (float) Math.floor(hue)) * 6.0f;
+            float fragment = hueScaled - (float) Math.floor(hueScaled);
+            float p = val * (1.0f - sat);
+            float q = val * (1.0f - sat * fragment);
+            float t = val * (1.0f - sat * (1.0f - fragment));
+
+            switch ((int) hueScaled) {
+                case 0 -> { r = Math.round(val * 255f); g = Math.round(t * 255f); b = Math.round(p * 255f); }
+                case 1 -> { r = Math.round(q * 255f); g = Math.round(val * 255f); b = Math.round(p * 255f); }
+                case 2 -> { r = Math.round(p * 255f); g = Math.round(val * 255f); b = Math.round(t * 255f); }
+                case 3 -> { r = Math.round(p * 255f); g = Math.round(q * 255f); b = Math.round(val * 255f); }
+                case 4 -> { r = Math.round(t * 255f); g = Math.round(p * 255f); b = Math.round(val * 255f); }
+                case 5 -> { r = Math.round(val * 255f); g = Math.round(p * 255f); b = Math.round(q * 255f); }
+            }
+        }
+        return new ColorTag(r, g, b, alpha);
     }
 
     private static int clamp(int value) {
-        return Math.max(0, Math.min(255, value));
+        return Math.clamp(value, 0, 255);
     }
 
     @Override
     public @NonNull String getPrefix() {
-        return prefix;
+        return PREFIX;
     }
 
     @Override
     public @NonNull String identify() {
-        return prefix + "@" + red + "," + green + "," + blue + "," + alpha;
+        if (alpha == 255) return PREFIX + "@" + red + "," + green + "," + blue;
+        return PREFIX + "@" + red + "," + green + "," + blue + "," + alpha;
     }
 
     @Override
