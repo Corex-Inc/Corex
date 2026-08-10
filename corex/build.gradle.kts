@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     java
 }
 
@@ -10,6 +10,9 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://maven.canvasmc.io/releases")
     maven("https://maven.pulsemc.dev/snapshots")
+    maven("https://repo.codemc.io/repository/maven-releases/")
+    maven("https://repo.codemc.io/repository/maven-snapshots/")
+    maven("https://maven.pvphub.me/tofaa")
 }
 
 dependencies {
@@ -21,6 +24,8 @@ dependencies {
     compileOnly("org.java-websocket:Java-WebSocket:1.5.6")
     compileOnly("com.zaxxer:HikariCP:5.1.0")
     compileOnly("org.xerial:sqlite-jdbc:3.45.1.0")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
+    compileOnly("io.github.tofaa2:spigot:3.3.7-SNAPSHOT")
 
 
     // Tests

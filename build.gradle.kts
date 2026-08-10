@@ -25,6 +25,10 @@ subprojects {
     java {
         toolchain.languageVersion.set(JavaLanguageVersion.of(25))
     }
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+    }
 }
 
 dependencies {
@@ -35,9 +39,11 @@ dependencies {
     implementation(project(":v1_21_4"))
     implementation(project(":v1_21_5"))
     implementation(project(":v1_21_6"))
+    implementation(project(":v1_21_7"))
     implementation(project(":v1_21_9"))
     implementation(project(":v1_21_11"))
     implementation(project(":v26_1_2"))
+    implementation(project(":v26_2"))
 }
 
 tasks {
