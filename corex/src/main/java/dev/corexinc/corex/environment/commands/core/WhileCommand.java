@@ -111,10 +111,12 @@ public class WhileCommand implements AbstractCommand {
 
         boolean initialResult = condition.evaluate(queue);
 
-        Debugger.report(queue, instruction,
-                "Initial Condition", String.valueOf(initialResult),
-                "AsDefinition", asVar
-        );
+        if (Debugger.shouldReport(queue)) {
+            Debugger.report(queue, instruction,
+                    "Initial Condition", String.valueOf(initialResult),
+                    "AsDefinition", asVar
+            );
+        }
 
         if (!initialResult) {
             queue.define(asVar, null);

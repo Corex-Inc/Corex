@@ -51,6 +51,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the size of the map - that is, how many key/value pairs are within it.
          * @Usage
@@ -68,6 +69,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns true if the map contains no entries, false otherwise.
          * @Usage
@@ -85,6 +87,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all keys in this map.
          * @Usage
@@ -106,6 +109,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ElementTag, ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the first key whose value matches the given value.
          * If a list of values is given, returns a list of matching keys (skipping values not found).
@@ -147,6 +151,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the map merged with the given map.
          * Keys from the input map overwrite existing keys on conflict.
@@ -171,6 +176,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of the map with the entry order reversed.
          * @Usage
@@ -193,6 +199,7 @@ public class MapTag implements AbstractTag {
          * @RawName <MapTag.toList[(<separator>)]>
          * @Object MapTag
          * @ReturnType ListTag
+         * @Async
          * @Description
          * Converts the map into a ListTag of entries.
          * By default, each entry is formatted as "key=value".
@@ -220,6 +227,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ListTag(ListTag)
          * @NoArg
+         * @Async
          * @Description
          * Converts the map into a list of two-element lists, each containing[key, value].
          * Useful for foreach loops where both the key and value are needed.
@@ -248,6 +256,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all values in this map, in insertion order.
          * @Usage
@@ -269,6 +278,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns whether the map contains the specified key.
          * If a list is given as input, returns true only if ALL specified keys are present.
@@ -296,6 +306,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ObjectTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the object value at the specified key, using deep key paths separated by the '.' symbol.
          * If a list is given as input, returns a list of values.
@@ -354,6 +365,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a sub-map containing only the specified keys, ordered by the input list.
          * Keys not present in the map are silently skipped.
@@ -381,6 +393,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the map with the specified key set to the given value.
          * Supports deep key paths separated by '.' - no separate deep_with needed.
@@ -409,6 +422,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the map with the specified key(s) removed.
          * Accepts a list to remove multiple keys at once.
@@ -438,6 +452,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @NoArg
+         * @Async
          * @Description
          * Returns an inverted copy of the map - keys become values and values become keys.
          * If multiple original values are identical, the last matching key wins.
@@ -460,6 +475,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType MapTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of the map sorted lexicographically by its values.
          * @Usage
@@ -483,6 +499,7 @@ public class MapTag implements AbstractTag {
          * @Object MapTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Converts the MapTag into a strict JSON string.
@@ -497,6 +514,7 @@ public class MapTag implements AbstractTag {
              * @Object MapTag
              * @ReturnType ElementTag
              * @NoArg
+             * @Async
              *
              * @Description
              * Converts the MapTag into an element with nicely formatted multiline JSON.

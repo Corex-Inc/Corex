@@ -82,10 +82,11 @@ public class InventoryTag implements AbstractTag {
          * @Object InventoryTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the inventory is gui-locked (viewers cannot move items).
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "gui", (attr, obj) -> new ElementTag(obj.gui)).ignoreTest();
+        TAG_PROCESSOR.registerTag(ElementTag.class, "gui", (attr, obj) -> new ElementTag(obj.gui)).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -94,11 +95,12 @@ public class InventoryTag implements AbstractTag {
          * @Object InventoryTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the menu type key of the inventory (e.g. GENERIC_9X3).
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "inventoryType", (attr, obj) ->
-                obj.typeName != null ? new ElementTag(obj.typeName) : null).ignoreTest();
+                obj.typeName != null ? new ElementTag(obj.typeName) : null).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -107,11 +109,12 @@ public class InventoryTag implements AbstractTag {
          * @Object InventoryTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the title of the inventory.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "title", (attr, obj) ->
-                new ElementTag(LegacyComponentSerializer.legacySection().serialize(obj.title))).ignoreTest();
+                new ElementTag(LegacyComponentSerializer.legacySection().serialize(obj.title))).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -160,11 +163,12 @@ public class InventoryTag implements AbstractTag {
          * @Object InventoryTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the name of the backing inventory script container, or null for a generic inventory.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "script", (attr, obj) ->
-                obj.scriptName != null ? new ElementTag(obj.scriptName) : null).ignoreTest();
+                obj.scriptName != null ? new ElementTag(obj.scriptName) : null).ignoreTest().setAsyncSafe();
     }
 
     public InventoryTag(String scriptName, String typeName, Component title,

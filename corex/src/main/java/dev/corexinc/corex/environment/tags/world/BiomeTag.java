@@ -65,6 +65,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @ReturnType ElementTag
          * @Object BiomeTag
          * @NoArg
+         * @Async
          *
          * @Implements BiomeTag.name
          *
@@ -77,7 +78,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * - narrate "You are in the biome: <player.location.biome.name>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) ->
-                new ElementTag(obj.biomeKey.toString()));
+                new ElementTag(obj.biomeKey.toString())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -86,6 +87,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @ReturnType ElementTag
          * @Object BiomeTag
          * @NoArg
+         * @Async
          *
          * @Description
          * ReturnType the name of the world in which this biome is located.
@@ -96,7 +98,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * - narrate "This biome is in world: <player.location.biome.world>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "world", (attr, obj) ->
-                new ElementTag(obj.world.getName()));
+                new ElementTag(obj.world.getName())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -390,6 +392,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * @Name attributeNames
          * @RawName <BiomeTag.attributeNames>
          * @ReturnType ListTag(ElementTag)
+         * @Async
          * @AvailableSince 1.21.11
          * @Object BiomeTag
          * @NoArgs
@@ -403,7 +406,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * - narrate "Available biome attributes: <biome[minecraft:plains].attributeNames.join[, ]>"
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "attributeNames", (attr, obj) ->
-                new ListTag(nms.getAttributes())).setAvailableSince("1.21.11");
+                new ListTag(nms.getAttributes())).setAvailableSince("1.21.11").setAsyncSafe();
 
         /* @doc mechanism
          *

@@ -62,10 +62,11 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the common name of this material as a text string.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) -> new ElementTag(obj.material.name().toLowerCase()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) -> new ElementTag(obj.material.name().toLowerCase())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -74,10 +75,11 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Checks if this material represents a placeable block within the game world.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isBlock", (attr, obj) -> new ElementTag(obj.material.isBlock()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isBlock", (attr, obj) -> new ElementTag(obj.material.isBlock())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -86,10 +88,11 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Determines if this material can be held as an item.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isItem", (attr, obj) -> new ElementTag(obj.material.isItem()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isItem", (attr, obj) -> new ElementTag(obj.material.isItem())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -98,10 +101,11 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Checks if this material is an edible item that can be consumed by players.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isEdible", (attr, obj) -> new ElementTag(obj.material.isEdible()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isEdible", (attr, obj) -> new ElementTag(obj.material.isEdible())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -110,10 +114,11 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the maximum quantity of this material that can be present in a single inventory stack.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "maxStackSize", (attr, obj) -> new ElementTag(obj.material.getMaxStackSize()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "maxStackSize", (attr, obj) -> new ElementTag(obj.material.getMaxStackSize())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -122,6 +127,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType MapTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a MapTag containing all block state properties currently applied to this material.
          * For example, returns a map like: map@[facing=east;waterlogged=false;half=bottom]
@@ -143,7 +149,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
                 }
             }
             return map;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -152,6 +158,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the value of a specific block state property (like 'facing', 'level', 'waterlogged', 'age').
          * Returns null if the property does not exist on this material.
@@ -173,7 +180,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
             if (end == -1) return null;
 
             return new ElementTag(dataStr.substring(start, end));
-        }).ignoreTest();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -182,6 +189,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
          * @Object MaterialTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a ListTag containing all valid block state property names that can be applied to this material.
          * Returns null if the material is an item with no block properties.
@@ -207,7 +215,7 @@ public class MaterialTag implements AbstractTag, Adjustable {
                 }
             }
             return new ListTag(keys.toString());
-        });
+        }).setAsyncSafe();
 
         MECHANISM_PROCESSOR.registerMechanism("properties", (obj, val) -> {
             if (val instanceof MapTag mapTag) {

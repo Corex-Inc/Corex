@@ -95,6 +95,11 @@ public class FlagCommand implements AbstractCommand {
         return 4;
     }
 
+    @Override
+    public boolean isAsyncSafe() {
+        return true;
+    }
+
     private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
             .requireLinear(0, ListTag.class)
             .requireLinear(1, ElementTag.class)

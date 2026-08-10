@@ -122,6 +122,19 @@ public class Instruction {
     }
 
     /**
+     * Retrieves the raw, un-evaluated {@link CompiledArgument} at the given linear index.
+     * <p>
+     * Use this when you need to inspect or re-split the argument's original text
+     * (e.g. "mech:value" shorthand) before evaluation merges it into one object.
+     */
+    @Nullable
+    @AvailableSince("1.0.0")
+    public CompiledArgument getLinearArgument(int index) {
+        if (index < 0 || index >= linearArgs.length) return null;
+        return linearArgs[index];
+    }
+
+    /**
      * Evaluates a prefixed argument and returns its string representation.
      *
      * @param prefix the name of the prefix (e.g., "reason").

@@ -4,6 +4,8 @@ import dev.corexinc.corex.api.processors.MechanismProcessor;
 import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+
 /**
  * Represents an {@link AbstractTag} that can be modified via the mechanism system.
  * <p>
@@ -41,6 +43,29 @@ public interface Adjustable extends AbstractTag {
     @OverrideOnly
     @AvailableSince("1.0.0")
     AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value);
+
+    /**
+     * Applies several mechanisms as one change.
+     * <p>
+     * The default runs them one by one. Override it when applying values in a batch is cheaper
+     * than applying them individually - a packet entity, for instance, sends one metadata update
+     * for the whole batch instead of one per mechanism. Callers that already have a group of
+     * mechanisms (the {@code adjust} command, the {@code .with[...]} tag) should use this rather
+     * than looping over {@link #applyMechanism} themselves.
+     *
+     * @param mechanisms mechanism names mapped to their values, applied in iteration order.
+     * @return the modified object.
+     */
+    @NotNull
+    @AvailableSince("1.0.0")
+    default AbstractTag applyMechanisms(@NotNull Map<String, AbstractTag> mechanisms) {
+        AbstractTag current = this;
+        for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) {
+            if (!(current instanceof Adjustable adjustable)) return current;
+            current = adjustable.applyMechanism(entry.getKey(), entry.getValue());
+        }
+        return current;
+    }
 
     /**
      * Gets the {@link MechanismProcessor} responsible for handling modifications for this object.

@@ -63,6 +63,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
          * @Object EllipsoidTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns whether the given location is inside this ellipsoid region.
          * Uses the standard ellipsoid equation: (dx/rx)² + (dy/ry)² + (dz/rz)² ≤ 1.
@@ -83,6 +84,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
          * @Object EllipsoidTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the center point of this ellipsoid region.
          *
@@ -97,6 +99,7 @@ public class EllipsoidTag implements AbstractTag, AbstractAreaObject, Flaggable 
          * @Object EllipsoidTag
          * @ReturnType ListTag(LocationTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all block locations contained within this ellipsoid region.
          * Each block position is tested against the ellipsoid equation.

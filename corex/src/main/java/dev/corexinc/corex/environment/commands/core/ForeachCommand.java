@@ -149,11 +149,13 @@ public class ForeachCommand implements AbstractCommand {
             };
         }
 
-        Debugger.report(queue, instruction,
-                "Type", isMap ? "Map" : "List",
-                "AsVar", asVar,
-                isMap ? "KeyVar" : null, isMap ? keyVar : null
-        );
+        if (Debugger.shouldReport(queue)) {
+            Debugger.report(queue, instruction,
+                    "Type", isMap ? "Map" : "List",
+                    "AsVar", asVar,
+                    isMap ? "KeyVar" : null, isMap ? keyVar : null
+            );
+        }
 
         queue.pushFrame("foreach_loop", instruction.innerBlock, onFinish, loopCondition);
     }

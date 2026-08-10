@@ -5,9 +5,11 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.environment.tags.core.ColorTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Map;
 
 /* @doc formatter
  *
@@ -254,6 +256,32 @@ import java.util.List;
  */
 public class ColorFormatter implements AbstractFormatter {
 
+    private static final Map<Character, MarkupTag> LEGACY_MARKUP = Map.ofEntries(
+            Map.entry('0', new MarkupTag("<black>")),
+            Map.entry('1', new MarkupTag("<dark_blue>")),
+            Map.entry('2', new MarkupTag("<dark_green>")),
+            Map.entry('3', new MarkupTag("<dark_aqua>")),
+            Map.entry('4', new MarkupTag("<dark_red>")),
+            Map.entry('5', new MarkupTag("<dark_purple>")),
+            Map.entry('6', new MarkupTag("<gold>")),
+            Map.entry('7', new MarkupTag("<gray>")),
+            Map.entry('8', new MarkupTag("<dark_gray>")),
+            Map.entry('9', new MarkupTag("<blue>")),
+            Map.entry('a', new MarkupTag("<green>")),
+            Map.entry('b', new MarkupTag("<aqua>")),
+            Map.entry('c', new MarkupTag("<red>")),
+            Map.entry('d', new MarkupTag("<light_purple>")),
+            Map.entry('e', new MarkupTag("<yellow>")),
+            Map.entry('f', new MarkupTag("<white>")),
+            Map.entry('l', new MarkupTag("<bold>")),
+            Map.entry('m', new MarkupTag("<strikethrough>")),
+            Map.entry('n', new MarkupTag("<underlined>")),
+            Map.entry('o', new MarkupTag("<italic>")),
+            Map.entry('r', new MarkupTag("<reset>"))
+    );
+
+    private static final ElementTag EMPTY = new ElementTag("");
+
     @Override
     public @NonNull String getName() {
         return "&color";
@@ -273,8 +301,8 @@ public class ColorFormatter implements AbstractFormatter {
         String name = attribute.getName();
 
         if (name.length() == 2 && name.startsWith("&")) {
-            char code = name.charAt(1);
-            return new ElementTag("§" + code);
+            MarkupTag markup = LEGACY_MARKUP.get(name.charAt(1));
+            return markup != null ? markup : EMPTY;
         }
 
         if (attribute.hasParam()) {
@@ -288,14 +316,10 @@ public class ColorFormatter implements AbstractFormatter {
             if (hex.startsWith("#")) hex = hex.substring(1);
 
             if (hex.length() == 6) {
-                StringBuilder hexResult = new StringBuilder("§x");
-                for (char c : hex.toCharArray()) {
-                    hexResult.append('§').append(c);
-                }
-                return new ElementTag(hexResult.toString());
+                return new MarkupTag("<color:#" + hex.toLowerCase() + ">");
             }
         }
 
-        return new ElementTag("");
+        return EMPTY;
     }
 }

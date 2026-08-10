@@ -12,10 +12,21 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 public class MixedArg implements CompiledArgument {
+
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+
     private final CompiledArgument[] parts;
 
     public MixedArg(CompiledArgument[] parts) {
         this.parts = parts;
+    }
+
+    private static boolean isPlainText(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '<' || c == '§' || c == '\\') return false;
+        }
+        return true;
     }
 
     @Override
@@ -34,12 +45,19 @@ public class MixedArg implements CompiledArgument {
                 placeholders.resolver(Placeholder.component(placeholderKey, componentTag.asComponent()));
                 markupBuffer.append('<').append(placeholderKey).append('>');
             } else {
-                Component legacyPiece = CorexSerializer.LEGACY.deserialize(tag.identify());
-                markupBuffer.append(MiniMessage.miniMessage().serialize(legacyPiece));
+                String text = tag.identify();
+                if (isPlainText(text)) {
+                    markupBuffer.append(text);
+                } else if (text.indexOf('§') < 0) {
+                    markupBuffer.append(MINI_MESSAGE.escapeTags(text));
+                } else {
+                    Component legacyPiece = CorexSerializer.LEGACY.deserialize(text);
+                    markupBuffer.append(MINI_MESSAGE.serialize(legacyPiece));
+                }
             }
         }
 
-        Component result = MiniMessage.miniMessage().deserialize(markupBuffer.toString(), placeholders.build());
+        Component result = MINI_MESSAGE.deserialize(markupBuffer.toString(), placeholders.build());
         return new ComponentTag(result);
     }
 

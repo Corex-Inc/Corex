@@ -51,6 +51,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the unique identifier of the queue.
          */
@@ -63,6 +64,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns 'true' if the queue is running asynchronously (not on the main/region thread).
          */
@@ -75,6 +77,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns 'true' if the queue has been cancelled.
          */
@@ -87,6 +90,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType RegionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the region (thread) that this queue belongs to.
          * If the queue has no anchor location, it returns the global region ('reg@global').
@@ -105,6 +109,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a ListTag of all values returned by the queue using the 'determine' command.
          */
@@ -121,6 +126,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType ObjectTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the value of a specific definition (variable) stored within the queue.
          */
@@ -136,6 +142,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType MapTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a MapTag of all definitions (variables) currently stored in the queue.
          */
@@ -154,6 +161,7 @@ public class QueueTag implements AbstractTag {
          * @Object QueueTag
          * @ReturnType PlayerTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a linked player of the queue.
          */

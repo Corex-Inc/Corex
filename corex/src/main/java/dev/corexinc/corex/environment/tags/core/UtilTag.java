@@ -54,6 +54,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of ticks since the server was started.
          * Note that this is NOT an accurate indicator for real server uptime, as ticks fluctuate based on server lag.
@@ -70,6 +71,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of milliseconds since Jan 1, 1970.
          *
@@ -85,6 +87,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the uptime of the Java virtual machine (server) in milliseconds.
          *
@@ -100,6 +103,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the debug mode: NONE, ERRORS, DEFAULT, ALL
          *
@@ -115,6 +119,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the name of the default system text encoding charset, such as "UTF-8".
          *
@@ -130,6 +135,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns PI: 3.14159265358979323846
          *
@@ -144,6 +150,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns e (Euler's number): 2.7182818284590452354
          *
@@ -158,6 +165,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns Tau: 6.28318530717958647692
          *
@@ -172,6 +180,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the maximum value of a 32 bit signed integer (a java 'int'): 2147483647
          *
@@ -186,6 +195,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the minimum value of a 32 bit signed integer (a java 'int'): -2147483648
          *
@@ -200,6 +210,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the maximum value of a 64 bit signed integer (a java 'long'): 9223372036854775807
          *
@@ -214,6 +225,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the minimum value of a 64 bit signed integer (a java 'long'): -9223372036854775808
          *
@@ -228,6 +240,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the maximum value of a 16 bit signed integer (a java 'short'): 32767
          *
@@ -242,6 +255,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the minimum value of a 16 bit signed integer (a java 'short'): -32768
          *
@@ -256,6 +270,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a list of integer numbers in the specified range.
          * You must specify at least the 'to' input, you can optionally specify 'from' (default 1), and 'every' (default 1).
@@ -323,6 +338,7 @@ public class UtilTag implements AbstractTag {
          * @Object UtilTag
          * @ReturnType RandomTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a RandomTag object.
          * If a seed is specified, the generator becomes deterministic.

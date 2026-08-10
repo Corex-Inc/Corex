@@ -9,6 +9,9 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class GlobalTagProcessor {
 
     public static final TagProcessor<AbstractTag> PROCESSOR = new TagProcessor<>();
@@ -57,12 +60,12 @@ public class GlobalTagProcessor {
             Adjustable instance = adj.duplicate();
 
             MapTag map = new MapTag(attr.getParam());
-
+            Map<String, AbstractTag> mechanisms = new LinkedHashMap<>();
             for (String key : map.keySet()) {
-                instance = (Adjustable) instance.applyMechanism(key, map.getObject(key));
+                mechanisms.put(key, map.getObject(key));
             }
 
-            return instance;
+            return instance.applyMechanisms(mechanisms);
         });
 
         PROCESSOR.registerTag(AbstractTag.class, "flag", (attr, obj) -> {

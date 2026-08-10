@@ -1,9 +1,11 @@
 package dev.corexinc.corex.environment.utils.scripts;
 
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -205,7 +207,7 @@ public class ConditionCompiler {
                 String rightRaw = tokens.get(pos++);
                 CompiledArgument rightArg = ScriptCompiler.parseArg(rightRaw);
 
-                return q -> compare(leftArg.evaluate(q).identify(), op, rightArg.evaluate(q).identify());
+                return q -> compare(leftArg.evaluate(q), op, rightArg.evaluate(q));
             }
 
             return q -> {
@@ -217,24 +219,29 @@ public class ConditionCompiler {
                     val = val.substring(1);
                 }
 
-                val = val.toLowerCase();
-                boolean result = val.equals("true") || (!val.equals("false") && !val.equals("null") && !val.isEmpty());
+                boolean result = val.equalsIgnoreCase("true")
+                        || (!val.equalsIgnoreCase("false") && !val.equalsIgnoreCase("null") && !val.isEmpty());
 
                 return inverted != result;
             };
         }
     }
 
-    private static boolean compare(String val1, String op, String val2) {
+    private static boolean compare(AbstractTag left, String op, AbstractTag right) {
+        ElementTag el1 = left instanceof ElementTag el ? el : new ElementTag(left.identify());
+        ElementTag el2 = right instanceof ElementTag el ? el : new ElementTag(right.identify());
+        String val1 = el1.asString();
+        String val2 = el2.asString();
+
         if (op.equals("===")) return val1.equals(val2);
 
-        Double d1 = tryParse(val1);
-        Double d2 = tryParse(val2);
-        boolean isNumeric = (d1 != null && d2 != null);
+        boolean isNumeric = el1.isDouble() && el2.isDouble();
+        double d1 = el1.asDouble();
+        double d2 = el2.asDouble();
 
         return switch (op) {
-            case "=", "==" -> isNumeric ? d1.equals(d2) : val1.equalsIgnoreCase(val2);
-            case "!=" -> isNumeric ? !d1.equals(d2) : !val1.equalsIgnoreCase(val2);
+            case "=", "==" -> isNumeric ? d1 == d2 : val1.equalsIgnoreCase(val2);
+            case "!=" -> isNumeric ? d1 != d2 : !val1.equalsIgnoreCase(val2);
             case ">"  -> isNumeric ? d1 > d2  : val1.compareToIgnoreCase(val2) > 0;
             case "<"  -> isNumeric ? d1 < d2  : val1.compareToIgnoreCase(val2) < 0;
             case ">=" -> isNumeric ? d1 >= d2 : val1.compareToIgnoreCase(val2) >= 0;
@@ -242,9 +249,5 @@ public class ConditionCompiler {
             case "contains" -> val1.toLowerCase().contains(val2.toLowerCase());
             default -> false;
         };
-    }
-
-    private static Double tryParse(String s) {
-        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return null; }
     }
 }

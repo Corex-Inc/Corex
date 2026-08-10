@@ -53,6 +53,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the red component of this color, constrained between 0 and 255.
          *
@@ -67,6 +68,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the green component of this color, constrained between 0 and 255.
          *
@@ -81,6 +83,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the blue component of this color, constrained between 0 and 255.
          *
@@ -95,6 +98,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the alpha (opacity) component of this color. 255 means fully visible, 0 means invisible.
          *
@@ -109,6 +113,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Yields the hexadecimal string representation of the color in '#RRGGBB' format.
          * Using the sub-tag '.withAlpha' appends the alpha channel, resulting in '#RRGGBBAA'.
@@ -128,6 +133,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Packs the Red, Green, and Blue channels into a single 24-bit integer.
          * This format is often required by low-level server APIs or NMS tools.
@@ -144,6 +150,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Packs the Alpha, Red, Green, and Blue channels into a single 32-bit integer.
          * Alpha occupies the highest-order bytes.
@@ -160,6 +167,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Outputs a simple comma-separated string containing the red, green, and blue values (e.g., '255,0,0').
          *
@@ -175,6 +183,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Outputs a comma-separated string containing the red, green, blue, and alpha values.
          *
@@ -190,6 +199,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Extracts the hue component from the color's HSV model, converted to a 0-255 scale.
          *
@@ -205,6 +215,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Extracts the saturation value from the color's HSV model, converted to a 0-255 scale.
          *
@@ -220,6 +231,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Extracts the brightness (value) component from the color's HSV model, converted to a 0-255 scale.
          *
@@ -235,6 +247,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves a comma-separated string of the Hue, Saturation, and Brightness metrics, each scaled 0-255.
          *
@@ -252,6 +265,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Transforms the RGB channels into a ListTag formatted as R|G|B.
          * Appending '.withAlpha' modifies the output to R|G|B|A.
@@ -277,6 +291,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a cloned ColorTag with its red channel substituted by the specified value (0-255).
          *
@@ -294,6 +309,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a cloned ColorTag with its green channel substituted by the specified value (0-255).
          *
@@ -311,6 +327,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a cloned ColorTag with its blue channel substituted by the specified value (0-255).
          *
@@ -328,6 +345,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a cloned ColorTag with its alpha channel substituted by the specified value (0-255).
          *
@@ -345,6 +363,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Generates a new ColorTag using a replaced hue value (0-255), keeping the original saturation and brightness intact.
          *
@@ -363,6 +382,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Generates a new ColorTag using a replaced saturation value (0-255), keeping original hue and brightness.
          *
@@ -381,6 +401,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Generates a new ColorTag using a replaced brightness value (0-255), keeping original hue and saturation.
          *
@@ -399,6 +420,7 @@ public class ColorTag implements AbstractTag {
          * @Object ColorTag
          * @ReturnType ColorTag
          * @ArgRequired
+         * @Async
          * @Description
          * Computes the blended result of this color mixed with another.
          * You can chain '.by[<0.0-1.0>]' to set a custom blending ratio (the default is 0.5 for an exact 50/50 split).

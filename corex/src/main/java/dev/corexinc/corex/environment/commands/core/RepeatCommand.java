@@ -144,38 +144,33 @@ public class RepeatCommand implements AbstractCommand {
         final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
 
         final int max = startFrom + times - 1;
-        final String stateKey = "rep_idx_" + queue.getDepth();
-
         final int[] state = new int[] { startFrom + 1 };
 
         queue.define(asVar, new ElementTag(startFrom));
-        queue.setTempData(stateKey, state);
 
-        Debugger.report(queue, instruction,
-                "Times", times,
-                "From", startFrom,
-                "AsDefinition", asVar
-        );
+        if (Debugger.shouldReport(queue)) {
+            Debugger.report(queue, instruction,
+                    "Times", times,
+                    "From", startFrom,
+                    "AsDefinition", asVar
+            );
+        }
 
         queue.pushFrame("repeat_loop", instruction.innerBlock,
                 () -> {
                     queue.setBroken(false);
                     queue.define(asVar, null);
-                    queue.setTempData(stateKey, null);
                 },
                 () -> {
                     if (queue.isBroken()) return false;
 
-                    int[] currentState = (int[]) queue.getTempData(stateKey);
-                    if (currentState == null) return false;
-
-                    int nextVal = currentState[0];
+                    int nextVal = state[0];
                     if (nextVal > max) {
                         return false;
                     }
 
                     queue.define(asVar, new ElementTag(nextVal));
-                    currentState[0] = nextVal + 1;
+                    state[0] = nextVal + 1;
 
                     return true;
                 }

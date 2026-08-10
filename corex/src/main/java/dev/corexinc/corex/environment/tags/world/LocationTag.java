@@ -81,6 +81,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the X-coordinate component of this location object.
          * This value represents the horizontal position along the X-axis in a 3D space.
@@ -96,6 +97,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the Y-coordinate component of this location object.
          * This value represents the vertical position in a 3D space.
@@ -111,6 +113,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the Z-coordinate component of this location object.
          * This value represents the horizontal position along the Z-axis in a 3D space.
@@ -126,6 +129,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the core coordinates of this location as a clean string in "x,y,z" format.
          * Excludes other specific data such as world name, pitch, and yaw.
@@ -160,6 +164,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the normalized yaw rotation of this location, bounded between 0 and 360 degrees.
          *
@@ -178,6 +183,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the raw, un-normalized yaw rotation of this location directly from the server.
          *
@@ -192,6 +198,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the simple compass direction the location is facing based on its yaw.
          * Possible returns: North, East, South, West.
@@ -214,6 +221,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the pitch rotation value of an object positioned at this location.
          * Pitch represents the vertical rotation around the X-axis.
@@ -229,6 +237,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          * @Description
          * Formats the location according to a custom string template.
          * Available placeholders: x, y, z, yaw, pitch, world, bx, by, bz.
@@ -258,6 +267,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a simplified string representation of the block coordinates and the world.
          * Formatted as: x,y,z,world.
@@ -277,6 +287,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Creates and returns a copy of this location with the X coordinate replaced by the specified value.
          *
@@ -298,6 +309,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Creates and returns a copy of this location with the Y coordinate replaced by the specified value.
          *
@@ -319,6 +331,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Creates and returns a copy of this location with the Z coordinate replaced by the specified value.
          *
@@ -340,6 +353,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the location with its yaw modified to the specified value.
          *
@@ -359,6 +373,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the location with its pitch modified to the specified value.
          *
@@ -378,6 +393,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the location with both its pitch and yaw modified.
          *
@@ -400,6 +416,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType CuboidTag
          * @ArgRequired
+         * @Async
          * @Description
          * Constructs a rectangular 3D selection (CuboidTag) by using this location as the first corner
          * and the provided location as the opposite diagonal corner.
@@ -419,6 +436,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType WorldTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the WorldTag representing the game world where this location is situated.
          *
@@ -427,7 +445,7 @@ public class LocationTag implements AbstractTag, Flaggable {
         TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> {
             World w = obj.location.getWorld();
             return w != null ? new WorldTag(w) : null;
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -436,6 +454,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Creates and returns a new LocationTag by adding the specified coordinates or another vector/location to this object.
          * This operation does not modify the original LocationTag.
@@ -458,6 +477,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Creates and returns a new LocationTag by subtracting the specified coordinates or another vector/location from this object.
          *
@@ -479,6 +499,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new LocationTag representing this vector scaled up by the specified scalar multiplier.
          * X, Y and Z are multiplied, leaving pitch/yaw intact.
@@ -502,6 +523,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new LocationTag representing this vector scaled down by the specified scalar divisor.
          * X, Y and Z are divided by the provided length.
@@ -525,6 +547,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a unit vector (a vector with a length of exactly 1) pointing in the identical direction as this vector.
          *
@@ -549,6 +572,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the geometric 3D magnitude (length) of this vector from the origin (0,0,0).
          *
@@ -565,6 +589,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the squared 3D magnitude of this vector.
          * Prefer this over standard length calculations when just comparing distances as it is mathematically cheaper.
@@ -583,6 +608,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the 3D distance between this location and the targeted location.
          *
@@ -601,6 +627,7 @@ public class LocationTag implements AbstractTag, Flaggable {
              * @ReturnType ElementTag(Decimal)
              * @ArgRequired 1
              * @NoArg 2
+             * @Async
              * @Description
              * Returns the horizontal (2D) distance between this location and the targeted location, ignoring the Y axis.
              *
@@ -620,6 +647,7 @@ public class LocationTag implements AbstractTag, Flaggable {
              * @ReturnType ElementTag(Decimal)
              * @ArgRequired 1
              * @NoArg 2
+             * @Async
              * @Description
              * Returns the vertical (1D) distance between this location and the targeted location on the Y axis.
              *
@@ -643,6 +671,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the mathematically cheaper squared distance between this and the targeted location.
          *
@@ -661,6 +690,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the scalar dot product between this vector and the provided vector.
          * Often used in calculating viewing angles and directional checks.
@@ -678,6 +708,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Computes the mathematical cross product between this and the target vector, resulting in a new vector orthogonal (perpendicular) to both.
          */
@@ -700,6 +731,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the mathematical projection of this vector onto the given target vector.
          */
@@ -726,6 +758,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Creates and returns a new LocationTag with its world set to the specified WorldTag.
          * The X, Y, Z, yaw, and pitch coordinates of the original location are preserved.
@@ -744,7 +777,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             }
 
             return new LocationTag(loc, false);
-        }).test("world");
+        }).test("world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -753,6 +786,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves a new LocationTag representing the block coordinates of the current location by rounding down its X, Y, and Z values.
          * This tag effectively removes decimal components, yielding integer block coordinates.
@@ -793,6 +827,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType RegionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the region (tick-thread) that manages this location.
          */
@@ -802,7 +837,7 @@ public class LocationTag implements AbstractTag, Flaggable {
                         obj.getLocation().getBlockX() >> 4,
                         obj.getLocation().getBlockZ() >> 4
                 )
-        );
+        ).setAsyncSafe();
 
         /* @doc tag
          *
@@ -840,6 +875,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a quaternion that is a rotation around this vector as an axis, by the given angle input (in radians).
          *
@@ -866,6 +902,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a quaternion that represents the rotation from this vector to another.
          *
@@ -1012,6 +1049,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Calculates and returns the closest BlockFace name corresponding to the vector representation of this location.
          *
@@ -1042,6 +1080,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Checks whether this location is contained within the specified area object, such as a CuboidTag.
          *
@@ -1062,6 +1101,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.above[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved upwards along the Y-axis by the specified distance (defaults to 1 block).
          *
@@ -1078,6 +1118,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.below[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved downwards along the Y-axis by the specified distance (defaults to 1 block).
          *
@@ -1094,6 +1135,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.forward[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved forward in the direction this location is facing by the specified distance.
          *
@@ -1110,6 +1152,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.backward[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved backward relative to the direction this location is facing by the specified distance.
          *
@@ -1126,6 +1169,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.forwardFlat[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved forward based purely on its yaw (ignoring pitch and Y-axis) by the specified distance.
          *
@@ -1144,6 +1188,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.backwardFlat[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved backward based purely on its yaw (ignoring pitch and Y-axis) by the specified distance.
          *
@@ -1162,6 +1207,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.left[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved to the left relative to its current facing direction by the specified distance.
          *
@@ -1180,6 +1226,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.right[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved to the right relative to its current facing direction by the specified distance.
          *
@@ -1198,6 +1245,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.up[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved mathematically 'up' relative to its current pitch and yaw orientations by the specified distance.
          *
@@ -1216,6 +1264,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @RawName <LocationTag.down[(<#.#>)]>
          * @Object LocationTag
          * @ReturnType LocationTag
+         * @Async
          * @Description
          * Returns a new location moved mathematically 'down' relative to its current pitch and yaw orientations by the specified distance.
          *
@@ -1235,6 +1284,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a new location perfectly centered in the middle of its corresponding block coordinates (X+0.5, Y+0.5, Z+0.5).
          *
@@ -1252,6 +1302,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the compass direction (North, East, South, West) pointing from this location towards the specified target location.
          *
@@ -1281,6 +1332,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a new location representing the 1-length directional vector of this location's pitch and yaw.
          *
@@ -1300,6 +1352,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Calculates and returns the precise yaw angle required to face the target location from this location.
          *
@@ -1324,6 +1377,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Calculates and returns the precise pitch angle required to face the target location from this location.
          *
@@ -1346,6 +1400,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of this location with its pitch and yaw modified to perfectly look at the specified target location.
          *
@@ -1367,6 +1422,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Checks if this location's direction is currently facing towards the target location.
          * By default, this uses a 45-degree cone tolerance.
@@ -1387,6 +1443,7 @@ public class LocationTag implements AbstractTag, Flaggable {
              * @Object LocationTag
              * @ReturnType ElementTag(Boolean)
              * @ArgRequired
+             * @Async
              * @Description
              * Specifies the exact angle tolerance (cone width) in degrees for the facing check.
              *
@@ -1463,6 +1520,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ListTag(LocationTag)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a list of locations forming a circle rotating around the X-axis, calculated using the provided radius and point count.
          *
@@ -1492,6 +1550,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ListTag(LocationTag)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a list of locations forming a circle rotating around the Y-axis, calculated using the provided radius and point count.
          *
@@ -1521,6 +1580,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ListTag(LocationTag)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a list of locations forming a circle rotating around the Z-axis, calculated using the provided radius and point count.
          *
@@ -1550,6 +1610,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ListTag(LocationTag)
          * @ArgRequired
+         * @Async
          * @Description
          * Calculates and returns a list of locations spread evenly in a straight line between this location and the target.
          * The default distance between each point is 1 block.
@@ -1570,6 +1631,7 @@ public class LocationTag implements AbstractTag, Flaggable {
              * @Object LocationTag
              * @ReturnType ListTag(LocationTag)
              * @ArgRequired
+             * @Async
              * @Description
              * Specifies the exact spacing (in blocks) between each generated point in the line.
              *
@@ -1618,6 +1680,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of this location randomly offset by a maximum value.
          * Input can be a single number (applied equally to all axes) or a LocationTag vector for individual axis limits.
@@ -1649,6 +1712,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new location offset relative to this location's facing direction.
          * The input vector represents left (X), up (Y), and forward (Z) movements.
@@ -1677,6 +1741,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this location vector rotated mathematically around the X-axis by the specified angle in radians.
          *
@@ -1700,6 +1765,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this location vector rotated mathematically around the Y-axis by the specified angle in radians.
          *
@@ -1723,6 +1789,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this location vector rotated mathematically around the Z-axis by the specified angle in radians.
          *
@@ -1746,6 +1813,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of this location with its pitch rotated by the specified angle amount, capped naturally between -90 and 90 degrees.
          *
@@ -1766,6 +1834,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of this location with its yaw rotated mathematically by the specified angle amount.
          *
@@ -1785,6 +1854,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of this location with all spatial coordinates, yaw, and pitch mathematically rounded to the nearest whole number.
          *
@@ -1807,6 +1877,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of this location with all spatial coordinates, yaw, and pitch rounded completely down (floored).
          *
@@ -1829,6 +1900,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of this location with all spatial coordinates, yaw, and pitch rounded completely up (ceiling).
          *
@@ -1851,6 +1923,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of this location with all coordinates rounded dynamically to the specified number of decimal places.
          *
@@ -1876,6 +1949,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of this location with all coordinates mathematically rounded to the nearest multiple of the specified precision value.
          *
@@ -1902,6 +1976,7 @@ public class LocationTag implements AbstractTag, Flaggable {
          * @Object LocationTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the 3D simplex noise value (from -1 to 1) for this location's exact X/Y/Z coordinates.
          *

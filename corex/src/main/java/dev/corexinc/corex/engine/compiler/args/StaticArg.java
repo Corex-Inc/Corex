@@ -7,13 +7,21 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 
 public class StaticArg implements CompiledArgument {
     private final AbstractTag tag;
+    private final String rawSource;
 
     public StaticArg(String text) {
         this.tag = new ElementTag(text);
+        this.rawSource = null;
     }
 
     public StaticArg(AbstractTag tag) {
         this.tag = tag;
+        this.rawSource = null;
+    }
+
+    public StaticArg(AbstractTag tag, String rawSource) {
+        this.tag = tag;
+        this.rawSource = rawSource;
     }
 
     @Override
@@ -23,6 +31,6 @@ public class StaticArg implements CompiledArgument {
 
     @Override
     public String getRaw() {
-        return tag.identify();
+        return rawSource != null ? rawSource : tag.identify();
     }
 }

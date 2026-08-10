@@ -72,6 +72,7 @@ public class RegionTag implements AbstractTag {
          * @Object RegionTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns true if this region represents the global thread (i.e. `reg@global`),
          * false if it represents a specific tick-region in the world.
@@ -79,7 +80,7 @@ public class RegionTag implements AbstractTag {
          * @Implements RegionTag.isGlobal
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isGlobal", (attr, obj) ->
-                new ElementTag(obj.isGlobal));
+                new ElementTag(obj.isGlobal)).setAsyncSafe();
 
         /* @doc tag
          *

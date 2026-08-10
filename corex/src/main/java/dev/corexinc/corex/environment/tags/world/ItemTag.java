@@ -75,13 +75,14 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
          * @ReturnType MaterialTag
          * @Mechanism ItemTag.material
          * @NoArg
+         * @Async
          * @Description
          * Returns the MaterialTag that is the basis of the item.
          * EG, a stone with lore and a display name, etc. will return only "m@stone".
          *
          * @Implements ItemTag.material
          */
-        TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> new MaterialTag(obj.item.getType()));
+        TAG_PROCESSOR.registerTag(MaterialTag.class, "material", (attr, obj) -> new MaterialTag(obj.item.getType())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -90,13 +91,14 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
          * @Object ItemTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Mechanism ItemTag.amount
          * @Description
          * Returns the number of items in the ItemTag's itemstack.
          *
          * @Implements ItemTag.quantity
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "amount", (attr, obj) -> new ElementTag(obj.item.getAmount()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "amount", (attr, obj) -> new ElementTag(obj.item.getAmount())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -105,6 +107,7 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
          * @Object ItemTag
          * @ReturnType ElementTag(Number), MapTag
          * @NoArg
+         * @Async
          * @Mechanism ItemTag.customModelData
          * @Description
          * Controls the custom model data ID number of the item.
@@ -120,7 +123,7 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
                 return new ElementTag(integer);
             }
             return null;
-        }).ignoreTest();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -129,6 +132,7 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
          * @Object ItemTag
          * @ReturnType ColorTag
          * @NoArg
+         * @Async
          * @Mechanism ItemTag.color
          * @Description
          * Returns the dye color of the item, as a ColorTag.
@@ -144,7 +148,7 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
                 return new ColorTag(leatherMeta.getColor().asRGB());
             }
             return null;
-        }).ignoreTest();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc mechanism
          *

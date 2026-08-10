@@ -100,12 +100,13 @@ public class StructureTag implements AbstractTag {
          * @Object StructureTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the namespaced key of this structure in the format `namespace:key`.
          * For example: `minecraft:village/plains/houses/plains_small_house_1`.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "key", (attr, obj) ->
-                obj.key != null ? new ElementTag(obj.key.toString()) : null);
+                obj.key != null ? new ElementTag(obj.key.toString()) : null).setAsyncSafe();
 
         /* @doc tag
          *
@@ -114,6 +115,7 @@ public class StructureTag implements AbstractTag {
          * @Object StructureTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the dimensions of this structure as a ListTag.
          * Contains width, height, and depth in blocks.
@@ -127,7 +129,7 @@ public class StructureTag implements AbstractTag {
                     new ElementTag(size.getBlockY()),
                     new ElementTag(size.getBlockZ())
             ));
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -136,6 +138,7 @@ public class StructureTag implements AbstractTag {
          * @Object StructureTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of block palettes stored in this structure.
          * A structure may contain multiple palettes as random block variants.
@@ -143,7 +146,7 @@ public class StructureTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "paletteCount", (attr, obj) ->
                 obj.structure != null ? new ElementTag(obj.structure.getPaletteCount()) : null
-        ).ignoreTest();
+        ).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *

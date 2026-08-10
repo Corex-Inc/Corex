@@ -48,8 +48,16 @@ import java.nio.charset.StandardCharsets;
  */
 public class ElementTag implements AbstractTag {
 
+    private static final byte NUM_NOT_NUMERIC = 1;
+    private static final byte NUM_LONG = 2;
+    private static final byte NUM_DOUBLE = 3;
+
     private final String prefix;
     private final String element;
+
+    private long cachedLong;
+    private double cachedDouble;
+    private volatile byte numericKind;
 
     public static final TagProcessor<ElementTag> TAG_PROCESSOR = new TagProcessor<>();
 
@@ -58,7 +66,7 @@ public class ElementTag implements AbstractTag {
         if (string == null) {
             this.element = "";
         } else {
-            this.element = string.toLowerCase().startsWith(prefix + "@") ? string.substring(3) : string;
+            this.element = string.regionMatches(true, 0, "el@", 0, 3) ? string.substring(3) : string;
         }
     }
 
@@ -70,21 +78,90 @@ public class ElementTag implements AbstractTag {
     public ElementTag(boolean bool) {
         this.prefix = "boolean";
         this.element = String.valueOf(bool);
+        this.numericKind = NUM_NOT_NUMERIC;
     }
 
     public ElementTag(int integer) {
         this.prefix = "number";
-        this.element = String.valueOf(integer);
+        this.element = Integer.toString(integer);
+        this.cachedLong = integer;
+        this.cachedDouble = integer;
+        this.numericKind = NUM_LONG;
     }
 
     public ElementTag(long lng) {
         this.prefix = "number";
-        this.element = String.valueOf(lng);
+        this.element = Long.toString(lng);
+        this.cachedLong = lng;
+        this.cachedDouble = lng;
+        this.numericKind = NUM_LONG;
     }
 
     public ElementTag(double dbl) {
         this.prefix = "decimal";
-        this.element = (dbl == (long) dbl) ? String.format("%d", (long) dbl) : String.valueOf(dbl);
+        if (dbl == (long) dbl) {
+            long whole = (long) dbl;
+            this.element = Long.toString(whole);
+            this.cachedLong = whole;
+            this.cachedDouble = dbl;
+            this.numericKind = NUM_LONG;
+        } else {
+            this.element = Double.toString(dbl);
+            this.cachedDouble = dbl;
+            this.numericKind = NUM_DOUBLE;
+        }
+    }
+
+    private byte resolveNumericKind() {
+        byte kind = numericKind;
+        if (kind == 0) {
+            kind = parseNumeric();
+        }
+        return kind;
+    }
+
+    private byte parseNumeric() {
+        String value = element;
+        int length = value.length();
+        if (length == 0) {
+            numericKind = NUM_NOT_NUMERIC;
+            return NUM_NOT_NUMERIC;
+        }
+        char first = value.charAt(0);
+        boolean plausible = (first >= '0' && first <= '9') || first == '-' || first == '+'
+                || first == '.' || first == 'N' || first == 'I' || first == ' ';
+        if (!plausible) {
+            numericKind = NUM_NOT_NUMERIC;
+            return NUM_NOT_NUMERIC;
+        }
+        int digitStart = (first == '-' || first == '+') ? 1 : 0;
+        int digitCount = length - digitStart;
+        if (digitCount >= 1 && digitCount <= 18) {
+            boolean allDigits = true;
+            long parsed = 0;
+            for (int i = digitStart; i < length; i++) {
+                char c = value.charAt(i);
+                if (c < '0' || c > '9') {
+                    allDigits = false;
+                    break;
+                }
+                parsed = parsed * 10 + (c - '0');
+            }
+            if (allDigits) {
+                cachedLong = first == '-' ? -parsed : parsed;
+                cachedDouble = cachedLong;
+                numericKind = NUM_LONG;
+                return NUM_LONG;
+            }
+        }
+        try {
+            cachedDouble = Double.parseDouble(value);
+            numericKind = NUM_DOUBLE;
+            return NUM_DOUBLE;
+        } catch (NumberFormatException ignored) {
+            numericKind = NUM_NOT_NUMERIC;
+            return NUM_NOT_NUMERIC;
+        }
     }
 
     public boolean isBoolean() {
@@ -92,21 +169,12 @@ public class ElementTag implements AbstractTag {
     }
 
     public boolean isDouble() {
-        try {
-            Double.parseDouble(element);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        return resolveNumericKind() != NUM_NOT_NUMERIC;
     }
 
     public boolean isInt() {
-        try {
-            Integer.parseInt(element);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        return resolveNumericKind() == NUM_LONG
+                && cachedLong >= Integer.MIN_VALUE && cachedLong <= Integer.MAX_VALUE;
     }
 
     public boolean asBoolean() {
@@ -118,28 +186,25 @@ public class ElementTag implements AbstractTag {
     }
 
     public long asLong() {
-        try {
-            String cleaned = element;
-            int dot = cleaned.indexOf('.');
-            if (dot > 0) {
-                cleaned = cleaned.substring(0, dot);
-            }
-            return Long.parseLong(cleaned);
-        } catch (NumberFormatException ex) {
-            return 0;
-        }
+        byte kind = resolveNumericKind();
+        if (kind == NUM_LONG) return cachedLong;
+        if (kind == NUM_DOUBLE) return (long) cachedDouble;
+        return 0;
     }
 
     public double asDouble() {
-        try {
-            return Double.parseDouble(element);
-        } catch (NumberFormatException ex) {
-            return 0.0;
-        }
+        return resolveNumericKind() == NUM_NOT_NUMERIC ? 0.0 : cachedDouble;
     }
 
     public String asString() {
         return element;
+    }
+
+    private static ElementTag numericParamOf(Attribute attr) {
+        AbstractTag raw = attr.getParamObject();
+        if (raw == null) return null;
+        ElementTag param = raw instanceof ElementTag el ? el : new ElementTag(raw.identify());
+        return param.isDouble() ? param : null;
     }
 
     public static void register() {
@@ -154,6 +219,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the value of an element in all uppercase letters.
          *
@@ -168,6 +234,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the value of an element in all lowercase letters.
          *
@@ -182,6 +249,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the length of the element.
          *
@@ -196,6 +264,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the element is an integer number (a number without a decimal point), within the limits of a Java "long" (64-bit signed integer).
          *
@@ -210,6 +279,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the element is a valid decimal number (the decimal point is optional).
          *
@@ -224,6 +294,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the element is a boolean ("true" or "false").
          *
@@ -238,17 +309,17 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element + number.
          *
          * @Implements ElementTag.add
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "add", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(obj.asDouble() + new ElementTag(attr.getParam()).asDouble());
-            }
-            return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
+            return new ElementTag(obj.asDouble() + param.asDouble());
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -258,17 +329,17 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element - number.
          *
          * @Implements ElementTag.sub
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "sub", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(obj.asDouble() - new ElementTag(attr.getParam()).asDouble());
-            }
-            return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
+            return new ElementTag(obj.asDouble() - param.asDouble());
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -278,17 +349,17 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element * number.
          *
          * @Implements ElementTag.mul
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "mul", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(obj.asDouble() * new ElementTag(attr.getParam()).asDouble());
-            }
-            return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
+            return new ElementTag(obj.asDouble() * param.asDouble());
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -298,6 +369,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element % number. (Remainder of the element / number)
          *
@@ -305,12 +377,12 @@ public class ElementTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "mod", (attr, obj) -> {
             if (!attr.hasParam()) return null;
-            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(obj.asDouble() % new ElementTag(attr.getParam()).asDouble());
-            } else {
+            ElementTag param = obj.isDouble() ? numericParamOf(attr) : null;
+            if (param == null) {
                 Debugger.error("Element '" + obj + "' or '" + attr.getParam() + "is not a valid decimal number!");
+                return null;
             }
-            return null;
+            return new ElementTag(obj.asDouble() % param.asDouble());
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -320,6 +392,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element / number.
          *
@@ -327,12 +400,12 @@ public class ElementTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "div", (attr, obj) -> {
             if (!attr.hasParam()) return null;
-            if (obj.isDouble() && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(obj.asDouble() / new ElementTag(attr.getParam()).asDouble());
-            } else {
+            ElementTag param = obj.isDouble() ? numericParamOf(attr) : null;
+            if (param == null) {
                 Debugger.error("Element '" + obj + "' or '" + attr.getParam() + "is not a valid decimal number!");
+                return null;
             }
-            return null;
+            return new ElementTag(obj.asDouble() / param.asDouble());
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -342,6 +415,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the root of the element.
          * If no number is specified, returns the square root.
@@ -351,7 +425,11 @@ public class ElementTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "root", (attr, obj) -> {
             double value = obj.asDouble();
-            double degree = attr.hasParam() ? new ElementTag(attr.getParam()).asDouble() : 2.0;
+            double degree = 2.0;
+            if (attr.hasParam()) {
+                ElementTag degreeParam = numericParamOf(attr);
+                degree = degreeParam != null ? degreeParam.asDouble() : 0.0;
+            }
 
             if (degree == 0) return new ElementTag(1);
 
@@ -365,6 +443,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element to the power of a number.
          *
@@ -373,7 +452,8 @@ public class ElementTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "pow", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             double base = obj.asDouble();
-            double exponent = new ElementTag(attr.getParam()).asDouble();
+            ElementTag param = numericParamOf(attr);
+            double exponent = param != null ? param.asDouble() : 0.0;
 
             return new ElementTag(Math.pow(base, exponent));
         }).test("2").setAsyncSafe();
@@ -385,6 +465,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the absolute value of the element.
          *
@@ -399,6 +480,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns true if number is less than param.
          *
@@ -416,6 +498,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns true if number is more than param.
          *
@@ -433,6 +516,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns true if number is less than or equal to param.
          *
@@ -450,6 +534,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns true if number is more than or equal to param.
          *
@@ -468,6 +553,7 @@ public class ElementTag implements AbstractTag {
          * @ReturnType ObjectTag
          * @Group element checking
          * @ArgRequired
+         * @Async
          * @Description
          * If this element is "true", returns the first given object. If it isn't "true", returns the second given object.
          * If the input objects are tags, only the matching tag will be parsed.
@@ -501,6 +587,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a copy of the element, repeated the specified number of times.
          * For example, "hello" .repeat[3] returns "hellohellohello"
@@ -520,6 +607,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType MapTag, ListTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Parses a JSON formatted string and returns it as a MapTag or ListTag depending on its structure.
@@ -543,6 +631,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Encodes the text to be safely used inside a URL.
@@ -561,6 +650,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Decodes a URL-encoded string back to normal text.
@@ -579,6 +669,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the cosine of the specified object
@@ -591,6 +682,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the arccosine of the specified object.
@@ -603,6 +695,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the sinus of the specified object.
@@ -615,6 +708,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the arcsine of the specified object.
@@ -627,6 +721,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the tangent of the specified object.
@@ -639,6 +734,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the hyperbolic tangent of the specified object.
@@ -651,6 +747,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the atan of the specified object.
@@ -663,16 +760,16 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          *
          * @Description
          * Returns the atan2 of the specified object.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "atg2", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            if ((obj.isDouble()) && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(Math.atan2(obj.asDouble(), new ElementTag(attr.getParam()).asDouble()));
-            }
-            return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
+            return new ElementTag(Math.atan2(obj.asDouble(), param.asDouble()));
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -681,6 +778,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the cotangent of the specified object.
@@ -693,6 +791,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the arccotangent of the specified object.
@@ -705,6 +804,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the factorial of the specified object.
@@ -723,6 +823,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Returns the natural logarithm of the specified object.
@@ -735,16 +836,16 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          *
          * @Description
          * Returns the logarithm of the specified object.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "log", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            if ((obj.isDouble()) && new ElementTag(attr.getParam()).isDouble()) {
-                return new ElementTag(Math.log(obj.asDouble()) / Math.log(new ElementTag(attr.getParam()).asDouble()));
-            }
-            return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
+            return new ElementTag(Math.log(obj.asDouble()) / Math.log(param.asDouble()));
         }).test("5").setAsyncSafe();
 
         /* @doc tag
@@ -754,6 +855,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Converts an integer to a hexadecimal string.
          * @Usage
@@ -769,6 +871,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the greater of the element and the given number.
          * For example, <element[-5].max[0]> returns 0.
@@ -776,9 +879,9 @@ public class ElementTag implements AbstractTag {
          * @Implements ElementTag.max
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "max", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            ElementTag param = new ElementTag(attr.getParam());
-            if (!obj.isDouble() || !param.isDouble()) return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
             return new ElementTag(Math.max(obj.asDouble(), param.asDouble()));
         }).test("5").setAsyncSafe();
 
@@ -789,6 +892,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the lesser of the element and the given number.
          * For example, <element[360].min[360]> returns 360.
@@ -796,9 +900,9 @@ public class ElementTag implements AbstractTag {
          * @Implements ElementTag.min
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "min", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            ElementTag param = new ElementTag(attr.getParam());
-            if (!obj.isDouble() || !param.isDouble()) return null;
+            if (!attr.hasParam() || !obj.isDouble()) return null;
+            ElementTag param = numericParamOf(attr);
+            if (param == null) return null;
             return new ElementTag(Math.min(obj.asDouble(), param.asDouble()));
         }).test("5").setAsyncSafe();
 
@@ -809,6 +913,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the element rounded to the nearest integer.
          * For example, <element[3.7].round> returns 4.
@@ -825,6 +930,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the element rounded to the specified number of decimal places.
          * Uses HALF_UP rounding mode (i.e. 0.5 rounds up).
@@ -858,6 +964,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Snaps the element to the nearest multiple of the given step value, rather than to a fixed number of decimal places.
          * Useful for grid-snapping or quantizing a value (e.g. positions, sensitivity steps).
@@ -891,6 +998,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the largest integer less than or equal to the element (rounds down).
          * For example, <element[3.9].floor> returns 3, and <element[-1.2].floor> returns -2.
@@ -910,6 +1018,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the smallest integer greater than or equal to the element (rounds up).
          * For example, <element[3.1].ceil> returns 4, and <element[-1.9].ceil> returns -1.
@@ -929,6 +1038,7 @@ public class ElementTag implements AbstractTag {
          * @Object ElementTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          * @Description
          * Left-pads the element to the specified total length using the given fill character or string.
          * If the element is already at or beyond the target length, it is returned unchanged.

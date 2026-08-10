@@ -93,6 +93,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.available_processors
          * @Description
          * Returns the number of logical CPU processors available to the JVM.
@@ -113,6 +114,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Implements utils.java_version
          * @Description
          * Returns the Java version string the server is currently running on,
@@ -132,6 +134,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.ram_max
          * @Description
          * Returns the maximum heap memory in bytes the JVM is allowed to claim from the OS (-Xmx).
@@ -152,6 +155,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.ram_allocated
          * @Description
          * Returns the amount of heap memory in bytes currently committed (allocated) from the OS
@@ -172,6 +176,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.ram_usage
          * @Description
          * Returns the amount of heap memory in bytes that is actively occupied by live objects
@@ -195,6 +200,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.ram_free
          * @Description
          * Returns the total free heap headroom in bytes — the amount of memory that can still be
@@ -219,6 +225,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.disk_total
          * @Description
          * Returns the total capacity of the partition that holds the server's working directory,
@@ -238,6 +245,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements utils.disk_free
          * @Description
          * Returns the usable free space in bytes on the partition holding the server's working
@@ -259,6 +267,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Implements utils.disk_usage
          * @Description
          * Returns the disk usage ratio of the server's partition as a decimal between 0.0 and 1.0.
@@ -283,6 +292,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @RawName <server.hasFile[<path>]>
          * @Object ServerTag
          * @ReturnType ElementTag(Boolean)
+         * @Async
          * @Implements utils.has_file
          * @Description
          * Returns true if the given path exists on the filesystem (file or directory).
@@ -304,6 +314,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @RawName <server.listFiles[<path>]>
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
+         * @Async
          * @Implements utils.list_files
          * @Description
          * Returns a list of file and directory names directly inside the given path.
@@ -355,7 +366,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 }
             }
             return list;
-        }).setAsyncSafe();
+        });
 
         /* @doc tag
          *
@@ -364,6 +375,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(StructureTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all structures currently registered with the server's StructureManager.
          * This includes vanilla structures, DataPack structures, and any structures registered at runtime.
@@ -386,6 +398,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all structure type keys known to the server, including
          * custom structures added by DataPacks.
@@ -412,6 +425,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of online players
          *
@@ -434,6 +448,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Implements server.online_ops
          * @Description
          * Returns a list of all currently online players that are server operators.
@@ -457,6 +472,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Implements server.offline_players
          * @Description
          * Returns a list of all players that are currently offline.
@@ -482,6 +498,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Implements server.players
          * @Description
          * Returns a list of all players that have ever joined the server, including those
@@ -506,6 +523,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Implements server.offline_ops
          * @Description
          * Returns a list of all server operators that are currently offline.
@@ -531,6 +549,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Implements server.ops
          * @Description
          * Returns a list of all server operators.
@@ -555,6 +574,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @RawName <server.matchPlayer[<name>]>
          * @Object ServerTag
          * @ReturnType PlayerTag
+         * @Async
          * @Implements server.match_player
          * @Description
          * Returns the online player that best matches the input name.
@@ -586,6 +606,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Implements server.motd
          * @Description
          * Returns the server's message of the day.
@@ -603,6 +624,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Implements server.max_players
          * @Description
          * Returns the maximum number of players the server allows online at once.
@@ -620,6 +642,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(MaterialTag)
          * @NoArg
+         * @Async
          * @Implements server.material_types
          * @Description
          * Returns a list of all material types known to the server.
@@ -642,6 +665,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.particle_types
          * @Description
          * Returns a list of all particle type names available on the server.
@@ -663,6 +687,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.entity_types
          * @Description
          * Returns a list of all entity type names known to the server.
@@ -681,6 +706,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name availableBiomes
+         * @Async
          * @Syntax <server.availableBiomes>
          * @Returns ListTag(BiomeTag)
          *
@@ -719,6 +745,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.advancement_types
          * @Description
          * Returns a list of all advancement keys registered on the server, including
@@ -743,6 +770,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.art_types
          * @Description
          * Returns a list of all painting art variant keys registered on the server.
@@ -765,6 +793,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.banned_addresses
          * @Description
          * Returns a list of all IP addresses currently on the IP ban list.
@@ -792,6 +821,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
+         * @Async
          * @Implements server.banned_players
          * @Description
          * Returns a list of all players currently on the profile ban list.
@@ -820,6 +850,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @RawName <server.banInfo[<address>]>
          * @Object ServerTag
          * @ReturnType MapTag
+         * @Async
          * @Implements server.ban_info
          * @Description
          * Returns a MapTag describing the IP ban entry for the given address, or null if the
@@ -860,6 +891,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Implements server.bukkit_name
          * @Description
          * Returns the name of the server platform (e.g. "Paper", "Folia", "Spigot").
@@ -876,6 +908,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Implements server.bukkit_version
          * @Description
          * Returns the Bukkit API version string of the current platform
@@ -893,6 +926,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Implements server.version
          * @Description
          * Returns the Minecraft protocol version string the server is running
@@ -910,6 +944,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Implements server.denizen_version
          * @Description
          * Returns the currently loaded CoreX plugin version string.
@@ -927,6 +962,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.damage_causes
          * @Description
          * Returns a list of all damage cause names known to the server
@@ -951,6 +987,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.effect_types
          * @Description
          * Returns a list of all potion effect type keys registered on the server
@@ -974,6 +1011,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.enchantments
          * @Description
          * Returns a list of all enchantment keys registered on the server,
@@ -996,6 +1034,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * @Object ServerTag
          * @ReturnType ListTag(ElementTag)
          * @NoArg
+         * @Async
          * @Implements server.gamerules
          * @Description
          * Returns a list of all gamerule names known to the server, derived from the first

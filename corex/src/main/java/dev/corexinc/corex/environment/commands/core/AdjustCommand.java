@@ -3,7 +3,9 @@ package dev.corexinc.corex.environment.commands.core;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
+import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -69,7 +71,8 @@ public class AdjustCommand implements AbstractCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         String targetsRaw = instruction.getLinear(0, queue);
-        AbstractTag mechInput = instruction.getLinearObject(1, queue);
+        CompiledArgument mechArg = instruction.getLinearArgument(1);
+        AbstractTag mechInput = mechArg != null ? mechArg.evaluate(queue) : null;
 
         if (targetsRaw == null) {
             Debugger.echoError(queue, "Targets cannot be null!");
@@ -89,15 +92,16 @@ public class AdjustCommand implements AbstractCommand {
             }
         }
         else {
-            String str = mechInput.identify();
-            int colonIndex = str.indexOf(':');
+            String raw = mechArg.getRaw();
+            int colonIndex = raw.indexOf(':');
 
             if (colonIndex > 0) {
-                String mechName = str.substring(0, colonIndex);
-                String mechValue = str.substring(colonIndex + 1);
-                mechanisms.put(mechName, ObjectFetcher.pickObject(mechValue));
+                String mechName = ScriptCompiler.unescape(raw.substring(0, colonIndex));
+                String mechValueRaw = raw.substring(colonIndex + 1);
+                AbstractTag mechValue = ScriptCompiler.parseArg(mechValueRaw).evaluate(queue);
+                mechanisms.put(mechName, mechValue);
             } else {
-                mechanisms.put(str, new ElementTag(""));
+                mechanisms.put(mechInput.identify(), new ElementTag(""));
             }
         }
 
@@ -108,19 +112,11 @@ public class AdjustCommand implements AbstractCommand {
                 continue;
             }
 
-            AbstractTag current = target;
-
-            for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) {
-                String mech = entry.getKey();
-                AbstractTag value = entry.getValue();
-
-                if (current instanceof Adjustable adjustable) {
-                    current = adjustable.applyMechanism(mech, value);
-                }
-                else {
-                    Debugger.echoError(queue, "Mechanisms cannot be applied to the '<yellow>" + current.identify() + "</yellow>'!");
-                    break;
-                }
+            if (target instanceof Adjustable adjustable) {
+                adjustable.applyMechanisms(mechanisms);
+            }
+            else {
+                Debugger.echoError(queue, "Mechanisms cannot be applied to the '<yellow>" + target.identify() + "</yellow>'!");
             }
         }
 

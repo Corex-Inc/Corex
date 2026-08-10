@@ -73,6 +73,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the raw X component value of this quaternion.
          *
@@ -87,6 +88,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the raw Y component value of this quaternion.
          *
@@ -101,6 +103,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the raw Z component value of this quaternion.
          *
@@ -115,6 +118,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the raw W component value of this quaternion.
          *
@@ -129,6 +133,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the X, Y, and Z values of this quaternion in a simple comma-separated format ("x,y,z").
          *
@@ -144,6 +149,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the X, Y, Z, and W values of this quaternion in a simple comma-separated format ("x,y,z,w").
          *
@@ -159,6 +165,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Converts the X, Y, and Z components of this quaternion into a LocationTag (vector).
          * The W component is ignored.
@@ -175,6 +182,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this quaternion mathematically added to another quaternion (component-wise addition).
          * Note: This is NOT the same as combining rotations. To combine rotations, use {@link tag QuaternionTag.mul}.
@@ -194,6 +202,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this quaternion multiplied by another quaternion.
          * This effectively combines the rotations represented by the two quaternions.
@@ -213,6 +222,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this quaternion with all its components multiplied by the given scaling factor.
          * Note: This does not simply increase the rotation angle.
@@ -234,6 +244,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a normalized copy of this quaternion (length equal to 1).
          * Useful to ensure valid rotations after mathematical operations.
@@ -249,6 +260,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the geometric length (magnitude) of this quaternion.
          *
@@ -264,6 +276,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the squared geometric length (magnitude) of this quaternion.
          * Mathematically cheaper than calculating the true length.
@@ -279,6 +292,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the mathematical conjugate of this quaternion.
          * This is equivalent to negating its X, Y, and Z components (-x, -y, -z, w).
@@ -295,6 +309,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the inverse of this quaternion.
          * The inverse represents the exact same amount of rotation, but applied in the opposite direction.
@@ -311,6 +326,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the negative of this quaternion (-x, -y, -z, -w).
          * Note: If you want a reverse rotation, use the `inverse` tag instead.
@@ -327,6 +343,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the quaternion representing the rotational difference between this quaternion and the provided target quaternion.
          *
@@ -345,6 +362,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType LocationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Takes the given location/vector and applies this quaternion's rotation to it, returning the newly transformed vector.
          *
@@ -367,6 +385,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the angle (in radians) represented by this quaternion's rotation.
          * Best used alongside the {@link tag QuaternionTag.representedAxis} tag.
@@ -383,6 +402,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the directional axis represented by this quaternion's rotation as a vector (LocationTag).
          * Best used alongside the {@link tag QuaternionTag.representedAngle} tag.
@@ -409,6 +429,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the angle (in radians) of rotation around the specified axis vector created by this quaternion.
          *
@@ -438,6 +459,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Computes the Spherical Linear Interpolation (Slerp) between this quaternion and the target quaternion.
          * The `amount` dictates the progression (e.g. 0.5 represents exactly halfway between the two rotations).
@@ -462,6 +484,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the 4D dot product of this quaternion and another.
          * The result is a value between -1 and 1 (assuming both quaternions are normalized).
@@ -483,6 +506,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the smallest angle in radians between this rotation and the target rotation.
          * Both quaternions must be normalized for the result to be accurate.
@@ -505,6 +529,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Computes the Normalized Linear Interpolation (Nlerp) between this quaternion and the target.
          * Nlerp is cheaper than {@link tag QuaternionTag.slerp} because it only does a linear blend
@@ -531,6 +556,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType QuaternionTag
          * @ArgRequired
+         * @Async
          * @Description
          * Raises this quaternion to the given power.
          * Intuitively: `pow[0.5]` gives exactly half of the rotation, `pow[2]` doubles it,
@@ -554,6 +580,7 @@ public class QuaternionTag implements AbstractTag {
          * @Object QuaternionTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Converts this quaternion into intrinsic XYZ Euler angles (radians), returned as
          * a comma-separated string "roll,pitch,yaw" (X,Y,Z order).

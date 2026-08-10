@@ -17,7 +17,6 @@ import org.bukkit.Location;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /* @doc command
@@ -90,7 +89,8 @@ public class SpawnCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        List<EntityTag> blueprints = resolveBlueprints(instruction.getLinearObject(0, queue));
+        List<EntityTag> blueprints = EntityTag.resolveBlueprints(
+                EntityTag.resolveBlueprintList(instruction.getLinearArgument(0), queue));
         if (blueprints.isEmpty()) {
             Debugger.echoError(queue, "Spawn command could not resolve any entities to spawn.");
             return;
@@ -157,15 +157,4 @@ public class SpawnCommand implements AbstractCommand {
         });
     }
 
-    private List<EntityTag> resolveBlueprints(AbstractTag argument) {
-        List<EntityTag> blueprints = new ArrayList<>();
-        switch (argument) {
-            case EntityTag entity -> blueprints.add(entity);
-            case ListTag list -> list.getList().forEach(tag ->
-                    blueprints.add(tag instanceof EntityTag entity ? entity : new EntityTag(tag.identify())));
-            case null -> {}
-            default -> blueprints.add(new EntityTag(argument.identify()));
-        }
-        return blueprints;
-    }
 }

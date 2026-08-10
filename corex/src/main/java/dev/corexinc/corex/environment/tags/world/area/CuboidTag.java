@@ -64,6 +64,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @Object CuboidTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns whether the given location is inside any member of this cuboid region.
          * Minimum bound is inclusive, maximum bound is exclusive.
@@ -84,6 +85,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @Object CuboidTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the center point of the overall bounding box of this cuboid.
          * For multi-member cuboids, this is the center spanning all members combined.
@@ -99,6 +101,7 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @Object CuboidTag
          * @ReturnType ListTag(LocationTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all block locations contained within this cuboid region.
          * For multi-member cuboids, blocks from all members are included.

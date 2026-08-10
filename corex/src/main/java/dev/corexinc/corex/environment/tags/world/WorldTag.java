@@ -53,10 +53,11 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description Returns the world name.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attr, obj) ->
-                new ElementTag(obj.name));
+                new ElementTag(obj.name)).setAsyncSafe();
 
         /* @doc tag
          * @Name uuid
@@ -64,10 +65,11 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description Returns the world UUID.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attr, obj) ->
-                obj.cachedInfo == null ? null : new ElementTag(obj.cachedInfo.getUID().toString()));
+                obj.cachedInfo == null ? null : new ElementTag(obj.cachedInfo.getUID().toString())).setAsyncSafe();
 
         /* @doc tag
          * @Name seed
@@ -75,10 +77,11 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description Returns the world seed.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "seed", (attr, obj) ->
-                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getSeed()));
+                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getSeed())).setAsyncSafe();
 
         /* @doc tag
          * @Name minHeight
@@ -86,10 +89,11 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description Returns the minimum world height.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "minHeight", (attr, obj) ->
-                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getMinHeight()));
+                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getMinHeight())).setAsyncSafe();
 
         /* @doc tag
          * @Name maxHeight
@@ -97,10 +101,11 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description Returns the maximum world height.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "maxHeight", (attr, obj) ->
-                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getMaxHeight()));
+                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getMaxHeight())).setAsyncSafe();
 
         /* @doc tag
          * @Name environment
@@ -108,10 +113,11 @@ public class WorldTag implements AbstractTag {
          * @Object WorldTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description Returns the world environment type.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "environment", (attr, obj) ->
-                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getEnvironment().name()));
+                obj.getWorldInfo() == null ? null : new ElementTag(obj.getWorldInfo().getEnvironment().name())).setAsyncSafe();
 
         /* @doc tag
          * @Name time

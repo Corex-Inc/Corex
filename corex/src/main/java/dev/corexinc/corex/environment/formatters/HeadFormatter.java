@@ -7,7 +7,6 @@ import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.object.ObjectContents;
 import net.kyori.adventure.text.object.PlayerHeadObjectContents;
 import org.jspecify.annotations.NonNull;
@@ -20,8 +19,11 @@ import java.util.UUID;
  * @Name &head
  * @ArgRequired
  * @Description
- * Generates a MiniMessage component that displays a player head icon within text, based on the provided player name or UUID.
- * This is useful for integrating player heads directly into chat messages or other text displays.
+ * Generates a component that displays a player head icon within text, based on the
+ * provided player name or a raw skin texture hash.
+ * Short values (<=20 chars) are treated as a player name and resolved via MiniMessage's
+ * built-in head tag. Longer hex strings (>20 chars) are treated as a raw skin texture
+ * hash and built into a fully-resolved player-head object component directly.
  *
  * @Usage
  * // Displays a player head for 'Notch' followed by their name.
@@ -47,7 +49,7 @@ public class HeadFormatter implements AbstractFormatter {
             if (safeParam.length() > 20 && safeParam.matches("^[a-fA-F0-9]+$")) {
                 try {
                     Class.forName("net.kyori.adventure.text.object.PlayerHeadObjectContents");
-                    return new MarkupTag(ModernHeadHandler.create(safeParam));
+                    return new ComponentTag(ModernHeadHandler.create(safeParam));
                 } catch (ClassNotFoundException e) {
                     return INSTANCE;
                 }
@@ -59,7 +61,7 @@ public class HeadFormatter implements AbstractFormatter {
     }
 
     private static class ModernHeadHandler {
-        static String create(String hash) {
+        static Component create(String hash) {
             String json = "{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net/texture/" + hash + "\"}}}";
             String base64 = Base64.getEncoder().encodeToString(json.getBytes());
 
@@ -69,7 +71,7 @@ public class HeadFormatter implements AbstractFormatter {
                     .profileProperty(new SimpleProfileProperty("textures", base64))
                     .build();
 
-            return MiniMessage.miniMessage().serialize(Component.object(headContents));
+            return Component.object(headContents);
         }
 
         private record SimpleProfileProperty(String name, String value)

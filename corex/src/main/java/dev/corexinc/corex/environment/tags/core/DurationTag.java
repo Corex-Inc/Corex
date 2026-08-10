@@ -61,6 +61,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of ticks in the duration.
          *
@@ -76,6 +77,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of seconds in the duration.
          *
@@ -91,6 +93,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of minutes in the duration.
          *
@@ -106,6 +109,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of hours in the duration.
          *
@@ -121,6 +125,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the number of milliseconds in the duration.
          *
@@ -136,6 +141,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the value of the duration in an easily readable format like 2h 30m.
          * Will show seconds, minutes, hours, days, and/or years.
@@ -152,6 +158,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType DurationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this duration + another.
          *
@@ -167,6 +174,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType DurationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this duration - another.
          *
@@ -182,6 +190,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType DurationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this duration * another.
          */
@@ -198,6 +207,7 @@ public class DurationTag implements AbstractTag {
          * @Object DurationTag
          * @ReturnType DurationTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns this duration / another.
          */

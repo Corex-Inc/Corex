@@ -201,7 +201,7 @@ public class ScriptCompiler {
                 && (nodes[0].param() == null || nodes[0].param() instanceof StaticArg)) {
             Attribute mockAttr = new Attribute(nodes, null);
             AbstractTag result = formats.get(nodes[0].name()).parse(mockAttr);
-            return new StaticArg(result);
+            return new StaticArg(result, "<" + rawTag + ">");
         }
         return new PreSlicedDynamicArg(nodes, fallback, rawTag);
     }

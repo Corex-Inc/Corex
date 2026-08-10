@@ -3,18 +3,32 @@ package dev.corexinc.corex.environment.tags.entity;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.api.properties.PropertyRegistrar;
+import dev.corexinc.corex.api.properties.PropertyType;
+import dev.corexinc.corex.api.properties.PropertyTypes;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.compiler.CompiledArgument;
+import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
+import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.CorexSerializer;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.EntityAdapter;
+import dev.corexinc.corex.environment.utils.entities.BukkitEntityView;
+import dev.corexinc.corex.environment.utils.entities.FakeEntityRegistry;
+import dev.corexinc.corex.environment.utils.entities.FakeEntityView;
+import dev.corexinc.corex.environment.utils.entities.LiveEntityView;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import me.tofaa.entitylib.meta.EntityMeta;
+import me.tofaa.entitylib.wrapper.WrapperEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -23,6 +37,8 @@ import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -32,6 +48,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
@@ -45,6 +62,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /* @doc object
  *
@@ -70,8 +88,10 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
     private static final String prefix = "e";
 
     private final Entity entity;
+    private WrapperEntity fakeEntity = null;
+    private LiveEntityView liveView = null;
     private final EntityType type;
-    private final MapTag mechanisms;
+    private final Map<String, AbstractTag> mechanisms;
 
     public static final TagProcessor<EntityTag> TAG_PROCESSOR = new TagProcessor<>();
     public static final MechanismProcessor<EntityTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
@@ -82,11 +102,163 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
     private static final Map<String, NbtMechanism> NBT_MECHANISMS = new LinkedHashMap<>();
 
-    private static void registerMechanism(String name, BiConsumer<Entity, AbstractTag> applier) {
+    static final PropertyRegistrar<EntityTag, LiveEntityView> PROPERTIES =
+            new PropertyRegistrar<EntityTag, LiveEntityView>("EntityTag", TAG_PROCESSOR, MECHANISM_PROCESSOR,
+                    EntityTag::bindProperty)
+                    .withRecordedValues((object, property) -> object.mechanisms.get(property));
+
+    static <E, V> void property(String name, Class<E> entityClass, PropertyType<V> type,
+                                Function<E, V> reader, BiConsumer<LiveEntityView, V> writer) {
+        PROPERTIES.property(name, type)
+                .read(object -> entityClass.isInstance(object.entity) ? reader.apply(entityClass.cast(object.entity)) : null)
+                .write(writer)
+                .register();
+    }
+
+    static Dispatch dispatch(String name) {
+        return new Dispatch(name);
+    }
+
+    static final class Dispatch {
+
+        private record Branch(Class<?> entityClass,
+                              Function<Entity, AbstractTag> reader,
+                              BiConsumer<LiveEntityView, AbstractTag> writer) {}
+
+        <E extends Entity, V> Dispatch onClearable(Class<E> entityClass, PropertyType<V> codec,
+                                                   Function<E, V> reader, BiConsumer<LiveEntityView, V> writer) {
+            return on(entityClass, codec, reader, writer, true);
+        }
+
+        private final String name;
+        private final List<Branch> branches = new ArrayList<>();
+
+        private Dispatch(String name) {
+            this.name = name;
+        }
+
+        <E extends Entity, V> Dispatch on(Class<E> entityClass, PropertyType<V> codec,
+                                          Function<E, V> reader, BiConsumer<LiveEntityView, V> writer) {
+            return on(entityClass, codec, reader, writer, false);
+        }
+
+        private <E extends Entity, V> Dispatch on(Class<E> entityClass, PropertyType<V> codec,
+                                                  Function<E, V> reader, BiConsumer<LiveEntityView, V> writer,
+                                                  boolean clearable) {
+            branches.add(new Branch(entityClass,
+                    entity -> {
+                        V value = reader.apply(entityClass.cast(entity));
+                        return value != null ? codec.write(value) : null;
+                    },
+                    (view, raw) -> {
+                        V value = resolve(codec, raw, clearable, entityClass);
+                        if (value != null || (clearable && PropertyTypes.isClearInput(raw))) {
+                            writer.accept(view, value);
+                        }
+                    }));
+            return this;
+        }
+
+        private <V> V resolve(PropertyType<V> codec, AbstractTag raw, boolean clearable, Class<?> entityClass) {
+            if (clearable && PropertyTypes.isClearInput(raw)) return null;
+            V value = codec.parse(raw);
+            if (value == null) {
+                Debugger.echoError(null, "Invalid input '" + raw.identify() + "' for mechanism 'EntityTag."
+                        + name + "' on " + entityClass.getSimpleName()
+                        + " - expected " + codec.describeInput() + ".");
+            }
+            return value;
+        }
+
+        void register() {
+            PROPERTIES.property(name, PropertyTypes.ANY)
+                    .read(object -> {
+                        if (object.entity == null) return null;
+                        for (Branch branch : branches) {
+                            if (branch.entityClass().isInstance(object.entity)) {
+                                return branch.reader().apply(object.entity);
+                            }
+                        }
+                        return null;
+                    })
+                    .write((view, raw) -> {
+                        Class<?> species = view.bukkitType().getEntityClass();
+                        if (species == null) return;
+                        for (Branch branch : branches) {
+                            if (branch.entityClass().isAssignableFrom(species)) {
+                                branch.writer().accept(view, raw);
+                                return;
+                            }
+                        }
+                    })
+                    .register();
+        }
+    }
+
+    static <E, V> void clearableProperty(String name, Class<E> entityClass, PropertyType<V> type,
+                                         Function<E, V> reader, BiConsumer<LiveEntityView, V> writer) {
+        PROPERTIES.property(name, type)
+                .read(object -> entityClass.isInstance(object.entity) ? reader.apply(entityClass.cast(object.entity)) : null)
+                .write(writer)
+                .clearable()
+                .register();
+    }
+
+    static <E, V> void readOnlyProperty(String name, Class<E> entityClass, PropertyType<V> type,
+                                        Function<E, V> reader) {
+        PROPERTIES.property(name, type)
+                .read(object -> entityClass.isInstance(object.entity) ? reader.apply(entityClass.cast(object.entity)) : null)
+                .register();
+    }
+
+    static <E, V> void livingProperty(String name, Class<E> entityClass, PropertyType<V> type,
+                                      Function<E, V> reader, BiConsumer<LiveEntityView, V> writer) {
+        property(name, entityClass, type, reader, writer);
+    }
+
+    static <K extends org.bukkit.Keyed> PropertyType<K> registryOf(Supplier<Registry<K>> registrySupplier,
+                                                                   String description) {
+        return new PropertyType<>() {
+
+            private Registry<K> registry;
+
+            private Registry<K> registry() {
+                if (registry == null) registry = registrySupplier.get();
+                return registry;
+            }
+
+            @Override
+            public K parse(@NotNull AbstractTag input) {
+                NamespacedKey key = NamespacedKey.fromString(input.identify().toLowerCase());
+                if (key == null) return null;
+                Registry<K> resolved = registry();
+                return resolved != null ? resolved.get(key) : null;
+            }
+
+            @Override
+            public @NotNull AbstractTag write(@NotNull K value) {
+                return new ElementTag(value.getKey().getKey());
+            }
+
+            @Override
+            public @NotNull Class<? extends AbstractTag> tagClass() {
+                return ElementTag.class;
+            }
+
+            @Override
+            public @NotNull String describeInput() {
+                return description;
+            }
+        };
+    }
+
+    private static void registerMechanism(String name, BiConsumer<LiveEntityView, AbstractTag> applier) {
         registerMechanism(name, null, null, applier);
     }
 
-    private static void registerMechanism(String name, String nbtKey, Function<AbstractTag, AbstractTag> nbtTransform, BiConsumer<Entity, AbstractTag> applier) {
+    private static void registerMechanism(String name, String nbtKey, Function<AbstractTag,
+            AbstractTag> nbtTransform, BiConsumer<LiveEntityView, AbstractTag> applier) {
+
         MECHANISM_PROCESSOR.registerMechanism(name, (object, value) -> object.adjust(name, value, applier));
         if (nbtKey != null) NBT_MECHANISMS.put(nbtKey, new NbtMechanism(name, nbtTransform));
     }
@@ -106,12 +278,17 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Object EntityTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the permanent unique ID of the entity.
          *
          * @Implements EntityTag.uuid
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> new  ElementTag(object.entity.getUniqueId().toString()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> {
+            if (object.entity != null) return new ElementTag(object.entity.getUniqueId().toString());
+            if (object.fakeEntity != null) return new ElementTag("fake-" + object.fakeEntity.getEntityId());
+            return null;
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -126,7 +303,12 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.name
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> new ElementTag(object.entity.getName()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> {
+            if (object.entity != null) return new ElementTag(object.entity.getName());
+            AbstractTag recorded = object.mechanisms.get("name");
+            if (recorded != null) return new ElementTag(recorded.identify());
+            return object.type != null ? new ElementTag(object.type.getKey().getKey()) : null;
+        });
 
         /* @doc tag
          *
@@ -135,12 +317,13 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Object EntityTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the type of the entity.
          *
          * @Implements EntityTag.type
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.getEntityType().name()));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "type", (attribute, object) -> new ElementTag(object.getEntityType().name())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -149,12 +332,13 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Object EntityTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns 'true' if this EntityTag points to a spawned entity, or 'false' if it is an unspawned blueprint.
          *
          * @Implements EntityTag.is_spawned
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isSpawned", (attribute, object) -> new ElementTag(object.entity != null));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isSpawned", (attribute, object) -> new ElementTag(object.entity != null || object.fakeEntity != null)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -166,7 +350,11 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Description
          * Returns 'true' whether the entity is alive.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) -> new ElementTag(String.valueOf(!object.entity.isDead())));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isAlive", (attribute, object) -> {
+            if (object.entity != null) return new ElementTag(String.valueOf(!object.entity.isDead()));
+            if (object.fakeEntity != null) return new ElementTag("true");
+            return null;
+        });
 
         /* @doc tag
          *
@@ -180,7 +368,8 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.location
          */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) -> new LocationTag(object.entity.getLocation()));
+        TAG_PROCESSOR.registerTag(LocationTag.class, "location", (attribute, object) ->
+                object.entity != null ? new LocationTag(object.entity.getLocation()) : null);
 
         /* @doc tag
          *
@@ -227,207 +416,9 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * The blueprint can be passed to the Spawn command to create fresh copies.
          */
         TAG_PROCESSOR.registerTag(EntityTag.class, "blueprint", (attribute, object) ->
-                new EntityTag(null, object.getEntityType(), object.describe()));
+                new EntityTag(null, object.getEntityType(), mechanismsOf(object.describe())));
 
-        /* @doc tag
-         *
-         * @Name viewRange
-         * @RawName <EntityTag.viewRange>
-         * @Object EntityTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the view range of a Display entity.
-         *
-         * @Implements EntityTag.view_range
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "viewRange", (attribute, object) -> {
-            if (object.entity instanceof Display display) {
-                return new ElementTag(display.getViewRange());
-            }
-            return null;
-        });
-
-        /* @doc tag
-         *
-         * @Name translation
-         * @RawName <EntityTag.translation>
-         * @Object EntityTag
-         * @ReturnType LocationTag
-         * @NoArg
-         * @Description
-         * Returns the translation (positional offset) component of a Display entity's current transformation.
-         * Only applies to Display entities.
-         *
-         * @Implements EntityTag.translation
-         */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "translation", (attribute, object) -> {
-            if (!(object.entity instanceof Display display)) return null;
-            Vector3f translation = display.getTransformation().getTranslation();
-            return new LocationTag(translation.x(), translation.y(), translation.z(), 0, 0);
-        });
-
-        /* @doc tag
-         *
-         * @Name scale
-         * @RawName <EntityTag.scale>
-         * @Object EntityTag
-         * @ReturnType LocationTag
-         * @NoArg
-         * @Description
-         * Returns the scale component of a Display entity's current transformation.
-         * Only applies to Display entities.
-         *
-         * @Implements EntityTag.scale
-         */
-        TAG_PROCESSOR.registerTag(LocationTag.class, "scale", (attribute, object) -> {
-            if (!(object.entity instanceof Display display)) return null;
-            Vector3f scale = display.getTransformation().getScale();
-            return new LocationTag(scale.x(), scale.y(), scale.z(), 0, 0);
-        });
-
-        /* @doc tag
-         *
-         * @Name leftRotation
-         * @RawName <EntityTag.leftRotation>
-         * @Object EntityTag
-         * @ReturnType QuaternionTag
-         * @NoArg
-         * @Description
-         * Returns the left rotation (applied before scale) component of a Display entity's current transformation.
-         * Only applies to Display entities.
-         *
-         * @Implements EntityTag.left_rotation
-         */
-        TAG_PROCESSOR.registerTag(QuaternionTag.class, "leftRotation", (attribute, object) -> {
-            if (!(object.entity instanceof Display display)) return null;
-            Quaternionf rotation = display.getTransformation().getLeftRotation();
-            return new QuaternionTag(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-        });
-
-        /* @doc tag
-         *
-         * @Name rightRotation
-         * @RawName <EntityTag.rightRotation>
-         * @Object EntityTag
-         * @ReturnType QuaternionTag
-         * @NoArg
-         * @Description
-         * Returns the right rotation (applied after scale) component of a Display entity's current transformation.
-         * Only applies to Display entities.
-         *
-         * @Implements EntityTag.right_rotation
-         */
-        TAG_PROCESSOR.registerTag(QuaternionTag.class, "rightRotation", (attribute, object) -> {
-            if (!(object.entity instanceof Display display)) return null;
-            Quaternionf rotation = display.getTransformation().getRightRotation();
-            return new QuaternionTag(rotation.x(), rotation.y(), rotation.z(), rotation.w());
-        });
-
-        /* @doc tag
-         *
-         * @Name billboard
-         * @RawName <EntityTag.billboard>
-         * @Object EntityTag
-         * @ReturnType ElementTag
-         * @NoArg
-         * @Description
-         * Returns the billboard mode of a Display entity - the axes/point it automatically pivots around to face the viewer.
-         * Possible outputs: FIXED, VERTICAL, HORIZONTAL, CENTER. Only applies to Display entities.
-         *
-         * @Implements EntityTag.pivot
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "billboard", (attribute, object) -> {
-            if (!(object.entity instanceof Display display)) return null;
-            return new ElementTag(display.getBillboard().name());
-        });
-
-        /* @doc tag
-         *
-         * @Name textShadowed
-         * @RawName <EntityTag.textShadowed>
-         * @Object EntityTag
-         * @ReturnType ElementTag(Boolean)
-         * @NoArg
-         * @Description
-         * Returns whether a text_display entity's text has a drop shadow. Only applies to TextDisplay entities.
-         *
-         * @Implements EntityTag.text_shadowed
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "textShadowed", (attribute, object) -> {
-            if (!(object.entity instanceof TextDisplay textDisplay)) return null;
-            return new ElementTag(textDisplay.isShadowed());
-        });
-
-        /* @doc tag
-         *
-         * @Name backgroundColor
-         * @RawName <EntityTag.backgroundColor>
-         * @Object EntityTag
-         * @ReturnType ColorTag
-         * @NoArg
-         * @Description
-         * Returns the background color behind a text_display entity's text. Only applies to TextDisplay entities.
-         *
-         * @Implements EntityTag.background_color
-         */
-        TAG_PROCESSOR.registerTag(ColorTag.class, "backgroundColor", (attribute, object) -> {
-            if (!(object.entity instanceof TextDisplay textDisplay)) return null;
-            Color color = textDisplay.getBackgroundColor();
-            if (color == null) return null;
-            return new ColorTag(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
-        });
-
-        /* @doc tag
-         *
-         * @Name text
-         * @RawName <EntityTag.text>
-         * @Object EntityTag
-         * @ReturnType ElementTag
-         * @NoArg
-         * @Description
-         * Returns the displayed text of a text_display entity. Only applies to TextDisplay entities.
-         *
-         * @Implements EntityTag.text
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "text", (attribute, object) -> {
-            if (!(object.entity instanceof TextDisplay textDisplay)) return null;
-            return new ElementTag(CorexSerializer.LEGACY.serialize(textDisplay.text()));
-        });
-
-        /* @doc tag
-         *
-         * @Name width
-         * @RawName <EntityTag.width>
-         * @Object EntityTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the width of the interaction bounding box. Only applies to Interaction entities.
-         *
-         * @Implements EntityTag.width
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "width", (attribute, object) -> {
-            if (!(object.entity instanceof Interaction interaction)) return null;
-            return new ElementTag(interaction.getInteractionWidth());
-        });
-
-        /* @doc tag
-         *
-         * @Name height
-         * @RawName <EntityTag.height>
-         * @Object EntityTag
-         * @ReturnType ElementTag(Number)
-         * @NoArg
-         * @Description
-         * Returns the height of the interaction bounding box. Only applies to Interaction entities.
-         *
-         * @Implements EntityTag.height
-         */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "height", (attribute, object) -> {
-            if (!(object.entity instanceof Interaction interaction)) return null;
-            return new ElementTag(interaction.getInteractionHeight());
-        });
+        registerProperties();
 
         /* @doc mechanism
          *
@@ -439,346 +430,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.custom_name
          */
-        registerMechanism("name", (target, val) -> target.customName(val.asComponent()));
-
-        /* @doc mechanism
-         *
-         * @Name customNameVisible
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether the entity's custom name is always visible.
-         *
-         * @Implements EntityTag.custom_name_visible
-         */
-        registerMechanism("customNameVisible", "CustomNameVisible", EntityTag::nbtByteToBool, (target, val) -> target.setCustomNameVisible(asBoolean(val)));
-
-        /* @doc mechanism
-         *
-         * @Name maxHealth
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets the maximum health of a living entity.
-         *
-         * @Implements EntityTag.max_health
-         */
-        registerMechanism("maxHealth", (target, val) -> {
-            if (target instanceof LivingEntity living) {
-                AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
-                if (attribute != null) attribute.setBaseValue(asDouble(val));
-            }
-        });
-
-        /* @doc mechanism
-         *
-         * @Name health
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets the current health of a living entity, clamped to its maximum health.
-         *
-         * @Implements EntityTag.health
-         */
-        registerMechanism("health", "Health", EntityTag::nbtNumber, (target, val) -> {
-            if (target instanceof LivingEntity living) {
-                AttributeInstance attribute = living.getAttribute(Attribute.MAX_HEALTH);
-                double max = attribute != null ? attribute.getValue() : asDouble(val);
-                living.setHealth(Math.max(0.0, Math.min(asDouble(val), max)));
-            }
-        });
-
-        /* @doc mechanism
-         *
-         * @Name glowing
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether the entity has the glowing outline effect.
-         *
-         * @Implements EntityTag.glowing
-         */
-        registerMechanism("glowing", "Glowing", EntityTag::nbtByteToBool, (target, val) -> target.setGlowing(asBoolean(val)));
-
-        /* @doc mechanism
-         *
-         * @Name gravity
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether the entity is affected by gravity.
-         *
-         * @Implements EntityTag.gravity
-         */
-        registerMechanism("gravity", "NoGravity", EntityTag::nbtInvertedByteToBool, (target, val) -> target.setGravity(asBoolean(val)));
-
-        /* @doc mechanism
-         *
-         * @Name invulnerable
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether the entity is immune to all damage sources except void and /kill.
-         *
-         * @Implements EntityTag.invulnerable
-         */
-        registerMechanism("invulnerable", "Invulnerable", EntityTag::nbtByteToBool, (target, val) -> target.setInvulnerable(asBoolean(val)));
-
-        /* @doc mechanism
-         *
-         * @Name silent
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether the entity produces sounds.
-         *
-         * @Implements EntityTag.silent
-         */
-        registerMechanism("silent", "Silent", EntityTag::nbtByteToBool, (target, val) -> target.setSilent(asBoolean(val)));
-
-        /* @doc mechanism
-         *
-         * @Name ai
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether a living entity runs its AI (movement, targeting, goals).
-         *
-         * @Implements EntityTag.has_ai
-         */
-        registerMechanism("ai", "NoAI", EntityTag::nbtInvertedByteToBool, (target, val) -> {
-            if (target instanceof LivingEntity living) living.setAI(asBoolean(val));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name fireTicks
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets how many ticks the entity stays on fire for.
-         *
-         * @Implements EntityTag.fire_time
-         */
-        registerMechanism("fireTicks", "Fire", EntityTag::nbtNumber, (target, val) -> target.setFireTicks(asInt(val)));
-
-        /* @doc mechanism
-         *
-         * @Name freezeTicks
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets how many ticks of powder snow freezing the entity has accumulated.
-         *
-         * @Implements EntityTag.freeze_duration
-         */
-        registerMechanism("freezeTicks", "TicksFrozen", EntityTag::nbtNumber, (target, val) -> target.setFreezeTicks(asInt(val)));
-
-        /* @doc mechanism
-         *
-         * @Name air
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets the remaining air (in ticks) of a living entity.
-         *
-         * @Implements EntityTag.oxygen
-         */
-        registerMechanism("air", "Air", EntityTag::nbtNumber, (target, val) -> {
-            if (target instanceof LivingEntity living) living.setRemainingAir(asInt(val));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name fallDistance
-         * @Object EntityTag
-         * @Input ElementTag(Decimal)
-         * @Description
-         * Sets the distance the entity has fallen, used to calculate fall damage.
-         *
-         * @Implements EntityTag.fall_distance
-         */
-        registerMechanism("fallDistance", "FallDistance", EntityTag::nbtNumber, (target, val) -> target.setFallDistance((float) asDouble(val)));
-
-        /* @doc mechanism
-         *
-         * @Name velocity
-         * @Object EntityTag
-         * @Input LocationTag
-         * @Description
-         * Sets the entity's velocity to the vector of the given LocationTag.
-         *
-         * @Implements EntityTag.velocity
-         */
-        registerMechanism("velocity", "Motion", EntityTag::nbtMotion, (target, val) -> target.setVelocity(new LocationTag(val.identify()).getLocation().toVector()));
-
-        /* @doc mechanism
-         *
-         * @Name rotation
-         * @Object EntityTag
-         * @Input LocationTag
-         * @Description
-         * Sets the entity's body rotation to the yaw and pitch of the given LocationTag.
-         *
-         * @Implements EntityTag.rotate
-         */
-        registerMechanism("rotation", "Rotation", EntityTag::nbtRotation, (target, val) -> {
-            Location loc = new LocationTag(val.identify()).getLocation();
-            target.setRotation(loc.getYaw(), loc.getPitch());
-        });
-
-        /* @doc mechanism
-         *
-         * @Name interpolationDuration
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets, in ticks, how long a Display entity (block_display, item_display, text_display) takes to
-         * animate from its old transformation to its new one once <@link mechanism EntityTag.transformation>,
-         * <@link mechanism EntityTag.translation>, <@link mechanism EntityTag.scale>,
-         * <@link mechanism EntityTag.leftRotation>, or <@link mechanism EntityTag.rightRotation> is applied.
-         * A value of 0 snaps instantly. Only applies to Display entities, ignored otherwise.
-         *
-         * @Implements EntityTag.interpolation_duration
-         */
-        registerMechanism("interpolationDuration", (target, val) -> {
-            if (target instanceof Display display) display.setInterpolationDuration(resolveTicks(val));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name start
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets, in ticks, how long a Display entity waits after receiving a transformation update before it
-         * starts animating towards it (vanilla NBT key 'start_interpolation'). Only applies to Display entities.
-         *
-         * @Implements EntityTag.interpolation_start
-         */
-        registerMechanism("interpolationStart", (target, val) -> {
-            if (target instanceof Display display) display.setInterpolationDelay(resolveTicks(val));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name translation
-         * @Object EntityTag
-         * @Input LocationTag
-         * @Description
-         * Sets the translation (positional offset) component of a Display entity's transformation, leaving
-         * scale and rotation untouched. Only applies to Display entities.
-         *
-         * @Implements EntityTag.translation
-         */
-        registerMechanism("translation", (target, val) -> {
-            if (!(target instanceof Display display)) return;
-            if (!(val instanceof LocationTag locationTag)) return;
-            Transformation current = display.getTransformation();
-            display.setTransformation(new Transformation(locationTag.getVector().toVector3f(), current.getLeftRotation(), current.getScale(), current.getRightRotation()));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name scale
-         * @Object EntityTag
-         * @Input LocationTag
-         * @Description
-         * Sets the scale component of a Display entity's transformation, leaving translation and rotation untouched.
-         * Only applies to Display entities.
-         *
-         * @Implements EntityTag.scale
-         */
-        registerMechanism("scale", (target, val) -> {
-            if (!(target instanceof Display display)) return;
-            if (!(val instanceof LocationTag locationTag)) return;
-            Transformation current = display.getTransformation();
-            display.setTransformation(new Transformation(current.getTranslation(), current.getLeftRotation(), locationTag.getVector().toVector3f(), current.getRightRotation()));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name leftRotation
-         * @Object EntityTag
-         * @Input QuaternionTag
-         * @Description
-         * Sets the left rotation (applied before scale) component of a Display entity's transformation, leaving
-         * translation, scale, and right rotation untouched. Only applies to Display entities.
-         *
-         * @Implements EntityTag.left_rotation
-         */
-        registerMechanism("leftRotation", (target, val) -> {
-            if (!(target instanceof Display display)) return;
-            if (!(val instanceof QuaternionTag quaternionTag)) return;
-            Transformation current = display.getTransformation();
-            display.setTransformation(new Transformation(current.getTranslation(), quaternionTag.getQuaternionf(), current.getScale(), current.getRightRotation()));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name rightRotation
-         * @Object EntityTag
-         * @Input QuaternionTag
-         * @Description
-         * Sets the right rotation (applied after scale) component of a Display entity's transformation, leaving
-         * translation, scale, and left rotation untouched. Only applies to Display entities.
-         *
-         * @Implements EntityTag.right_rotation
-         */
-        registerMechanism("rightRotation", (target, val) -> {
-            if (!(target instanceof Display display)) return;
-            if (!(val instanceof QuaternionTag quaternionTag)) return;
-            Transformation current = display.getTransformation();
-            display.setTransformation(new Transformation(current.getTranslation(), current.getLeftRotation(), current.getScale(), quaternionTag.getQuaternionf()));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name item
-         * @Object EntityTag
-         * @Input ItemTag
-         * @Description
-         * Sets the ItemStack shown by an item_display entity. Only applies to ItemDisplay entities.
-         *
-         * @Implements EntityTag.item_display
-         */
-        registerMechanism("item", (target, val) -> {
-            if (target instanceof ItemDisplay itemDisplay && val instanceof ItemTag itemTag) {
-                itemDisplay.setItemStack(itemTag.getItemStack());
-            }
-        });
-
-        /* @doc mechanism
-         *
-         * @Name width
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets the width of the interaction bounding box. Only applies to Interaction entities.
-         *
-         * @Implements EntityTag.width
-         */
-        registerMechanism("width", "width", EntityTag::nbtNumber, (target, val) -> {
-            if (target instanceof Interaction interaction) {
-                interaction.setInteractionWidth((float) asDouble(val));
-            }
-        });
-
-        /* @doc mechanism
-         *
-         * @Name height
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets the height of the interaction bounding box. Only applies to Interaction entities.
-         *
-         * @Implements EntityTag.height
-         */
-        registerMechanism("height", "height", EntityTag::nbtNumber, (target, val) -> {
-            if (target instanceof Interaction interaction) {
-                interaction.setInteractionHeight((float) asDouble(val));
-            }
-        });
+        registerMechanism("name", (target, val) -> target.setCustomName(val.asComponent()));
 
         /* @doc mechanism
          *
@@ -792,25 +444,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          *
          * @Implements EntityTag.nbt
          */
-        registerMechanism("nbt", (target, val) -> {
-            if (nms != null && val instanceof MapTag map) nms.applyNbt(target, map);
-        });
-
-        /* @doc mechanism
-         *
-         * @Name viewRange
-         * @Object EntityTag
-         * @Input ElementTag(Number)
-         * @Description
-         * Sets the view range of a Display entity.
-         *
-         * @Implements EntityTag.view_range
-         */
-        registerMechanism("viewRange", "view_range", EntityTag::nbtNumber, (target, val) -> {
-            if (target instanceof Display display) {
-                display.setViewRange((float) asDouble(val));
-            }
-        });
+        registerMechanism("nbt", (target, val) -> { if (val instanceof MapTag map) target.setNbt(map); });
 
         /* @doc mechanism
          *
@@ -839,97 +473,73 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          * @Implements EntityTag.brightness
          */
         registerMechanism("brightness", (target, val) -> {
-            if (!(target instanceof Display display)) return;
-            if (!(val instanceof MapTag map)) return;
-            AbstractTag skyValue = map.getObject("sky");
-            AbstractTag blockValue = map.getObject("block");
-            int sky = skyValue != null ? asInt(skyValue) : 0;
-            int block = blockValue != null ? asInt(blockValue) : 0;
-            display.setBrightness(new Display.Brightness(block, sky));
+            if (val instanceof MapTag map) {
+                target.setBrightness(
+                        map.getObject("block") != null ? asInt(map.getObject("block")) : 0,
+                        map.getObject("sky") != null ? asInt(map.getObject("sky")) : 0
+                );
+            }
         });
 
-        /* @doc mechanism
-         *
-         * @Name billboard
-         * @Object EntityTag
-         * @Input ElementTag
-         * @Description
-         * Sets the billboard mode of a Display entity - the axes/point it automatically pivots around to face the viewer.
-         * Valid inputs: FIXED (no rotation, default), VERTICAL, HORIZONTAL, CENTER.
-         * Only applies to Display entities.
-         *
-         * @Implements EntityTag.pivot
-         */
-        registerMechanism("billboard", (target, val) -> {
-            if (!(target instanceof Display display)) return;
-            try {
-                display.setBillboard(Display.Billboard.valueOf(val.identify().toUpperCase()));
-            } catch (IllegalArgumentException ignored) {}
-        });
-
-        /* @doc mechanism
-         *
-         * @Name textShadowed
-         * @Object EntityTag
-         * @Input ElementTag(Boolean)
-         * @Description
-         * Controls whether a text_display entity's text has a drop shadow. Only applies to TextDisplay entities.
-         *
-         * @Implements EntityTag.text_shadowed
-         */
-        registerMechanism("textShadowed", (target, val) -> {
-            if (target instanceof TextDisplay textDisplay) textDisplay.setShadowed(asBoolean(val));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name backgroundColor
-         * @Object EntityTag
-         * @Input ColorTag
-         * @Description
-         * Sets the background color behind a text_display entity's text. Only applies to TextDisplay entities.
-         *
-         * @Implements EntityTag.background_color
-         */
-        registerMechanism("backgroundColor", (target, val) -> {
-            if (!(target instanceof TextDisplay textDisplay)) return;
-            if (!(val instanceof ColorTag colorTag)) return;
-            textDisplay.setBackgroundColor(Color.fromARGB(colorTag.alpha, colorTag.red, colorTag.green, colorTag.blue));
-        });
-
-        /* @doc mechanism
-         *
-         * @Name text
-         * @Object EntityTag
-         * @Input ElementTag
-         * @Description
-         * Sets the displayed text of a text_display entity. Only applies to TextDisplay entities.
-         *
-         * @Implements EntityTag.text
-         */
-        registerMechanism("text", (target, val) -> {
-            if (target instanceof TextDisplay textDisplay) textDisplay.text(val.asComponent());
-        });
     }
 
-    private EntityTag(Entity entity, EntityType type, MapTag mechanisms) {
+    private static void registerProperties() {
+        EntityProperties.register();
+
+        NBT_MECHANISMS.put("CustomNameVisible", new NbtMechanism("customNameVisible", EntityTag::nbtByteToBool));
+        NBT_MECHANISMS.put("Health", new NbtMechanism("health", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("Glowing", new NbtMechanism("glowing", EntityTag::nbtByteToBool));
+        NBT_MECHANISMS.put("NoGravity", new NbtMechanism("gravity", EntityTag::nbtInvertedByteToBool));
+        NBT_MECHANISMS.put("Invulnerable", new NbtMechanism("invulnerable", EntityTag::nbtByteToBool));
+        NBT_MECHANISMS.put("Silent", new NbtMechanism("silent", EntityTag::nbtByteToBool));
+        NBT_MECHANISMS.put("NoAI", new NbtMechanism("ai", EntityTag::nbtInvertedByteToBool));
+        NBT_MECHANISMS.put("Fire", new NbtMechanism("fireTicks", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("TicksFrozen", new NbtMechanism("freezeTicks", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("Air", new NbtMechanism("air", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("FallDistance", new NbtMechanism("fallDistance", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("Motion", new NbtMechanism("velocity", EntityTag::nbtMotion));
+        NBT_MECHANISMS.put("Rotation", new NbtMechanism("rotation", EntityTag::nbtRotation));
+        NBT_MECHANISMS.put("width", new NbtMechanism("width", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("height", new NbtMechanism("height", EntityTag::nbtNumber));
+        NBT_MECHANISMS.put("view_range", new NbtMechanism("viewRange", EntityTag::nbtNumber));
+    }
+
+    private EntityTag(Entity entity, WrapperEntity fakeEntity, EntityType type, Map<String, AbstractTag> mechanisms) {
         this.entity = entity;
+        this.fakeEntity = fakeEntity;
         this.type = type;
         this.mechanisms = mechanisms;
+        this.liveView = entity != null ? new BukkitEntityView(entity)
+                : fakeEntity != null ? new FakeEntityView(fakeEntity)
+                  : null;
+    }
+
+    private EntityTag(Entity entity, EntityType type, Map<String, AbstractTag> mechanisms) {
+        this(entity, null, type, mechanisms);
+    }
+
+    private static Map<String, AbstractTag> mechanismsOf(MapTag source) {
+        Map<String, AbstractTag> result = new LinkedHashMap<>();
+        for (String key : source.keySet()) {
+            AbstractTag value = source.getObject(key);
+            if (value != null) result.put(key, value);
+        }
+        return result;
     }
 
     public EntityTag(UUID uuid) {
-        this(Bukkit.getEntity(uuid), null, new MapTag());
+        this(Bukkit.getEntity(uuid), null, null, new LinkedHashMap<>());
     }
 
     public EntityTag(Entity entity) {
-        this(entity, null, new MapTag());
+        this(entity, null, null, new LinkedHashMap<>());
     }
 
     public EntityTag(String raw) {
         Entity parsedEntity = null;
+        WrapperEntity parsedFake = null;
         EntityType parsedType = null;
-        MapTag parsedMechanisms = new MapTag();
+        Map<String, AbstractTag> parsedMechanisms = new LinkedHashMap<>();
 
         if (raw != null && !raw.isEmpty()) {
             String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(prefix.length() + 1) : raw;
@@ -938,28 +548,79 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
             if (bracketStart > 0 && cleanRaw.endsWith("]")) {
                 basePart = cleanRaw.substring(0, bracketStart);
-                parsedMechanisms = new MapTag(cleanRaw.substring(bracketStart + 1, cleanRaw.length() - 1));
+                parsedMechanisms = mechanismsOf(new MapTag(cleanRaw.substring(bracketStart + 1, cleanRaw.length() - 1)));
             }
 
-            try {
-                parsedEntity = Bukkit.getEntity(UUID.fromString(basePart));
-            } catch (IllegalArgumentException ignored) {
-                parsedType = matchEntityType(basePart);
+            if (basePart.startsWith("fake-")) {
+                try {
+                    int id = Integer.parseInt(basePart.substring(5));
+                    parsedFake = FakeEntityRegistry.getById(id);
+                } catch (NumberFormatException ignored) {}
+            } else {
+                try {
+                    parsedEntity = Bukkit.getEntity(UUID.fromString(basePart));
+                } catch (IllegalArgumentException ignored) {
+                    parsedType = matchEntityType(basePart);
+                }
             }
         }
 
         this.entity = parsedEntity;
+        this.fakeEntity = parsedFake;
         this.type = parsedType;
         this.mechanisms = parsedMechanisms;
+
+        this.liveView = entity != null ? new BukkitEntityView(entity)
+                : fakeEntity != null ? new FakeEntityView(fakeEntity)
+                  : null;
     }
 
-    private AbstractTag adjust(String name, AbstractTag value, BiConsumer<Entity, AbstractTag> liveApplier) {
-        if (entity != null) {
-            liveApplier.accept(entity, value);
-        } else {
-            mechanisms.putObject(name, value);
+    private LiveEntityView bindProperty(String name, AbstractTag value) {
+        if (entity == null) {
+            mechanisms.put(name, value);
+        }
+        return liveView;
+    }
+
+    private AbstractTag adjust(String name, AbstractTag value, BiConsumer<LiveEntityView, AbstractTag> liveApplier) {
+        if (liveView != null) {
+            liveApplier.accept(liveView, value);
+        }
+
+        if (entity == null) {
+            if (value == null) mechanisms.remove(name);
+            else mechanisms.put(name, value);
         }
         return this;
+    }
+
+    public EntityTag fakeSpawn(Location location, List<UUID> targets, int durationTicks) {
+        if (type == null) return null;
+
+        com.github.retrooper.packetevents.protocol.entity.type.EntityType peType = SpigotConversionUtil.fromBukkitEntityType(type);
+
+        WrapperEntity wrapperEntity = new WrapperEntity(peType);
+        wrapperEntity.spawn(SpigotConversionUtil.fromBukkitLocation(location));
+
+        EntityTag fake = new EntityTag(null, wrapperEntity, type, new LinkedHashMap<>());
+
+        EntityMeta meta = wrapperEntity.getEntityMeta();
+        meta.setNotifyAboutChanges(false);
+        try {
+            for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) {
+                fake.applyMechanism(entry.getKey(), entry.getValue());
+            }
+        }
+        finally {
+            meta.setNotifyAboutChanges(true);
+        }
+
+        for (UUID target : targets) {
+            wrapperEntity.addViewer(target);
+        }
+
+        FakeEntityRegistry.register(wrapperEntity, durationTicks);
+        return fake;
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -974,8 +635,8 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
             if (type == null) return null;
             spawned = world.spawnEntity(location, type, reason);
             EntityTag blueprint = new EntityTag(spawned);
-            for (String key : mechanisms.keySet()) {
-                blueprint.applyMechanism(key, mechanisms.getObject(key));
+            for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) {
+                blueprint.applyMechanism(entry.getKey(), entry.getValue());
             }
         }
 
@@ -996,7 +657,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
     public MapTag describe() {
         if (entity == null) {
             MapTag copy = new MapTag();
-            for (String key : mechanisms.keySet()) copy.putObject(key, mechanisms.getObject(key));
+            for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) copy.putObject(entry.getKey(), entry.getValue());
             return copy;
         }
 
@@ -1116,6 +777,93 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         return entity.customName() != null && entity.customName().toString().toLowerCase().contains(pattern);
     }
 
+    public static List<EntityTag> resolveBlueprints(AbstractTag argument) {
+        List<EntityTag> blueprints = new ArrayList<>();
+        switch (argument) {
+            case EntityTag entity -> blueprints.add(entity);
+            case ListTag list -> list.getList().forEach(tag ->
+                    blueprints.add(tag instanceof EntityTag entity ? entity : new EntityTag(tag.identify())));
+            case null -> {}
+            default -> blueprints.add(new EntityTag(argument.identify()));
+        }
+        return blueprints;
+    }
+
+    public static ListTag resolveBlueprintList(CompiledArgument rawArg, ScriptQueue queue) {
+        ListTag result = new ListTag();
+        if (rawArg == null) return result;
+        String raw = rawArg.getRaw();
+
+        for (String piece : ObjectFetcher.splitIgnoringBrackets(raw, '|')) {
+            String stripped = piece.strip();
+            int bracketStart = stripped.indexOf('[');
+
+            if (bracketStart > 0 && stripped.endsWith("]") && stripped.charAt(0) != '<') {
+                result.addObject(new EntityTag(stripped, queue));
+            } else {
+                AbstractTag evaluated = ScriptCompiler.parseArg(stripped).evaluate(queue);
+                for (EntityTag blueprint : resolveBlueprints(evaluated)) {
+                    result.addObject(blueprint);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public EntityTag(String raw, ScriptQueue queue) {
+        Entity parsedEntity = null;
+        WrapperEntity parsedFake = null;
+        EntityType parsedType = null;
+        Map<String, AbstractTag> parsedMechanisms = new LinkedHashMap<>();
+
+        if (raw != null && !raw.isEmpty()) {
+            String cleanRaw = raw.toLowerCase().startsWith(prefix + "@") ? raw.substring(prefix.length() + 1) : raw;
+            int bracketStart = cleanRaw.indexOf('[');
+            String basePart = cleanRaw;
+
+            if (bracketStart > 0 && cleanRaw.endsWith("]")) {
+                basePart = cleanRaw.substring(0, bracketStart);
+                String bracketContent = cleanRaw.substring(bracketStart + 1, cleanRaw.length() - 1);
+
+                for (String pair : ObjectFetcher.splitIgnoringBrackets(bracketContent, ';')) {
+                    int eq = pair.indexOf('=');
+                    if (eq <= 0) continue;
+
+                    String key = pair.substring(0, eq).strip();
+                    String valueRaw = pair.substring(eq + 1).strip();
+
+                    AbstractTag value = ScriptCompiler.parseArg(valueRaw).evaluate(queue);
+                    if (value != null) parsedMechanisms.put(key, value);
+                }
+            }
+
+            String resolvedBase = ScriptCompiler.parseArg(basePart).evaluate(queue).identify();
+
+            if (resolvedBase.startsWith("fake-")) {
+                try {
+                    int id = Integer.parseInt(resolvedBase.substring(5));
+                    parsedFake = FakeEntityRegistry.getById(id);
+                } catch (NumberFormatException ignored) {}
+            } else {
+                try {
+                    parsedEntity = Bukkit.getEntity(UUID.fromString(resolvedBase));
+                } catch (IllegalArgumentException ignored) {
+                    parsedType = matchEntityType(resolvedBase);
+                }
+            }
+        }
+
+        this.entity = parsedEntity;
+        this.fakeEntity = parsedFake;
+        this.type = parsedType;
+        this.mechanisms = parsedMechanisms;
+
+        this.liveView = entity != null ? new BukkitEntityView(entity)
+                : fakeEntity != null ? new FakeEntityView(fakeEntity)
+                  : null;
+    }
+
     public Entity getEntity() {
         return entity;
     }
@@ -1127,14 +875,15 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
     @Override
     public @NotNull String identify() {
         if (entity != null) return prefix + "@" + entity.getUniqueId();
+        if (fakeEntity != null) return prefix + "@fake-" + fakeEntity.getEntityId();
 
         StringBuilder builder = new StringBuilder(prefix + "@");
         builder.append(type != null ? type.getKey().getKey() : "unknown");
 
         if (!mechanisms.isEmpty()) {
             List<String> pairs = new ArrayList<>();
-            for (String key : mechanisms.keySet()) {
-                pairs.add(key + "=" + mechanisms.getObject(key).identify());
+            for (Map.Entry<String, AbstractTag> entry : mechanisms.entrySet()) {
+                pairs.add(entry.getKey() + "=" + entry.getValue().identify());
             }
             builder.append("[").append(String.join(";", pairs)).append("]");
         }
@@ -1153,14 +902,28 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
     @Override
     public @NonNull Adjustable duplicate() {
-        MapTag copy = new MapTag();
-        for (String key : mechanisms.keySet()) copy.putObject(key, mechanisms.getObject(key));
-        return new EntityTag(entity, type, copy);
+        return new EntityTag(entity, type, new LinkedHashMap<>(mechanisms));
     }
 
     @Override
     public @NotNull AbstractTag applyMechanism(@NotNull String mechanism, @NotNull AbstractTag value) {
         return MECHANISM_PROCESSOR.process(this, mechanism, value);
+    }
+
+    @Override
+    public @NotNull AbstractTag applyMechanisms(@NotNull Map<String, AbstractTag> mechanisms) {
+        if (fakeEntity == null) {
+            return Adjustable.super.applyMechanisms(mechanisms);
+        }
+
+        EntityMeta meta = fakeEntity.getEntityMeta();
+        meta.setNotifyAboutChanges(false);
+        try {
+            return Adjustable.super.applyMechanisms(mechanisms);
+        }
+        finally {
+            meta.setNotifyAboutChanges(true);
+        }
     }
 
     @Override

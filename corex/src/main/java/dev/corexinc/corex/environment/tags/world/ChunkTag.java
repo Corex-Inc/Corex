@@ -75,13 +75,14 @@ public class ChunkTag implements AbstractTag, Flaggable {
          * @Object ChunkTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the X-coordinate component of this chunk object.
          * This value represents the horizontal position along the X-axis in a 3D space.
          *
          * @Implements ChunkTag.x
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.x));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "x", (attr, obj) -> new ElementTag(obj.x)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -90,13 +91,14 @@ public class ChunkTag implements AbstractTag, Flaggable {
          * @Object ChunkTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the Z-coordinate component of this chunk object.
          * This value represents the horizontal position along the Z-axis in chunk coordinates.
          *
          * @Implements ChunkTag.z
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.z));
+        TAG_PROCESSOR.registerTag(ElementTag.class, "z", (attr, obj) -> new ElementTag(obj.z)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -105,12 +107,13 @@ public class ChunkTag implements AbstractTag, Flaggable {
          * @Object ChunkTag
          * @ReturnType WorldTag
          * @NoArg
+         * @Async
          * @Description
          * Retrieves the WorldTag representing the world this chunk belongs to.
          *
          * @Implements ChunkTag.world
          */
-        TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> new WorldTag(obj.world));
+        TAG_PROCESSOR.registerTag(WorldTag.class, "world", (attr, obj) -> new WorldTag(obj.world)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -135,13 +138,14 @@ public class ChunkTag implements AbstractTag, Flaggable {
          * @Object ChunkTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a LocationTag at the horizontal center of this chunk (Y=0).
          * The center is always at local offset 8,8 within the 16x16 column,
          * i.e. block coordinates (x*16+8, 0, z*16+8).
          */
         TAG_PROCESSOR.registerTag(LocationTag.class, "center", (attr, obj) ->
-                new LocationTag(new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8)));
+                new LocationTag(new Location(obj.world, (obj.x << 4) + 8, 0, (obj.z << 4) + 8))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -204,11 +208,12 @@ public class ChunkTag implements AbstractTag, Flaggable {
          * @Object ChunkTag
          * @ReturnType RegionTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the Folia RegionTag that owns this chunk.
          * Useful for verifying region ownership before performing region-bound operations.
          */
-        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> new RegionTag(obj.world, obj.x, obj.z));
+        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> new RegionTag(obj.world, obj.x, obj.z)).setAsyncSafe();
 
         /* @doc tag
          *
@@ -217,6 +222,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
          * @Object ChunkTag
          * @ReturnType CuboidTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a CuboidTag spanning the full vertical extent of this chunk —
          * from the world's minimum height to its maximum height across the 16x16 column.
@@ -232,7 +238,7 @@ public class ChunkTag implements AbstractTag, Flaggable {
                     new Location(obj.world, minX, obj.world.getMinHeight(), minZ),
                     new Location(obj.world, minX + 16, obj.world.getMaxHeight(), minZ + 16)
             );
-        });
+        }).setAsyncSafe();
     }
 
     public ChunkTag(@NonNull Chunk chunk) {

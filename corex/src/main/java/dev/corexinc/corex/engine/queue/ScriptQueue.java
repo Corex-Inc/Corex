@@ -312,10 +312,12 @@ public class ScriptQueue {
 
                         boolean skipCommand = false;
 
-                        for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
-                            if (!entry.getKey().execute(this, inst, entry.getValue())) {
-                                skipCommand = true;
-                                break;
+                        if (!inst.globalFlags.isEmpty()) {
+                            for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
+                                if (!entry.getKey().execute(this, inst, entry.getValue())) {
+                                    skipCommand = true;
+                                    break;
+                                }
                             }
                         }
 

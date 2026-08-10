@@ -72,6 +72,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the name of the player.
          *
@@ -80,7 +81,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) -> {
             String name = object.offlinePlayer.getName();
             return new ElementTag(name != null ? name : "Unknown");
-        });
+        }).setAsyncSafe();
 
         /* @doc tag
          *
@@ -89,6 +90,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the player is currently online.
          * Works with offline players (returns false in that case).
@@ -96,7 +98,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.is_online
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isOnline", (attribute, object) ->
-                new ElementTag(String.valueOf(object.offlinePlayer.isOnline())));
+                new ElementTag(String.valueOf(object.offlinePlayer.isOnline()))).setAsyncSafe();
 
         /* @doc tag
          *
@@ -105,13 +107,14 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the permanent unique ID of the player.
          *
          * @Implements EntityTag.uuid
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.getUniqueId().toString()));
+                new ElementTag(object.offlinePlayer.getUniqueId().toString())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -277,6 +280,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether this player's profile is banned from the server.
          * Works with offline players.
@@ -284,7 +288,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.is_banned
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isBanned", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.isBanned()));
+                new ElementTag(object.offlinePlayer.isBanned())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -294,6 +298,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @ReturnType ElementTag(Boolean)
          * @Mechanism PlayerTag.whitelisted
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the player is on the server whitelist.
          * Works with offline players.
@@ -301,7 +306,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.is_whitelisted
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isWhitelisted", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.isWhitelisted()));
+                new ElementTag(object.offlinePlayer.isWhitelisted())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -311,6 +316,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @ReturnType ElementTag(Boolean)
          * @Mechanism PlayerTag.op
          * @NoArg
+         * @Async
          * @Description
          * Returns whether this player has operator (OP) status on the server.
          * Works with offline players.
@@ -318,7 +324,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.is_op
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isOp", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.isOp()));
+                new ElementTag(object.offlinePlayer.isOp())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -327,6 +333,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether this player has ever joined this server before.
          * Works with offline players.
@@ -334,7 +341,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.has_played_before
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "hasPlayedBefore", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.hasPlayedBefore()));
+                new ElementTag(object.offlinePlayer.hasPlayedBefore())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -343,6 +350,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the Unix timestamp (in milliseconds) of the first time this player
          * joined the server, or 0 if they have never played.
@@ -351,7 +359,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.first_played
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "firstPlayed", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.getFirstPlayed()));
+                new ElementTag(object.offlinePlayer.getFirstPlayed())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -360,6 +368,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the Unix timestamp (in milliseconds) of the last time this player
          * logged into the server, or 0 if they have never played.
@@ -368,7 +377,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.last_login
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "lastLogin", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.getLastLogin()));
+                new ElementTag(object.offlinePlayer.getLastLogin())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -377,6 +386,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns the Unix timestamp (in milliseconds) of the last time this player
          * was seen on the server. If the player is currently online, returns the
@@ -386,7 +396,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Implements PlayerTag.last_seen
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "lastSeen", (attribute, object) ->
-                new ElementTag(object.offlinePlayer.getLastSeen()));
+                new ElementTag(object.offlinePlayer.getLastSeen())).setAsyncSafe();
 
         /* @doc tag
          *

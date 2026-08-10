@@ -116,9 +116,11 @@ public class IfCommand implements AbstractCommand {
 
         queue.setTempData("corex_if_result", result);
 
-        Debugger.report(queue, instruction,
-                "Result", String.valueOf(result)
-        );
+        if (Debugger.shouldReport(queue)) {
+            Debugger.report(queue, instruction,
+                    "Result", String.valueOf(result)
+            );
+        }
 
         if (result && instruction.innerBlock != null) {
             queue.pushFrame(getName(), instruction.innerBlock, null);

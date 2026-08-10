@@ -65,7 +65,7 @@ public class GradientFormatter implements AbstractFormatter {
             MapTag map = new MapTag(param);
 
             String styleVal = getValue(map, "style").orElse(null);
-            if (styleVal != null) style = styleVal.toUpperCase();
+            if (styleVal != null) style = unquote(styleVal).toUpperCase();
 
             Optional<String> colorsKey = getValue(map, "colors");
             if (colorsKey.isPresent()) {
@@ -91,7 +91,7 @@ public class GradientFormatter implements AbstractFormatter {
             for (String part : parts) {
                 String trimmed = part.strip();
                 if (trimmed.toLowerCase().startsWith("style=")) {
-                    style = trimmed.substring(6).strip().toUpperCase();
+                    style = unquote(trimmed.substring(6)).toUpperCase();
                 } else {
                     String resolved = resolveColor(trimmed);
                     if (resolved != null) colors.add(resolved);
@@ -116,7 +116,17 @@ public class GradientFormatter implements AbstractFormatter {
         return new MarkupTag(sb.toString());
     }
 
-    private String resolveColor(String input) {
+    private static String unquote(String input) {
+        if (input == null) return null;
+        String trimmed = input.strip();
+        if (trimmed.length() >= 2 && trimmed.charAt(0) == '`' && trimmed.charAt(trimmed.length() - 1) == '`') {
+            return trimmed.substring(1, trimmed.length() - 1).strip();
+        }
+        return trimmed;
+    }
+
+    private String resolveColor(String rawInput) {
+        String input = unquote(rawInput);
         if (input == null || input.isBlank()) return null;
 
         if (input.startsWith("#") && (input.length() == 7 || input.length() == 4)) {

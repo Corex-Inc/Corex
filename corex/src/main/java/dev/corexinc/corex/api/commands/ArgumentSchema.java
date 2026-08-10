@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -59,7 +60,8 @@ public final class ArgumentSchema {
             Class<? extends AbstractTag> type,
             Function<String, ? extends AbstractTag> parser,
             boolean required,
-            String  defaultRaw
+            String  defaultRaw,
+            BiFunction<CompiledArgument, ScriptQueue, ? extends AbstractTag> rawParser
     ) {}
 
     private final List<ArgumentDef> defs;
@@ -104,7 +106,7 @@ public final class ArgumentSchema {
                 @NotNull Class<T> type,
                 @Nullable Function<String, T> parser
         ) {
-            defs.add(new ArgumentDef(ArgumentKind.PREFIX, key, -1, type, parser, true, null));
+            defs.add(new ArgumentDef(ArgumentKind.PREFIX, key, -1, type, parser, true, null, null ));
             return this;
         }
 
@@ -143,7 +145,7 @@ public final class ArgumentSchema {
                 @Nullable Function<String, T> parser,
                 @Nullable String defaultRaw
         ) {
-            defs.add(new ArgumentDef(ArgumentKind.PREFIX, key, -1, type, parser, false, defaultRaw));
+            defs.add(new ArgumentDef(ArgumentKind.PREFIX, key, -1, type, parser, false, defaultRaw, null ));
             return this;
         }
 
@@ -165,7 +167,19 @@ public final class ArgumentSchema {
                 @NotNull Class<T> type,
                 @Nullable Function<String, T> parser
         ) {
-            defs.add(new ArgumentDef(ArgumentKind.LINEAR, String.valueOf(index), index, type, parser, true, null));
+            defs.add(new ArgumentDef(ArgumentKind.LINEAR, String.valueOf(index), index, type, parser, true, null, null ));
+            return this;
+        }
+
+        /**
+         * Declares a <b>required</b> positional argument with a raw explicit parser.
+         */
+        public <T extends AbstractTag> Builder requireLinearRaw(
+                int index,
+                @NotNull Class<T> type,
+                @NotNull java.util.function.BiFunction<CompiledArgument, ScriptQueue, T> rawParser
+        ) {
+            defs.add(new ArgumentDef(ArgumentKind.LINEAR, String.valueOf(index), index, type, null, true, null, rawParser));
             return this;
         }
 
@@ -177,7 +191,7 @@ public final class ArgumentSchema {
                 @NotNull Class<T> type,
                 @Nullable String defaultRaw
         ) {
-            defs.add(new ArgumentDef(ArgumentKind.LINEAR, String.valueOf(index), index, type, null, false, defaultRaw));
+            defs.add(new ArgumentDef(ArgumentKind.LINEAR, String.valueOf(index), index, type, null, false, defaultRaw, null ));
             return this;
         }
 
@@ -188,7 +202,7 @@ public final class ArgumentSchema {
          * this just makes the intent explicit in the schema for documentation purposes.
          */
         public Builder optionalFlag(String name) {
-            defs.add(new ArgumentDef(ArgumentKind.FLAG, name, -1, ElementTag.class, null, false, null));
+            defs.add(new ArgumentDef(ArgumentKind.FLAG, name, -1, ElementTag.class, null, false, null, null ));
             return this;
         }
 
@@ -240,6 +254,12 @@ public final class ArgumentSchema {
 
     @SuppressWarnings("unchecked")
     private <T extends AbstractTag> T resolve(ArgumentDef def, Instruction instruction, ScriptQueue queue) {
+        if (def.rawParser() != null && def.kind() == ArgumentKind.LINEAR) {
+            CompiledArgument rawArg = instruction.getLinearArgument(def.linearIndex());
+            if (rawArg == null) return defaultOf(def, queue);
+            return (T) def.rawParser().apply(rawArg, queue);
+        }
+
         AbstractTag raw;
 
         if (def.kind() == ArgumentKind.PREFIX) {

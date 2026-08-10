@@ -47,7 +47,17 @@ public class ListTag implements AbstractTag {
     public static final TagProcessor<ListTag> TAG_PROCESSOR = new TagProcessor<>();
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag("list", attr -> new ListTag(attr.getParam()));
+        BaseTagProcessor.registerBaseTag("list", attr -> {
+            AbstractTag paramObj = attr.getParamObject();
+
+            if (paramObj instanceof ComponentTag) {
+                ListTag result = new ListTag();
+                result.addObject(paramObj);
+                return result;
+            }
+
+            return new ListTag(paramObj != null ? paramObj.identify() : null);
+        });
         ObjectFetcher.registerFetcher(prefix, ListTag::new);
 
         /* @doc tag
@@ -57,6 +67,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Number)
          * @NoArg
+         * @Async
          * @Description
          * Returns how many items are in the list.
          *
@@ -76,6 +87,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns whether the list has no entries.
          *
@@ -95,6 +107,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ObjectTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the item at the given 1-based index.
          * Supply multiple pipe-separated indices to receive a ListTag of results.
@@ -145,6 +158,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.first[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @Async
          * @Description
          * Returns the first element, equivalent to get[1].
          * Optionally specify a count to receive the first N elements as a ListTag.
@@ -176,6 +190,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.last[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @Async
          * @Description
          * Returns the last element, equivalent to get[-1].
          * Optionally specify a count to receive the last N elements in original order.
@@ -209,6 +224,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns whether the list contains ALL the given elements.
          *
@@ -228,6 +244,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ElementTag(Boolean)
              * @ArgRequired 1
+             * @Async
              * @Description
              * Returns true if at least ONE of the elements is present.
              * @Usage
@@ -254,6 +271,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Number)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the 1-based index of the first exact match in the list, or -1 if not found.
          *
@@ -275,6 +293,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ListTag(Number)
              * @ArgRequired 1
+             * @Async
              * @Description
              * Returns the ListTag of 1-based index of ALL matching indices, or empty list if not found.
              *
@@ -296,6 +315,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ElementTag(Number)
              * @ArgRequired 1
+             * @Async
              * @Description
              * Returns the 1-based index of match any element that CONTAINS the given text (not requiring an exact match), or -1 if not found.
              *
@@ -317,6 +337,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ListTag(Number)
              * @ArgRequired 1
+             * @Async
              * @Description
              * Returns the ListTag of 1-based index of match any element that CONTAINS the given text (not requiring an exact match), or empty list if not found.
              *
@@ -355,6 +376,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Number)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns how many times the given value appears in the list.
          *
@@ -377,6 +399,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.join[(<text>)]>
          * @Object ListTag
          * @ReturnType ElementTag
+         * @Async
          * @Description
          * Returns the list as a single string with items separated by the given text.
          * Defaults to ", " when no separator is provided.
@@ -405,6 +428,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with the specified items appended to the end.
          *
@@ -429,6 +453,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with all matching items removed.
          *
@@ -449,6 +474,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ListTag
              * @ArgRequired
+             * @Async
              * @Description
              * Returns a new list with all matching items removed with limit how many occurrences are removed.
              *
@@ -485,6 +511,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with the given items inserted before the item at the specified index.
          * Items from that index onward are shifted right.
@@ -518,6 +545,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with the item at the given index replaced by the provided value(s).
          * If more than one replacement value is given, extras are inserted at that position and shift following items right.
@@ -553,6 +581,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with entries starting at the given index overwritten by the provided values.
          * If the replacement extends past the end of the original list, the list grows to accommodate.
@@ -587,6 +616,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with the item(s) at the specified index (or indices) removed.
          * Append {@code .to[<index>]} to remove a contiguous range.
@@ -613,6 +643,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ListTag
              * @ArgRequired
+             * @Async
              * @Description
              * Returns a new list with the item(s) at the specified index contiguous range removed.
              * Accepts 'first', 'last', and negative indices.
@@ -648,6 +679,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a new list with all occurrences of the given element replaced matches with a different value.
          *
@@ -684,6 +716,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of the list with all duplicate entries removed, keeping only the first occurrence.
          *
@@ -709,6 +742,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a list of items that appear in BOTH this list and the given list.
          * Preserves the order of the original list and deduplicates automatically.
@@ -739,6 +773,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the list extended to the specified minimum length by prepending entries.
          *
@@ -764,6 +799,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ListTag
              * @ArgRequired
+             * @Async
              * @Description
              * Returns the list extended to the specified minimum length by prepending entries uses a custom fill value instead of an empty string.
              *
@@ -787,6 +823,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Returns the list extended to the specified minimum length by appending entries.
          *
@@ -808,6 +845,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ListTag
              * @ArgRequired
+             * @Async
              * @Description
              * Returns the list extended to the specified minimum length by appending entries uses a custom fill value instead of an empty string.
              *
@@ -831,6 +869,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of the list with all items in reversed order.
          *
@@ -854,6 +893,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.sort[(<mode>)]>
          * @Object ListTag
          * @ReturnType ListTag
+         * @Async
          * @Description
          * Returns a sorted copy of the list. Mode controls the sort strategy:
          * <ul>
@@ -900,6 +940,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a copy of the list in a random order.
          * Do NOT use .random[9999] for shuffle the list!
@@ -918,6 +959,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.random[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @Async
          * @Description
          * Returns a randomly chosen item from the list.
          * Optionally specify a count to return that many distinct random items as a ListTag.
@@ -953,6 +995,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the sum of all numeric values in the list. Non-numeric entries are ignored.
          *
@@ -978,6 +1021,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the product of all numeric values in the list. Non-numeric entries are ignored.
          * Returns 1 if no numeric values are present.
@@ -1002,6 +1046,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns the mean average of all numeric values in the list. Non-numeric entries are ignored.
          * Returns 0 if no numeric values are present.
@@ -1028,6 +1073,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.highest[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @Async
          * @Description
          * Returns the item with the highest numeric value.
          * Optionally specify a count to return the top N items as a ListTag, in descending order.
@@ -1063,6 +1109,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.lowest[(<#>)]>
          * @Object ListTag
          * @ReturnType ObjectTag
+         * @Async
          * @Description
          * Returns the item with the lowest numeric value.
          * Optionally specify a count to return the N smallest items as a ListTag, in ascending order.
@@ -1099,6 +1146,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @NoArg
+         * @Async
          * @Description
          * Treats each item in this list as a sub-list and returns a single flat list of all their contents.
          *
@@ -1124,6 +1172,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          * @Description
          * Splits this list into a ListTag of sub-lists, each of the specified maximum length.
          * The final sub-list may be shorter if the count doesn't divide evenly.
@@ -1156,6 +1205,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType MapTag
          * @ArgRequired
+         * @Async
          * @Description
          * Treats this list as keys and the parameter list as values,
          * pairing them by index to form a MapTag.
@@ -1184,6 +1234,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.toMap[(<separator>)]>
          * @Object ListTag
          * @ReturnType MapTag
+         * @Async
          * @Description
          * Interprets each list entry as a "key/value" pair and builds a MapTag.
          * The separator defaults to '/' but can be customised.
@@ -1219,6 +1270,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          *
          * @Description
          * Converts the ListTag into a strict JSON string.
@@ -1233,6 +1285,7 @@ public class ListTag implements AbstractTag {
              * @Object ListTag
              * @ReturnType ElementTag
              * @NoArg
+             * @Async
              *
              * @Description
              * Converts the ListTag into an element with nicely formatted multiline JSON.
@@ -1251,6 +1304,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ElementTag
          * @ArgRequired
+         * @Async
          *
          * @Description
          * Calculates the dot product between this list and the input list.
@@ -1282,6 +1336,7 @@ public class ListTag implements AbstractTag {
          * @RawName <ListTag.activation[(<type>)]>
          * @Object ListTag
          * @ReturnType ListTag
+         * @Async
          *
          * @Description
          * Applies an activation function to all numeric values in the list.
@@ -1326,6 +1381,7 @@ public class ListTag implements AbstractTag {
          * @Object ListTag
          * @ReturnType ListTag
          * @ArgRequired
+         * @Async
          *
          * @Description
          * Multiplies this list (as a matrix of rows) by the input list (as a vector).

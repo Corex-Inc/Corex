@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.environment.commands.FakeSpawnCommand;
 import dev.corexinc.corex.environment.containers.commands.CommandContainer;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // NMS
@@ -54,10 +55,12 @@ public class EnvironmentLoader {
         nms.register(PlayerAdapter.class, "1.21.5", "dev.corexinc.corex.nms.v1_21_5.PlayerAdapterImpl");
         nms.register(PlayerAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.PlayerAdapterImpl");
         nms.register(PlayerAdapter.class, "26.1.2", "dev.corexinc.corex.nms.v26_1_2.PlayerAdapterImpl");
+        nms.register(PlayerAdapter.class, "26.2", "dev.corexinc.corex.nms.v26_2.PlayerAdapterImpl");
 
         nms.register(CommandAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.CommandAdapterImpl");
         nms.register(CommandAdapter.class, "1.21.11", "dev.corexinc.corex.nms.v1_21_11.CommandAdapterImpl");
         nms.register(CommandAdapter.class, "26.1.2", "dev.corexinc.corex.nms.v26_1_2.CommandAdapterImpl");
+        nms.register(CommandAdapter.class, "26.2", "dev.corexinc.corex.nms.v26_2.CommandAdapterImpl");
 
         nms.register(NbtUtilAdapter.class, "1.21", "dev.corexinc.corex.nms.v1_21.NbtUtilAdapterImpl");
         nms.register(NbtUtilAdapter.class, "1.21.3", "dev.corexinc.corex.nms.v1_21_3.NbtUtilAdapterImpl");
@@ -160,6 +163,7 @@ public class EnvironmentLoader {
                 InventoryCommand.class,
                 DialogCommand.class,
                 TimeCommand.class,
+                FakeSpawnCommand.class,
 
                 // Tags
                 ElementTag.class,

@@ -56,6 +56,7 @@ public class RandomTag implements AbstractTag {
          * @Object RandomTag
          * @ReturnType ElementTag
          * @NoArg
+         * @Async
          * @Description
          * Returns a random unique ID.
          *
@@ -70,6 +71,7 @@ public class RandomTag implements AbstractTag {
          * @RawName <RandomTag.int[(<#>)]>
          * @Object RandomTag
          * @ReturnType ElementTag(Number)
+         * @Async
          * @Description
          * Returns a random integer number from 0 to max integer.
          *
@@ -90,6 +92,7 @@ public class RandomTag implements AbstractTag {
              * @Object RandomTag
              * @ReturnType ElementTag(Decimal)
              * @ArgRequired
+             * @Async
              * @Description
              * Returns a random decimal number between the 2 specified decimal numbers, inclusive.
              * @Usage
@@ -120,6 +123,7 @@ public class RandomTag implements AbstractTag {
          * @Object RandomTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns a random decimal number from 0 to 1.
          *
@@ -141,6 +145,7 @@ public class RandomTag implements AbstractTag {
              * @Object RandomTag
              * @ReturnType ElementTag(Decimal)
              * @ArgRequired
+             * @Async
              * @Description
              * Returns a random decimal number between the 2 specified decimal numbers, inclusive.
              * @Usage
@@ -166,6 +171,7 @@ public class RandomTag implements AbstractTag {
          * @Object RandomTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
+         * @Async
          * @Description
          * Returns a random boolean (true or false). Essentially a coin flip.
          *
@@ -181,6 +187,7 @@ public class RandomTag implements AbstractTag {
          * @Object RandomTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns true with the specified percentage chance (0 to 100).
          * For example, <random.chance[25]> has a 25% chance to return true.
@@ -200,6 +207,7 @@ public class RandomTag implements AbstractTag {
          * @Object RandomTag
          * @ReturnType ElementTag(Decimal)
          * @NoArg
+         * @Async
          * @Description
          * Returns a random decimal number from a Gaussian (normal) distribution with mean 0.0 and standard deviation 1.0.
          *
@@ -215,6 +223,7 @@ public class RandomTag implements AbstractTag {
          * @Object util
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns a pseudo-random decimal number from -1 to 1, based on a Simplex Noise algorithm. See {@link url https://en.wikipedia.org/wiki/Simplex_noise}
          * Input map is like "x=1.0", or "x=1.0;y=2.0", or "x=1.0;y=2.0;z=3" or "x=1;y=2;z=3"

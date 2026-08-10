@@ -72,6 +72,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @Object PolygonTag
          * @ReturnType ElementTag(Boolean)
          * @ArgRequired
+         * @Async
          * @Description
          * Returns whether the given location is inside this polygon region.
          * Uses the ray-casting algorithm on the X/Z plane with a Y bounds check.
@@ -92,6 +93,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @Object PolygonTag
          * @ReturnType LocationTag
          * @NoArg
+         * @Async
          * @Description
          * Returns the centroid of this polygon at the mid-Y level.
          * The centroid is computed as the average of all vertex positions.
@@ -107,6 +109,7 @@ public class PolygonTag implements AbstractTag, AbstractAreaObject, Flaggable {
          * @Object PolygonTag
          * @ReturnType ListTag(LocationTag)
          * @NoArg
+         * @Async
          * @Description
          * Returns a list of all block locations contained within this polygon region.
          * Each block position is tested via the ray-casting algorithm on the X/Z plane

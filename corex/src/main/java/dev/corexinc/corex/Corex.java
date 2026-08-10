@@ -1,5 +1,6 @@
 package dev.corexinc.corex;
 
+import com.github.retrooper.packetevents.PacketEvents;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
@@ -22,7 +23,11 @@ import dev.corexinc.corex.environment.utils.commands.impl.RunCommand;
 import dev.corexinc.corex.environment.utils.scripts.WebSocketManager;
 import dev.corexinc.corex.environment.utils.commands.impl.RunsCommand;
 import dev.corexinc.corex.environment.tags.core.MapTag;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import me.tofaa.entitylib.APIConfig;
+import me.tofaa.entitylib.EntityLib;
+import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform;
 import org.bukkit.Bukkit;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -41,6 +46,9 @@ public class Corex extends JavaPlugin {
 
     @Override
     public void onLoad() {
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+        PacketEvents.getAPI().load();
+
         instance = this;
         this.registry = new CorexRegistry();
 
@@ -56,6 +64,13 @@ public class Corex extends JavaPlugin {
     public void onEnable() {
         SchedulerAdapter.set(new BukkitSchedulerAdapter());
         CorexLogger.setConsole(Bukkit.getConsoleSender());
+
+        SpigotEntityLibPlatform platform = new SpigotEntityLibPlatform(this);
+        APIConfig settings = new APIConfig(PacketEvents.getAPI())
+                .tickTickables()
+                .usePlatformLogger();
+
+        EntityLib.init(platform, settings);
 
         silenceHikariLogs();
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");
@@ -110,6 +125,10 @@ public class Corex extends JavaPlugin {
         } catch (Throwable ignored) {}
 
         DatabaseManager.closeAll();
+
+        if (PacketEvents.getAPI() != null) {
+            PacketEvents.getAPI().terminate();
+        }
     }
 
     public static Corex getInstance() { return instance; }

@@ -7,10 +7,12 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
+import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import org.jspecify.annotations.NonNull;
@@ -89,6 +91,8 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
 
+    private record ResolvedDefinition(String keyPath, AbstractDataAction action, String param, String[] parts) {}
+
     @Override
     public @NonNull String getName() {
         return "def";
@@ -122,6 +126,11 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
 
+        if (instruction.customData instanceof ResolvedDefinition resolved) {
+            runResolved(queue, instruction, resolved);
+            return;
+        }
+
         if (instruction.customData instanceof Map<?, ?> rawMap) {
             handleDataBlock(queue, instruction, rawMap);
             return;
@@ -140,50 +149,83 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
         }
 
         int colonIndex = findColonOutsideBrackets(rawArg);
+        ResolvedDefinition resolved;
 
         if (colonIndex < 0) {
-            String value = instruction.getLinear(1, queue);
+            resolved = new ResolvedDefinition(rawArg, null, null, null);
+        }
+        else {
+            String keyPath = rawArg.substring(0, colonIndex);
+            String actionStr = rawArg.substring(colonIndex + 1);
 
-            queue.define(rawArg, value == null ? null : ObjectFetcher.pickObject(value));
+            AbstractDataAction action = ScriptManager.getRegistry().findAction(actionStr);
+            if (action == null) {
+                Debugger.echoError(queue, "DataAction cannot be null!");
+                Debugger.echoError(queue, "It seems DataAction is <red>null</red>.");
+                return;
+            }
 
-            Debugger.report(queue, instruction,
-                    "Definition", rawArg,
-                    "Value", value,
-                    "Action", ":"
-            );
+            String param = action.extractParam(actionStr);
+            String[] parts = keyPath.indexOf('.') < 0
+                    ? new String[] { keyPath }
+                    : DOT_SPLIT.split(keyPath, -1);
+            resolved = new ResolvedDefinition(keyPath, action, param, parts);
+        }
+
+        if (instruction.getLinearArgument(0) instanceof StaticArg) {
+            instruction.customData = resolved;
+        }
+
+        runResolved(queue, instruction, resolved);
+    }
+
+    private void runResolved(@NonNull ScriptQueue queue, @NonNull Instruction instruction,
+                             @NonNull ResolvedDefinition resolved) {
+        if (resolved.action() == null) {
+            AbstractTag valueObj = instruction.getLinearObject(1, queue);
+            AbstractTag stored;
+
+            if (valueObj == null) {
+                stored = null;
+            }
+            else if (valueObj instanceof ElementTag el && el.asString().indexOf('@') < 1) {
+                stored = el;
+            }
+            else {
+                stored = ObjectFetcher.pickObject(valueObj.identify());
+            }
+
+            queue.define(resolved.keyPath(), stored);
+
+            if (Debugger.shouldReport(queue)) {
+                Debugger.report(queue, instruction,
+                        "Definition", resolved.keyPath(),
+                        "Value", valueObj != null ? valueObj.identify() : null,
+                        "Action", ":"
+                );
+            }
             return;
         }
 
-        String keyPath = rawArg.substring(0, colonIndex);
-        String actionStr = rawArg.substring(colonIndex + 1);
-
-        AbstractDataAction action = ScriptManager.getRegistry().findAction(actionStr);
-        if (action == null) {
-            Debugger.echoError(queue, "DataAction cannot be null!");
-            Debugger.echoError(queue, "It seems DataAction is <red>null</red>.");
-            return;
-        }
-
-        String param = action.extractParam(actionStr);
         AbstractTag secondArg = instruction.getLinearObject(1, queue);
 
-        String[] parts = DOT_SPLIT.split(keyPath, -1);
-
         try {
-            if (parts.length > 1) {
-                applyToMap(queue, parts, action, param, secondArg);
+            if (resolved.parts().length > 1) {
+                applyToMap(queue, resolved.parts(), resolved.action(), resolved.param(), secondArg);
             } else {
-                AbstractTag current = queue.getDefinition(keyPath);
-                AbstractTag result = action.apply(current, param, secondArg, queue);
-                queue.define(keyPath, result);
+                AbstractTag current = queue.getDefinition(resolved.keyPath());
+                AbstractTag result = resolved.action().apply(current, resolved.param(), secondArg, queue);
+                queue.define(resolved.keyPath(), result);
             }
         }
         finally {
-            Debugger.report(queue, instruction,
-                    "Definition", keyPath,
-                    "Value", param,
-                    "Action", ":" + action.getSymbol()
-            );
+            if (Debugger.shouldReport(queue)) {
+                Debugger.report(queue, instruction,
+                        "Definition", resolved.keyPath(),
+                        "Value", resolved.param(),
+                        "Action", ":" + resolved.action().getSymbol()
+                );
+            }
         }
     }
 
