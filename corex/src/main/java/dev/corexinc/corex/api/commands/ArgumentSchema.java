@@ -177,7 +177,7 @@ public final class ArgumentSchema {
         public <T extends AbstractTag> Builder requireLinearRaw(
                 int index,
                 @NotNull Class<T> type,
-                @NotNull java.util.function.BiFunction<CompiledArgument, ScriptQueue, T> rawParser
+                @NotNull BiFunction<CompiledArgument, ScriptQueue, T> rawParser
         ) {
             defs.add(new ArgumentDef(ArgumentKind.LINEAR, String.valueOf(index), index, type, null, true, null, rawParser));
             return this;

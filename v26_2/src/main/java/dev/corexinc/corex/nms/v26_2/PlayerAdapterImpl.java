@@ -21,6 +21,7 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,7 @@ public class PlayerAdapterImpl implements PlayerAdapter {
             default -> AdvancementType.TASK;
         };
 
-        net.minecraft.world.item.ItemStack nmsIcon = CraftItemStack.asNMSCopy(new org.bukkit.inventory.ItemStack(icon));
+        net.minecraft.world.item.ItemStack nmsIcon = CraftItemStack.asNMSCopy(new ItemStack(icon));
         net.minecraft.world.item.ItemStackTemplate iconTemplate = net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(nmsIcon);
         net.minecraft.network.chat.Component nmsTitle = PaperAdventure.asVanilla(message);
         net.minecraft.network.chat.Component nmsDescription = net.minecraft.network.chat.Component.empty();

@@ -6,6 +6,7 @@ import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,7 +59,7 @@ public class Debugger {
     public static void queueStop(ScriptQueue queue, double ms) {
         if (queue.isSilent() || mode == Mode.NONE || mode == Mode.ERRORS) return;
         CorexLogger.success(styleOf(queue).header + " <gray>done <dark_gray>("
-                + String.format(java.util.Locale.US, "%.4f", ms) + "ms)");
+                + String.format(Locale.US, "%.4f", ms) + "ms)");
     }
 
     public static void releaseQueue(ScriptQueue queue) {

@@ -6,6 +6,8 @@ import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.CustomModelData;
+import org.bukkit.Color;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
@@ -36,7 +38,7 @@ public class ItemAdapterImpl implements ItemAdapter {
         if (item == null || tag == null) return;
         if (!(tag instanceof MapTag mapTag)) return;
 
-        var builder = io.papermc.paper.datacomponent.item.CustomModelData.customModelData();
+        var builder = CustomModelData.customModelData();
 
         toList(mapTag.getObject("floats")).forEach(t -> {
             try { builder.addFloat(Float.parseFloat(t.identify())); }
@@ -44,7 +46,7 @@ public class ItemAdapterImpl implements ItemAdapter {
         });
 
         toList(mapTag.getObject("colors")).forEach(t -> {
-            try { builder.addColor(org.bukkit.Color.fromRGB(Integer.parseInt(t.identify()))); }
+            try { builder.addColor(Color.fromRGB(Integer.parseInt(t.identify()))); }
             catch (NumberFormatException ignored) {}
         });
 

@@ -2,6 +2,7 @@ package dev.corexinc.corex.environment.tags.entity;
 
 import dev.corexinc.corex.api.properties.PropertyType;
 import dev.corexinc.corex.api.properties.PropertyTypes;
+import dev.corexinc.corex.environment.tags.core.ColorTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.core.QuaternionTag;
@@ -16,6 +17,7 @@ import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
@@ -48,10 +50,10 @@ final class EntityProperties {
     static final PropertyType<Color> BUKKIT_COLOR = PropertyTypes.mapping(
             PropertyTypes.COLOR,
             colorTag -> Color.fromARGB(colorTag.alpha, colorTag.red, colorTag.green, colorTag.blue),
-            color -> new dev.corexinc.corex.environment.tags.core.ColorTag(
+            color -> new ColorTag(
                     color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()));
 
-    static final PropertyType<org.bukkit.inventory.ItemStack> ITEM_STACK = PropertyTypes.mapping(
+    static final PropertyType<ItemStack> ITEM_STACK = PropertyTypes.mapping(
             PropertyTypes.ITEM, ItemTag::getItemStack, ItemTag::new);
 
     static final PropertyType<BlockData> BLOCK_DATA = PropertyTypes.mapping(

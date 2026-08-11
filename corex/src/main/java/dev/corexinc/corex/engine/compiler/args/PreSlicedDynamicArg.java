@@ -14,11 +14,17 @@ import dev.corexinc.corex.engine.tags.TagManager;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 
+import java.util.function.Function;
+
 public class PreSlicedDynamicArg implements CompiledArgument {
     private final TagNode[] nodes;
     private final CompiledArgument fallback;
     private final String rawFullTag;
     private final FormatRegistry formats;
+
+    private AbstractFormatter cachedFormatter;
+    private Function<Attribute, AbstractTag> cachedBaseTag;
+    private volatile boolean handlerResolved;
 
     public PreSlicedDynamicArg(TagNode[] nodes, CompiledArgument fallback, String rawFullTag) {
         this.nodes = nodes;
@@ -32,12 +38,21 @@ public class PreSlicedDynamicArg implements CompiledArgument {
         Attribute attr = new Attribute(nodes, queue);
         AbstractTag currentObj;
 
-        AbstractFormatter fmt = formats.get(attr.getName());
-        if (fmt != null) {
-            currentObj = fmt.parse(attr);
+        if (!handlerResolved) {
+            String baseName = nodes[0].name();
+            cachedFormatter = formats.get(baseName);
+            if (cachedFormatter == null) cachedBaseTag = TagManager.getBaseTag(baseName);
+            handlerResolved = true;
+        }
+
+        if (cachedFormatter != null) {
+            currentObj = cachedFormatter.parse(attr);
+            attr.fulfill(1);
+        } else if (cachedBaseTag != null) {
+            currentObj = cachedBaseTag.apply(attr);
             attr.fulfill(1);
         } else {
-            currentObj = TagManager.executeBaseTag(attr);
+            currentObj = null;
         }
 
         while (attr.hasNext()) {

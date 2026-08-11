@@ -269,6 +269,8 @@ public class ScriptQueue {
     @AvailableSince("1.0.0")
     public void executeNext() {
         try {
+            if (bytecode == null) this.bytecode = new Instruction[0];
+
             while (!isPaused && !isStopped) {
 
                 if (targetRegionPosition != null
@@ -281,8 +283,6 @@ public class ScriptQueue {
                     });
                     return;
                 }
-
-                if (bytecode == null) this.bytecode = new Instruction[0];
 
                 if (pointer < bytecode.length) {
                     if (errorTrapped && !trappedErrors.isEmpty()) {
@@ -297,10 +297,9 @@ public class ScriptQueue {
                         continue;
                     }
 
-                    int depth = callStack.size();
-
                     try {
-                        if (isAsync && !inst.command.isAsyncSafe()) {
+                        if (isAsync && !inst.asyncSafe) {
+                            int depth = callStack.size();
                             Debugger.error(this,
                                     "Attempt to execute a <aqua>sync</aqua> command '"
                                             + inst.command.getName() + "' in an <purple>async</purple> queue!", depth);
@@ -312,7 +311,7 @@ public class ScriptQueue {
 
                         boolean skipCommand = false;
 
-                        if (!inst.globalFlags.isEmpty()) {
+                        if (inst.hasGlobalFlags) {
                             for (Map.Entry<AbstractGlobalFlag, CompiledArgument> entry : inst.globalFlags.entrySet()) {
                                 if (!entry.getKey().execute(this, inst, entry.getValue())) {
                                     skipCommand = true;
@@ -322,7 +321,7 @@ public class ScriptQueue {
                         }
 
                         if (!skipCommand) {
-                            this.setErrorHeaderPrinted(false);
+                            this.errorHeaderPrinted = false;
                             try {
                                 inst.command.run(this, inst);
                             } catch (RegionRelocateException rre) {
@@ -331,13 +330,13 @@ public class ScriptQueue {
                                 this.addError("Internal Java Exception: " + e.getMessage());
                                 Debugger.error("Internal Java Exception in '" + inst.command.getName() + "'", e);
                             }
-                            Debugger.flushErrors(this, inst);
+                            if (!currentErrors.isEmpty()) Debugger.flushErrors(this, inst);
                         }
                     } catch (RegionRelocateException rre) {
                         throw rre;
                     } catch (Exception e) {
                         String cmdName = inst.command.getName();
-                        Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, depth);
+                        Debugger.error(this, "Error executing '" + cmdName + "': " + e.getMessage(), e, callStack.size());
                     }
 
                 } else if (!isPaused) {
@@ -420,7 +419,11 @@ public class ScriptQueue {
      */
     public void runAsyncChild(Instruction[] block, boolean waitable) {
         ScriptQueue child = ScriptQueue.spawnChild(id + "@async@" + nextSequence(), block, true, this);
-        child.definitions.putAll(this.definitions);
+        for (Map.Entry<String, AbstractTag> entry : this.definitions.entrySet()) {
+            AbstractTag value = entry.getValue();
+            if (value instanceof MutableDefinition mutable) value = mutable.snapshot();
+            if (value != null) child.definitions.put(entry.getKey(), value);
+        }
         child.context = this.context;
 
         if (waitable) {
@@ -546,7 +549,8 @@ public class ScriptQueue {
     @Nullable
     @AvailableSince("1.0.0")
     public AbstractTag getDefinition(String name) {
-        return definitions.get(name);
+        AbstractTag value = definitions.get(name);
+        return value instanceof MutableDefinition mutable ? mutable.snapshot() : value;
     }
 
     /**

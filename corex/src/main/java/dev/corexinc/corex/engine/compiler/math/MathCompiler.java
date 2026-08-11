@@ -1,7 +1,9 @@
 package dev.corexinc.corex.engine.compiler.math;
 
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
+import dev.corexinc.corex.environment.tags.core.ElementTag;
 
 public class MathCompiler {
 
@@ -127,7 +129,9 @@ public class MathCompiler {
                 String tagStr = str.substring(startPos, pos);
                 CompiledArgument arg = ScriptCompiler.parseArg(tagStr);
                 x = q -> {
-                    try { return Double.parseDouble(arg.evaluate(q).identify()); }
+                    AbstractTag tag = arg.evaluate(q);
+                    if (tag instanceof ElementTag el && el.isDouble()) return el.asDouble();
+                    try { return Double.parseDouble(tag.identify()); }
                     catch(Exception e) { return 0.0; }
                 };
             } else if ((ch >= '0' && ch <= '9') || ch == '.') {

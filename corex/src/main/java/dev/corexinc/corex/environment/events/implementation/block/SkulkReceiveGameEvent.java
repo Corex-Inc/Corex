@@ -11,6 +11,7 @@ import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockReceiveGameEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class SkulkReceiveGameEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onReceiveGameEvent(org.bukkit.event.block.BlockReceiveGameEvent event) {
+    public void onReceiveGameEvent(BlockReceiveGameEvent event) {
         String eventName = event.getEvent().getKey().getKey().toLowerCase();
         ContextTag context = null;
 

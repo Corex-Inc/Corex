@@ -18,6 +18,8 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.utils.adapters.ItemAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -198,8 +200,8 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
             ItemMeta meta = obj.item.getItemMeta();
             if (meta != null) {
                 Component name = val.asComponent()
-                        .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.WHITE)
-                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false);
+                        .colorIfAbsent(NamedTextColor.WHITE)
+                        .decoration(TextDecoration.ITALIC, false);
                 meta.displayName(name);
                 obj.item.setItemMeta(meta);
             }
@@ -223,13 +225,13 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
                 if (val instanceof ListTag listTag) {
                     for (AbstractTag tag : listTag.getList()) {
                         lore.add(tag.asComponent()
-                                .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.WHITE)
-                                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                                .colorIfAbsent(NamedTextColor.WHITE)
+                                .decoration(TextDecoration.ITALIC, false));
                     }
                 } else {
                     lore.add(val.asComponent()
-                            .colorIfAbsent(net.kyori.adventure.text.format.NamedTextColor.WHITE)
-                            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+                            .colorIfAbsent(NamedTextColor.WHITE)
+                            .decoration(TextDecoration.ITALIC, false));
                 }
                 meta.lore(lore);
                 obj.item.setItemMeta(meta);

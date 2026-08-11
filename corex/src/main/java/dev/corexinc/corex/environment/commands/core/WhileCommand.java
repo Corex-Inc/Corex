@@ -1,14 +1,16 @@
 package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.queue.MutableDefinition;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.utils.scripts.ConditionCompiler;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Map;
 
 /* @doc command
  *
@@ -107,7 +109,9 @@ public class WhileCommand implements AbstractCommand {
         String rawAs = instruction.getPrefix("as", queue);
         final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
 
-        queue.define(asVar, new ElementTag(1));
+        final MutableDefinition.OfInt index = new MutableDefinition.OfInt(1);
+        final Map<String, AbstractTag> defs = queue.getDefinitionsMap();
+        queue.define(asVar, index);
 
         boolean initialResult = condition.evaluate(queue);
 
@@ -125,8 +129,6 @@ public class WhileCommand implements AbstractCommand {
 
         final ConditionCompiler.Condition finalCondition = condition;
 
-        final int[] iterationCounter = new int[] { 1 };
-
         queue.pushFrame("while_loop", instruction.innerBlock,
                 () -> {
                     queue.setBroken(false);
@@ -135,7 +137,7 @@ public class WhileCommand implements AbstractCommand {
                 () -> {
                     if (queue.isBroken()) return false;
 
-                    int nextIndex = ++iterationCounter[0];
+                    int nextIndex = index.value + 1;
 
                     if (nextIndex > 100000) {
                         Debugger.echoError(queue, "StackOverflow: Too many iterations!");
@@ -143,7 +145,8 @@ public class WhileCommand implements AbstractCommand {
                         return false;
                     }
 
-                    queue.define(asVar, new ElementTag(nextIndex));
+                    index.value = nextIndex;
+                    if (defs.get(asVar) != index) queue.define(asVar, index);
 
                     return finalCondition.evaluate(queue);
                 }

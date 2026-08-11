@@ -3,6 +3,7 @@ package dev.corexinc.corex.engine.compiler;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.compiler.args.DefinitionArg;
 import dev.corexinc.corex.engine.compiler.args.MathArg;
 import dev.corexinc.corex.engine.compiler.args.MixedArg;
 import dev.corexinc.corex.engine.compiler.args.PreSlicedDynamicArg;
@@ -193,6 +194,13 @@ public class ScriptCompiler {
         }
 
         TagNode[] nodes = parseTagNodes(mainTag);
+
+        if (nodes.length == 1 && nodes[0].name().isEmpty()
+                && nodes[0].param() instanceof StaticArg staticParam) {
+            formatterFlagOut.add(false);
+            return new DefinitionArg(staticParam.evaluate(null).identify(), fallback, rawTag);
+        }
+
         FormatRegistry formats = ScriptManager.getRegistry().getFormats();
         boolean isFormatterCall = formats.isFormat(nodes[0].name());
         formatterFlagOut.add(isFormatterCall);

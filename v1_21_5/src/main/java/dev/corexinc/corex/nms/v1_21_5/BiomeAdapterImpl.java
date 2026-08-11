@@ -2,6 +2,7 @@ package dev.corexinc.corex.nms.v1_21_5;
 
 import dev.corexinc.corex.environment.utils.ReflectionHelper;
 import dev.corexinc.corex.environment.utils.adapters.BiomeAdapter;
+import org.bukkit.Registry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -135,7 +136,7 @@ public class BiomeAdapterImpl implements BiomeAdapter {
         World world = min.getWorld();
         if (world == null) return;
 
-        org.bukkit.block.Biome bukkitBiome = org.bukkit.Registry.BIOME.get(biomeKey);
+        org.bukkit.block.Biome bukkitBiome = Registry.BIOME.get(biomeKey);
         if (bukkitBiome == null) return;
 
         int minX = Math.min(min.getBlockX(), max.getBlockX());

@@ -53,7 +53,7 @@ public class ElementTag implements AbstractTag {
     private static final byte NUM_DOUBLE = 3;
 
     private final String prefix;
-    private final String element;
+    private String element;
 
     private long cachedLong;
     private double cachedDouble;
@@ -83,7 +83,6 @@ public class ElementTag implements AbstractTag {
 
     public ElementTag(int integer) {
         this.prefix = "number";
-        this.element = Integer.toString(integer);
         this.cachedLong = integer;
         this.cachedDouble = integer;
         this.numericKind = NUM_LONG;
@@ -91,7 +90,6 @@ public class ElementTag implements AbstractTag {
 
     public ElementTag(long lng) {
         this.prefix = "number";
-        this.element = Long.toString(lng);
         this.cachedLong = lng;
         this.cachedDouble = lng;
         this.numericKind = NUM_LONG;
@@ -100,13 +98,10 @@ public class ElementTag implements AbstractTag {
     public ElementTag(double dbl) {
         this.prefix = "decimal";
         if (dbl == (long) dbl) {
-            long whole = (long) dbl;
-            this.element = Long.toString(whole);
-            this.cachedLong = whole;
+            this.cachedLong = (long) dbl;
             this.cachedDouble = dbl;
             this.numericKind = NUM_LONG;
         } else {
-            this.element = Double.toString(dbl);
             this.cachedDouble = dbl;
             this.numericKind = NUM_DOUBLE;
         }
@@ -165,7 +160,9 @@ public class ElementTag implements AbstractTag {
     }
 
     public boolean isBoolean() {
-        return element.equalsIgnoreCase("true") || element.equalsIgnoreCase("false");
+        String value = element;
+        if (value == null) return false;
+        return value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false");
     }
 
     public boolean isDouble() {
@@ -178,7 +175,13 @@ public class ElementTag implements AbstractTag {
     }
 
     public boolean asBoolean() {
-        return element.equalsIgnoreCase("true");
+        String value = element;
+        return value != null && value.equalsIgnoreCase("true");
+    }
+
+    public boolean isKnownNumeric() {
+        byte kind = numericKind;
+        return kind == NUM_LONG || kind == NUM_DOUBLE;
     }
 
     public int asInt() {
@@ -197,7 +200,12 @@ public class ElementTag implements AbstractTag {
     }
 
     public String asString() {
-        return element;
+        String value = element;
+        if (value == null) {
+            value = numericKind == NUM_DOUBLE ? Double.toString(cachedDouble) : Long.toString(cachedLong);
+            element = value;
+        }
+        return value;
     }
 
     private static ElementTag numericParamOf(Attribute attr) {
@@ -225,7 +233,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.to_uppercase
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.element.toUpperCase())).setAsyncSafe();
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toUppercase", (attr, obj) -> new ElementTag(obj.asString().toUpperCase())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -240,7 +248,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.to_lowercase
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.element.toLowerCase())).setAsyncSafe();
+        TAG_PROCESSOR.registerTag(ElementTag.class, "toLowercase", (attr, obj) -> new ElementTag(obj.asString().toLowerCase())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -255,7 +263,7 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.length
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.element.length())).setAsyncSafe();
+        TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.asString().length())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -597,7 +605,7 @@ public class ElementTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "repeat", (attribute, elementTag) -> {
             if (!attribute.hasParam()) return null;
-            return new ElementTag(elementTag.element.repeat(new ElementTag(attribute.getParam()).asInt()));
+            return new ElementTag(elementTag.asString().repeat(new ElementTag(attribute.getParam()).asInt()));
         }).test("2").setAsyncSafe();
 
         /* @doc tag
@@ -1070,7 +1078,7 @@ public class ElementTag implements AbstractTag {
 
     @Override
     public @NonNull String identify() {
-        return element;
+        return asString();
     }
 
     @Override
@@ -1082,12 +1090,12 @@ public class ElementTag implements AbstractTag {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof ElementTag other)) return false;
-        return element.equals(other.element);
+        return asString().equals(other.asString());
     }
 
     @Override
     public int hashCode() {
-        return element.hashCode();
+        return asString().hashCode();
     }
 
     public @NonNull String getTestValue() {

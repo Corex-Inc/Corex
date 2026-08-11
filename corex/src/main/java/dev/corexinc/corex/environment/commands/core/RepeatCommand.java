@@ -1,13 +1,16 @@
 package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.queue.MutableDefinition;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Map;
 
 /* @doc command
  *
@@ -144,9 +147,10 @@ public class RepeatCommand implements AbstractCommand {
         final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
 
         final int max = startFrom + times - 1;
-        final int[] state = new int[] { startFrom + 1 };
+        final MutableDefinition.OfInt index = new MutableDefinition.OfInt(startFrom);
+        final Map<String, AbstractTag> defs = queue.getDefinitionsMap();
 
-        queue.define(asVar, new ElementTag(startFrom));
+        queue.define(asVar, index);
 
         if (Debugger.shouldReport(queue)) {
             Debugger.report(queue, instruction,
@@ -164,14 +168,13 @@ public class RepeatCommand implements AbstractCommand {
                 () -> {
                     if (queue.isBroken()) return false;
 
-                    int nextVal = state[0];
+                    int nextVal = index.value + 1;
                     if (nextVal > max) {
                         return false;
                     }
 
-                    queue.define(asVar, new ElementTag(nextVal));
-                    state[0] = nextVal + 1;
-
+                    index.value = nextVal;
+                    if (defs.get(asVar) != index) queue.define(asVar, index);
                     return true;
                 }
         );

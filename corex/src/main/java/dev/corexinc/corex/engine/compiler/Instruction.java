@@ -70,6 +70,16 @@ public class Instruction {
      */
     @NotNull public final Map<AbstractGlobalFlag, CompiledArgument> globalFlags;
 
+    /**
+     * Whether {@link #command} is safe to run in an async queue, resolved once at compile time.
+     */
+    public final boolean asyncSafe;
+
+    /**
+     * Whether {@link #globalFlags} contains at least one entry, resolved once at compile time.
+     */
+    public final boolean hasGlobalFlags;
+
     public Instruction(
             @NotNull AbstractCommand command,
             @NotNull CompiledArgument[] linearArgs,
@@ -88,6 +98,8 @@ public class Instruction {
         this.isWaitable = isWaitable;
         this.isAsync = isAsync;
         this.globalFlags = globalFlags;
+        this.asyncSafe = command.isAsyncSafe();
+        this.hasGlobalFlags = globalFlags != null && !globalFlags.isEmpty();
     }
 
     /**

@@ -230,22 +230,34 @@ public class ConditionCompiler {
     private static boolean compare(AbstractTag left, String op, AbstractTag right) {
         ElementTag el1 = left instanceof ElementTag el ? el : new ElementTag(left.identify());
         ElementTag el2 = right instanceof ElementTag el ? el : new ElementTag(right.identify());
+
+        if (op.equals("===")) return el1.asString().equals(el2.asString());
+
+        if (!op.equals("contains") && el1.isDouble() && el2.isDouble()) {
+            double d1 = el1.asDouble();
+            double d2 = el2.asDouble();
+
+            return switch (op) {
+                case "=", "==" -> d1 == d2;
+                case "!=" -> d1 != d2;
+                case ">"  -> d1 > d2;
+                case "<"  -> d1 < d2;
+                case ">=" -> d1 >= d2;
+                case "<=" -> d1 <= d2;
+                default -> false;
+            };
+        }
+
         String val1 = el1.asString();
         String val2 = el2.asString();
 
-        if (op.equals("===")) return val1.equals(val2);
-
-        boolean isNumeric = el1.isDouble() && el2.isDouble();
-        double d1 = el1.asDouble();
-        double d2 = el2.asDouble();
-
         return switch (op) {
-            case "=", "==" -> isNumeric ? d1 == d2 : val1.equalsIgnoreCase(val2);
-            case "!=" -> isNumeric ? d1 != d2 : !val1.equalsIgnoreCase(val2);
-            case ">"  -> isNumeric ? d1 > d2  : val1.compareToIgnoreCase(val2) > 0;
-            case "<"  -> isNumeric ? d1 < d2  : val1.compareToIgnoreCase(val2) < 0;
-            case ">=" -> isNumeric ? d1 >= d2 : val1.compareToIgnoreCase(val2) >= 0;
-            case "<=" -> isNumeric ? d1 <= d2 : val1.compareToIgnoreCase(val2) <= 0;
+            case "=", "==" -> val1.equalsIgnoreCase(val2);
+            case "!=" -> !val1.equalsIgnoreCase(val2);
+            case ">"  -> val1.compareToIgnoreCase(val2) > 0;
+            case "<"  -> val1.compareToIgnoreCase(val2) < 0;
+            case ">=" -> val1.compareToIgnoreCase(val2) >= 0;
+            case "<=" -> val1.compareToIgnoreCase(val2) <= 0;
             case "contains" -> val1.toLowerCase().contains(val2.toLowerCase());
             default -> false;
         };

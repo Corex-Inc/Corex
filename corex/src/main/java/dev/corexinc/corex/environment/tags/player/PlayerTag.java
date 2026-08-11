@@ -24,9 +24,12 @@ import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+
+import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
@@ -271,7 +274,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "maxHealth", ((attribute, object) ->
                 new ElementTag(Objects.requireNonNull(object.getPlayer()
-                        .getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue()))).ignoreTest();
+                        .getAttribute(MAX_HEALTH)).getValue()))).ignoreTest();
 
         /* @doc tag
          *
@@ -868,7 +871,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
                 Player player = playerTag.getPlayer();
                 if (player != null) {
                     double maxHp = Objects.requireNonNull(
-                            player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH)).getValue();
+                            player.getAttribute(MAX_HEALTH)).getValue();
                     double clamped = Math.max(0, Math.min(el.asDouble(), maxHp));
                     ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.setHealth(clamped));
                 }
@@ -890,7 +893,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             Player player = playerTag.getPlayer();
             if (player == null) return playerTag;
 
-            org.bukkit.attribute.AttributeInstance attribute = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            AttributeInstance attribute = player.getAttribute(MAX_HEALTH);
             if (attribute == null) return playerTag;
 
             double targetMax;

@@ -268,7 +268,7 @@ public class FindTag implements AbstractTag {
             BiomeTag biomeTag = attr.getParamObject(BiomeTag.class, BiomeTag::new);
             if (biomeTag == null || biomeTag.getBiomeKey() == null) return null;
 
-            Biome biome = org.bukkit.Registry.BIOME.get(biomeTag.getBiomeKey());
+            Biome biome = Registry.BIOME.get(biomeTag.getBiomeKey());
             if (biome == null) return null;
 
             BiomeSearchResult result = world.locateNearestBiome(obj.center, 5000, biome);

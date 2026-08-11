@@ -31,6 +31,7 @@ import me.tofaa.entitylib.meta.EntityMeta;
 import me.tofaa.entitylib.wrapper.WrapperEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -216,7 +217,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         property(name, entityClass, type, reader, writer);
     }
 
-    static <K extends org.bukkit.Keyed> PropertyType<K> registryOf(Supplier<Registry<K>> registrySupplier,
+    static <K extends Keyed> PropertyType<K> registryOf(Supplier<Registry<K>> registrySupplier,
                                                                    String description) {
         return new PropertyType<>() {
 

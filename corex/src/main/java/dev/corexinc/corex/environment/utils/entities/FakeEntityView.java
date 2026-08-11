@@ -37,7 +37,9 @@ import me.tofaa.entitylib.wrapper.WrapperEntity;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
+import org.bukkit.Keyed;
 import org.bukkit.Rotation;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
@@ -66,9 +68,12 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.Locale;
+import java.util.function.Consumer;
+
 public record FakeEntityView(WrapperEntity wrapperEntity) implements LiveEntityView {
 
-    @Override public org.bukkit.entity.EntityType bukkitType() {
+    @Override public EntityType bukkitType() {
         return SpigotConversionUtil.toBukkitEntityType(wrapperEntity.getEntityType());
     }
 
@@ -562,7 +567,7 @@ public record FakeEntityView(WrapperEntity wrapperEntity) implements LiveEntityV
                 + "' - spawn a real entity to use it.");
     }
 
-    private static <T extends Enum<T>> void applyNamed(Class<T> target, Enum<?> source, java.util.function.Consumer<T> writer) {
+    private static <T extends Enum<T>> void applyNamed(Class<T> target, Enum<?> source, Consumer<T> writer) {
         try {
             writer.accept(Enum.valueOf(target, source.name()));
         } catch (IllegalArgumentException mismatch) {
@@ -570,9 +575,9 @@ public record FakeEntityView(WrapperEntity wrapperEntity) implements LiveEntityV
         }
     }
 
-    private static <T extends Enum<T>> void applyKeyed(Class<T> target, org.bukkit.Keyed source, java.util.function.Consumer<T> writer) {
+    private static <T extends Enum<T>> void applyKeyed(Class<T> target, Keyed source, Consumer<T> writer) {
         try {
-            writer.accept(Enum.valueOf(target, source.getKey().getKey().toUpperCase(java.util.Locale.ROOT)));
+            writer.accept(Enum.valueOf(target, source.getKey().getKey().toUpperCase(Locale.ROOT)));
         } catch (IllegalArgumentException mismatch) {
             Debugger.echoError(null, "EntityLib has no " + target.getSimpleName() + " named " + source.getKey().getKey() + ".");
         }

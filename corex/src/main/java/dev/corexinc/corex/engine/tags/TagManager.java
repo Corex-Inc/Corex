@@ -28,6 +28,10 @@ public class TagManager {
         return null;
     }
 
+    public static Function<Attribute, AbstractTag> getBaseTag(String name) {
+        return baseTags.get(name);
+    }
+
     public static Set<String> getBaseTagNames() {
         return baseTags.keySet();
     }

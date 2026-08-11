@@ -3,6 +3,7 @@ package dev.corexinc.corex.environment.commands.core;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.queue.MutableDefinition;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -12,6 +13,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 /* @doc command
@@ -102,7 +104,8 @@ public class ForeachCommand implements AbstractCommand {
             if (isMap) queue.define(keyVar, null);
         };
 
-        final int[] stateIdx = new int[] { 2 };
+        final MutableDefinition.OfInt index = new MutableDefinition.OfInt(1);
+        final Map<String, AbstractTag> defs = queue.getDefinitionsMap();
 
         if (isMap) {
             final MapTag mt = (MapTag) targetObj;
@@ -112,19 +115,26 @@ public class ForeachCommand implements AbstractCommand {
             final Iterator<String> iterator = mt.keySet().iterator();
             String firstKey = iterator.next();
 
-            queue.define("loopIndex", new ElementTag(1));
-            queue.define(keyVar, new ElementTag(firstKey));
-            queue.define(asVar, mt.getObject(firstKey));
+            final MutableDefinition.OfTag key = new MutableDefinition.OfTag(new ElementTag(firstKey));
+            final MutableDefinition.OfTag value = new MutableDefinition.OfTag(mt.getObject(firstKey));
+
+            queue.define("loopIndex", index);
+            queue.define(keyVar, key);
+            queue.define(asVar, value);
 
             loopCondition = () -> {
                 if (queue.isBroken()) return false;
                 if (!iterator.hasNext()) return false;
 
-                queue.define("loopIndex", new ElementTag(stateIdx[0]++));
+                index.value++;
 
-                String key = iterator.next();
-                queue.define(keyVar, new ElementTag(key));
-                queue.define(asVar, mt.getObject(key));
+                String nextKey = iterator.next();
+                key.current = new ElementTag(nextKey);
+                value.current = mt.getObject(nextKey);
+
+                if (defs.get("loopIndex") != index) queue.define("loopIndex", index);
+                if (defs.get(keyVar) != key) queue.define(keyVar, key);
+                if (defs.get(asVar) != value) queue.define(asVar, value);
                 return true;
             };
 
@@ -136,15 +146,20 @@ public class ForeachCommand implements AbstractCommand {
 
             final Iterator<AbstractTag> iterator = items.iterator();
 
-            queue.define("loopIndex", new ElementTag(1));
-            queue.define(asVar, iterator.next());
+            final MutableDefinition.OfTag value = new MutableDefinition.OfTag(iterator.next());
+
+            queue.define("loopIndex", index);
+            queue.define(asVar, value);
 
             loopCondition = () -> {
                 if (queue.isBroken()) return false;
                 if (!iterator.hasNext()) return false;
 
-                queue.define("loopIndex", new ElementTag(stateIdx[0]++));
-                queue.define(asVar, iterator.next());
+                index.value++;
+                value.current = iterator.next();
+
+                if (defs.get("loopIndex") != index) queue.define("loopIndex", index);
+                if (defs.get(asVar) != value) queue.define(asVar, value);
                 return true;
             };
         }

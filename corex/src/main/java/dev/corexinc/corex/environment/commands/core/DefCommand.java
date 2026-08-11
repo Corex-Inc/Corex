@@ -91,7 +91,8 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
 
-    private record ResolvedDefinition(String keyPath, AbstractDataAction action, String param, String[] parts) {}
+    private record ResolvedDefinition(String keyPath, AbstractDataAction action, String param, String[] parts,
+                                      AbstractTag staticValue) {}
 
     @Override
     public @NonNull String getName() {
@@ -152,7 +153,13 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
         ResolvedDefinition resolved;
 
         if (colonIndex < 0) {
-            resolved = new ResolvedDefinition(rawArg, null, null, null);
+            AbstractTag staticValue = null;
+            if (instruction.getLinearArgument(1) instanceof StaticArg staticArg
+                    && staticArg.evaluate(null) instanceof ElementTag el
+                    && (el.isKnownNumeric() || el.asString().indexOf('@') < 1)) {
+                staticValue = el;
+            }
+            resolved = new ResolvedDefinition(rawArg, null, null, null, staticValue);
         }
         else {
             String keyPath = rawArg.substring(0, colonIndex);
@@ -169,7 +176,7 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
             String[] parts = keyPath.indexOf('.') < 0
                     ? new String[] { keyPath }
                     : DOT_SPLIT.split(keyPath, -1);
-            resolved = new ResolvedDefinition(keyPath, action, param, parts);
+            resolved = new ResolvedDefinition(keyPath, action, param, parts, null);
         }
 
         if (instruction.getLinearArgument(0) instanceof StaticArg) {
@@ -182,13 +189,27 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
     private void runResolved(@NonNull ScriptQueue queue, @NonNull Instruction instruction,
                              @NonNull ResolvedDefinition resolved) {
         if (resolved.action() == null) {
+            AbstractTag staticValue = resolved.staticValue();
+            if (staticValue != null) {
+                queue.define(resolved.keyPath(), staticValue);
+
+                if (Debugger.shouldReport(queue)) {
+                    Debugger.report(queue, instruction,
+                            "Definition", resolved.keyPath(),
+                            "Value", staticValue.identify(),
+                            "Action", ":"
+                    );
+                }
+                return;
+            }
+
             AbstractTag valueObj = instruction.getLinearObject(1, queue);
             AbstractTag stored;
 
             if (valueObj == null) {
                 stored = null;
             }
-            else if (valueObj instanceof ElementTag el && el.asString().indexOf('@') < 1) {
+            else if (valueObj instanceof ElementTag el && (el.isKnownNumeric() || el.asString().indexOf('@') < 1)) {
                 stored = el;
             }
             else {

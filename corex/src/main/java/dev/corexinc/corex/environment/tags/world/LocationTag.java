@@ -3048,7 +3048,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (loc.getWorld() == null) return null;
             BukkitSchedulerAdapter.requireRegion(loc);
 
-            org.bukkit.Color color = loc.getBlock().getBlockData().getMapColor();
+            Color color = loc.getBlock().getBlockData().getMapColor();
             return new ElementTag(color.getRed() + "," + color.getGreen() + "," + color.getBlue());
         }).ignoreTest();
 
@@ -3562,7 +3562,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (loc.getWorld() == null) return null;
             BukkitSchedulerAdapter.requireRegion(loc);
 
-            if (loc.getBlock().getState() instanceof org.bukkit.block.Skull skull) {
+            if (loc.getBlock().getState() instanceof Skull skull) {
                 PlayerProfile profile = skull.getPlayerProfile();
                 return profile != null && profile.getName() != null ? new ElementTag(profile.getName()) : null;
             }
@@ -3586,7 +3586,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (loc.getWorld() == null) return null;
             BukkitSchedulerAdapter.requireRegion(loc);
 
-            if (loc.getBlock().getState() instanceof org.bukkit.block.Skull skull) {
+            if (loc.getBlock().getState() instanceof Skull skull) {
                 PlayerProfile profile = skull.getPlayerProfile();
                 if (profile == null) return null;
 

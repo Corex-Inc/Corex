@@ -1048,7 +1048,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "gamerules", (attr, obj) -> {
             ListTag list = new ListTag();
-            java.util.List<World> worlds = Bukkit.getWorlds();
+            List<World> worlds = Bukkit.getWorlds();
             if (worlds.isEmpty()) return list;
             for (String rule : worlds.getFirst().getGameRules()) list.addString(rule);
             return list;

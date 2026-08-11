@@ -14,6 +14,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -74,7 +75,7 @@ public class PistonExtendEvent implements AbstractEvent {
     }
 
     @EventHandler
-    public void onPistonExtends(org.bukkit.event.block.BlockPistonExtendEvent event) {
+    public void onPistonExtends(BlockPistonExtendEvent event) {
         String blockMaterial = event.getBlock().getType().name().toLowerCase();
         ContextTag context = null;
 

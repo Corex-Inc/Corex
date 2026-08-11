@@ -193,7 +193,7 @@ public class PlaySoundCommand implements AbstractCommand {
                     player.playSound(sound);
                 } else {
                     for (LocationTag locTag : locations) {
-                        org.bukkit.Location loc = locTag.getLocation();
+                        Location loc = locTag.getLocation();
                         if (loc != null) player.playSound(sound, loc.getX(), loc.getY(), loc.getZ());
                     }
                 }
