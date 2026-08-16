@@ -4,6 +4,7 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
+import org.bukkit.Location;
 import org.bukkit.Rotation;
 import org.bukkit.entity.*;
 import org.bukkit.block.data.BlockData;
@@ -13,6 +14,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public interface LiveEntityView {
+    void teleport(Location location);
+    void remove();
     void setCustomName(Component name);
     void setCustomNameVisible(boolean visible);
     void setGlowing(boolean value);

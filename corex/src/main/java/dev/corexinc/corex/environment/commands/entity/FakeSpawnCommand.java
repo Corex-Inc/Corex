@@ -1,14 +1,12 @@
-package dev.corexinc.corex.environment.commands;
+package dev.corexinc.corex.environment.commands.entity;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.commands.ArgumentSchema;
 import dev.corexinc.corex.api.commands.ArgumentSet;
-import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
-import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;

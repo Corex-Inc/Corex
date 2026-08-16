@@ -10,6 +10,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import me.tofaa.entitylib.wrapper.WrapperEntity;
 import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NonNull;
 
@@ -86,53 +87,92 @@ public class MountCommand implements AbstractCommand {
 
         ListTag list = args.linear(0);
 
-        List<Entity> entities = new ArrayList<>();
+        List<Rider> riders = new ArrayList<>();
         for (AbstractTag item : list.getList()) {
-            Entity entity = resolveEntity(item);
-            if (entity == null || entity.isDead()) {
+            Rider rider = resolveRider(item);
+            if (rider == null) {
                 Debugger.echoError(queue, "Mount: '" + item.identify() + "' is not a valid, living entity (got: "
                         + item.getPrefix() + "), skipping.");
                 continue;
             }
-            entities.add(entity);
+            riders.add(rider);
         }
 
         boolean cancel = args.flag("cancel");
 
         if (cancel) {
-            for (Entity entity : entities) entity.leaveVehicle();
+            for (Rider rider : riders) rider.dismount();
             Debugger.report(queue, instruction,
                     "List", list.identify(),
-                    "Entities", String.valueOf(entities.size()),
+                    "Entities", String.valueOf(riders.size()),
                     "Action", "cancel"
             );
             return;
         }
 
-        if (entities.size() < 2) {
+        if (riders.size() < 2) {
             Debugger.echoError(queue, "Mount: need at least 2 valid entities to chain, only "
-                    + entities.size() + " resolved from " + list.size() + " list entries.");
+                    + riders.size() + " resolved from " + list.size() + " list entries.");
             return;
         }
 
         int mounted = 0;
-        for (int i = 0; i < entities.size() - 1; i++) {
-            Entity passenger = entities.get(i);
-            Entity vehicle = entities.get(i + 1);
-            if (vehicle.addPassenger(passenger)) {
+        for (int i = 0; i < riders.size() - 1; i++) {
+            Rider passenger = riders.get(i);
+            Rider vehicle = riders.get(i + 1);
+
+            if (vehicle.fake() != null) {
+                vehicle.fake().addPassenger(passenger.entityId());
+                mounted++;
+                continue;
+            }
+
+            if (passenger.fake() != null) {
+                Debugger.echoError(queue, "Mount: a real entity cannot carry the fake entity '"
+                        + passenger.fake().getUuid() + "' - only a fake vehicle can, since the server "
+                        + "has no entity to attach. Skipped.");
+                continue;
+            }
+
+            if (vehicle.real().addPassenger(passenger.real())) {
                 mounted++;
             } else {
-                Debugger.echoError(queue, "Mount: Paper rejected mounting '" + passenger.getUniqueId()
-                        + "' onto '" + vehicle.getUniqueId() + "' (dead entity or incompatible type?).");
+                Debugger.echoError(queue, "Mount: Paper rejected mounting '" + passenger.real().getUniqueId()
+                        + "' onto '" + vehicle.real().getUniqueId() + "' (dead entity or incompatible type?).");
             }
         }
 
         Debugger.report(queue, instruction,
                 "List", list.identify(),
-                "Chain", String.valueOf(entities.size()),
-                "Mounted", mounted + "/" + (entities.size() - 1),
+                "Chain", String.valueOf(riders.size()),
+                "Mounted", mounted + "/" + (riders.size() - 1),
                 "Action", "mount"
         );
+    }
+
+    /** One link of a mount chain: either a server entity or a packet-only one. */
+    private record Rider(Entity real, WrapperEntity fake) {
+
+        int entityId() {
+            return real != null ? real.getEntityId() : fake.getEntityId();
+        }
+
+        void dismount() {
+            if (real != null) real.leaveVehicle();
+            else {
+                WrapperEntity riding = fake.getRiding();
+                if (riding != null) riding.removePassenger(fake);
+            }
+        }
+    }
+
+    private static Rider resolveRider(AbstractTag tag) {
+        if (tag instanceof EntityTag entityTag && entityTag.isFake()) {
+            return new Rider(null, entityTag.getFakeEntity());
+        }
+        Entity entity = resolveEntity(tag);
+        if (entity == null || entity.isDead()) return null;
+        return new Rider(entity, null);
     }
 
     private static Entity resolveEntity(AbstractTag tag) {

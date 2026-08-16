@@ -9,6 +9,7 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.entities.EntityTargets;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -70,6 +71,8 @@ public class DamageCommand implements AbstractCommand {
 
         AbstractTag source = instruction.getPrefixObject("source", queue);
         String cause = instruction.getPrefix("cause", queue);
+
+        EntityTargets.warnIfFake(queue, getName(), instruction.getLinearObject(0, queue));
 
         switch (instruction.getLinearObject(0, queue)) {
             case EntityTag e -> entity = e;

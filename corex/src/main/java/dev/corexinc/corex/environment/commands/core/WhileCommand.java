@@ -1,8 +1,10 @@
 package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.SlotAware;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.SlotTable;
 import dev.corexinc.corex.engine.queue.MutableDefinition;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -10,7 +12,6 @@ import dev.corexinc.corex.environment.utils.scripts.ConditionCompiler;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
-import java.util.Map;
 
 /* @doc command
  *
@@ -50,7 +51,21 @@ import java.util.Map;
  * - while <[loopIndex]> < 5:
  *     - narrate "This will run exactly 4 times! Currently on: <[loopIndex]>"
  */
-public class WhileCommand implements AbstractCommand {
+public class WhileCommand implements AbstractCommand, SlotAware {
+
+    private record LoopSlots(String asVar, int slot) {}
+
+    @Override
+    public @NonNull List<String> writtenDefinitions(@NonNull Instruction instruction) {
+        String asVar = RepeatCommand.resolveLoopVar(instruction, "loopIndex");
+        return asVar != null ? List.of(asVar) : List.of();
+    }
+
+    @Override
+    public void bindSlots(@NonNull Instruction instruction, @NonNull SlotTable table) {
+        String asVar = RepeatCommand.resolveLoopVar(instruction, "loopIndex");
+        if (asVar != null) instruction.slotData = new LoopSlots(asVar, table.indexOf(asVar));
+    }
 
     @Override
     public @NonNull String getName() {
@@ -106,12 +121,21 @@ public class WhileCommand implements AbstractCommand {
             instruction.customData = condition;
         }
 
-        String rawAs = instruction.getPrefix("as", queue);
-        final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
+        final String asVar;
+        final int slot;
+
+        if (instruction.slotData instanceof LoopSlots cached && instruction.slots == queue.slotTable()) {
+            asVar = cached.asVar();
+            slot = cached.slot();
+        } else {
+            String rawAs = instruction.getPrefix("as", queue);
+            asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
+            slot = SlotTable.NO_SLOT;
+        }
 
         final MutableDefinition.OfInt index = new MutableDefinition.OfInt(1);
-        final Map<String, AbstractTag> defs = queue.getDefinitionsMap();
-        queue.define(asVar, index);
+        final AbstractTag shadowed = queue.rawDefinition(slot, asVar);
+        queue.setDefinition(slot, asVar, index);
 
         boolean initialResult = condition.evaluate(queue);
 
@@ -123,7 +147,7 @@ public class WhileCommand implements AbstractCommand {
         }
 
         if (!initialResult) {
-            queue.define(asVar, null);
+            queue.setDefinition(slot, asVar, shadowed);
             return;
         }
 
@@ -132,7 +156,7 @@ public class WhileCommand implements AbstractCommand {
         queue.pushFrame("while_loop", instruction.innerBlock,
                 () -> {
                     queue.setBroken(false);
-                    queue.define(asVar, null);
+                    queue.setDefinition(slot, asVar, shadowed);
                 },
                 () -> {
                     if (queue.isBroken()) return false;
@@ -146,7 +170,7 @@ public class WhileCommand implements AbstractCommand {
                     }
 
                     index.value = nextIndex;
-                    if (defs.get(asVar) != index) queue.define(asVar, index);
+                    if (queue.rawDefinition(slot, asVar) != index) queue.setDefinition(slot, asVar, index);
 
                     return finalCondition.evaluate(queue);
                 }

@@ -62,6 +62,11 @@ public class MixedArg implements CompiledArgument {
     }
 
     @Override
+    public void visitChildren(java.util.function.Consumer<CompiledArgument> visitor) {
+        for (CompiledArgument part : parts) visitor.accept(part);
+    }
+
+    @Override
     public String getRaw() {
         StringBuilder sb = new StringBuilder();
         for (CompiledArgument part : parts) sb.append(part.getRaw());

@@ -18,6 +18,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.*;
+import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.EntityAdapter;
@@ -42,6 +43,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
@@ -287,8 +289,52 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) -> {
             if (object.entity != null) return new ElementTag(object.entity.getUniqueId().toString());
-            if (object.fakeEntity != null) return new ElementTag("fake-" + object.fakeEntity.getEntityId());
+            if (object.fakeEntity != null) return new ElementTag(object.fakeEntity.getUuid().toString());
             return null;
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name isFake
+         * @RawName <EntityTag.isFake>
+         * @Object EntityTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns whether this entity is a packet-only fake entity created by the
+         * fakespawn command, as opposed to a real entity tracked by the server.
+         *
+         * @Implements EntityTag.is_fake
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "isFake", (attribute, object) ->
+                new ElementTag(object.fakeEntity != null)).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name viewers
+         * @RawName <EntityTag.viewers>
+         * @Object EntityTag
+         * @ReturnType ListTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the list of players that can currently see this fake entity.
+         *
+         * Only meaningful for fake entities - a real entity is visible according to
+         * the server's own tracking rules, so this returns an empty list for one.
+         * Offline viewers are skipped.
+         *
+         * @Implements EntityTag.viewers
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "viewers", (attribute, object) -> {
+            ListTag result = new ListTag();
+            if (object.fakeEntity == null) return result;
+            for (UUID viewer : object.fakeEntity.getViewers()) {
+                Player player = Bukkit.getPlayer(viewer);
+                if (player != null) result.addObject(new PlayerTag(player));
+            }
+            return result;
         }).setAsyncSafe();
 
         /* @doc tag
@@ -536,6 +582,18 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
         this(entity, null, null, new LinkedHashMap<>());
     }
 
+    /**
+     * Wraps an existing fake entity.
+     * <p>
+     * Deliberately a factory rather than a constructor overload: the NMS modules
+     * construct EntityTags without EntityLib on their compile classpath, and an
+     * overload would force them to resolve {@code WrapperEntity} to type-check.
+     */
+    public static EntityTag ofFake(WrapperEntity fakeEntity) {
+        return new EntityTag(null, fakeEntity,
+                SpigotConversionUtil.toBukkitEntityType(fakeEntity.getEntityType()), new LinkedHashMap<>());
+    }
+
     public EntityTag(String raw) {
         Entity parsedEntity = null;
         WrapperEntity parsedFake = null;
@@ -553,10 +611,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
             }
 
             if (basePart.startsWith("fake-")) {
-                try {
-                    int id = Integer.parseInt(basePart.substring(5));
-                    parsedFake = FakeEntityRegistry.getById(id);
-                } catch (NumberFormatException ignored) {}
+                parsedFake = resolveFake(basePart.substring(5));
             } else {
                 try {
                     parsedEntity = Bukkit.getEntity(UUID.fromString(basePart));
@@ -842,10 +897,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
             String resolvedBase = ScriptCompiler.parseArg(basePart).evaluate(queue).identify();
 
             if (resolvedBase.startsWith("fake-")) {
-                try {
-                    int id = Integer.parseInt(resolvedBase.substring(5));
-                    parsedFake = FakeEntityRegistry.getById(id);
-                } catch (NumberFormatException ignored) {}
+                parsedFake = resolveFake(resolvedBase.substring(5));
             } else {
                 try {
                     parsedEntity = Bukkit.getEntity(UUID.fromString(resolvedBase));
@@ -865,8 +917,40 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
                   : null;
     }
 
+    /**
+     * Resolves the part after {@code fake-} in an identifier. Accepts a UUID, and
+     * falls back to the numeric entity id that identifiers used before 1.0.0.
+     */
+    private static WrapperEntity resolveFake(String raw) {
+        try {
+            return FakeEntityRegistry.getByUuid(UUID.fromString(raw));
+        } catch (IllegalArgumentException notAUuid) {
+            try {
+                return FakeEntityRegistry.getById(Integer.parseInt(raw));
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+    }
+
     public Entity getEntity() {
         return entity;
+    }
+
+    public WrapperEntity getFakeEntity() {
+        return fakeEntity;
+    }
+
+    public boolean isFake() {
+        return fakeEntity != null;
+    }
+
+    /**
+     * Returns the write-side view of whichever entity backs this tag, or {@code null}
+     * when the tag only describes a type that has not been spawned yet.
+     */
+    public LiveEntityView getView() {
+        return liveView;
     }
 
     public EntityType getEntityType() {
@@ -876,7 +960,7 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
     @Override
     public @NotNull String identify() {
         if (entity != null) return prefix + "@" + entity.getUniqueId();
-        if (fakeEntity != null) return prefix + "@fake-" + fakeEntity.getEntityId();
+        if (fakeEntity != null) return prefix + "@fake-" + fakeEntity.getUuid();
 
         StringBuilder builder = new StringBuilder(prefix + "@");
         builder.append(type != null ? type.getKey().getKey() : "unknown");

@@ -8,6 +8,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.entities.EntityTargets;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LeashHitch;
@@ -76,6 +77,9 @@ public class LeashCommand implements AbstractCommand {
         boolean cancel = instruction.hasFlag("cancel");
 
         List<LivingEntity> targets = new ArrayList<>();
+
+        EntityTargets.warnIfFake(queue, getName(), instruction.getLinearObject(0, queue));
+
         switch (instruction.getLinearObject(0, queue)) {
             case PlayerTag p -> targets.add(p.getPlayer());
             case EntityTag e -> {

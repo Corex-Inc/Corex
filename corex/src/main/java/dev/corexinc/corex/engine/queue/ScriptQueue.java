@@ -4,11 +4,13 @@ import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.SlotTable;
 import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.engine.utils.exceptions.RegionRelocateException;
+import net.kyori.adventure.audience.Audience;
 import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,9 +60,27 @@ public class ScriptQueue {
     private final PlayerIdentity linkedPlayer;
 
     /**
-     * Local variables (definitions) stored in this queue.
+     * Definitions whose names were not known at compile time.
+     * <p>
+     * Names that <i>were</i> known live in {@link #slotValues} instead — see
+     * {@link #slotTable}. Never read this directly; use {@link #getDefinition(String)}.
      */
     private final Map<String, AbstractTag> definitions;
+
+    /**
+     * Compile-time name-to-index mapping for {@link #slotValues}, or {@code null} when
+     * this queue runs bytecode that had no slots allocated.
+     */
+    @Nullable
+    private SlotTable slotTable;
+
+    /**
+     * Values of the definitions listed in {@link #slotTable}, indexed by slot.
+     * A {@code null} entry means the definition is not currently set.
+     */
+    private AbstractTag[] slotValues = EMPTY_SLOTS;
+
+    private static final AbstractTag[] EMPTY_SLOTS = new AbstractTag[0];
 
     /**
      * List of values returned by the queue via 'return' or 'determine' commands.
@@ -174,6 +194,17 @@ public class ScriptQueue {
     private Position anchorPosition = null;
 
     /**
+     * Receives a copy of this queue's debug output alongside the console.
+     * <p>
+     * Set by whoever started the queue on demand - typically the player who ran
+     * {@code /run}, so they see the script's debug in chat instead of having to read
+     * the server log. Inherited by child queues, so {@code do} and async blocks report
+     * back to the same place. {@code null} means console-only.
+     */
+    @Nullable
+    private Audience debugObserver = null;
+
+    /**
      * The target position of a region shift requested by a command.
      * <p>
      * {@code null} when no region shift is pending.
@@ -183,11 +214,7 @@ public class ScriptQueue {
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync,
                        @Nullable PlayerIdentity linkedPlayer, @Nullable Position anchorPosition) {
-        this.id = id;
-        this.bytecode = bytecode;
-        this.isAsync = isAsync;
-        this.linkedPlayer = linkedPlayer;
-        this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+        this(id, bytecode, isAsync, linkedPlayer);
         this.anchorPosition = anchorPosition;
     }
 
@@ -198,15 +225,15 @@ public class ScriptQueue {
         this.isAsync = isAsync;
         this.linkedPlayer = linkedPlayer;
         this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+        if (bytecode != null && bytecode.length > 0 && bytecode[0].slots != null) {
+            this.slotTable = bytecode[0].slots;
+            this.slotValues = new AbstractTag[slotTable.size()];
+        }
     }
 
     public ScriptQueue(String id, Instruction[] bytecode, boolean isAsync,
                        @Nullable PlayerIdentity linkedPlayer, boolean silent) {
-        this.id = id;
-        this.bytecode = bytecode;
-        this.isAsync = isAsync;
-        this.linkedPlayer = linkedPlayer;
-        this.definitions = isAsync ? new ConcurrentHashMap<>() : new HashMap<>();
+        this(id, bytecode, isAsync, linkedPlayer);
         this.silent = silent;
     }
 
@@ -242,7 +269,10 @@ public class ScriptQueue {
                 parent != null ? parent.getPlayer() : null,
                 parent != null ? parent.anchorPosition : null
         );
-        if (parent != null) child.targetRegionPosition = parent.targetRegionPosition;
+        if (parent != null) {
+            child.targetRegionPosition = parent.targetRegionPosition;
+            child.debugObserver = parent.debugObserver;
+        }
         return child;
     }
 
@@ -419,11 +449,7 @@ public class ScriptQueue {
      */
     public void runAsyncChild(Instruction[] block, boolean waitable) {
         ScriptQueue child = ScriptQueue.spawnChild(id + "@async@" + nextSequence(), block, true, this);
-        for (Map.Entry<String, AbstractTag> entry : this.definitions.entrySet()) {
-            AbstractTag value = entry.getValue();
-            if (value instanceof MutableDefinition mutable) value = mutable.snapshot();
-            if (value != null) child.definitions.put(entry.getKey(), value);
-        }
+        child.inheritDefinitionsFrom(this);
         child.context = this.context;
 
         if (waitable) {
@@ -511,6 +537,8 @@ public class ScriptQueue {
     }
 
     public void injectInstructions(Instruction... insts) {
+        adoptSlots(insts);
+
         if (this.bytecode == null || this.pointer >= this.bytecode.length) {
             this.bytecode = insts;
         } else {
@@ -536,6 +564,13 @@ public class ScriptQueue {
      */
     @AvailableSince("1.0.0")
     public void define(String name, AbstractTag value) {
+        if (slotTable != null) {
+            int slot = slotTable.indexOf(name);
+            if (slot != SlotTable.NO_SLOT) {
+                writeSlot(slot, value);
+                return;
+            }
+        }
         if (value == null) definitions.remove(name);
         else definitions.put(name, value);
     }
@@ -549,8 +584,158 @@ public class ScriptQueue {
     @Nullable
     @AvailableSince("1.0.0")
     public AbstractTag getDefinition(String name) {
+        if (slotTable != null) {
+            int slot = slotTable.indexOf(name);
+            if (slot != SlotTable.NO_SLOT) return readSlot(slot);
+        }
         AbstractTag value = definitions.get(name);
         return value instanceof MutableDefinition mutable ? mutable.snapshot() : value;
+    }
+
+    /**
+     * Returns the slot table this queue's bytecode was compiled against, or {@code null}.
+     * <p>
+     * Compiled arguments compare this against their own table before using a cached slot
+     * index — a queue running a different tree must fall back to name-based lookup.
+     */
+    @Nullable
+    @Internal
+    public SlotTable slotTable() {
+        return slotTable;
+    }
+
+    /**
+     * Reads a definition by its compile-time slot index, resolving loop holders.
+     */
+    @Nullable
+    @Internal
+    public AbstractTag readSlot(int slot) {
+        AbstractTag value = slot < slotValues.length ? slotValues[slot] : null;
+        return value instanceof MutableDefinition mutable ? mutable.snapshot() : value;
+    }
+
+    /**
+     * Reads a definition slot without resolving loop holders.
+     */
+    @Nullable
+    @Internal
+    public AbstractTag rawSlot(int slot) {
+        return slot < slotValues.length ? slotValues[slot] : null;
+    }
+
+    /**
+     * Reads a definition by slot when one was assigned, falling back to its name
+     * otherwise. Loop holders are returned as-is so callers can compare identity.
+     */
+    @Nullable
+    @Internal
+    public AbstractTag rawDefinition(int slot, String name) {
+        return slot >= 0 ? rawSlot(slot) : definitions.get(name);
+    }
+
+    /**
+     * Reads a definition by slot when one was assigned, falling back to its name,
+     * resolving loop holders to their current value.
+     */
+    @Nullable
+    @Internal
+    public AbstractTag readDefinition(int slot, String name) {
+        return slot >= 0 ? readSlot(slot) : getDefinition(name);
+    }
+
+    /**
+     * Writes a definition by slot when one was assigned, falling back to its name.
+     */
+    @Internal
+    public void setDefinition(int slot, String name, @Nullable AbstractTag value) {
+        if (slot >= 0) writeSlot(slot, value);
+        else define(name, value);
+    }
+
+    /**
+     * Writes a definition by its compile-time slot index.
+     */
+    @Internal
+    public void writeSlot(int slot, @Nullable AbstractTag value) {
+        if (slot >= slotValues.length) {
+            if (value == null) return;
+            slotValues = Arrays.copyOf(slotValues, slotTable != null ? slotTable.size() : slot + 1);
+        }
+        slotValues[slot] = value;
+    }
+
+    /**
+     * Copies every definition of {@code parent} into this queue.
+     * <p>
+     * When both queues were compiled against the same slot table - the usual case for
+     * an async child, which runs a slice of its parent's bytecode - the slot array is
+     * copied wholesale and no name lookups happen at all. Otherwise each definition is
+     * routed by name into whatever storage this queue uses for it.
+     */
+    private void inheritDefinitionsFrom(ScriptQueue parent) {
+        if (parent.slotTable == this.slotTable && this.slotTable != null) {
+            AbstractTag[] source = parent.slotValues;
+            if (slotValues.length < source.length) slotValues = new AbstractTag[source.length];
+            for (int slot = 0; slot < source.length; slot++) {
+                AbstractTag value = source[slot];
+                slotValues[slot] = value instanceof MutableDefinition mutable ? mutable.snapshot() : value;
+            }
+            copyNamed(parent);
+            return;
+        }
+
+        for (Map.Entry<String, AbstractTag> entry : parent.allDefinitions().entrySet()) {
+            define(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void copyNamed(ScriptQueue parent) {
+        if (parent.definitions.isEmpty()) return;
+        for (Map.Entry<String, AbstractTag> entry : parent.definitions.entrySet()) {
+            AbstractTag value = entry.getValue();
+            if (value instanceof MutableDefinition mutable) value = mutable.snapshot();
+            if (value != null) definitions.put(entry.getKey(), value);
+        }
+    }
+
+    private void adoptSlots(Instruction[] source) {
+        if (source == null || source.length == 0) return;
+        SlotTable table = source[0].slots;
+        if (table == null || table == slotTable) return;
+        if (slotTable == null) {
+            slotTable = table;
+            slotValues = new AbstractTag[table.size()];
+            return;
+        }
+        Map<String, AbstractTag> carried = allDefinitions();
+        slotTable = table;
+        slotValues = new AbstractTag[table.size()];
+        definitions.clear();
+        for (Map.Entry<String, AbstractTag> entry : carried.entrySet()) {
+            define(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Returns every definition currently set on this queue, merging slots and named
+     * storage into one map. Loop holders are resolved to plain values.
+     */
+    @NotNull
+    @AvailableSince("1.0.0")
+    public Map<String, AbstractTag> allDefinitions() {
+        Map<String, AbstractTag> merged = new HashMap<>();
+        for (Map.Entry<String, AbstractTag> entry : definitions.entrySet()) {
+            AbstractTag value = entry.getValue();
+            if (value instanceof MutableDefinition mutable) value = mutable.snapshot();
+            if (value != null) merged.put(entry.getKey(), value);
+        }
+        if (slotTable != null) {
+            for (int slot = 0; slot < slotValues.length; slot++) {
+                AbstractTag value = readSlot(slot);
+                if (value != null) merged.put(slotTable.nameAt(slot), value);
+            }
+        }
+        return merged;
     }
 
     /**
@@ -596,6 +781,21 @@ public class ScriptQueue {
     /** Sets (or clears) the anchor position for this queue. */
     public void setAnchorPosition(@Nullable Position position) {
         this.anchorPosition = position;
+    }
+
+    /**
+     * Mirrors this queue's debug output to {@code audience} as well as the console.
+     * Child queues spawned from this one inherit it.
+     */
+    @AvailableSince("1.0.0")
+    public void setDebugObserver(@Nullable Audience audience) {
+        this.debugObserver = audience;
+    }
+
+    @Nullable
+    @AvailableSince("1.0.0")
+    public Audience getDebugObserver() {
+        return debugObserver;
     }
 
     /**
@@ -697,7 +897,7 @@ public class ScriptQueue {
     public void setKeepAlive(boolean keepAlive) { this.keepAlive = keepAlive; }
     public boolean isKeepAlive() { return keepAlive; }
     public int getDepth() { return callStack.size(); }
-    public Map<String, AbstractTag> getDefinitionsMap() { return definitions; }
+    public Map<String, AbstractTag> getDefinitionsMap() { return allDefinitions(); }
     public static ScriptQueue getQueueById(String id) { return activeQueues.get(id); }
     public static Collection<ScriptQueue> getAllQueues() { return activeQueues.values(); }
 }

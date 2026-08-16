@@ -2,11 +2,13 @@ package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.commands.DataBlockCommand;
+import dev.corexinc.corex.api.commands.SlotAware;
 import dev.corexinc.corex.api.data.actions.AbstractDataAction;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
+import dev.corexinc.corex.engine.compiler.SlotTable;
 import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
@@ -87,12 +89,35 @@ import java.util.regex.Pattern;
  *       - sword
  *       - bow
  */
-public class DefCommand implements AbstractCommand, DataBlockCommand {
+public class DefCommand implements AbstractCommand, DataBlockCommand, SlotAware {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
 
     private record ResolvedDefinition(String keyPath, AbstractDataAction action, String param, String[] parts,
                                       AbstractTag staticValue) {}
+
+    private record DefSlot(String name, int slot) {}
+
+    private static String staticRootName(Instruction instruction) {
+        if (!(instruction.getLinearArgument(0) instanceof StaticArg staticArg)) return null;
+        String raw = staticArg.evaluate(null).identify();
+        int colon = findColonOutsideBrackets(raw);
+        String keyPath = colon < 0 ? raw : raw.substring(0, colon);
+        return keyPath.indexOf('.') < 0 ? keyPath : null;
+    }
+
+    @Override
+    public @NonNull List<String> writtenDefinitions(@NonNull Instruction instruction) {
+        String name = staticRootName(instruction);
+        return name != null && !name.isEmpty() ? List.of(name) : List.of();
+    }
+
+    @Override
+    public void bindSlots(@NonNull Instruction instruction, @NonNull SlotTable table) {
+        String name = staticRootName(instruction);
+        if (name == null || name.isEmpty()) return;
+        instruction.slotData = new DefSlot(name, table.indexOf(name));
+    }
 
     @Override
     public @NonNull String getName() {
@@ -188,10 +213,14 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
 
     private void runResolved(@NonNull ScriptQueue queue, @NonNull Instruction instruction,
                              @NonNull ResolvedDefinition resolved) {
+        int slot = instruction.slotData instanceof DefSlot cached && instruction.slots == queue.slotTable()
+                ? cached.slot()
+                : SlotTable.NO_SLOT;
+
         if (resolved.action() == null) {
             AbstractTag staticValue = resolved.staticValue();
             if (staticValue != null) {
-                queue.define(resolved.keyPath(), staticValue);
+                queue.setDefinition(slot, resolved.keyPath(), staticValue);
 
                 if (Debugger.shouldReport(queue)) {
                     Debugger.report(queue, instruction,
@@ -216,7 +245,7 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
                 stored = ObjectFetcher.pickObject(valueObj.identify());
             }
 
-            queue.define(resolved.keyPath(), stored);
+            queue.setDefinition(slot, resolved.keyPath(), stored);
 
             if (Debugger.shouldReport(queue)) {
                 Debugger.report(queue, instruction,
@@ -234,9 +263,9 @@ public class DefCommand implements AbstractCommand, DataBlockCommand {
             if (resolved.parts().length > 1) {
                 applyToMap(queue, resolved.parts(), resolved.action(), resolved.param(), secondArg);
             } else {
-                AbstractTag current = queue.getDefinition(resolved.keyPath());
+                AbstractTag current = queue.readDefinition(slot, resolved.keyPath());
                 AbstractTag result = resolved.action().apply(current, resolved.param(), secondArg, queue);
-                queue.define(resolved.keyPath(), result);
+                queue.setDefinition(slot, resolved.keyPath(), result);
             }
         }
         finally {

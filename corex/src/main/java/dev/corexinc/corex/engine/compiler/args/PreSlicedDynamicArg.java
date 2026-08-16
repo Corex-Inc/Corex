@@ -1,6 +1,5 @@
 package dev.corexinc.corex.engine.compiler.args;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
@@ -20,17 +19,22 @@ public class PreSlicedDynamicArg implements CompiledArgument {
     private final TagNode[] nodes;
     private final CompiledArgument fallback;
     private final String rawFullTag;
-    private final FormatRegistry formats;
+    private final DefinitionArg baseDefinition;
 
     private AbstractFormatter cachedFormatter;
     private Function<Attribute, AbstractTag> cachedBaseTag;
     private volatile boolean handlerResolved;
 
     public PreSlicedDynamicArg(TagNode[] nodes, CompiledArgument fallback, String rawFullTag) {
+        this(nodes, fallback, rawFullTag, null);
+    }
+
+    public PreSlicedDynamicArg(TagNode[] nodes, CompiledArgument fallback, String rawFullTag,
+                               DefinitionArg baseDefinition) {
         this.nodes = nodes;
         this.fallback = fallback;
         this.rawFullTag = rawFullTag;
-        this.formats = ScriptManager.getRegistry().getFormats();
+        this.baseDefinition = baseDefinition;
     }
 
     @Override
@@ -38,8 +42,15 @@ public class PreSlicedDynamicArg implements CompiledArgument {
         Attribute attr = new Attribute(nodes, queue);
         AbstractTag currentObj;
 
+        if (baseDefinition != null) {
+            currentObj = baseDefinition.resolve(queue);
+            attr.fulfill(1);
+            return continueChain(queue, attr, currentObj);
+        }
+
         if (!handlerResolved) {
             String baseName = nodes[0].name();
+            FormatRegistry formats = ScriptManager.getRegistry().getFormats();
             cachedFormatter = formats.get(baseName);
             if (cachedFormatter == null) cachedBaseTag = TagManager.getBaseTag(baseName);
             handlerResolved = true;
@@ -55,6 +66,10 @@ public class PreSlicedDynamicArg implements CompiledArgument {
             currentObj = null;
         }
 
+        return continueChain(queue, attr, currentObj);
+    }
+
+    private AbstractTag continueChain(ScriptQueue queue, Attribute attr, AbstractTag currentObj) {
         while (attr.hasNext()) {
 
             if (currentObj == null) {
@@ -88,6 +103,15 @@ public class PreSlicedDynamicArg implements CompiledArgument {
         }
 
         return currentObj;
+    }
+
+    @Override
+    public void visitChildren(java.util.function.Consumer<CompiledArgument> visitor) {
+        if (baseDefinition != null) visitor.accept(baseDefinition);
+        for (TagNode node : nodes) {
+            if (node.param() != null) visitor.accept(node.param());
+        }
+        if (fallback != null) visitor.accept(fallback);
     }
 
     @Override

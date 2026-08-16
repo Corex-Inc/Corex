@@ -6,6 +6,7 @@ import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.SlotAllocator;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import org.yaml.snakeyaml.Yaml;
@@ -70,7 +71,7 @@ public class ScriptManager {
                     for (String path : flatKeys(section)) {
                         if (container.resolvePath(path) == PathType.SCRIPT) {
                             List<?> rawCommands = getNestedList(section, path);
-                            if (rawCommands != null) container.addCompiledScript(path, compileBlock(rawCommands));
+                            if (rawCommands != null) container.addCompiledScript(path, compileScript(rawCommands));
                         }
                     }
 
@@ -151,6 +152,12 @@ public class ScriptManager {
     public static void setRegistry(CorexRegistry r) { registry = r; }
 
     public static CorexRegistry getRegistry() { return registry; }
+
+    public static Instruction[] compileScript(List<?> rawList) {
+        Instruction[] bytecode = compileBlock(rawList);
+        SlotAllocator.allocate(bytecode);
+        return bytecode;
+    }
 
     public static Instruction[] compileBlock(List<?> rawList) {
         List<Instruction> bytecode = new ArrayList<>();

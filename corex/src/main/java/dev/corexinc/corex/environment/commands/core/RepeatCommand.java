@@ -1,8 +1,12 @@
 package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.SlotAware;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.SlotTable;
+import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.queue.MutableDefinition;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -10,7 +14,6 @@ import dev.corexinc.corex.environment.tags.core.ElementTag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
-import java.util.Map;
 
 /* @doc command
  *
@@ -67,7 +70,29 @@ import java.util.Map;
  *         - repeat continue // We jump to the next iteration
  *     - narrate "The number is <[loopIndex]>!"
  */
-public class RepeatCommand implements AbstractCommand {
+public class RepeatCommand implements AbstractCommand, SlotAware {
+
+    private record LoopSlots(String asVar, int slot) {}
+
+    static String resolveLoopVar(Instruction instruction, String fallback) {
+        CompiledArgument raw = instruction.prefixArgs.get("as");
+        if (raw == null) return fallback;
+        if (!(raw instanceof StaticArg staticArg)) return null;
+        String value = staticArg.evaluate(null).identify();
+        return value.isBlank() ? fallback : value;
+    }
+
+    @Override
+    public @NonNull List<String> writtenDefinitions(@NonNull Instruction instruction) {
+        String asVar = resolveLoopVar(instruction, "loopIndex");
+        return asVar != null ? List.of(asVar) : List.of();
+    }
+
+    @Override
+    public void bindSlots(@NonNull Instruction instruction, @NonNull SlotTable table) {
+        String asVar = resolveLoopVar(instruction, "loopIndex");
+        if (asVar != null) instruction.slotData = new LoopSlots(asVar, table.indexOf(asVar));
+    }
 
     @Override
     public @NonNull String getName() {
@@ -143,14 +168,23 @@ public class RepeatCommand implements AbstractCommand {
             startFrom = fromTag.asInt();
         }
 
-        String rawAs = instruction.getPrefix("as", queue);
-        final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
+        final String asVar;
+        final int slot;
+
+        if (instruction.slotData instanceof LoopSlots cached && instruction.slots == queue.slotTable()) {
+            asVar = cached.asVar();
+            slot = cached.slot();
+        } else {
+            String rawAs = instruction.getPrefix("as", queue);
+            asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "loopIndex";
+            slot = SlotTable.NO_SLOT;
+        }
 
         final int max = startFrom + times - 1;
         final MutableDefinition.OfInt index = new MutableDefinition.OfInt(startFrom);
-        final Map<String, AbstractTag> defs = queue.getDefinitionsMap();
+        final AbstractTag shadowed = queue.rawDefinition(slot, asVar);
 
-        queue.define(asVar, index);
+        queue.setDefinition(slot, asVar, index);
 
         if (Debugger.shouldReport(queue)) {
             Debugger.report(queue, instruction,
@@ -163,7 +197,7 @@ public class RepeatCommand implements AbstractCommand {
         queue.pushFrame("repeat_loop", instruction.innerBlock,
                 () -> {
                     queue.setBroken(false);
-                    queue.define(asVar, null);
+                    queue.setDefinition(slot, asVar, shadowed);
                 },
                 () -> {
                     if (queue.isBroken()) return false;
@@ -174,7 +208,7 @@ public class RepeatCommand implements AbstractCommand {
                     }
 
                     index.value = nextVal;
-                    if (defs.get(asVar) != index) queue.define(asVar, index);
+                    if (queue.rawDefinition(slot, asVar) != index) queue.setDefinition(slot, asVar, index);
                     return true;
                 }
         );

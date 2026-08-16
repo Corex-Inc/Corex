@@ -4,6 +4,7 @@ import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import net.kyori.adventure.audience.Audience;
 
 import java.util.List;
 import java.util.Locale;
@@ -48,17 +49,21 @@ public class Debugger {
         setMode(debugMode);
     }
 
+    private static Audience mirrorOf(ScriptQueue queue) {
+        return queue != null ? queue.getDebugObserver() : null;
+    }
+
     public static void queueStart(ScriptQueue queue) {
         if (queue.isSilent() || mode == Mode.NONE || mode == Mode.ERRORS) return;
         String player = queue.getPlayer() != null
                 ? " <dark_gray>player=<white>" + queue.getPlayer().identify().replace("<", "\\<").replace("§", "&") : "";
         String m = queue.isAsync() ? "<gray>async" : "<gray>sync";
-        CorexLogger.info(styleOf(queue).header + " <gray>started <dark_gray>(" + m + "<dark_gray>)" + player);
+        CorexLogger.info(mirrorOf(queue), styleOf(queue).header + " <gray>started <dark_gray>(" + m + "<dark_gray>)" + player);
     }
 
     public static void queueStop(ScriptQueue queue, double ms) {
         if (queue.isSilent() || mode == Mode.NONE || mode == Mode.ERRORS) return;
-        CorexLogger.success(styleOf(queue).header + " <gray>done <dark_gray>("
+        CorexLogger.success(mirrorOf(queue), styleOf(queue).header + " <gray>done <dark_gray>("
                 + String.format(Locale.US, "%.4f", ms) + "ms)");
     }
 
@@ -68,7 +73,7 @@ public class Debugger {
 
     public static void instruction(ScriptQueue queue, Instruction inst, int depth) {
         if (queue.isSilent() || mode != Mode.ALL) return;
-        CorexLogger.info(indent(depth) + styleOf(queue).bar + " <white>" + inst.command.getName() + formatArgs(inst));
+        CorexLogger.info(mirrorOf(queue), indent(depth) + styleOf(queue).bar + " <white>" + inst.command.getName() + formatArgs(inst));
     }
 
     public static void tag(ScriptQueue queue, String original, String filled, int depth) {
@@ -77,7 +82,7 @@ public class Debugger {
         String escapedOriginal = original != null ? original.replace("<", "\\<").replace("§", "&") : "null";
         String escapedFilled = filled != null ? filled.replace("<", "\\<").replace("§", "&") : "null";
 
-        CorexLogger.info(indent(depth + 1) + styleOf(queue).bar
+        CorexLogger.info(mirrorOf(queue), indent(depth + 1) + styleOf(queue).bar
                 + " <dark_gray><<gray>" + escapedOriginal + "<dark_gray>> <dark_gray>= <aqua>" + escapedFilled);
     }
 
@@ -101,7 +106,7 @@ public class Debugger {
             }
         }
 
-        CorexLogger.info(sb.toString());
+        CorexLogger.info(mirrorOf(queue), sb.toString());
     }
 
     public static void error(ScriptQueue queue, String message, int depth) {
@@ -110,14 +115,15 @@ public class Debugger {
 
     public static void error(ScriptQueue queue, String message, Throwable cause, int depth) {
         if (mode == Mode.NONE) return;
+        Audience mirror = mirrorOf(queue);
         String prefix = queue != null ? styleOf(queue).header + " " : "";
-        CorexLogger.error(indent(depth) + prefix + message.replace("§", "&"));
+        CorexLogger.error(mirror, indent(depth) + prefix + message.replace("§", "&"));
         if (cause == null) return;
-        CorexLogger.error(indent(depth + 1) + "<dark_red>Caused by: <red>"
+        CorexLogger.error(mirror, indent(depth + 1) + "<dark_red>Caused by: <red>"
                 + cause.getClass().getSimpleName() + ": " + cause.getMessage());
         StackTraceElement[] trace = cause.getStackTrace();
         for (int i = 0; i < Math.min(5, trace.length); i++)
-            CorexLogger.error(indent(depth + 2) + "<dark_red>at <red>" + trace[i]);
+            CorexLogger.error(mirror, indent(depth + 2) + "<dark_red>at <red>" + trace[i]);
     }
 
     public static void error(String message) {
@@ -152,18 +158,19 @@ public class Debugger {
         if (mode == Mode.NONE) return;
 
         List<String> errors = queue.getAndClearErrors();
+        Audience mirror = mirrorOf(queue);
 
         if (!queue.isErrorHeaderPrinted()) {
             String cmdName = inst != null ? inst.command.getName().toUpperCase() : "UNKNOWN";
-            CorexLogger.error(styleOf(queue).bar + " ERROR while executing command '<yellow>" + cmdName + "</yellow>'!");
-            CorexLogger.error(styleOf(queue).bar + "  <gray>Error Message:</gray> <white>" + errors.getFirst().replace("§", "&"));
+            CorexLogger.error(mirror, styleOf(queue).bar + " ERROR while executing command '<yellow>" + cmdName + "</yellow>'!");
+            CorexLogger.error(mirror, styleOf(queue).bar + "  <gray>Error Message:</gray> <white>" + errors.getFirst().replace("§", "&"));
             queue.setErrorHeaderPrinted(true);
         }
         if (errors.size() != 1) {
             for (int i = 1; i < errors.size() - 1; i++) {
-                CorexLogger.error(styleOf(queue).bar + "  <gray>├─> Additional Error Info: <white>" + errors.get(i).replace("§", "&"));
+                CorexLogger.error(mirror, styleOf(queue).bar + "  <gray>├─> Additional Error Info: <white>" + errors.get(i).replace("§", "&"));
             }
-            CorexLogger.error(styleOf(queue).bar + "  <gray>└─> Additional Error Info: <white>" + errors.getLast().replace("§", "&"));
+            CorexLogger.error(mirror, styleOf(queue).bar + "  <gray>└─> Additional Error Info: <white>" + errors.getLast().replace("§", "&"));
         }
     }
 

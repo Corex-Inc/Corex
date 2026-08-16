@@ -80,6 +80,18 @@ public class Instruction {
      */
     public final boolean hasGlobalFlags;
 
+    /**
+     * The definition slot table shared by every instruction of the compiled tree this
+     * instruction belongs to, or {@code null} if slots were not allocated.
+     */
+    @Nullable public SlotTable slots;
+
+    /**
+     * Slot indices resolved at compile time, written by {@code SlotAware} commands.
+     * Kept separate from {@link #customData} so both can be cached independently.
+     */
+    @Nullable public Object slotData;
+
     public Instruction(
             @NotNull AbstractCommand command,
             @NotNull CompiledArgument[] linearArgs,

@@ -4,6 +4,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CorexLogger {
 
@@ -37,27 +38,55 @@ public class CorexLogger {
     }
 
     public static void info(@NotNull String sender, String message) {
-        send(PREFIX_INFO + message, sender);
+        send(PREFIX_INFO + message, sender, null);
     }
 
     public static void success(@NotNull String sender, String message) {
-        send(PREFIX_SUCCESS + message, sender);
+        send(PREFIX_SUCCESS + message, sender, null);
     }
 
     public static void warn(@NotNull String sender, String message) {
-        send(PREFIX_WARN + message, sender);
+        send(PREFIX_WARN + message, sender, null);
     }
 
     public static void error(@NotNull String sender, String message) {
-        send(PREFIX_ERROR + message, sender);
+        send(PREFIX_ERROR + message, sender, null);
+    }
+
+    /**
+     * Logs to the console and mirrors the same line to {@code mirror}.
+     * <p>
+     * Used for script debug output so the player who started a queue sees it too.
+     * A {@code null} mirror behaves exactly like the console-only variant.
+     */
+    public static void info(@Nullable Audience mirror, String message) {
+        send(PREFIX_INFO + message, "Corex", mirror);
+    }
+
+    public static void success(@Nullable Audience mirror, String message) {
+        send(PREFIX_SUCCESS + message, "Corex", mirror);
+    }
+
+    public static void warn(@Nullable Audience mirror, String message) {
+        send(PREFIX_WARN + message, "Corex", mirror);
+    }
+
+    public static void error(@Nullable Audience mirror, String message) {
+        send(PREFIX_ERROR + message, "Corex", mirror);
     }
 
     private static void send(String format, String sender) {
+        send(format, sender, null);
+    }
+
+    private static void send(String format, String sender, @Nullable Audience mirror) {
+        Component component;
         try {
-            Component component = MINI_MESSAGE.deserialize(String.format(format, sender).replace("§", "&"));
-            console.sendMessage(component);
+            component = MINI_MESSAGE.deserialize(String.format(format, sender).replace("§", "&"));
         } catch (Exception e) {
-            console.sendMessage(Component.text("(Raw) " + format));
+            component = Component.text("(Raw) " + format);
         }
+        console.sendMessage(component);
+        if (mirror != null) mirror.sendMessage(component);
     }
 }

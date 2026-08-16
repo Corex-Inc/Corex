@@ -65,11 +65,13 @@ public class RunsCommand implements BasicCommand {
                     anchor
             );
             queue.setKeepAlive(true);
+            if (executor != null) queue.setDebugObserver(executor);
             activeQueues.put(senderId, queue);
             queue.start();
             sender.sendMessage("§b[Corex] §7New queue session created. Use §f- stop§7 to kill it.");
         } else if (executor != null) {
             queue.setAnchorPosition(toPosition(executor.getLocation()));
+            queue.setDebugObserver(executor);
         }
 
         for (Instruction inst : instructions) {

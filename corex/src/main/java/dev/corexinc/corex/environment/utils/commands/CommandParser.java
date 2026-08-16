@@ -2,6 +2,7 @@ package dev.corexinc.corex.environment.utils.commands;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
+import dev.corexinc.corex.engine.compiler.SlotAllocator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,13 +20,19 @@ public class CommandParser {
     }
 
     public static Instruction[] compileScript(String script) {
+        Instruction[] bytecode = compileBlock(script);
+        SlotAllocator.allocate(bytecode);
+        return bytecode;
+    }
+
+    private static Instruction[] compileBlock(String script) {
         List<ParsedCommand> parsed = split(script);
         List<Instruction> instructions = new ArrayList<>();
 
         for (ParsedCommand cmd : parsed) {
             Instruction[] inner = null;
             if (cmd.innerBlock != null) {
-                inner = compileScript(cmd.innerBlock);
+                inner = compileBlock(cmd.innerBlock);
             }
             Instruction inst = ScriptCompiler.compile(cmd.command, inner);
             if (inst != null) {

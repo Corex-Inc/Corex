@@ -14,8 +14,11 @@ import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
+import dev.corexinc.corex.environment.utils.entities.FakeEntityRegistry;
+import me.tofaa.entitylib.wrapper.WrapperEntity;
 import dev.corexinc.corex.environment.tags.inventory.InventoryTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
@@ -118,6 +121,31 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "uuid", (attribute, object) ->
                 new ElementTag(object.offlinePlayer.getUniqueId().toString())).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name fakeEntities
+         * @RawName <PlayerTag.fakeEntities>
+         * @Object PlayerTag
+         * @ReturnType ListTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the list of fake entities this player is currently a viewer of.
+         *
+         * Fake entities are the packet-only entities created by the fakespawn command.
+         * A player only appears as a viewer of the entities it was actually shown, so
+         * this is the inverse of <EntityTag.viewers>.
+         *
+         * @Implements PlayerTag.fake_entities
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "fakeEntities", (attribute, object) -> {
+            ListTag result = new ListTag();
+            for (WrapperEntity fake : FakeEntityRegistry.visibleTo(object.offlinePlayer.getUniqueId())) {
+                result.addObject(EntityTag.ofFake(fake));
+            }
+            return result;
+        }).setAsyncSafe();
 
         /* @doc tag
          *

@@ -38,6 +38,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
+import org.bukkit.Location;
 import org.bukkit.Rotation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.AbstractArrow;
@@ -88,6 +89,14 @@ public record FakeEntityView(WrapperEntity wrapperEntity) implements LiveEntityV
     @Override public void setSilent(boolean value) { wrapperEntity.getEntityMeta().setSilent(value); }
 
     @Override public void setRotation(float yaw, float pitch) { wrapperEntity.rotateHead(yaw, pitch); }
+
+    @Override public void teleport(Location location) {
+        wrapperEntity.teleport(SpigotConversionUtil.fromBukkitLocation(location));
+    }
+
+    @Override public void remove() {
+        FakeEntityRegistry.remove(wrapperEntity.getEntityId());
+    }
 
     @Override public void setFireTicks(int ticks) { wrapperEntity.getEntityMeta().setOnFire(ticks > 0); }
 

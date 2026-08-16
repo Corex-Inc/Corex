@@ -5,17 +5,13 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
-import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
+import dev.corexinc.corex.environment.utils.entities.EntityTargets;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.jspecify.annotations.NonNull;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /* @doc command
  *
@@ -89,30 +85,18 @@ public class TeleportCommand implements AbstractCommand {
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
         int argCount = instruction.linearArgs.length;
 
-        List<Entity> entitiesToTeleport = new ArrayList<>();
+        EntityTargets.Resolved targets;
         String rawLocationInput;
 
         if (argCount >= 2) {
-            AbstractTag targetTag = instruction.getLinearObject(0, queue);
+            targets = EntityTargets.resolve(instruction.getLinearObject(0, queue), queue);
             rawLocationInput = instruction.getLinear(1, queue);
-
-            if (targetTag instanceof ListTag list) {
-                entitiesToTeleport.addAll(list.filter(PlayerTag.class, queue).stream().map(PlayerTag::getPlayer).toList());
-                entitiesToTeleport.addAll(list.filter(EntityTag.class, queue).stream().map(EntityTag::getEntity).toList());
-            } else if (targetTag instanceof PlayerTag p) {
-                entitiesToTeleport.add(p.getPlayer());
-            } else if (targetTag instanceof EntityTag e) {
-                entitiesToTeleport.add(e.getEntity());
-            }
         } else {
-            PlayerTag pt = (PlayerTag) queue.getPlayer();
-            if (pt != null) {
-                entitiesToTeleport.add(pt.getPlayer());
-            }
+            targets = EntityTargets.resolve((AbstractTag) queue.getPlayer(), queue);
             rawLocationInput = instruction.getLinear(0, queue);
         }
 
-        if (entitiesToTeleport.isEmpty()) {
+        if (targets.isEmpty()) {
             Debugger.echoError(queue, getName() + " could not resolve any target entities.");
             return;
         }
@@ -138,13 +122,14 @@ public class TeleportCommand implements AbstractCommand {
         Debugger.report(queue, instruction,
                 "Destination", locationTag.identify(),
                 "Cause", cause.name(),
-                "Targets_Count", entitiesToTeleport.size()
+                "Targets_Count", targets.views().size()
         );
 
-        for (Entity entity : entitiesToTeleport) {
-            if (entity != null && entity.isValid()) {
-                entity.teleportAsync(destination, cause);
-            }
+        for (Entity entity : targets.real()) {
+            entity.teleportAsync(destination, cause);
+        }
+        for (EntityTag fake : targets.fakes()) {
+            fake.getView().teleport(destination);
         }
     }
 }

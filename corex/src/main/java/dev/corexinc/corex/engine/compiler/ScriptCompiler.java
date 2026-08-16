@@ -195,10 +195,13 @@ public class ScriptCompiler {
 
         TagNode[] nodes = parseTagNodes(mainTag);
 
-        if (nodes.length == 1 && nodes[0].name().isEmpty()
-                && nodes[0].param() instanceof StaticArg staticParam) {
+        if (nodes[0].name().isEmpty() && nodes[0].param() instanceof StaticArg staticParam) {
+            String path = staticParam.evaluate(null).identify();
             formatterFlagOut.add(false);
-            return new DefinitionArg(staticParam.evaluate(null).identify(), fallback, rawTag);
+            return nodes.length == 1
+                    ? new DefinitionArg(path, fallback, rawTag)
+                    : new PreSlicedDynamicArg(nodes, fallback, rawTag,
+                            new DefinitionArg(path, null, rawTag));
         }
 
         FormatRegistry formats = ScriptManager.getRegistry().getFormats();

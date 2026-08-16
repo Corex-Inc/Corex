@@ -5,6 +5,7 @@ import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import dev.corexinc.corex.environment.utils.adapters.EntityAdapter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.DyeColor;
 import org.bukkit.Rotation;
@@ -44,6 +45,10 @@ public record BukkitEntityView(Entity entity) implements LiveEntityView {
     @Override public void setVelocity(Vector velocity) { entity.setVelocity(velocity); }
 
     @Override public void setRotation(float yaw, float pitch) { entity.setRotation(yaw, pitch); }
+
+    @Override public void teleport(Location location) { entity.teleportAsync(location); }
+
+    @Override public void remove() { entity.remove(); }
 
     @Override public void setNbt(MapTag nbt) {
         EntityAdapter nms = NMSHandler.get().get(EntityAdapter.class);

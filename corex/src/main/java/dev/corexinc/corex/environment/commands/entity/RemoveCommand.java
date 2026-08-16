@@ -88,7 +88,8 @@ public class RemoveCommand implements AbstractCommand {
 
         List<Entity> specific = new ArrayList<>();
         List<String> matchers = new ArrayList<>();
-        collect(arg, specific, matchers);
+        List<EntityTag> fakes = new ArrayList<>();
+        collect(arg, specific, matchers, fakes);
 
         AbstractAreaObject area = null;
         String inRaw = instruction.getPrefix("in", queue);
@@ -133,7 +134,8 @@ public class RemoveCommand implements AbstractCommand {
         }
 
         Debugger.report(queue, instruction,
-                "Targets", String.valueOf(targets.size()),
+                "Targets", String.valueOf(targets.size() + fakes.size()),
+                "Fakes", fakes.isEmpty() ? null : String.valueOf(fakes.size()),
                 "Matchers", matchers.isEmpty() ? "None" : String.join(",", matchers),
                 "Scope", matchers.isEmpty() ? "direct" : (area != null ? "area" : (world != null ? world.getName() : "all worlds"))
         );
@@ -142,21 +144,27 @@ public class RemoveCommand implements AbstractCommand {
             if (entity == null || entity.isDead() || entity instanceof Player) continue;
             ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(entity, entity::remove);
         }
+
+        for (EntityTag fake : fakes) {
+            fake.getView().remove();
+        }
     }
 
-    private void collect(AbstractTag arg, List<Entity> specific, List<String> matchers) {
+    private void collect(AbstractTag arg, List<Entity> specific, List<String> matchers, List<EntityTag> fakes) {
         switch (arg) {
-            case EntityTag entity -> addEntity(entity, specific, matchers);
+            case EntityTag entity -> addEntity(entity, specific, matchers, fakes);
             case ListTag list -> list.getList().forEach(tag -> {
-                if (tag instanceof EntityTag entity) addEntity(entity, specific, matchers);
+                if (tag instanceof EntityTag entity) addEntity(entity, specific, matchers, fakes);
                 else matchers.add(tag.identify());
             });
             default -> matchers.add(arg.identify());
         }
     }
 
-    private void addEntity(EntityTag tag, List<Entity> specific, List<String> matchers) {
-        if (tag.getEntity() != null) {
+    private void addEntity(EntityTag tag, List<Entity> specific, List<String> matchers, List<EntityTag> fakes) {
+        if (tag.isFake()) {
+            fakes.add(tag);
+        } else if (tag.getEntity() != null) {
             specific.add(tag.getEntity());
         } else {
             matchers.add(tag.getEntityType() != null ? tag.getEntityType().name() : "*");

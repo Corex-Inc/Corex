@@ -7,6 +7,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.entities.EntityTargets;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.NamespacedKey;
@@ -82,6 +83,8 @@ public class KillCommand implements AbstractCommand {
     @Override
     public void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction) {
         List<Entity> targets = new ArrayList<>();
+
+        EntityTargets.warnIfFake(queue, getName(), instruction.getLinearObject(0, queue));
 
         switch (instruction.getLinearObject(0, queue)) {
             case PlayerTag p -> targets.add(p.getPlayer());

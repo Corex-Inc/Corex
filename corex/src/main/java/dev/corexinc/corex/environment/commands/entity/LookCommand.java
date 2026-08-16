@@ -13,7 +13,9 @@ import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import io.papermc.paper.entity.LookAnchor;
+import me.tofaa.entitylib.wrapper.WrapperEntity;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -133,10 +135,17 @@ public class LookCommand implements AbstractCommand {
             }
         }
 
+        List<EntityTag> fakeTargets = rawEntities.stream()
+                .filter(tag -> tag instanceof EntityTag et && et.isFake())
+                .map(EntityTag.class::cast)
+                .toList();
+
+        for (EntityTag fake : fakeTargets) applyFakeLook(fake, target);
+
         List<Entity> targets = rawEntities.stream()
                 .map(tag -> switch (tag) {
                     case PlayerTag pt -> pt.getPlayer();
-                    case EntityTag et -> et.getEntity();
+                    case EntityTag et -> et.isFake() ? null : et.getEntity();
                     default           -> null;
                 })
                 .filter(e -> e != null && e.isValid() && !e.isDead())
@@ -184,6 +193,19 @@ public class LookCommand implements AbstractCommand {
                 } else {
                     entity.setRotation(resolvedYaw, resolvedPitch);
                 }
+            }
+        }
+    }
+
+    private static void applyFakeLook(EntityTag fake, LookTarget target) {
+        WrapperEntity wrapper = fake.getFakeEntity();
+        switch (target) {
+            case LookTarget.AtLocation(LocationTag locationTag) ->
+                    wrapper.rotateHead(SpigotConversionUtil.fromBukkitLocation(locationTag.getLocation()));
+            case LookTarget.AtRotation(float yaw, float pitch) -> {
+                float resolvedYaw = Float.isNaN(yaw) ? wrapper.getYaw() : yaw;
+                float resolvedPitch = Float.isNaN(pitch) ? wrapper.getPitch() : pitch;
+                wrapper.rotateHead(resolvedYaw, resolvedPitch);
             }
         }
     }

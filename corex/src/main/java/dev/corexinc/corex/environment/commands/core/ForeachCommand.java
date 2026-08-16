@@ -1,8 +1,12 @@
 package dev.corexinc.corex.environment.commands.core;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
+import dev.corexinc.corex.api.commands.SlotAware;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.SlotTable;
+import dev.corexinc.corex.engine.compiler.args.StaticArg;
 import dev.corexinc.corex.engine.queue.MutableDefinition;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -13,7 +17,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 /* @doc command
@@ -34,7 +37,34 @@ import java.util.function.BooleanSupplier;
  * To break out of the loop early, use - foreach break
  * To skip to the next iteration, use - foreach continue
  */
-public class ForeachCommand implements AbstractCommand {
+public class ForeachCommand implements AbstractCommand, SlotAware {
+
+    private record LoopSlots(String asVar, int valueSlot, String keyVar, int keySlot, int indexSlot) {}
+
+    private static String prefixVar(Instruction instruction, String prefix, String fallback) {
+        CompiledArgument raw = instruction.prefixArgs.get(prefix);
+        if (raw == null) return fallback;
+        if (!(raw instanceof StaticArg staticArg)) return null;
+        String value = staticArg.evaluate(null).identify();
+        return value.isBlank() ? fallback : value;
+    }
+
+    @Override
+    public @NonNull List<String> writtenDefinitions(@NonNull Instruction instruction) {
+        String asVar = prefixVar(instruction, "as", "value");
+        String keyVar = prefixVar(instruction, "key", "key");
+        if (asVar == null || keyVar == null) return List.of();
+        return List.of(asVar, keyVar, "loopIndex");
+    }
+
+    @Override
+    public void bindSlots(@NonNull Instruction instruction, @NonNull SlotTable table) {
+        String asVar = prefixVar(instruction, "as", "value");
+        String keyVar = prefixVar(instruction, "key", "key");
+        if (asVar == null || keyVar == null) return;
+        instruction.slotData = new LoopSlots(asVar, table.indexOf(asVar),
+                keyVar, table.indexOf(keyVar), table.indexOf("loopIndex"));
+    }
 
     @Override
     public @NonNull String getName() {
@@ -87,25 +117,44 @@ public class ForeachCommand implements AbstractCommand {
             return;
         }
 
-        String rawAs = instruction.getPrefix("as", queue);
-        final String asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "value";
+        final String asVar;
+        final String keyVar;
+        final int valueSlot;
+        final int keySlot;
+        final int indexSlot;
 
-        String rawKey = instruction.getPrefix("key", queue);
-        final String keyVar = (rawKey != null && !rawKey.isBlank()) ? rawKey : "key";
+        if (instruction.slotData instanceof LoopSlots cached && instruction.slots == queue.slotTable()) {
+            asVar = cached.asVar();
+            keyVar = cached.keyVar();
+            valueSlot = cached.valueSlot();
+            keySlot = cached.keySlot();
+            indexSlot = cached.indexSlot();
+        } else {
+            String rawAs = instruction.getPrefix("as", queue);
+            asVar = (rawAs != null && !rawAs.isBlank()) ? rawAs : "value";
+            String rawKey = instruction.getPrefix("key", queue);
+            keyVar = (rawKey != null && !rawKey.isBlank()) ? rawKey : "key";
+            valueSlot = SlotTable.NO_SLOT;
+            keySlot = SlotTable.NO_SLOT;
+            indexSlot = SlotTable.NO_SLOT;
+        }
 
         final boolean isMap = targetObj instanceof MapTag;
 
         BooleanSupplier loopCondition;
 
+        final AbstractTag shadowedIndex = queue.rawDefinition(indexSlot, "loopIndex");
+        final AbstractTag shadowedValue = queue.rawDefinition(valueSlot, asVar);
+        final AbstractTag shadowedKey = isMap ? queue.rawDefinition(keySlot, keyVar) : null;
+
         Runnable onFinish = () -> {
             queue.setBroken(false);
-            queue.define("loopIndex", null);
-            queue.define(asVar, null);
-            if (isMap) queue.define(keyVar, null);
+            queue.setDefinition(indexSlot, "loopIndex", shadowedIndex);
+            queue.setDefinition(valueSlot, asVar, shadowedValue);
+            if (isMap) queue.setDefinition(keySlot, keyVar, shadowedKey);
         };
 
         final MutableDefinition.OfInt index = new MutableDefinition.OfInt(1);
-        final Map<String, AbstractTag> defs = queue.getDefinitionsMap();
 
         if (isMap) {
             final MapTag mt = (MapTag) targetObj;
@@ -118,9 +167,9 @@ public class ForeachCommand implements AbstractCommand {
             final MutableDefinition.OfTag key = new MutableDefinition.OfTag(new ElementTag(firstKey));
             final MutableDefinition.OfTag value = new MutableDefinition.OfTag(mt.getObject(firstKey));
 
-            queue.define("loopIndex", index);
-            queue.define(keyVar, key);
-            queue.define(asVar, value);
+            queue.setDefinition(indexSlot, "loopIndex", index);
+            queue.setDefinition(keySlot, keyVar, key);
+            queue.setDefinition(valueSlot, asVar, value);
 
             loopCondition = () -> {
                 if (queue.isBroken()) return false;
@@ -132,9 +181,9 @@ public class ForeachCommand implements AbstractCommand {
                 key.current = new ElementTag(nextKey);
                 value.current = mt.getObject(nextKey);
 
-                if (defs.get("loopIndex") != index) queue.define("loopIndex", index);
-                if (defs.get(keyVar) != key) queue.define(keyVar, key);
-                if (defs.get(asVar) != value) queue.define(asVar, value);
+                if (queue.rawDefinition(indexSlot, "loopIndex") != index) queue.setDefinition(indexSlot, "loopIndex", index);
+                if (queue.rawDefinition(keySlot, keyVar) != key) queue.setDefinition(keySlot, keyVar, key);
+                if (queue.rawDefinition(valueSlot, asVar) != value) queue.setDefinition(valueSlot, asVar, value);
                 return true;
             };
 
@@ -148,8 +197,8 @@ public class ForeachCommand implements AbstractCommand {
 
             final MutableDefinition.OfTag value = new MutableDefinition.OfTag(iterator.next());
 
-            queue.define("loopIndex", index);
-            queue.define(asVar, value);
+            queue.setDefinition(indexSlot, "loopIndex", index);
+            queue.setDefinition(valueSlot, asVar, value);
 
             loopCondition = () -> {
                 if (queue.isBroken()) return false;
@@ -158,8 +207,8 @@ public class ForeachCommand implements AbstractCommand {
                 index.value++;
                 value.current = iterator.next();
 
-                if (defs.get("loopIndex") != index) queue.define("loopIndex", index);
-                if (defs.get(asVar) != value) queue.define(asVar, value);
+                if (queue.rawDefinition(indexSlot, "loopIndex") != index) queue.setDefinition(indexSlot, "loopIndex", index);
+                if (queue.rawDefinition(valueSlot, asVar) != value) queue.setDefinition(valueSlot, asVar, value);
                 return true;
             };
         }

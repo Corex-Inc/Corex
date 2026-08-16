@@ -48,7 +48,7 @@ public class DialogContainer implements AbstractContainer {
                 if (!buttons.get(key).isJsonObject()) continue;
                 JsonElement scriptEl = buttons.get(key).getAsJsonObject().get("script");
                 if (scriptEl != null && scriptEl.isJsonArray() && jsonToRaw(scriptEl) instanceof List<?> rawList) {
-                    buttonScripts.put(key, ScriptManager.compileBlock(rawList));
+                    buttonScripts.put(key, ScriptManager.compileScript(rawList));
                 }
             }
         }
