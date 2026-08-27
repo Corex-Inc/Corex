@@ -33,7 +33,7 @@ public class FinallyCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<commands>]";
+        return "";
     }
 
     @Override

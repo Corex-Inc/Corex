@@ -38,7 +38,7 @@ public class TryCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[<commands>]";
+        return "";
     }
 
     @Override

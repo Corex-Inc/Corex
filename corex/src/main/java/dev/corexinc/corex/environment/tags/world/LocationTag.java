@@ -32,7 +32,9 @@ import org.bukkit.util.Vector;
 import org.bukkit.util.noise.SimplexNoiseGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaterniond;
+import org.joml.Quaternionf;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
 
 import java.net.URL;
@@ -1757,6 +1759,50 @@ public class LocationTag implements AbstractTag, Flaggable {
             loc.setZ((y * sin) + (z * cos));
             return new LocationTag(loc, false);
         }).test("1,2,1").setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name toQuaternionLeft
+         * @RawName <LocationTag.toQuaternionLeft>
+         * @Object LocationTag
+         * @ReturnType QuaternionTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Converts the location's yaw and pitch into a left-handed quaternion rotation.
+         */
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "toQuaternionLeft", (attr, obj) -> {
+            float yaw = obj.getLocation().getYaw();
+            float pitch = obj.getLocation().getPitch();
+
+            Quaterniond quaternion = new Quaterniond();
+            quaternion.rotateX((float) Math.toRadians(pitch));
+            quaternion.rotateAxis((float) Math.toRadians(yaw), new Vector3d(0,-1,0));
+
+            return new QuaternionTag(quaternion);
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name toQuaternionRight
+         * @RawName <LocationTag.toQuaternionRight>
+         * @Object LocationTag
+         * @ReturnType QuaternionTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Converts the location's yaw and pitch into a right-handed quaternion rotation.
+         */
+        TAG_PROCESSOR.registerTag(QuaternionTag.class, "toQuaternionRight", (attr, obj) -> {
+            float yaw = obj.getLocation().getYaw();
+            float pitch = obj.getLocation().getPitch();
+
+            Quaterniond quaternion = new Quaterniond();
+            quaternion.rotateX((float) Math.toRadians(-pitch));
+            quaternion.rotateAxis((float) Math.toRadians(-yaw), new Vector3d(0,-1,0));
+
+            return new QuaternionTag(quaternion);
+        }).setAsyncSafe();
 
         /* @doc tag
          *

@@ -129,6 +129,29 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
 
         /* @doc tag
          *
+         * @Name itemModel
+         * @RawName <ItemTag.itemModel>
+         * @Object ItemTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Mechanism ItemTag.itemModel
+         * @Description
+         * Returns the item model key of the item, as a namespaced key like "minecraft:diamond_sword".
+         * Returns nothing when the item has no item model component set, which is
+         * the case for most items, so guard with .exists before using the result.
+         *
+         * @Implements ItemTag.item_model
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "itemModel", (attr, obj) -> {
+            ItemMeta itemMeta = obj.getItemStack().getItemMeta();
+            if (itemMeta == null || itemMeta.getItemModel() == null) {
+                return null;
+            }
+            return new ElementTag(itemMeta.getItemModel().toString());
+        }).setAvailableSince("1.21.2").ignoreTest();
+
+        /* @doc tag
+         *
          * @Name color
          * @RawName <ItemTag.color>
          * @Object ItemTag
@@ -378,6 +401,10 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
             if (meta.hasDisplayName() && meta.displayName() != null) {
                 String nameStr = LegacyComponentSerializer.legacySection().serialize(Objects.requireNonNull(meta.displayName()));
                 propertiesList.add("displayName=" + nameStr.replace(";", "\\;").replace("=", "\\="));
+            }
+
+            if (meta.getItemModel() != null) {
+                propertiesList.add("itemModel=" + meta.getItemModel().toString());
             }
         }
 

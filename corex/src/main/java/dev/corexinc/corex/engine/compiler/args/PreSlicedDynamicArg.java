@@ -75,6 +75,8 @@ public class PreSlicedDynamicArg implements CompiledArgument {
             if (currentObj == null) {
                 if (attr.getName().equals("ifNull") && attr.hasParam()) {
                     currentObj = ObjectFetcher.pickObject(attr.getParam());
+                } else if (attr.getName().equals("exists")) {
+                    currentObj = new ElementTag(false);
                 }
                 attr.fulfill(1);
                 continue;

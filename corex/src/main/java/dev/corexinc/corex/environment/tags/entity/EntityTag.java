@@ -509,6 +509,49 @@ public class EntityTag implements AbstractTag, Adjustable, Flaggable {
 
         /* @doc mechanism
          *
+         * @Name glowColor
+         * @Object EntityTag
+         * @Input ColorTag
+         * @Description
+         * Sets the glowing outline color of a Display entity (block_display, item_display, text_display),
+         * overriding the scoreboard team color. Accepts a ColorTag, a packed RGB integer
+         * (red*65536 + green*256 + blue), or a raw color string like '255,0,0' or '#FF0000'.
+         * An input of 'reset' or a negative integer removes the override, so the outline uses the
+         * team color again. The entity still needs <@link mechanism EntityTag.glowing> to actually
+         * show an outline. Only applies to Display entities, ignored otherwise.
+         *
+         * @Implements EntityTag.glow_color_override
+         *
+         * @Usage
+         * // Give a marker display a pure red outline.
+         * - adjust <[marker]> glowColor:<color[255,0,0]>
+         *
+         * @Usage
+         * // Feed a precomputed packed RGB value (used by shader data markers).
+         * - adjust <[marker]> glowColor:<[glowValue]>
+         */
+        registerMechanism("glowColor", "glow_color_override", EntityTag::nbtNumber, (target, val) -> {
+            if (!(target instanceof Display display)) return;
+            if (val instanceof ColorTag colorTag) {
+                display.setGlowColorOverride(Color.fromRGB(colorTag.red, colorTag.green, colorTag.blue));
+                return;
+            }
+            if (!(val instanceof ElementTag element)) return;
+            if (element.asString().equalsIgnoreCase("reset")) {
+                display.setGlowColorOverride(null);
+                return;
+            }
+            if (element.isInt()) {
+                int packed = element.asInt();
+                display.setGlowColorOverride(packed < 0 ? null : Color.fromRGB(packed & 0xFFFFFF));
+                return;
+            }
+            ColorTag parsed = new ColorTag(element.asString());
+            display.setGlowColorOverride(Color.fromRGB(parsed.red, parsed.green, parsed.blue));
+        });
+
+        /* @doc mechanism
+         *
          * @Name brightness
          * @Object EntityTag
          * @Input MapTag
