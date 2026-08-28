@@ -1,6 +1,6 @@
 package dev.corexinc.corex.environment.commands.core;
 
-import dev.corexinc.corex.Corex;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
@@ -204,7 +204,7 @@ public class FetchCommand implements AbstractCommand {
         HttpResponse.BodyHandler<?> bodyHandler;
         if (saveFile != null) {
             try {
-                File dataFolder = Corex.getInstance().getDataFolder();
+                File dataFolder = ScriptManager.getDataFolder().toFile();
                 File targetFile = new File(dataFolder, saveFile);
                 String basePath = dataFolder.getCanonicalPath();
                 String targetPath = targetFile.getCanonicalPath();

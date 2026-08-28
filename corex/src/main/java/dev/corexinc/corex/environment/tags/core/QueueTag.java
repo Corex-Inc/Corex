@@ -6,6 +6,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.RegionTag;
@@ -85,25 +86,6 @@ public class QueueTag implements AbstractTag {
 
         /* @doc tag
          *
-         * @Name region
-         * @RawName <QueueTag.region>
-         * @Object QueueTag
-         * @ReturnType RegionTag
-         * @NoArg
-         * @Async
-         * @Description
-         * Returns the region (thread) that this queue belongs to.
-         * If the queue has no anchor location, it returns the global region ('reg@global').
-         */
-        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> {
-            Position anchor = obj.queue.getAnchorPosition();
-            if (anchor == null) return new RegionTag("global");
-            Location loc = BukkitSchedulerAdapter.toLocation(anchor);
-            return new RegionTag(loc.getWorld(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
-        }).setAsyncSafe();
-
-        /* @doc tag
-         *
          * @Name returns
          * @RawName <QueueTag.returns>
          * @Object QueueTag
@@ -162,10 +144,34 @@ public class QueueTag implements AbstractTag {
          * @ReturnType PlayerTag
          * @NoArg
          * @Async
+         * @Modules PAPER
          * @Description
          * Returns a linked player of the queue.
+         * The Velocity port registers its own version of this tag, returning a proxy PlayerTag.
          */
-        TAG_PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer())).ignoreTest().setAsyncSafe();
+        TAG_PROCESSOR.registerTag(PlayerTag.class, "player", (attr, obj) -> ((PlayerTag) obj.queue.getPlayer()))
+                .ignoreTest().setAsyncSafe().setAvailableFor(Modules.PAPER);
+
+        /* @doc tag
+         *
+         * @Name region
+         * @RawName <QueueTag.region>
+         * @Object QueueTag
+         * @ReturnType RegionTag
+         * @NoArg
+         * @Async
+         * @Modules PAPER
+         * @Description
+         * Returns the region (thread) that this queue belongs to.
+         * If the queue has no anchor location, it returns the global region ('reg@global').
+         * A Velocity proxy has no worlds to divide into regions, so this tag does not exist there.
+         */
+        TAG_PROCESSOR.registerTag(RegionTag.class, "region", (attr, obj) -> {
+            Position anchor = obj.queue.getAnchorPosition();
+            if (anchor == null) return new RegionTag("global");
+            Location loc = BukkitSchedulerAdapter.toLocation(anchor);
+            return new RegionTag(loc.getWorld(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
+        }).setAsyncSafe().setAvailableFor(Modules.PAPER);
     }
 
     public QueueTag(String id) {
@@ -175,6 +181,10 @@ public class QueueTag implements AbstractTag {
 
     public QueueTag(ScriptQueue queue) {
         this.queue = queue;
+    }
+
+    public ScriptQueue getQueue() {
+        return queue;
     }
 
     @Override

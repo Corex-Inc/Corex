@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.utils.RandomTag;
 import org.bukkit.Bukkit;
@@ -55,14 +56,16 @@ public class UtilTag implements AbstractTag {
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Async
+         * @Modules PAPER
          * @Description
          * Returns the number of ticks since the server was started.
          * Note that this is NOT an accurate indicator for real server uptime, as ticks fluctuate based on server lag.
+         * A Velocity proxy has no tick loop, so this tag does not exist there.
          *
          * @Implements util.current_tick
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "serverTick", (attr, obj) ->
-                new ElementTag(Bukkit.getServer().getCurrentTick())).setAsyncSafe();
+                new ElementTag(Bukkit.getServer().getCurrentTick())).setAsyncSafe().setAvailableFor(Modules.PAPER);
 
         /* @doc tag
          *

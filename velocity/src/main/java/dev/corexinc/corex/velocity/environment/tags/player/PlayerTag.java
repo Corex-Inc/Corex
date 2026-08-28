@@ -12,7 +12,9 @@ import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.PlayerIdentity;
+import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
+import dev.corexinc.corex.environment.tags.core.QueueTag;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
@@ -87,6 +89,23 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             if (!attribute.hasParam()) return null;
             return new ElementTag(object.player.hasPermission(attribute.getParam()));
         });
+
+        /* @doc tag
+         *
+         * @Name player
+         * @RawName <QueueTag.player>
+         * @Object QueueTag
+         * @ReturnType PlayerTag
+         * @NoArg
+         * @Async
+         * @Modules VELOCITY
+         * @Description
+         * Returns a linked player of the queue, as a proxy PlayerTag.
+         * The Paper plugin registers its own version of this tag, returning a server PlayerTag.
+         */
+        QueueTag.TAG_PROCESSOR.registerTag(PlayerTag.class, "player", (attribute, object) ->
+                        ((PlayerTag) object.getQueue().getPlayer()))
+                .ignoreTest().setAsyncSafe().setAvailableFor(Modules.VELOCITY);
     }
 
     public Optional<Player> getPlayer() {
@@ -105,7 +124,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
 
     @Override
     public boolean isOnline() {
-        return player != null;
+        return player != null && player.isActive();
     }
 
     @Override
@@ -137,7 +156,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
 
     @Override
     public AbstractFlagTracker getFlagTracker() {
-        File dbFile = CorexVelocity.getInstance().getDataFolder().toFile();
+        File dbFile = new File(CorexVelocity.getInstance().getDataFolder().toFile(), "playerFlags.db");
         return new SqlFlagTracker(dbFile, player.getUniqueId().toString());
     }
 

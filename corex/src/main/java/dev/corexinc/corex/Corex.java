@@ -9,6 +9,7 @@ import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.CorexComputePool;
 import dev.corexinc.corex.environment.commands.core.FileCommand;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.utils.ServerVersion;
@@ -36,6 +37,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
+import java.io.File;
+
 public class Corex extends JavaPlugin {
 
     private static Corex instance;
@@ -54,13 +57,30 @@ public class Corex extends JavaPlugin {
         ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
         setupRuntimeFlags();
 
+        if (isCanvas()) {
+            Modules.setCurrent(Modules.CANVAS);
+        }
+        else if (isFolia()) {
+            Modules.setCurrent(Modules.FOLIA);
+        }
+        else {
+            Modules.setCurrent(Modules.PAPER);
+        }
+
         if (!isTest()) {
             PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
             PacketEvents.getAPI().load();
         }
 
         EnvironmentLoader.registerDefaults(this.registry);
-        EnvManager.load();
+
+        if (!new File(getDataFolder(), "secrets.env").exists()) {
+            try {
+                saveResource("secrets.env", false);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        EnvManager.load(getDataFolder());
+
         ScriptManager.setRegistry(registry);
     }
 

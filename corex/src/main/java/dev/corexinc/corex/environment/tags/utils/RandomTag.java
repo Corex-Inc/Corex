@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import org.bukkit.util.noise.SimplexNoiseGenerator;
@@ -224,10 +225,12 @@ public class RandomTag implements AbstractTag {
          * @ReturnType ElementTag(Decimal)
          * @ArgRequired
          * @Async
+         * @Modules PAPER
          * @Description
          * Returns a pseudo-random decimal number from -1 to 1, based on a Simplex Noise algorithm. See {@link url https://en.wikipedia.org/wiki/Simplex_noise}
          * Input map is like "x=1.0", or "x=1.0;y=2.0", or "x=1.0;y=2.0;z=3" or "x=1;y=2;z=3"
          * (That is: 1d, 2d, 3d, or 4d).
+         * A Velocity proxy has no noise generator, so this tag does not exist there.
          *
          * @Implements util.random_simplex
          */
@@ -254,7 +257,7 @@ public class RandomTag implements AbstractTag {
             }
 
             return new ElementTag(SimplexNoiseGenerator.getNoise(x, y, z));
-        }).test("x=1;y=2;z=14").setAsyncSafe();
+        }).test("x=1;y=2;z=14").setAsyncSafe().setAvailableFor(Modules.PAPER);
     }
 
     public RandomTag(String raw) {

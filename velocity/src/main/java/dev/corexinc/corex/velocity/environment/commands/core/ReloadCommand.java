@@ -5,7 +5,6 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.environment.events.EventRegistry;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import org.jspecify.annotations.NonNull;
 
@@ -37,7 +36,6 @@ public class ReloadCommand implements AbstractCommand {
             Debugger.report(queue, instruction);
             CorexVelocity.getInstance().getConfig().reload();
             Debugger.updateDebugMode(CorexVelocity.getInstance().getConfig().getString("logger.debug-mode", "default"));
-            EventRegistry.resetAll();
 
             ScriptManager.reloadScripts();
         } catch (Exception e) {

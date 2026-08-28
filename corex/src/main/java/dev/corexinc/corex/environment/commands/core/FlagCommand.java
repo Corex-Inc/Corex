@@ -1,6 +1,6 @@
 package dev.corexinc.corex.environment.commands.core;
 
-import dev.corexinc.corex.Corex;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.commands.ArgumentSchema;
 import dev.corexinc.corex.api.commands.ArgumentSet;
@@ -138,7 +138,7 @@ public class FlagCommand implements AbstractCommand {
             keyPath = rawArg.substring(0, colonIndex);
             String actionStr = rawArg.substring(colonIndex + 1);
 
-            action = Corex.getInstance().getRegistry().findAction(actionStr);
+            action = ScriptManager.getRegistry().findAction(actionStr);
             if (action != null) {
                 param = action.extractParam(actionStr);
             } else {

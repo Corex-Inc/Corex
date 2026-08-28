@@ -3,6 +3,7 @@ package dev.corexinc.corex.api.processors;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.ServerVersion;
 import org.jetbrains.annotations.ApiStatus.*;
@@ -214,6 +215,15 @@ public final class TagProcessor<T extends AbstractTag> {
         @Nullable
         public String availableBefore = null;
 
+        /**
+         * Modules this sub-tag is registered on.
+         * {@code null} means every module.
+         *
+         * @see TagRegistration#setAvailableFor(Modules...)
+         */
+        @Nullable
+        public Modules[] availableFor = null;
+
         /** The functional logic of this sub-tag. */
         private final BiFunction<Attribute, T, AbstractTag> action;
 
@@ -226,8 +236,13 @@ public final class TagProcessor<T extends AbstractTag> {
     /**
      * Fluent builder returned by {@link #registerTag} for configuring a sub-tag after registration.
      *
-     * <p>Calling {@link #setAvailableSince} or {@link #setAvailableBefore} triggers an immediate re-evaluation:
-     * the tag is either added to or removed from the registry depending on the current server version.</p>
+     * <p>Calling {@link #setAvailableSince}, {@link #setAvailableBefore} or {@link #setAvailableFor}
+     * triggers an immediate re-evaluation: the tag is either added to or removed from the registry
+     * depending on the current server version and module.</p>
+     *
+     * <p>A registration only ever removes its own entry, so the same sub-tag name may be registered
+     * from several places under different constraints (as {@code queue.player} is, once per module)
+     * without the order of registration mattering.</p>
      *
      * @param <T> the owner tag type.
      */
@@ -236,23 +251,44 @@ public final class TagProcessor<T extends AbstractTag> {
         private final TagData<T> data;
         private final String name;
         private final Map<String, TagData<T>> registry;
+        private final TagData<T> displaced;
 
         TagRegistration(TagData<T> data, String name, Map<String, TagData<T>> registry) {
             this.data = data;
             this.name = name;
             this.registry = registry;
+            this.displaced = registry.get(name);
             commit();
         }
 
         /**
-         * Evaluates version constraints and either adds or removes the tag from the registry.
+         * Evaluates the constraints and either adds or removes the tag from the registry.
+         *
+         * <p>Constraints arrive after construction, so the constructor has already inserted this
+         * handler by the time they are known. Backing out therefore restores whatever registration
+         * this one displaced, which is what lets two modules register the same name in any order.</p>
          */
         private void commit() {
-            if (isVersionCompatible()) {
+            if (isModuleCompatible() && isVersionCompatible()) {
                 registry.put(name, data);
-            } else {
-                registry.remove(name);
+            } else if (registry.remove(name, data) && displaced != null) {
+                registry.put(name, displaced);
             }
+        }
+
+        /**
+         * Returns {@code true} if the running module satisfies {@link TagData#availableFor}.
+         *
+         * @return {@code true} if this sub-tag belongs on the running module.
+         */
+        private boolean isModuleCompatible() {
+            if (data.availableFor == null) {
+                return true;
+            }
+            for (Modules module : data.availableFor) {
+                if (module.includes(Modules.getCurrent())) return true;
+            }
+            return false;
         }
 
         /**
@@ -352,6 +388,29 @@ public final class TagProcessor<T extends AbstractTag> {
          */
         public TagRegistration<T> setAvailableBefore(@NotNull String version) {
             this.data.availableBefore = version;
+            commit();
+            return this;
+        }
+
+        /**
+         * Registers this sub-tag only on the given Corex modules.
+         *
+         * <p>Use it for handlers that depend on something only one platform has, so the tag
+         * disappears instead of erroring on the other one. Without this call a sub-tag is
+         * registered everywhere.</p>
+         *
+         * <p>Example:</p>
+         * <pre>{@code
+         * PROCESSOR.registerTag(ElementTag.class, "serverTick", (attr, obj) -> ...)
+         *          .setAvailableFor(Modules.PAPER);
+         * // A Velocity proxy has no tick loop, so <util.serverTick> does not exist there.
+         * }</pre>
+         *
+         * @param modules the modules this sub-tag is available on.
+         * @return {@code this} for chaining.
+         */
+        public TagRegistration<T> setAvailableFor(@NotNull Modules... modules) {
+            this.data.availableFor = modules;
             commit();
             return this;
         }

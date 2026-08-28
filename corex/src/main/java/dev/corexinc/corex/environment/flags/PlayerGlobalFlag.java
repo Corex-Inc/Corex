@@ -5,7 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import org.jspecify.annotations.NonNull;
 
 public class PlayerGlobalFlag implements AbstractGlobalFlag {
@@ -16,9 +16,10 @@ public class PlayerGlobalFlag implements AbstractGlobalFlag {
 
     @Override
     public boolean execute(@NonNull ScriptQueue queue, @NonNull Instruction instruction, @NonNull CompiledArgument value) {
-        if (value.evaluate(queue) instanceof PlayerTag playerTag) {
+        AbstractTag evaluated = value.evaluate(queue);
+        if (evaluated instanceof PlayerIdentity) {
             AbstractTag previous = queue.getDefinition("__player");
-            queue.define("__player", playerTag);
+            queue.define("__player", evaluated);
 
             instruction.command.run(queue, instruction);
             queue.define("__player", previous);

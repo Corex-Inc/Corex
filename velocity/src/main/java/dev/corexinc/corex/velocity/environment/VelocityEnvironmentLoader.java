@@ -11,12 +11,17 @@ import dev.corexinc.corex.velocity.environment.commands.player.NarrateCommand;
 // Containers
 import dev.corexinc.corex.environment.containers.TaskContainer;
 // Formatters
-import dev.corexinc.corex.environment.formatters.ColorFormatter;
+import dev.corexinc.corex.environment.formatters.*;
 // Tags
 import dev.corexinc.corex.environment.tags.core.*;
+import dev.corexinc.corex.environment.tags.utils.RandomTag;
 import dev.corexinc.corex.velocity.environment.tags.core.ServerTag;
 import dev.corexinc.corex.velocity.environment.tags.core.VelocityTag;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
+// DataActions
+import dev.corexinc.corex.environment.data.actions.*;
+// GlobalFlags
+import dev.corexinc.corex.environment.flags.*;
 
 public class VelocityEnvironmentLoader {
 
@@ -67,6 +72,14 @@ public class VelocityEnvironmentLoader {
                 SwitchDefaultCommand.class, // Switch subcommand
                 IfCommand.class,
                 IfElseCommand.class, // If subcommand
+                TryCommand.class,
+                CatchCommand.class, // Try subcommand
+                FinallyCommand.class, // Try subcommand
+                AsyncCommand.class,
+                AdjustCommand.class,
+                FlagCommand.class,
+                FetchCommand.class,
+                WebsocketCommand.class,
                 InjectCommand.class,
                 ReturnCommand.class,
                 StopCommand.class,
@@ -80,12 +93,45 @@ public class VelocityEnvironmentLoader {
                 MapTag.class,
                 DurationTag.class,
                 ColorTag.class,
+                ContextTag.class,
+                EnvTag.class,
+                UtilTag.class,
+                RandomTag.class,
+                QueueTag.class,
 
                 // Formatters
+                NewLineFormatter.class,
+                SpaceFormatter.class,
+                CharFormatter.class,
+                SpriteFormatter.class,
                 ColorFormatter.class,
+                HeadFormatter.class,
+                FontFormatter.class,
+                GradientFormatter.class,
+                KeybindFormatter.class,
+                ParagraphFormatter.class,
+                ScoreFormatter.class,
+                TranslateFormatter.class,
 
                 // Script containers
-                TaskContainer.class
+                TaskContainer.class,
+
+                // Global Flags
+                IfGlobalFlag.class,
+                PlayerGlobalFlag.class,
+                SaveGlobalFlag.class,
+
+                // Data Actions
+                IncrementAction.class,
+                DecrementAction.class,
+                AddNumberAction.class,
+                SubNumberAction.class,
+                AddToListAction.class,
+                RemoveFromListAction.class,
+                MergeListsAction.class,
+                PutIfAbsentAction.class,
+                UndefineAction.class,
+                AssignAction.class
 
         );
     }

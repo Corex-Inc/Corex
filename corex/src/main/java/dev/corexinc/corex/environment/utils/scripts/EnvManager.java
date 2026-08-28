@@ -1,8 +1,6 @@
 package dev.corexinc.corex.environment.utils.scripts;
 
-import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.engine.utils.CorexLogger;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -14,22 +12,15 @@ public class EnvManager {
 
     private static final Map<String, String> secrets = new HashMap<>();
 
-    public static void load() {
-        JavaPlugin plugin = Corex.getInstance();
+    public static void load(File dataFolder) {
         secrets.clear();
-        File envFile = new File(plugin.getDataFolder(), "secrets.env");
+        File envFile = new File(dataFolder, "secrets.env");
 
         if (!envFile.exists()) {
             try {
-                plugin.saveResource("secrets.env", false);
-            } catch (IllegalArgumentException e) {
-                try {
-                    if (!plugin.getDataFolder().exists()) {
-                        plugin.getDataFolder().mkdirs();
-                    }
-                    envFile.createNewFile();
-                } catch (Exception ignored) {}
-            }
+                dataFolder.mkdirs();
+                envFile.createNewFile();
+            } catch (Exception ignored) {}
         }
 
         try {
