@@ -1,6 +1,7 @@
 package dev.corexinc.corex.velocity;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
@@ -9,6 +10,10 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonResolver;
+import dev.corexinc.corex.velocity.environment.addons.VelocityAddonResolver;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
@@ -57,7 +62,15 @@ public class CorexVelocity {
         }
     }
 
-    @Subscribe
+    /**
+     * Builds the engine before anything else on the proxy gets to see the initialize event, so an
+     * addon subscribing to it at normal priority finds the registries ready.
+     *
+     * <p>The ordering is stated twice because Velocity moved from {@code order} to {@code priority}
+     * and honours whichever of the two its build understands.</p>
+     */
+    @SuppressWarnings("deprecation")
+    @Subscribe(order = PostOrder.FIRST, priority = Short.MAX_VALUE)
     public void onInit(ProxyInitializeEvent event) {
         instance = this;
 
@@ -76,14 +89,34 @@ public class CorexVelocity {
         EnvManager.load(dataFolder.toFile());
         Debugger.updateDebugMode(config.getString("logger.debug-mode", "default"));
 
-        this.registry = new CorexRegistry();
-        VelocityEnvironmentLoader.registerDefaults(this.registry);
+        AddonManager.reset();
+        AddonResolver.set(new VelocityAddonResolver(server, this));
 
+        this.registry = new CorexRegistry();
         ScriptManager.setDataFolder(dataFolder);
         ScriptManager.setRegistry(registry);
-        ScriptManager.loadScripts();
+
+        AddonManager.openScope(AddonOwner.CORE);
+        try {
+            VelocityEnvironmentLoader.registerDefaults(this.registry);
+        }
+        finally {
+            AddonManager.closeScope(AddonOwner.CORE);
+        }
 
         registerCommands();
+    }
+
+    /**
+     * Compiles the scripts once every other plugin has had its turn at the initialize event, which
+     * is the proxy's equivalent of compiling after the last {@code onLoad()}. Addons register in
+     * between the two handlers.
+     */
+    @SuppressWarnings("deprecation")
+    @Subscribe(order = PostOrder.LAST, priority = Short.MIN_VALUE)
+    public void onAddonsRegistered(ProxyInitializeEvent event) {
+        AddonManager.seal();
+        ScriptManager.loadScripts();
     }
 
     @Subscribe

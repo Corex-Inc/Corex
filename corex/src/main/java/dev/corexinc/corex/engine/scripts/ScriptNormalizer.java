@@ -1,35 +1,93 @@
 package dev.corexinc.corex.engine.scripts;
 
+import dev.corexinc.corex.api.scripts.ScriptComment;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
-public class ScriptPreprocessor {
+/**
+ * Turns a {@code .cx} file into valid YAML.
+ *
+ * <p>Comments come out, folded continuation lines are joined onto the line they belong to, and
+ * command lines are quoted so that a colon inside one does not read as a YAML mapping. This is
+ * Corex's own normalization step, not the addon hook: that one is
+ * {@link dev.corexinc.corex.api.scripts.AbstractPreprocessor}, and it runs around this.</p>
+ */
+public class ScriptNormalizer {
 
+    /**
+     * Stands in for {@code #} between normalization and parsing, so a hash inside a script is not
+     * read as the start of a YAML comment.
+     */
+    public static final char HASH_PLACEHOLDER = '\uE000';
+
+    /**
+     * Replaces every {@code #} with {@link #HASH_PLACEHOLDER}.
+     *
+     * @param text the text to escape.
+     * @return the escaped text.
+     */
+    public static String escapeHashes(String text) {
+        return text.indexOf('#') == -1 ? text : text.replace('#', HASH_PLACEHOLDER);
+    }
+
+    /**
+     * Normalizes a script into YAML, throwing its comments away.
+     *
+     * @param rawLines the file contents.
+     * @return the YAML text.
+     */
     public static String preprocess(List<String> rawLines) {
+        return preprocess(rawLines, null);
+    }
+
+    /**
+     * Normalizes a script into YAML, optionally keeping the comments it strips.
+     *
+     * @param rawLines the file contents.
+     * @param comments a list to collect comments into, or {@code null} to discard them. Corex
+     *                 passes one only when an addon asked for
+     *                 {@link dev.corexinc.corex.api.scripts.PreprocessStage#COMMENTS}, so the
+     *                 collection costs nothing when nobody wants it.
+     * @return the YAML text.
+     */
+    public static String preprocess(List<String> rawLines, @Nullable List<ScriptComment> comments) {
         StringBuilder result = new StringBuilder();
         StringBuilder currentLine = new StringBuilder();
         boolean inBlockComment = false;
+        int lineNumber = 0;
 
         for (String line : rawLines) {
+            lineNumber++;
 
             line = line.replace("\t", "    ");
-            line = line.replace("#", "\uE000");
+            line = escapeHashes(line);
 
             if (inBlockComment) {
                 int endIdx = line.indexOf("*/");
-                if (endIdx == -1) continue;
+                if (endIdx == -1) {
+                    collect(comments, lineNumber, line, true);
+                    continue;
+                }
+                collect(comments, lineNumber, line.substring(0, endIdx), true);
                 inBlockComment = false;
                 line = line.substring(endIdx + 2);
             }
 
-            line = stripInlineBlockComments(line);
+            line = stripInlineBlockComments(line, comments, lineNumber);
 
             int blockStart = line.indexOf("/*");
             if (blockStart != -1) {
                 inBlockComment = true;
+                collect(comments, lineNumber, line.substring(blockStart + 2), true);
                 line = line.substring(0, blockStart);
             }
 
-            line = stripLineComment(line);
+            String withoutLineComment = stripLineComment(line);
+            if (comments != null && withoutLineComment.length() != line.length()) {
+                collect(comments, lineNumber, line.substring(withoutLineComment.length() + 2), false);
+            }
+            line = withoutLineComment;
 
             String trimmed = line.trim();
             if (trimmed.isEmpty()) continue;
@@ -50,13 +108,27 @@ public class ScriptPreprocessor {
         return result.toString();
     }
 
-    private static String stripInlineBlockComments(String line) {
+    private static void collect(@Nullable List<ScriptComment> comments, int line, String text, boolean block) {
+        if (comments == null) return;
+
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) return;
+
+        comments.add(new ScriptComment(line, restoreHashes(trimmed), block));
+    }
+
+    private static String restoreHashes(String text) {
+        return text.indexOf(HASH_PLACEHOLDER) == -1 ? text : text.replace(HASH_PLACEHOLDER, '#');
+    }
+
+    private static String stripInlineBlockComments(String line, @Nullable List<ScriptComment> comments, int lineNumber) {
         StringBuilder sb = new StringBuilder();
         int i = 0;
         while (i < line.length()) {
             if (i + 1 < line.length() && line.charAt(i) == '/' && line.charAt(i + 1) == '*') {
                 int end = line.indexOf("*/", i + 2);
                 if (end != -1) {
+                    collect(comments, lineNumber, line.substring(i + 2, end), true);
                     i = end + 2;
                 } else {
                     sb.append(line, i, line.length());

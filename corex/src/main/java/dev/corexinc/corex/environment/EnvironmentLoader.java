@@ -4,8 +4,10 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.engine.registry.RegistryExtension;
 import dev.corexinc.corex.environment.commands.entity.FakeSpawnCommand;
 import dev.corexinc.corex.environment.containers.commands.CommandContainer;
+import dev.corexinc.corex.environment.events.AbstractEvent;
 import dev.corexinc.corex.environment.events.EventRegistry;
 // NMS
 import dev.corexinc.corex.environment.utils.adapters.*;
@@ -37,7 +39,23 @@ import dev.corexinc.corex.environment.data.actions.*;
 import dev.corexinc.corex.environment.flags.*;
 
 public class EnvironmentLoader {
+
+    /**
+     * Routes event classes to {@link EventRegistry}, which {@link CorexRegistry} cannot dispatch
+     * itself: an event extends a Bukkit listener, a type the engine has no name for. Installing it
+     * here lets an addon hand its events to the registrar along with everything else.
+     */
+    private static final RegistryExtension EVENT_EXTENSION = component -> {
+        if (!AbstractEvent.class.isAssignableFrom(component)) {
+            return false;
+        }
+        EventRegistry.register(component);
+        return true;
+    };
+
     public static void registerDefaults(CorexRegistry registry) {
+
+        CorexRegistry.addExtension(EVENT_EXTENSION);
 
         // ---------- NMS (Net.Minecraft.Server) ----------
 

@@ -4,6 +4,9 @@ import com.google.gson.Gson;
 import dev.corexinc.corex.api.commands.DataBlockCommand;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.api.containers.PathType;
+import dev.corexinc.corex.api.scripts.PreprocessStage;
+import dev.corexinc.corex.api.scripts.ScriptComment;
+import dev.corexinc.corex.api.scripts.ScriptSource;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.SlotAllocator;
@@ -25,68 +28,150 @@ public class ScriptManager {
     private static Path dataFolder;
     private static CorexRegistry registry;
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Reads, preprocesses and compiles the whole scriptpack.
+     *
+     * <p>It runs in two passes. Every file is read, normalized and parsed first, and only once the
+     * last one is in does anything get compiled. That ordering is what lets an addon pass see the
+     * whole pack before a single command has been resolved, and it means a syntax error is reported
+     * against the scripts as they finally are rather than as they were halfway through loading.</p>
+     */
     public static void loadScripts() {
-        Map<String, AbstractContainer> loaded = new HashMap<>();
-        File scriptsFolder = new File(dataFolder.toFile(), "scripts");
-        if (!scriptsFolder.exists()) {
-            scriptsFolder.mkdirs();
-            File readme = new File(scriptsFolder, "readme.txt");
-            try (var stream = ScriptManager.class.getResourceAsStream("/scripts/readme.txt")) {
-                if (stream != null) Files.copy(stream, readme.toPath());
-            } catch (Exception ignored) {}
-        }
+        File scriptsFolder = prepareScriptsFolder();
 
         List<File> files = new ArrayList<>();
         findScriptsRecursively(scriptsFolder, files);
-        int loadedCount = 0;
 
+        PreprocessorRegistry preprocessors = registry.getPreprocessors();
+        preprocessors.reportChains();
+
+        List<ScriptSource> sources = new ArrayList<>(files.size());
         for (File file : files) {
-            try {
-                List<String> rawLines = Files.readAllLines(file.toPath());
-                String cleanYaml = ScriptPreprocessor.preprocess(rawLines);
-
-                Map<String, Object> parsed = new Yaml().load(cleanYaml);
-                if (parsed == null) continue;
-
-                parsed = (Map<String, Object>) restoreHashes(parsed);
-
-                for (Map.Entry<String, Object> entry : parsed.entrySet()) {
-                    String scriptName = entry.getKey();
-                    if (!(entry.getValue() instanceof Map<?, ?> rawSection)) continue;
-
-                    Map<String, Object> section = (Map<String, Object>) rawSection;
-
-                    if (!(section.get("type") instanceof String type)) continue;
-
-                    Class<? extends AbstractContainer> clazz = registry.getContainerClass(type);
-                    if (clazz == null) {
-                        CorexLogger.warn("Script " + scriptName + " is using unknown type: " + type);
-                        continue;
-                    }
-
-                    AbstractContainer container = clazz.getDeclaredConstructor().newInstance();
-                    container.init(scriptName, GSON.toJsonTree(section).getAsJsonObject());
-
-                    for (String path : flatKeys(section)) {
-                        if (container.resolvePath(path) == PathType.SCRIPT) {
-                            List<?> rawCommands = getNestedList(section, path);
-                            if (rawCommands != null) container.addCompiledScript(path, compileScript(rawCommands));
-                        }
-                    }
-
-                    AbstractContainer previous = loaded.put(scriptName, container);
-                    if (previous != null) {
-                        CorexLogger.warn("Duplicate script name '" + scriptName + "' - the definition in " + file.getName() + " overrides an earlier one!");
-                    }
-                    loadedCount++;
-                }
-            } catch (Exception e) {
-                CorexLogger.error("ERROR while reloading script " + file.getName() + ": " + e.getMessage());
-            }
+            ScriptSource source = readSource(file, preprocessors);
+            if (source != null) sources.add(source);
         }
+
+        preprocessors.runAllParsed(sources);
+
+        Map<String, AbstractContainer> loaded = new HashMap<>();
+        int loadedCount = 0;
+        for (ScriptSource source : sources) {
+            loadedCount += buildContainers(source, loaded);
+        }
+
         containers = loaded;
         CorexLogger.success("Loaded <aqua>" + loadedCount + "</aqua> containers!");
+    }
+
+    private static File prepareScriptsFolder() {
+        File scriptsFolder = new File(dataFolder.toFile(), "scripts");
+        if (scriptsFolder.exists()) {
+            return scriptsFolder;
+        }
+
+        scriptsFolder.mkdirs();
+        File readme = new File(scriptsFolder, "readme.txt");
+        try (java.io.InputStream stream = ScriptManager.class.getResourceAsStream("/scripts/readme.txt")) {
+            if (stream != null) Files.copy(stream, readme.toPath());
+        } catch (Exception ignored) {}
+        return scriptsFolder;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ScriptSource readSource(File file, PreprocessorRegistry preprocessors) {
+        try {
+            ScriptSource source = new ScriptSource(file.toPath(), Files.readAllLines(file.toPath()));
+            preprocessors.runRawScript(source);
+
+            if (preprocessors.hasStage(PreprocessStage.COMMENTS)) {
+                List<ScriptComment> comments = new ArrayList<>();
+                source.setYaml(ScriptNormalizer.preprocess(source.getLines(), comments));
+                source.setComments(comments);
+                preprocessors.runComments(source);
+            } else {
+                source.setYaml(ScriptNormalizer.preprocess(source.getLines()));
+            }
+
+            preprocessors.runRawYaml(source);
+
+            Map<String, Object> parsed = parseYaml(source);
+            if (parsed == null) return null;
+
+            source.setTree((Map<String, Object>) restoreHashes(parsed));
+            preprocessors.runParsedYaml(source);
+
+            return source;
+        } catch (Exception e) {
+            CorexLogger.error("ERROR while reading script " + file.getName() + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseYaml(ScriptSource source) {
+        try {
+            return (Map<String, Object>) new Yaml().load(source.getYaml());
+        } catch (Exception failure) {
+            List<String> touched = new ArrayList<>(source.getTouchedBy(PreprocessStage.RAW_SCRIPT));
+            touched.addAll(source.getTouchedBy(PreprocessStage.RAW_YAML));
+
+            String blame = touched.isEmpty()
+                    ? ""
+                    : " It was rewritten by " + String.join(", ", touched) + ", which is the first thing to suspect.";
+
+            CorexLogger.error("Script " + source.getFileName() + " is not valid YAML: "
+                    + failure.getMessage() + "." + blame);
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int buildContainers(ScriptSource source, Map<String, AbstractContainer> loaded) {
+        Map<String, Object> tree = source.getTree();
+        if (tree == null) return 0;
+
+        int built = 0;
+        for (Map.Entry<String, Object> entry : tree.entrySet()) {
+            String scriptName = entry.getKey();
+            if (!(entry.getValue() instanceof Map<?, ?> rawSection)) continue;
+
+            Map<String, Object> section = (Map<String, Object>) rawSection;
+
+            if (!(section.get("type") instanceof String type)) continue;
+
+            Class<? extends AbstractContainer> clazz = registry.getContainerClass(type);
+            if (clazz == null) {
+                CorexLogger.warn("Script " + scriptName + " is using unknown type: " + type);
+                continue;
+            }
+
+            try {
+                AbstractContainer container = clazz.getDeclaredConstructor().newInstance();
+                container.init(scriptName, GSON.toJsonTree(section).getAsJsonObject());
+
+                for (String path : flatKeys(section)) {
+                    if (container.resolvePath(path) != PathType.SCRIPT) continue;
+
+                    List<?> rawCommands = getNestedList(section, path);
+                    if (rawCommands == null) continue;
+
+                    List<?> block = registry.getPreprocessors()
+                            .runScriptBlock(source, scriptName, path, rawCommands);
+                    container.addCompiledScript(path, compileScript(block));
+                }
+
+                AbstractContainer previous = loaded.put(scriptName, container);
+                if (previous != null) {
+                    CorexLogger.warn("Duplicate script name '" + scriptName + "' - the definition in "
+                            + source.getFileName() + " overrides an earlier one!");
+                }
+                built++;
+            } catch (Exception e) {
+                CorexLogger.error("ERROR while compiling script " + scriptName + " in "
+                        + source.getFileName() + ": " + e.getMessage());
+            }
+        }
+        return built;
     }
 
     private static Set<String> flatKeys(Map<String, Object> map) {
@@ -214,7 +299,9 @@ public class ScriptManager {
     @SuppressWarnings("unchecked")
     private static Object restoreHashes(Object obj) {
         if (obj instanceof String str) {
-            return str.contains("\uE000") ? str.replace('\uE000', '#') : str;
+            return str.indexOf(ScriptNormalizer.HASH_PLACEHOLDER) == -1
+                    ? str
+                    : str.replace(ScriptNormalizer.HASH_PLACEHOLDER, '#');
         } else if (obj instanceof List<?> list) {
             boolean changed = false;
             List<Object> newList = new ArrayList<>(list.size());

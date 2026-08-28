@@ -1,5 +1,8 @@
 package dev.corexinc.corex.engine.utils.debugging;
 
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonOwnership;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -135,6 +138,7 @@ public class Debugger {
         StackTraceElement[] trace = cause.getStackTrace();
         for (int i = 0; i < Math.min(5, trace.length); i++)
             CorexLogger.error(mirror, indent(depth + 2) + "<dark_red>at <red>" + trace[i]);
+        blame(mirror, cause, depth + 1);
     }
 
     public static void error(String message) {
@@ -154,6 +158,18 @@ public class Debugger {
                 CorexLogger.error("  <dark_red>at <red>" + trace[i]);
             unwrapped = unwrapped.getCause();
         }
+        blame(null, cause, 0);
+    }
+
+    /**
+     * Names the addon whose code appears in a stack trace, so a crash inside a third-party
+     * component is not read as a Corex bug.
+     */
+    private static void blame(Audience mirror, Throwable cause, int depth) {
+        AddonOwner suspect = AddonManager.blame(cause);
+        if (suspect == null || suspect.isCore()) return;
+        CorexLogger.error(mirror, indent(depth) + "<gold>Thrown from " + suspect.label()
+                + " <dark_gray>(" + suspect.fullName() + ")<gold>, report it there, not to Corex.");
     }
 
     public static void echoError(ScriptQueue queue, String message) {
@@ -175,6 +191,13 @@ public class Debugger {
             String cmdName = inst != null ? inst.command.getName().toUpperCase() : "UNKNOWN";
             CorexLogger.error(mirror, styleOf(queue).bar + " ERROR while executing command '<yellow>" + cmdName + "</yellow>'!");
             CorexLogger.error(mirror, styleOf(queue).bar + "  <gray>Error Message:</gray> <white>" + errors.getFirst().replace("§", "&"));
+
+            String provider = inst != null
+                    ? AddonOwnership.describe(AddonOwnership.Kind.COMMAND, inst.command.getName().toLowerCase())
+                    : null;
+            if (provider != null) {
+                CorexLogger.error(mirror, styleOf(queue).bar + "  <gold>" + provider);
+            }
             queue.setErrorHeaderPrinted(true);
         }
         if (errors.size() != 1) {

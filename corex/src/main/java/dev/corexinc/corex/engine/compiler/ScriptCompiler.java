@@ -30,6 +30,15 @@ public class ScriptCompiler {
     }
 
     public static Instruction compile(String rawLine, Instruction[] innerBlock) {
+        return compile(rawLine, innerBlock, true);
+    }
+
+    /**
+     * @param allowRewrite whether an unknown command may be handed to the addon passes. False while
+     *                     compiling what a pass already handed back, so a pass returning something
+     *                     equally unknown cannot loop.
+     */
+    private static Instruction compile(String rawLine, Instruction[] innerBlock, boolean allowRewrite) {
         List<String> tokens = tokenize(rawLine.trim());
         if (tokens.isEmpty()) return null;
 
@@ -46,6 +55,11 @@ public class ScriptCompiler {
         CommandMetadata meta = ScriptManager.getRegistry().getScriptCommands().getMetadata(cmdName);
 
         if (meta == null) {
+            if (allowRewrite) {
+                String rewritten = ScriptManager.getRegistry().getPreprocessors()
+                        .resolveUnknownLine(rawLine.trim());
+                if (rewritten != null) return compile(rewritten, innerBlock, false);
+            }
             CorexLogger.error("Unknown script command '<yellow>" + cmdName + "</yellow>'!");
             return null;
         }

@@ -3,6 +3,10 @@ package dev.corexinc.corex;
 import com.github.retrooper.packetevents.PacketEvents;
 import dev.corexinc.corex.api.containers.AbstractContainer;
 import dev.corexinc.corex.engine.CorexRegistry;
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonResolver;
+import dev.corexinc.corex.environment.addons.BukkitAddonResolver;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
@@ -53,6 +57,10 @@ public class Corex extends JavaPlugin {
     public void onLoad() {
         instance = this;
         this.registry = new CorexRegistry();
+        ScriptManager.setRegistry(registry);
+
+        AddonManager.reset();
+        AddonResolver.set(new BukkitAddonResolver());
 
         ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
         setupRuntimeFlags();
@@ -72,7 +80,13 @@ public class Corex extends JavaPlugin {
             PacketEvents.getAPI().load();
         }
 
-        EnvironmentLoader.registerDefaults(this.registry);
+        AddonManager.openScope(AddonOwner.CORE);
+        try {
+            EnvironmentLoader.registerDefaults(this.registry);
+        }
+        finally {
+            AddonManager.closeScope(AddonOwner.CORE);
+        }
 
         if (!new File(getDataFolder(), "secrets.env").exists()) {
             try {
@@ -80,8 +94,6 @@ public class Corex extends JavaPlugin {
             } catch (IllegalArgumentException ignored) {}
         }
         EnvManager.load(getDataFolder());
-
-        ScriptManager.setRegistry(registry);
     }
 
     @Override
@@ -115,6 +127,7 @@ public class Corex extends JavaPlugin {
         registerCommands();
 
         ScriptManager.setDataFolder(getDataFolder().toPath());
+        AddonManager.seal();
         ScriptManager.loadScripts();
 
         CommandManager.INSTANCE.updateContainers(
