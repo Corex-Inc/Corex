@@ -385,7 +385,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
             }
 
             return null;
-        }).setAvailableSince("1.21.11");
+        }).ignoreTest().setAvailableSince("1.21.11");
 
         /* @doc tag
          *
@@ -406,7 +406,7 @@ public class BiomeTag implements AbstractTag, Adjustable {
          * - narrate "Available biome attributes: <biome[minecraft:plains].attributeNames.join[, ]>"
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "attributeNames", (attr, obj) ->
-                new ListTag(nms.getAttributes())).setAvailableSince("1.21.11").setAsyncSafe();
+                new ListTag(nms.getAttributes())).setAvailableSince("1.21.11").ignoreTest().setAsyncSafe();
 
         /* @doc mechanism
          *

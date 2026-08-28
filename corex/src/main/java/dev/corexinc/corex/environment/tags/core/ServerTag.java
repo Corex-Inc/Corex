@@ -306,7 +306,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
         TAG_PROCESSOR.registerTag(ElementTag.class, "hasFile", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             return new ElementTag(new File(attr.getParam()).exists());
-        }).setAsyncSafe();
+        }).test("config.yml").setAsyncSafe();
 
         /* @doc tag
          *
@@ -597,7 +597,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 }
             }
             return best == null ? null : new PlayerTag(best);
-        }).setAsyncSafe();
+        }).test("TestPlayer").setAsyncSafe();
 
         /* @doc tag
          *
@@ -656,7 +656,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             ListTag list = new ListTag();
             for (Material material : Material.values()) list.addObject(new MaterialTag(material));
             return list;
-        }).setAsyncSafe();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -736,7 +736,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 list.addObject(new BiomeTag(world.getName() + "," + key.toString()));
             }
             return list;
-        }).setAsyncSafe();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -761,7 +761,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             Iterator<Advancement> it = Bukkit.advancementIterator();
             while (it.hasNext()) list.addString(it.next().getKey().toString());
             return list;
-        }).setAsyncSafe();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -812,7 +812,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             }
 
             return list;
-        }).setAsyncSafe();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -842,7 +842,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
                 }
             }
             return list;
-        }).setAsyncSafe();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *
@@ -882,7 +882,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             Date expiration = entry.getExpiration();
             map.putObject("expirationTime", new ElementTag(expiration != null ? expiration.toInstant().toString() : "never"));
             return map;
-        }).setAsyncSafe();
+        }).ignoreTest().setAsyncSafe();
 
         /* @doc tag
          *

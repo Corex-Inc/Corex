@@ -193,7 +193,7 @@ public class QuaternionTag implements AbstractTag {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
             return new QuaternionTag(obj.q.x + other.q.x, obj.q.y + other.q.y, obj.q.z + other.q.z, obj.q.w + other.q.w);
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -213,7 +213,7 @@ public class QuaternionTag implements AbstractTag {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
             return wrap(new Quaterniond(obj.q).mul(other.q));
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -235,7 +235,7 @@ public class QuaternionTag implements AbstractTag {
             if (!scale.isDouble()) return null;
             double s = scale.asDouble();
             return new QuaternionTag(obj.q.x * s, obj.q.y * s, obj.q.z * s, obj.q.w * s);
-        }).setAsyncSafe();
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *
@@ -353,7 +353,7 @@ public class QuaternionTag implements AbstractTag {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
             return wrap(new Quaterniond(obj.q).mul(new Quaterniond(other.q).conjugate()));
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -376,7 +376,7 @@ public class QuaternionTag implements AbstractTag {
             obj.q.transform(vec);
 
             return new LocationTag(new Location(null, vec.x, vec.y, vec.z));
-        }).setAsyncSafe();
+        }).test("l@1,1,1,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -450,7 +450,7 @@ public class QuaternionTag implements AbstractTag {
             Vector3d newForward = twist.transform(new Vector3d(1, 0, 0));
 
             return new ElementTag(vecToAngle(newForward.x, newForward.y));
-        }).setAsyncSafe();
+        }).test("l@0,1,0,world").setAsyncSafe();
 
         /* @doc tag
          *
@@ -475,7 +475,7 @@ public class QuaternionTag implements AbstractTag {
 
             attr.fulfill(1);
             return wrap(new Quaterniond(obj.q).slerp(end.q, amountTag.asDouble()));
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1", "amount[0.5]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -497,7 +497,7 @@ public class QuaternionTag implements AbstractTag {
             QuaternionTag other = attr.getParamObject(QuaternionTag.class, QuaternionTag::new);
             if (other == null) return null;
             return new ElementTag(obj.q.x * other.q.x + obj.q.y * other.q.y + obj.q.z * other.q.z + obj.q.w * other.q.w);
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -520,7 +520,7 @@ public class QuaternionTag implements AbstractTag {
             double dot = obj.q.x * other.q.x + obj.q.y * other.q.y + obj.q.z * other.q.z + obj.q.w * other.q.w;
             double clamped = Math.min(1.0, Math.abs(dot));
             return new ElementTag(2.0 * Math.acos(clamped));
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1").setAsyncSafe();
 
         /* @doc tag
          *
@@ -547,7 +547,7 @@ public class QuaternionTag implements AbstractTag {
 
             attr.fulfill(1);
             return wrap(new Quaterniond(obj.q).nlerp(end.q, amountTag.asDouble()));
-        }).setAsyncSafe();
+        }).test("quat@0,0,0,1", "amount[0.5]").setAsyncSafe();
 
         /* @doc tag
          *
@@ -571,7 +571,7 @@ public class QuaternionTag implements AbstractTag {
             ElementTag tTag = new ElementTag(attr.getParam());
             if (!tTag.isDouble()) return null;
             return powImpl(obj.q, tTag.asDouble());
-        }).setAsyncSafe();
+        }).test("2").setAsyncSafe();
 
         /* @doc tag
          *

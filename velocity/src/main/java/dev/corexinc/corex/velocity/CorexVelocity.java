@@ -17,7 +17,7 @@ import dev.corexinc.corex.velocity.environment.utils.ConfigManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
-import dev.corexinc.corex.velocity.environment.utils.VelocityEnvironmentLoader;
+import dev.corexinc.corex.velocity.environment.VelocityEnvironmentLoader;
 import dev.corexinc.corex.velocity.environment.utils.VelocitySchedulerAdapter;
 import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunCommand;
 

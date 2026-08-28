@@ -46,14 +46,16 @@ public class Corex extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
-        PacketEvents.getAPI().load();
-
         instance = this;
         this.registry = new CorexRegistry();
 
         ServerVersion.setCurrent(Bukkit.getBukkitVersion().split("-")[0]);
         setupRuntimeFlags();
+
+        if (!isTest()) {
+            PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+            PacketEvents.getAPI().load();
+        }
 
         EnvironmentLoader.registerDefaults(this.registry);
         EnvManager.load();
@@ -65,12 +67,14 @@ public class Corex extends JavaPlugin {
         SchedulerAdapter.set(new BukkitSchedulerAdapter());
         CorexLogger.setConsole(Bukkit.getConsoleSender());
 
-        SpigotEntityLibPlatform platform = new SpigotEntityLibPlatform(this);
-        APIConfig settings = new APIConfig(PacketEvents.getAPI())
-                .tickTickables()
-                .usePlatformLogger();
+        if (!isTest()) {
+            SpigotEntityLibPlatform platform = new SpigotEntityLibPlatform(this);
+            APIConfig settings = new APIConfig(PacketEvents.getAPI())
+                    .tickTickables()
+                    .usePlatformLogger();
 
-        EntityLib.init(platform, settings);
+            EntityLib.init(platform, settings);
+        }
 
         silenceHikariLogs();
         CorexLogger.info("<#8ce6ff>Welcome to Corex<white>!");

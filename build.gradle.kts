@@ -51,6 +51,8 @@ tasks {
         archiveBaseName.set("Corex")
         archiveClassifier.set("")
         archiveVersion.set("1.0-SNAPSHOT")
+
+        dependsOn(":corex:test")
     }
     build {
         dependsOn(shadowJar)

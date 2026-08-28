@@ -1,4 +1,4 @@
-package dev.corexinc.corex.velocity.environment.utils;
+package dev.corexinc.corex.velocity.environment;
 
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.GlobalTagProcessor;

@@ -408,7 +408,7 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
             }
         }
 
-        Object customModelData = nms.getCustomModelData(item);
+        Object customModelData = nms == null ? null : nms.getCustomModelData(item);
         if (customModelData instanceof Integer integer) {
             propertiesList.add("customModelData=" + integer);
         } else if (customModelData instanceof Map<?, ?> rawMap && !rawMap.isEmpty()) {
