@@ -353,7 +353,8 @@ public class ScriptQueue {
                         if (!skipCommand) {
                             this.errorHeaderPrinted = false;
                             try {
-                                inst.command.run(this, inst);
+                                if (inst.bound != null) inst.bound.invoke(this, inst);
+                                else inst.command.run(this, inst);
                             } catch (RegionRelocateException rre) {
                                 throw rre;
                             } catch (Exception e) {

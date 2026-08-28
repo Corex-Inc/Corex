@@ -216,7 +216,13 @@ public class ElementTag implements AbstractTag {
     }
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag("element", (attribute) -> new ElementTag(attribute.getParam()));
+        BaseTagProcessor.registerBaseTag("element", (attribute) -> {
+            AbstractTag param = attribute.getParamObject();
+            // A component carries formatting that legacy text cannot express - translatables
+            // collapse to their bare key - so pass it through instead of flattening it.
+            if (param instanceof ComponentTag) return param;
+            return new ElementTag(param != null ? param.identify() : null);
+        });
 
         TAG_PROCESSOR.registerTag(AbstractTag.class, "ifNull", (attr, obj) -> obj).setAsyncSafe();
 
@@ -264,6 +270,52 @@ public class ElementTag implements AbstractTag {
          * @Implements ElementTag.length
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "length", (attr, obj) -> new ElementTag(obj.asString().length())).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name substring[]
+         * @RawName <ElementTag.substring[<#>].to[<#>]>
+         * @Object ElementTag
+         * @ReturnType ElementTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Returns the part of the text between two 1-based positions, both included. Leave off
+         * '.to[]' to read to the end. Positions past the end are clamped rather than erroring, so
+         * substring[3] on a two character element gives an empty result instead of failing.
+         *
+         * @Usage
+         * // Narrates "ell"
+         * - narrate <element[hello].substring[2].to[4]>
+         *
+         * @Usage
+         * // Narrates "llo"
+         * - narrate <element[hello].substring[3]>
+         *
+         * @Implements ElementTag.substring[<#>(,<#>)]
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "substring", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            String value = obj.asString();
+            int length = value.length();
+
+            ElementTag fromParam = numericParamOf(attr);
+            if (fromParam == null) return null;
+            int from = fromParam.asInt() - 1;
+
+            int to = length;
+            if (attr.matchesNext("to") && attr.hasNextParam()) {
+                ElementTag toParam = attr.getNextParamObject(ElementTag.class, ElementTag::new);
+                attr.fulfill(1);
+                if (toParam == null || !toParam.isDouble()) return null;
+                to = toParam.asInt();
+            }
+
+            if (from < 0) from = 0;
+            if (to > length) to = length;
+            if (from >= to) return new ElementTag("");
+            return new ElementTag(value.substring(from, to));
+        }).test("2", "to", "3").setAsyncSafe();
 
         /* @doc tag
          *
@@ -570,22 +622,22 @@ public class ElementTag implements AbstractTag {
          *
          * @Implements ElementTag.if_true[<object>].if_false[<object>]
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "ifTrue", (attr, el) -> {
+        TAG_PROCESSOR.registerTag(AbstractTag.class, "ifTrue", (attr, el) -> {
             boolean isTrue = el.asBoolean();
-            String resultText = el.asString();
+            AbstractTag result = el;
 
             if (isTrue && attr.hasParam()) {
-                resultText = attr.getParam();
+                result = attr.getParamObject();
             }
 
             if (attr.matchesNext("ifFalse")) {
                 if (!isTrue && attr.hasNextParam()) {
-                    resultText = attr.getNextParam();
+                    result = attr.getNextParamObject();
                 }
                 attr.fulfill(1);
             }
 
-            return new ElementTag(resultText);
+            return result;
         }).test("This is true", "ifFalse[This is false!]").setAsyncSafe();
 
         /* @doc tag

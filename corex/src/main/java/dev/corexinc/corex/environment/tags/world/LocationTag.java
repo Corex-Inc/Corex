@@ -1869,7 +1869,7 @@ public class LocationTag implements AbstractTag, Flaggable {
             if (!attr.hasParam()) return null;
             Location loc = obj.getLocation().clone();
             float pitch = loc.getPitch() + ((float) new ElementTag(attr.getParam()).asDouble());
-            loc.setPitch(Math.max(-90, Math.min(90, pitch)));
+            loc.setPitch(Math.clamp(pitch, -90, 90));
             return new LocationTag(loc, false);
         }).test("22").setAsyncSafe();
 

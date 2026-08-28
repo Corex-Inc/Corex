@@ -110,7 +110,9 @@ public class ScriptCompiler {
             return null;
         }
 
-        return new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock, isWaitable, isAsync, gFlags);
+        Instruction instruction = new Instruction(meta.command, linearArgs.toArray(new CompiledArgument[0]), prefixArgs, flags.toArray(new String[0]), innerBlock, isWaitable, isAsync, gFlags);
+        instruction.bound = meta.bound;
+        return instruction;
     }
 
     public static Instruction compile(String rawLine) {

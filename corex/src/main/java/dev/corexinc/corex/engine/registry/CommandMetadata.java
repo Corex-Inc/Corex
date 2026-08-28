@@ -13,20 +13,38 @@ public class CommandMetadata {
 
     private final Set<String> requiredPrefixes = new LinkedHashSet<>();
     private final Set<String> allowedPrefixes  = new LinkedHashSet<>();
+    private final List<SyntaxSlot> slots;
     public final int syntaxRequiredLinear;
+
+    /**
+     * Set when the command declares a {@code run} overload taking resolved arguments
+     * instead of the raw instruction. Null means the command uses the classic form.
+     */
+    public final BoundCommand bound;
 
     public CommandMetadata(AbstractCommand command) {
         this.command = command;
 
         String syntax = command.getSyntax();
-        if (!syntax.isBlank()) {
-            ParsedSyntax parsed = parseSyntax(syntax, command.getName());
-            this.syntaxRequiredLinear = parsed.requiredLinear;
-            this.requiredPrefixes.addAll(parsed.requiredPrefixes);
-            this.allowedPrefixes.addAll(parsed.allowedPrefixes);
-        } else {
-            this.syntaxRequiredLinear = 0;
+        this.slots = syntax.isBlank() ? List.of() : parseSyntax(syntax, command.getName());
+
+        int requiredLinear = 0;
+        for (SyntaxSlot slot : slots) {
+            switch (slot.kind()) {
+                case LINEAR -> { if (slot.required()) requiredLinear++; }
+                case PREFIX -> {
+                    allowedPrefixes.add(slot.name());
+                    if (slot.required()) requiredPrefixes.add(slot.name());
+                }
+                case FLAG -> {}
+            }
         }
+        this.syntaxRequiredLinear = requiredLinear;
+        this.bound = BoundCommand.bind(command, slots);
+    }
+
+    public List<SyntaxSlot> getSlots() {
+        return slots;
     }
 
     public List<String> getMissingRequiredPrefixes(Set<String> providedPrefixes) {
@@ -63,16 +81,9 @@ public class CommandMetadata {
         return false;
     }
 
-    private record ParsedSyntax(
-            int requiredLinear,
-            Set<String> requiredPrefixes,
-            Set<String> allowedPrefixes
-    ) {}
-
-    private static ParsedSyntax parseSyntax(String syntax, String commandName) {
-        int requiredLinear = 0;
-        Set<String> required = new LinkedHashSet<>();
-        Set<String> allowed  = new LinkedHashSet<>();
+    private static List<SyntaxSlot> parseSyntax(String syntax, String commandName) {
+        List<SyntaxSlot> parsed = new ArrayList<>();
+        int linearIndex = 0;
 
         for (String token : tokenize(syntax)) {
             if (token.isBlank()) continue;
@@ -85,19 +96,63 @@ public class CommandMetadata {
 
             String inner = token.substring(1, token.length() - 1).trim();
 
-            int colon = inner.indexOf(':');
-            boolean isPrefix = colon > 0 && !inner.startsWith("<");
-
-            if (isPrefix) {
-                String prefix = inner.substring(0, colon).trim();
-                allowed.add(prefix);
-                if (isMandatory) required.add(prefix);
-            } else {
-                if (isMandatory) requiredLinear++;
+            String defaultRaw = null;
+            int equals = indexOfTopLevel(inner, '=');
+            if (equals >= 0) {
+                defaultRaw = inner.substring(equals + 1).trim();
+                inner = inner.substring(0, equals).trim();
             }
+
+            int colon = indexOfTopLevel(inner, ':');
+            if (colon > 0 && !inner.startsWith("<")) {
+                parsed.add(new SyntaxSlot(SyntaxSlot.Kind.PREFIX,
+                        inner.substring(0, colon).trim(), -1, isMandatory, defaultRaw));
+                continue;
+            }
+
+            if (inner.indexOf('<') < 0) {
+                parsed.add(new SyntaxSlot(SyntaxSlot.Kind.FLAG,
+                        inner.trim(), -1, false, defaultRaw));
+                continue;
+            }
+
+            parsed.add(new SyntaxSlot(SyntaxSlot.Kind.LINEAR,
+                    linearName(inner, linearIndex), linearIndex, isMandatory, defaultRaw));
+            linearIndex++;
         }
 
-        return new ParsedSyntax(requiredLinear, required, allowed);
+        return List.copyOf(parsed);
+    }
+
+    /**
+     * Pulls a readable name out of the first {@code <...>} group. Placeholders such as
+     * {@code <#>} or {@code <#.#>} carry no name, so those fall back to a positional one.
+     */
+    private static String linearName(String inner, int index) {
+        int open = inner.indexOf('<');
+        int close = inner.indexOf('>', open + 1);
+        String candidate = open >= 0 && close > open ? inner.substring(open + 1, close).trim() : "";
+
+        if (!candidate.isEmpty() && Character.isJavaIdentifierStart(candidate.charAt(0))) {
+            boolean clean = true;
+            for (int i = 1; i < candidate.length(); i++) {
+                if (!Character.isJavaIdentifierPart(candidate.charAt(i))) { clean = false; break; }
+            }
+            if (clean) return candidate;
+        }
+        return "arg" + index;
+    }
+
+    /** Finds a character that sits outside any {@code <...>} group. */
+    private static int indexOfTopLevel(String text, char target) {
+        int depth = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '<') depth++;
+            else if (c == '>') depth--;
+            else if (c == target && depth == 0) return i;
+        }
+        return -1;
     }
 
     private static List<String> tokenize(String syntax) {

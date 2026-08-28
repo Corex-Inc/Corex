@@ -7,6 +7,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.CorexComputePool;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.utils.scripts.JsonHelper;
 import org.jspecify.annotations.NonNull;
@@ -42,7 +43,12 @@ import java.util.stream.Collectors;
 public class ListTag implements AbstractTag {
 
     private static final String prefix = "li";
-    private final List<AbstractTag> list = new ArrayList<>();
+
+    private volatile List<AbstractTag> boxedEntries;
+    private volatile double[] numericEntries;
+    private volatile boolean numericDerivationFailed;
+
+    private static final double[] EMPTY_NUMBERS = new double[0];
 
     public static final TagProcessor<ListTag> TAG_PROCESSOR = new TagProcessor<>();
 
@@ -78,7 +84,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.size
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "size", (attr, obj) ->
-                new ElementTag(obj.list.size())).setAsyncSafe();
+                new ElementTag(obj.size())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -98,7 +104,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.is_empty
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isEmpty", (attr, obj) ->
-                new ElementTag(obj.list.isEmpty())).setAsyncSafe();
+                new ElementTag(obj.isEmpty())).setAsyncSafe();
 
         /* @doc tag
          *
@@ -131,23 +137,32 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(AbstractTag.class, "get", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             if (attr.matchesNext("to") && attr.hasNextParam()) {
-                int from = resolveIndex(attr.getParam(), obj.list.size());
-                int to   = resolveIndex(attr.getNextParam(), obj.list.size());
+                int size = obj.size();
+                int from = resolveIndex(attr.getParam(), size);
+                int to   = resolveIndex(attr.getNextParam(), size);
                 attr.fulfill(1);
                 if (from < 0 || to < 0 || from > to) return new ListTag();
+
+                double[] numbers = obj.numericView();
+                if (numbers != null) {
+                    double[] slice = new double[to - from + 1];
+                    System.arraycopy(numbers, from, slice, 0, slice.length);
+                    return ofNumbers(slice);
+                }
+
                 ListTag result = new ListTag();
-                for (int index = from; index <= to; index++) result.addObject(obj.list.get(index));
+                for (int index = from; index <= to; index++) result.addObject(obj.entryAt(index));
                 return result;
             }
             ListTag indices = new ListTag(attr.getParam());
             if (indices.size() == 1) {
-                int index = resolveIndex(attr.getParam(), obj.list.size());
-                return index >= 0 ? obj.list.get(index) : null;
+                int index = resolveIndex(attr.getParam(), obj.size());
+                return index >= 0 ? obj.entryAt(index) : null;
             }
             ListTag result = new ListTag();
             for (AbstractTag indexTag : indices.getList()) {
-                int index = resolveIndex(indexTag.identify(), obj.list.size());
-                if (index >= 0) result.addObject(obj.list.get(index));
+                int index = resolveIndex(indexTag.identify(), obj.size());
+                if (index >= 0) result.addObject(obj.entryAt(index));
             }
             return result;
         }).test("2").setAsyncSafe();
@@ -175,12 +190,12 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.first[(<#>)]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "first", (attr, obj) -> {
-            if (obj.list.isEmpty()) return null;
-            if (!attr.hasParam()) return obj.list.getFirst();
-            int count = Math.min(new ElementTag(attr.getParam()).asInt(), obj.list.size());
+            if (obj.isEmpty()) return null;
+            if (!attr.hasParam()) return obj.entryAt(0);
+            int count = Math.min(new ElementTag(attr.getParam()).asInt(), obj.size());
             if (count <= 0) return new ListTag();
             ListTag result = new ListTag();
-            for (int index = 0; index < count; index++) result.addObject(obj.list.get(index));
+            for (int index = 0; index < count; index++) result.addObject(obj.entryAt(index));
             return result;
         }).setAsyncSafe();
 
@@ -207,13 +222,13 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.last[(<#>)]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "last", (attr, obj) -> {
-            if (obj.list.isEmpty()) return null;
-            int size = obj.list.size();
-            if (!attr.hasParam()) return obj.list.get(size - 1);
+            if (obj.isEmpty()) return null;
+            int size = obj.size();
+            if (!attr.hasParam()) return obj.entryAt(size - 1);
             int count = Math.min(new ElementTag(attr.getParam()).asInt(), size);
             if (count <= 0) return new ListTag();
             ListTag result = new ListTag();
-            for (int index = size - count; index < size; index++) result.addObject(obj.list.get(index));
+            for (int index = size - count; index < size; index++) result.addObject(obj.entryAt(index));
             return result;
         }).setAsyncSafe();
 
@@ -255,7 +270,7 @@ public class ListTag implements AbstractTag {
              */
             boolean matchAny = attr.matchesNext("any");
             if (matchAny) attr.fulfill(1);
-            List<String> identities = obj.list.stream().map(AbstractTag::identify).toList();
+            List<String> identities = obj.items().stream().map(AbstractTag::identify).toList();
             for (AbstractTag needle : new ListTag(attr.getParam()).getList()) {
                 boolean found = identities.contains(needle.identify());
                 if (matchAny  &&  found) return new ElementTag(true);
@@ -353,17 +368,37 @@ public class ListTag implements AbstractTag {
                 attr.fulfill(1);
             }
 
+            double[] numbers = partial ? null : obj.numericView();
+            ElementTag needleTag = numbers != null ? new ElementTag(needle) : null;
+
+            if (numbers != null && needleTag.isDouble()) {
+                double target = needleTag.asDouble();
+
+                if (returnAll) {
+                    ListTag result = new ListTag();
+                    for (int index = 0; index < numbers.length; index++) {
+                        if (numbers[index] == target) result.addString(String.valueOf(index + 1));
+                    }
+                    return result;
+                }
+
+                for (int index = 0; index < numbers.length; index++) {
+                    if (numbers[index] == target) return new ElementTag(index + 1);
+                }
+                return new ElementTag(-1);
+            }
+
             if (returnAll) {
                 ListTag result = new ListTag();
-                for (int index = 0; index < obj.list.size(); index++) {
-                    String value = obj.list.get(index).identify().toLowerCase();
+                for (int index = 0; index < obj.size(); index++) {
+                    String value = obj.entryAt(index).identify().toLowerCase();
                     if (partial ? value.contains(needle) : value.equals(needle)) result.addString(String.valueOf(index + 1));
                 }
                 return result;
             }
 
-            for (int index = 0; index < obj.list.size(); index++) {
-                String value = obj.list.get(index).identify().toLowerCase();
+            for (int index = 0; index < obj.size(); index++) {
+                String value = obj.entryAt(index).identify().toLowerCase();
                 if (partial ? value.contains(needle) : value.equals(needle)) return new ElementTag(index + 1);
             }
             return new ElementTag(-1);
@@ -389,7 +424,7 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "count", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             String needle = attr.getParam();
-            long matches = obj.list.stream().filter(tag -> tag.identify().equals(needle)).count();
+            long matches = obj.items().stream().filter(tag -> tag.identify().equals(needle)).count();
             return new ElementTag((int) matches);
         }).test("1").setAsyncSafe();
 
@@ -417,7 +452,7 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "join", (attr, obj) -> {
             String separator = attr.hasParam() ? attr.getParam() : "";
             List<String> strings = new ArrayList<>();
-            for (AbstractTag tag : obj.list) strings.add(tag.identify());
+            for (AbstractTag tag : obj.items()) strings.add(tag.identify());
             return new ElementTag(String.join(separator, strings));
         }).test(", ").setAsyncSafe();
 
@@ -441,7 +476,7 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "include", (attr, obj) -> {
             if (!attr.hasParam()) return null;
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) result.addObject(tag);
+            for (AbstractTag tag : obj.items()) result.addObject(tag);
             for (AbstractTag tag : new ListTag(attr.getParam()).getList()) result.addObject(tag);
             return result;
         }).test("d|e").setAsyncSafe();
@@ -493,7 +528,7 @@ public class ListTag implements AbstractTag {
                     .map(AbstractTag::identify).collect(Collectors.toSet());
             Map<String, Integer> removalCount = new HashMap<>();
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 String id = tag.identify();
                 if (excluded.contains(id) && removalCount.getOrDefault(id, 0) < maxRemovals) {
                     removalCount.merge(id, 1, Integer::sum);
@@ -526,15 +561,15 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "insert", (attr, obj) -> {
             if (!attr.hasParam() || !attr.matchesNext("at") || !attr.hasNextParam()) return null;
             List<AbstractTag> toInsert = new ListTag(attr.getParam()).getList();
-            int insertAt = resolveIndex(attr.getNextParam(), obj.list.size() + 1);
+            int insertAt = resolveIndex(attr.getNextParam(), obj.size() + 1);
             attr.fulfill(1);
-            if (insertAt < 0) insertAt = obj.list.size();
+            if (insertAt < 0) insertAt = obj.size();
             ListTag result = new ListTag();
-            for (int index = 0; index < obj.list.size(); index++) {
+            for (int index = 0; index < obj.size(); index++) {
                 if (index == insertAt) for (AbstractTag tag : toInsert) result.addObject(tag);
-                result.addObject(obj.list.get(index));
+                result.addObject(obj.entryAt(index));
             }
-            if (insertAt >= obj.list.size()) for (AbstractTag tag : toInsert) result.addObject(tag);
+            if (insertAt >= obj.size()) for (AbstractTag tag : toInsert) result.addObject(tag);
             return result;
         }).test("x", "at[2]").setAsyncSafe();
 
@@ -563,13 +598,13 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "set", (attr, obj) -> {
             if (!attr.hasParam() || !attr.matchesNext("at") || !attr.hasNextParam()) return null;
             List<AbstractTag> replacements = new ListTag(attr.getParam()).getList();
-            int target = resolveIndex(attr.getNextParam(), obj.list.size());
+            int target = resolveIndex(attr.getNextParam(), obj.size());
             attr.fulfill(1);
             if (target < 0) return null;
             ListTag result = new ListTag();
-            for (int index = 0; index < obj.list.size(); index++) {
+            for (int index = 0; index < obj.size(); index++) {
                 if (index == target) for (AbstractTag tag : replacements) result.addObject(tag);
-                else result.addObject(obj.list.get(index));
+                else result.addObject(obj.entryAt(index));
             }
             return result;
         }).test("x", "at[2]").setAsyncSafe();
@@ -595,10 +630,10 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "overwrite", (attr, obj) -> {
             if (!attr.hasParam() || !attr.matchesNext("at") || !attr.hasNextParam()) return null;
             List<AbstractTag> replacements = new ListTag(attr.getParam()).getList();
-            int target = resolveIndex(attr.getNextParam(), obj.list.size());
+            int target = resolveIndex(attr.getNextParam(), obj.size());
             attr.fulfill(1);
             if (target < 0) return null;
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             for (int offset = 0; offset < replacements.size(); offset++) {
                 int position = target + offset;
                 if (position < copy.size()) copy.set(position, replacements.get(offset));
@@ -655,19 +690,19 @@ public class ListTag implements AbstractTag {
              * @Implements ListTag.remove[<#>].to[<#>]
              */
             if (attr.matchesNext("to") && attr.hasNextParam()) {
-                int from = resolveIndex(attr.getParam(), obj.list.size());
-                int to   = resolveIndex(attr.getNextParam(), obj.list.size());
+                int from = resolveIndex(attr.getParam(), obj.size());
+                int to   = resolveIndex(attr.getNextParam(), obj.size());
                 attr.fulfill(1);
                 if (from >= 0 && to >= from) for (int index = from; index <= to; index++) toRemove.add(index);
             } else {
                 for (AbstractTag indexTag : new ListTag(attr.getParam()).getList()) {
-                    int index = resolveIndex(indexTag.identify(), obj.list.size());
+                    int index = resolveIndex(indexTag.identify(), obj.size());
                     if (index >= 0) toRemove.add(index);
                 }
             }
             ListTag result = new ListTag();
-            for (int index = 0; index < obj.list.size(); index++) {
-                if (!toRemove.contains(index)) result.addObject(obj.list.get(index));
+            for (int index = 0; index < obj.size(); index++) {
+                if (!toRemove.contains(index)) result.addObject(obj.entryAt(index));
             }
             return result;
         }).test("2").setAsyncSafe();
@@ -699,7 +734,7 @@ public class ListTag implements AbstractTag {
             AbstractTag replacement = ObjectFetcher.pickObject(attr.getNextParam());
             attr.fulfill(1);
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 if (tag.identify().equals(target)) {
                     result.addObject(replacement);
                 } else {
@@ -729,7 +764,7 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "deduplicate", (attr, obj) -> {
             LinkedHashSet<String> seen = new LinkedHashSet<>();
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 if (seen.add(tag.identify())) result.addObject(tag);
             }
             return result;
@@ -759,7 +794,7 @@ public class ListTag implements AbstractTag {
                     .map(AbstractTag::identify).collect(Collectors.toSet());
             LinkedHashSet<String> seen = new LinkedHashSet<>();
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 String id = tag.identify();
                 if (other.contains(id) && seen.add(id)) result.addObject(tag);
             }
@@ -811,8 +846,8 @@ public class ListTag implements AbstractTag {
              */
             if (attr.matchesNext("with") && attr.hasNextParam()) { fill = attr.getNextParam(); attr.fulfill(1); }
             ListTag result = new ListTag();
-            for (int padding = obj.list.size(); padding < targetSize; padding++) result.addString(fill);
-            for (AbstractTag tag : obj.list) result.addObject(tag);
+            for (int padding = obj.size(); padding < targetSize; padding++) result.addString(fill);
+            for (AbstractTag tag : obj.items()) result.addObject(tag);
             return result;
         }).test("5").setAsyncSafe();
 
@@ -857,8 +892,8 @@ public class ListTag implements AbstractTag {
              */
             if (attr.matchesNext("with") && attr.hasNextParam()) { fill = attr.getNextParam(); attr.fulfill(1); }
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) result.addObject(tag);
-            for (int padding = obj.list.size(); padding < targetSize; padding++) result.addString(fill);
+            for (AbstractTag tag : obj.items()) result.addObject(tag);
+            for (int padding = obj.size(); padding < targetSize; padding++) result.addString(fill);
             return result;
         }).test("5").setAsyncSafe();
 
@@ -880,7 +915,7 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.reverse
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "reverse", (attr, obj) -> {
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             Collections.reverse(copy);
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
@@ -918,7 +953,7 @@ public class ListTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "sort", (attr, obj) -> {
             String mode = attr.hasParam() ? attr.getParam().toLowerCase() : "alph";
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             switch (mode) {
                 case "num", "numerical" -> copy.sort(Comparator.comparingDouble(ListTag::numericValue));
                 case "nat", "natural" -> copy.sort((a, b) -> naturalCompare(a.identify(), b.identify()));
@@ -946,7 +981,7 @@ public class ListTag implements AbstractTag {
          * Do NOT use .random[9999] for shuffle the list!
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "shuffled", (attr, obj) -> {
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             Collections.shuffle(copy);
             ListTag result = new ListTag();
             for (AbstractTag tag : copy) result.addObject(tag);
@@ -976,11 +1011,11 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.random[(<#>)]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "random", (attr, obj) -> {
-            if (obj.list.isEmpty()) return null;
-            if (!attr.hasParam()) return obj.list.get(ThreadLocalRandom.current().nextInt(obj.list.size()));
+            if (obj.isEmpty()) return null;
+            if (!attr.hasParam()) return obj.entryAt(ThreadLocalRandom.current().nextInt(obj.size()));
             int count = new ElementTag(attr.getParam()).asInt();
             if (count <= 0) return new ListTag();
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             Collections.shuffle(copy, ThreadLocalRandom.current());
             int limit = Math.min(count, copy.size());
             ListTag result = new ListTag();
@@ -1007,7 +1042,7 @@ public class ListTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "sum", (attr, obj) -> {
             double total = 0;
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 ElementTag element = new ElementTag(tag.identify());
                 if (element.isDouble()) total += element.asDouble();
             }
@@ -1032,7 +1067,7 @@ public class ListTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "product", (attr, obj) -> {
             double total = 1;
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 ElementTag element = new ElementTag(tag.identify());
                 if (element.isDouble()) total *= element.asDouble();
             }
@@ -1060,7 +1095,7 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ElementTag.class, "average", (attr, obj) -> {
             double total = 0;
             int count = 0;
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 ElementTag element = new ElementTag(tag.identify());
                 if (element.isDouble()) { total += element.asDouble(); count++; }
             }
@@ -1089,10 +1124,13 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.highest, ListTag.highest.count[<#>]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "highest", (attr, obj) -> {
-            if (obj.list.isEmpty()) return null;
+            if (obj.isEmpty()) return null;
             int count = attr.hasParam() ? new ElementTag(attr.getParam()).asInt() : 1;
 
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            AbstractTag extreme = extremeOf(obj, count, true);
+            if (extreme != null) return extreme;
+
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             copy.sort(Comparator.comparingDouble(ListTag::numericValue).reversed());
 
             if (count == 1) return copy.getFirst();
@@ -1125,10 +1163,13 @@ public class ListTag implements AbstractTag {
          * @Implements ListTag.lowest, ListTag.lowest.count[<#>]
          */
         TAG_PROCESSOR.registerTag(AbstractTag.class, "lowest", (attr, obj) -> {
-            if (obj.list.isEmpty()) return null;
+            if (obj.isEmpty()) return null;
             int count = attr.hasParam() ? new ElementTag(attr.getParam()).asInt() : 1;
 
-            List<AbstractTag> copy = new ArrayList<>(obj.list);
+            AbstractTag extreme = extremeOf(obj, count, false);
+            if (extreme != null) return extreme;
+
+            List<AbstractTag> copy = new ArrayList<>(obj.items());
             copy.sort(Comparator.comparingDouble(ListTag::numericValue));
 
             if (count == 1) return copy.getFirst();
@@ -1159,7 +1200,7 @@ public class ListTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "combine", (attr, obj) -> {
             ListTag result = new ListTag();
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 for (AbstractTag subTag : new ListTag(tag.identify()).getList()) result.addObject(subTag);
             }
             return result;
@@ -1189,10 +1230,10 @@ public class ListTag implements AbstractTag {
             int chunkSize = new ElementTag(attr.getParam()).asInt();
             if (chunkSize <= 0) return new ListTag();
             ListTag result = new ListTag();
-            for (int start = 0; start < obj.list.size(); start += chunkSize) {
-                int end = Math.min(start + chunkSize, obj.list.size());
+            for (int start = 0; start < obj.size(); start += chunkSize) {
+                int end = Math.min(start + chunkSize, obj.size());
                 ListTag chunk = new ListTag();
-                for (int index = start; index < end; index++) chunk.addObject(obj.list.get(index));
+                for (int index = start; index < end; index++) chunk.addObject(obj.entryAt(index));
                 result.addString(chunk.identify());
             }
             return result;
@@ -1221,9 +1262,9 @@ public class ListTag implements AbstractTag {
             if (!attr.hasParam()) return null;
             List<AbstractTag> values = new ListTag(attr.getParam()).getList();
             MapTag result = new MapTag();
-            int length = Math.min(obj.list.size(), values.size());
+            int length = Math.min(obj.size(), values.size());
             for (int index = 0; index < length; index++) {
-                result.putObject(obj.list.get(index).identify(), values.get(index));
+                result.putObject(obj.entryAt(index).identify(), values.get(index));
             }
             return result;
         }).test("1|2|3").setAsyncSafe();
@@ -1252,7 +1293,7 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(MapTag.class, "toMap", (attr, obj) -> {
             String separator = attr.hasParam() ? attr.getParam() : "/";
             MapTag result = new MapTag();
-            for (AbstractTag tag : obj.list) {
+            for (AbstractTag tag : obj.items()) {
                 String entry = tag.identify();
                 int splitAt = entry.indexOf(separator);
                 if (splitAt >= 0) result.putObject(
@@ -1317,15 +1358,27 @@ public class ListTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "dotProduct", (attr, obj) -> {
             if (!attr.hasParam()) return null;
-            List<AbstractTag> other = new ListTag(attr.getParam()).getList();
+            ListTag other = attr.getParamObject(ListTag.class, ListTag::new);
+            if (other == null) return null;
 
+            double[] left = obj.numericView();
+            double[] right = other.numericView();
+
+            if (left != null && right != null) {
+                int size = Math.min(left.length, right.length);
+                double sum = 0;
+                for (int index = 0; index < size; index++) {
+                    sum += left[index] * right[index];
+                }
+                return new ElementTag(sum);
+            }
+
+            List<AbstractTag> leftEntries = obj.items();
+            List<AbstractTag> rightEntries = other.items();
+            int size = Math.min(leftEntries.size(), rightEntries.size());
             double sum = 0;
-            int size = Math.min(obj.list.size(), other.size());
-
-            for (int i = 0; i < size; i++) {
-                double a = numericValue(obj.list.get(i));
-                double b = numericValue(other.get(i));
-                sum += a * b;
+            for (int index = 0; index < size; index++) {
+                sum += numericValue(leftEntries.get(index)) * numericValue(rightEntries.get(index));
             }
             return new ElementTag(sum);
         }).ignoreTest().setAsyncSafe();
@@ -1355,20 +1408,45 @@ public class ListTag implements AbstractTag {
         TAG_PROCESSOR.registerTag(ListTag.class, "activation", (attr, obj) -> {
             String type = attr.hasParam() ? attr.getParam().toLowerCase() : "relu";
 
-            if (type.equals("softmax")) {
-                double max = obj.getList().stream().mapToDouble(ListTag::numericValue).max().orElse(0);
-                double sumExp = 0;
-                List<Double> exps = new ArrayList<>();
+            double[] source = obj.numericView();
 
-                for (AbstractTag item : obj.getList()) {
-                    double exp = Math.exp(numericValue(item) - max);
-                    exps.add(exp);
+            if (type.equals("softmax")) {
+                if (source == null) {
+                    List<AbstractTag> entries = obj.items();
+                    source = new double[entries.size()];
+                    for (int index = 0; index < source.length; index++) {
+                        source[index] = numericValue(entries.get(index));
+                    }
+                }
+
+                int length = source.length;
+                double max = Double.NEGATIVE_INFINITY;
+                for (int index = 0; index < length; index++) {
+                    if (source[index] > max) max = source[index];
+                }
+
+                double[] result = new double[length];
+                double sumExp = 0;
+                for (int index = 0; index < length; index++) {
+                    double exp = Math.exp(source[index] - max);
+                    result[index] = exp;
                     sumExp += exp;
                 }
 
-                ListTag result = new ListTag();
-                for (double exp : exps) result.addObject(new ElementTag(sumExp == 0 ? 0 : exp / sumExp));
-                return result;
+                if (sumExp != 0) {
+                    double inverse = 1.0 / sumExp;
+                    for (int index = 0; index < length; index++) result[index] *= inverse;
+                }
+                return ofNumbers(result);
+            }
+
+            if (source != null) {
+                int length = source.length;
+                double[] result = new double[length];
+                double[] input = source;
+                CorexComputePool.parallelFor(0, length, 4L, index ->
+                        result[index] = applyActivation(input[index], type));
+                return ofNumbers(result);
             }
 
             return applyActivationRecursively(obj, type);
@@ -1393,14 +1471,48 @@ public class ListTag implements AbstractTag {
             ListTag other = attr.getParamObject(ListTag.class, ListTag::new);
             if (other == null) return null;
 
-            ListTag result = new ListTag();
-            List<AbstractTag> otherItems = other.getList();
+            List<AbstractTag> rows = obj.items();
+            int rowCount = rows.size();
+            double[] vector = other.numericView();
 
-            for (AbstractTag rowTag : obj.getList()) {
+            if (vector != null) {
+                double[][] matrix = new double[rowCount][];
+                int usableRows = 0;
+                for (int index = 0; index < rowCount; index++) {
+                    if (rows.get(index) instanceof ListTag row) {
+                        double[] rowValues = row.numericView();
+                        if (rowValues == null) {
+                            usableRows = -1;
+                            break;
+                        }
+                        matrix[usableRows++] = rowValues;
+                    }
+                }
+
+                if (usableRows >= 0) {
+                    double[] products = new double[usableRows];
+                    int vectorLength = vector.length;
+                    CorexComputePool.parallelFor(0, usableRows, vectorLength, index -> {
+                        double[] row = matrix[index];
+                        int size = Math.min(row.length, vectorLength);
+                        double sum = 0;
+                        for (int column = 0; column < size; column++) {
+                            sum += row[column] * vector[column];
+                        }
+                        products[index] = sum;
+                    });
+                    return ofNumbers(products);
+                }
+            }
+
+            ListTag result = new ListTag();
+            List<AbstractTag> otherItems = other.items();
+
+            for (AbstractTag rowTag : rows) {
                 if (!(rowTag instanceof ListTag row)) continue;
 
                 double sum = 0;
-                List<AbstractTag> rowItems = row.getList();
+                List<AbstractTag> rowItems = row.items();
                 int size = Math.min(rowItems.size(), otherItems.size());
 
                 for (int i = 0; i < size; i++) {
@@ -1411,6 +1523,478 @@ public class ListTag implements AbstractTag {
 
             return result;
         }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name reshape[]
+         * @RawName <ListTag.reshape[<#>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Splits a flat numeric list into rows of the given width, so it can be used as a matrix
+         * by matrixMul. A trailing partial row is dropped. The rows are primitive-backed, so a
+         * reshaped weight tensor costs the same memory as the flat list it came from.
+         *
+         * @Usage
+         * // Turns 6 numbers into 3 rows of 2, narrates "3"
+         * - narrate <list[1|2|3|4|5|6].reshape[2].size>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "reshape", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            int columns = new ElementTag(attr.getParam()).asInt();
+            if (columns <= 0) return null;
+
+            double[] flat = obj.numericView();
+            if (flat == null) return null;
+
+            int rowCount = flat.length / columns;
+            ListTag result = new ListTag();
+            for (int row = 0; row < rowCount; row++) {
+                double[] values = new double[columns];
+                System.arraycopy(flat, row * columns, values, 0, columns);
+                result.addObject(ofNumbers(values));
+            }
+            return result;
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name addList[]
+         * @RawName <ListTag.addList[<list>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Adds two numeric lists together entry by entry. The result is as long as the shorter
+         * input. This is the residual connection in a neural network, not list concatenation,
+         * which is 'include'.
+         *
+         * @Usage
+         * // Narrates "li@5|7|9"
+         * - narrate <list[1|2|3].addList[<list[4|5|6]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "addList", (attr, obj) ->
+                elementwise(attr, obj, ElementwiseOperation.ADD)).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name subList[]
+         * @RawName <ListTag.subList[<list>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Subtracts the given numeric list from this one, entry by entry.
+         *
+         * @Usage
+         * // Narrates "li@3|3|3"
+         * - narrate <list[4|5|6].subList[<list[1|2|3]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "subList", (attr, obj) ->
+                elementwise(attr, obj, ElementwiseOperation.SUBTRACT)).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name mulList[]
+         * @RawName <ListTag.mulList[<list>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Multiplies two numeric lists entry by entry. This is the elementwise product, used for
+         * things like applying a layer norm gain, not the dot product and not a matrix multiply.
+         *
+         * @Usage
+         * // Narrates "li@4|10|18"
+         * - narrate <list[1|2|3].mulList[<list[4|5|6]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "mulList", (attr, obj) ->
+                elementwise(attr, obj, ElementwiseOperation.MULTIPLY)).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name scale[]
+         * @RawName <ListTag.scale[<#.#>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Multiplies every numeric entry by one number.
+         *
+         * @Usage
+         * // Narrates "li@2|4|6"
+         * - narrate <list[1|2|3].scale[2]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "scale", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ElementTag factorTag = attr.getParamObject(ElementTag.class, ElementTag::new);
+            if (factorTag == null || !factorTag.isDouble()) return null;
+            double factor = factorTag.asDouble();
+
+            double[] source = obj.numericView();
+            if (source == null) return null;
+
+            double[] result = new double[source.length];
+            for (int index = 0; index < source.length; index++) result[index] = source[index] * factor;
+            return ofNumbers(result);
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name layerNorm
+         * @RawName <ListTag.layerNorm>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Standardizes the list so it has mean 0 and variance 1, using the population variance and
+         * an epsilon of 1e-5 to match what transformer implementations use. The learned gain and
+         * bias are not applied here, chain mulList and addList for those.
+         *
+         * @Usage
+         * // Normalize, then apply the layer's gain and bias.
+         * - def normalized:<[hidden].layerNorm.mulList[<[gamma]>].addList[<[beta]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "layerNorm", (attr, obj) -> {
+            double[] source = obj.numericView();
+            if (source == null || source.length == 0) return null;
+
+            int length = source.length;
+            double mean = 0;
+            for (int index = 0; index < length; index++) mean += source[index];
+            mean /= length;
+
+            double variance = 0;
+            for (int index = 0; index < length; index++) {
+                double delta = source[index] - mean;
+                variance += delta * delta;
+            }
+            variance /= length;
+
+            double inverse = 1.0 / Math.sqrt(variance + 1.0e-5);
+            double[] result = new double[length];
+            for (int index = 0; index < length; index++) result[index] = (source[index] - mean) * inverse;
+            return ofNumbers(result);
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name weightedSum[]
+         * @RawName <ListTag.weightedSum[<list>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Treats this list as rows and returns the rows added together, each scaled by the matching
+         * entry of the given weight list. This is what attention does once it has its probabilities:
+         * the weights are the attention scores and the rows are the cached values.
+         * Rows shorter than the widest one are padded with zero, and extra weights are ignored.
+         *
+         * @Usage
+         * // Half of the first row plus half of the second, narrates "li@2|3"
+         * - narrate <list[<list[1|2]>|<list[3|4]>].weightedSum[<list[0.5|0.5]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "weightedSum", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ListTag weightList = attr.getParamObject(ListTag.class, ListTag::new);
+            if (weightList == null) return null;
+            double[] weights = weightList.numericView();
+            if (weights == null) return null;
+
+            List<AbstractTag> rows = obj.items();
+            int rowCount = Math.min(rows.size(), weights.length);
+            if (rowCount == 0) return new ListTag();
+
+            double[][] matrix = new double[rowCount][];
+            int width = 0;
+            for (int index = 0; index < rowCount; index++) {
+                if (!(rows.get(index) instanceof ListTag row)) return null;
+                double[] values = row.numericView();
+                if (values == null) return null;
+                matrix[index] = values;
+                if (values.length > width) width = values.length;
+            }
+
+            int columns = width;
+            double[] result = new double[columns];
+            CorexComputePool.parallelFor(0, columns, rowCount, column -> {
+                double sum = 0;
+                for (int index = 0; index < rowCount; index++) {
+                    double[] row = matrix[index];
+                    if (column < row.length) sum += row[column] * weights[index];
+                }
+                result[column] = sum;
+            });
+            return ofNumbers(result);
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name indexOfHighest
+         * @RawName <ListTag.indexOfHighest>
+         * @Object ListTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the 1-based index of the largest numeric entry, in a single pass. Ties go to the
+         * earliest entry. Prefer this over 'highest' followed by 'find': that pair walks the list
+         * twice and compares text, which on a long list costs far more than the search itself.
+         * Returns -1 for an empty list.
+         *
+         * @Usage
+         * // Which vocabulary entry did the model score highest.
+         * - def bestIndex:<[logits].indexOfHighest>
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "indexOfHighest", (attr, obj) -> {
+            double[] numbers = obj.numericView();
+
+            if (numbers != null) {
+                if (numbers.length == 0) return new ElementTag(-1);
+                int best = 0;
+                for (int index = 1; index < numbers.length; index++) {
+                    if (numbers[index] > numbers[best]) best = index;
+                }
+                return new ElementTag(best + 1);
+            }
+
+            int size = obj.size();
+            if (size == 0) return new ElementTag(-1);
+            int best = 0;
+            double bestValue = numericValue(obj.entryAt(0));
+            for (int index = 1; index < size; index++) {
+                double value = numericValue(obj.entryAt(index));
+                if (value > bestValue) {
+                    bestValue = value;
+                    best = index;
+                }
+            }
+            return new ElementTag(best + 1);
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name setObject[]
+         * @RawName <ListTag.setObject[<object>].at[<#>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Returns a copy of the list with the entry at the given index replaced by the value, kept
+         * whole. This is to 'set' what 'push' is to 'include': set splices a list parameter's
+         * entries into place, this one stores it as a single entry. Use it to update one slot of a
+         * list of lists.
+         *
+         * @Usage
+         * // Replaces the second row, narrates "li@li@1|2|li@9|9"
+         * - narrate <list[<list[1|2]>|<list[3|4]>].setObject[<list[9|9]>].at[2]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "setObject", (attr, obj) -> {
+            if (!attr.hasParam() || !attr.matchesNext("at") || !attr.hasNextParam()) return null;
+            AbstractTag value = attr.getParamObject();
+            int target = resolveIndex(attr.getNextParam(), obj.size());
+            attr.fulfill(1);
+            if (value == null || target < 0) return null;
+
+            ListTag result = new ListTag();
+            for (int index = 0; index < obj.size(); index++) {
+                result.addObject(index == target ? value : obj.entryAt(index));
+            }
+            return result;
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name rmsNorm[]
+         * @RawName <ListTag.rmsNorm[(<#.#>)]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @Async
+         * @Description
+         * Divides every entry by the root mean square of the list. Unlike layerNorm this does not
+         * subtract the mean and has no bias, which is what Llama, Qwen and most models newer than
+         * GPT-2 use. The optional parameter is epsilon, default 1e-6. Apply the learned gain
+         * separately with mulList.
+         *
+         * @Usage
+         * // Normalize a hidden state and apply the layer's gain.
+         * - def normalized:<[hidden].rmsNorm.mulList[<[gamma]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "rmsNorm", (attr, obj) -> {
+            double[] source = obj.numericView();
+            if (source == null || source.length == 0) return null;
+
+            double epsilon = 1.0e-6;
+            if (attr.hasParam()) {
+                ElementTag epsilonParam = attr.getParamObject(ElementTag.class, ElementTag::new);
+                if (epsilonParam != null && epsilonParam.isDouble()) epsilon = epsilonParam.asDouble();
+            }
+
+            int length = source.length;
+            double sumOfSquares = 0;
+            for (int index = 0; index < length; index++) sumOfSquares += source[index] * source[index];
+
+            double inverse = 1.0 / Math.sqrt(sumOfSquares / length + epsilon);
+            double[] result = new double[length];
+            for (int index = 0; index < length; index++) result[index] = source[index] * inverse;
+            return ofNumbers(result);
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name rope[]
+         * @RawName <ListTag.rope[<#>].theta[(<#.#>)]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Applies rotary position embedding for the given 0-based position, rotating the first
+         * half of the list against the second half. This is how Llama and Qwen encode position:
+         * instead of adding a position vector once at the start like GPT-2, every layer rotates
+         * its queries and keys by an angle that depends on where the token sits.
+         * The list must be one head's vector, not the whole hidden state, and its length must be
+         * even. Optional '.theta[]' sets the frequency base, default 10000 (Qwen3 uses 1000000).
+         *
+         * @Usage
+         * // Rotate one head's query vector for position 5.
+         * - def rotated:<[queryHead].rope[5].theta[1000000]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "rope", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ElementTag positionParam = attr.getParamObject(ElementTag.class, ElementTag::new);
+            if (positionParam == null || !positionParam.isDouble()) return null;
+            double position = positionParam.asDouble();
+
+            double theta = 10000.0;
+            if (attr.matchesNext("theta") && attr.hasNextParam()) {
+                ElementTag thetaParam = attr.getNextParamObject(ElementTag.class, ElementTag::new);
+                attr.fulfill(1);
+                if (thetaParam != null && thetaParam.isDouble()) theta = thetaParam.asDouble();
+            }
+
+            double[] source = obj.numericView();
+            if (source == null || source.length == 0 || (source.length & 1) != 0) return null;
+
+            int length = source.length;
+            int half = length / 2;
+            double[] result = new double[length];
+            double base = theta;
+
+            for (int index = 0; index < half; index++) {
+                double frequency = 1.0 / Math.pow(base, (2.0 * index) / length);
+                double angle = position * frequency;
+                double cos = Math.cos(angle);
+                double sin = Math.sin(angle);
+                double first = source[index];
+                double second = source[index + half];
+                result[index] = first * cos - second * sin;
+                result[index + half] = second * cos + first * sin;
+            }
+            return ofNumbers(result);
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name concat[]
+         * @RawName <ListTag.concat[<list>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Joins two numeric lists end to end and keeps the result primitive-backed. This is what
+         * 'include' does, except include materializes an object per entry, which matters when you
+         * are building a long vector one piece at a time. Falls back to include's behaviour if
+         * either side is not purely numeric.
+         *
+         * @Usage
+         * // Narrates "li@1|2|3|4"
+         * - narrate <list[1|2].concat[<list[3|4]>]>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "concat", (attr, obj) -> {
+            if (!attr.hasParam()) return null;
+            ListTag other = attr.getParamObject(ListTag.class, ListTag::new);
+            if (other == null) return null;
+
+            double[] left = obj.numericView();
+            double[] right = other.numericView();
+
+            if (left != null && right != null) {
+                double[] result = new double[left.length + right.length];
+                System.arraycopy(left, 0, result, 0, left.length);
+                System.arraycopy(right, 0, result, left.length, right.length);
+                return ofNumbers(result);
+            }
+
+            ListTag result = new ListTag();
+            for (AbstractTag tag : obj.items()) result.addObject(tag);
+            for (AbstractTag tag : other.items()) result.addObject(tag);
+            return result;
+        }).ignoreTest().setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name push[]
+         * @RawName <ListTag.push[<object>]>
+         * @Object ListTag
+         * @ReturnType ListTag
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Returns a copy of the list with the given value added as one single entry, whatever it is.
+         * Use this instead of 'include' when the value is itself a list and you want a list of lists,
+         * since include would spread the inner entries into the outer list.
+         *
+         * @Usage
+         * // Narrates "2" - one original entry plus one list entry
+         * - narrate <list[a].push[<list[b|c]>].size>
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "push", (attr, obj) -> {
+            AbstractTag value = attr.getParamObject();
+            if (value == null) return null;
+
+            ListTag result = new ListTag();
+            for (AbstractTag tag : obj.items()) result.addObject(tag);
+            result.addObject(value);
+            return result;
+        }).ignoreTest().setAsyncSafe();
+    }
+
+    private enum ElementwiseOperation { ADD, SUBTRACT, MULTIPLY }
+
+    private static ListTag elementwise(Attribute attr, ListTag obj, ElementwiseOperation operation) {
+        if (!attr.hasParam()) return null;
+        ListTag other = attr.getParamObject(ListTag.class, ListTag::new);
+        if (other == null) return null;
+
+        double[] left = obj.numericView();
+        double[] right = other.numericView();
+        if (left == null || right == null) return null;
+
+        int length = Math.min(left.length, right.length);
+        double[] result = new double[length];
+        switch (operation) {
+            case ADD -> {
+                for (int index = 0; index < length; index++) result[index] = left[index] + right[index];
+            }
+            case SUBTRACT -> {
+                for (int index = 0; index < length; index++) result[index] = left[index] - right[index];
+            }
+            case MULTIPLY -> {
+                for (int index = 0; index < length; index++) result[index] = left[index] * right[index];
+            }
+        }
+        return ofNumbers(result);
     }
 
     public ListTag() {}
@@ -1419,7 +2003,7 @@ public class ListTag implements AbstractTag {
         if (raw == null || raw.isEmpty()) return;
         if (raw.startsWith(prefix + "@")) raw = raw.substring(prefix.length() + 1);
         for (String entry : ObjectFetcher.splitIgnoringBrackets(raw, '|')) {
-            if (!entry.isEmpty()) this.list.add(ObjectFetcher.pickObject(entry));
+            if (!entry.isEmpty()) appendTag(ObjectFetcher.pickObject(entry));
         }
     }
 
@@ -1427,9 +2011,9 @@ public class ListTag implements AbstractTag {
         for (Object element : list) {
             if (element == null) continue;
             if (element instanceof AbstractTag tag) {
-                this.list.add(tag);
+                appendTag(tag);
             } else {
-                this.list.add(ObjectFetcher.pickObject(element.toString()));
+                appendTag(ObjectFetcher.pickObject(element.toString()));
             }
         }
     }
@@ -1440,7 +2024,7 @@ public class ListTag implements AbstractTag {
      */
     public <T extends AbstractTag> List<T> filter(Class<T> clazz, @Nullable ScriptQueue queue) {
         List<T> results = new ArrayList<>();
-        for (AbstractTag item : this.list) {
+        for (AbstractTag item : items()) {
             if (clazz.isInstance(item)) {
                 results.add(clazz.cast(item));
             } else if (queue != null) {
@@ -1457,8 +2041,8 @@ public class ListTag implements AbstractTag {
                 .map(Class::getSimpleName)
                 .collect(Collectors.joining("/"));
 
-        List<AbstractTag> results = new ArrayList<>(this.list.size());
-        for (AbstractTag item : this.list) {
+        List<AbstractTag> results = new ArrayList<>(size());
+        for (AbstractTag item : items()) {
             boolean matched = false;
             for (Class<?> clazz : classes) {
                 if (clazz.isInstance(item)) {
@@ -1484,40 +2068,139 @@ public class ListTag implements AbstractTag {
                 continue;
             }
 
-            double val = numericValue(item);
-            double calc = switch (type) {
-                case "relu" -> Math.max(0, val);
-                case "sigmoid" -> 1.0 / (1.0 + Math.exp(-val));
-                case "tanh" -> Math.tanh(val);
-                default -> val;
-            };
-            result.addObject(new ElementTag(calc));
+            result.addObject(new ElementTag(applyActivation(numericValue(item), type)));
         }
         return result;
     }
 
+    private static final double GELU_COEFFICIENT = Math.sqrt(2.0 / Math.PI);
+
+    private static double applyActivation(double value, String type) {
+        return switch (type) {
+            case "relu" -> Math.max(0, value);
+            case "sigmoid" -> 1.0 / (1.0 + Math.exp(-value));
+            case "tanh" -> Math.tanh(value);
+            case "gelu" -> 0.5 * value
+                    * (1.0 + Math.tanh(GELU_COEFFICIENT * (value + 0.044715 * value * value * value)));
+            case "silu" -> value / (1.0 + Math.exp(-value));
+            default -> value;
+        };
+    }
+
+    /**
+     * Wraps an array of numbers without allocating an {@link ElementTag} per entry.
+     * <p>
+     * The array is taken by reference and must not be modified afterwards. Entries are
+     * materialized as tags only if something actually reads the list as objects, so a list
+     * produced by numeric tags and consumed by numeric tags never boxes at all.
+     *
+     * @param values the backing values, taken by reference
+     * @return a numeric-backed list of {@code values.length} entries
+     */
+    public static ListTag ofNumbers(double[] values) {
+        ListTag result = new ListTag();
+        result.numericEntries = values;
+        return result;
+    }
+
+    /**
+     * Returns the entries as primitive doubles, or {@code null} if any entry is not numeric.
+     * <p>
+     * The returned array is the live backing store, not a copy. Callers must treat it as
+     * read-only. A boxed list is converted once and the result is cached, so repeated numeric
+     * tags on the same list pay the conversion a single time.
+     *
+     * @return the backing values, or {@code null} when the list is not purely numeric
+     */
+    public double[] numericView() {
+        double[] current = numericEntries;
+        if (current != null) return current;
+        if (numericDerivationFailed) return null;
+        if (boxedEntries == null) return EMPTY_NUMBERS;
+
+        List<AbstractTag> source = boxedEntries;
+        int length = source.size();
+        double[] derived = new double[length];
+        for (int index = 0; index < length; index++) {
+            if (!(source.get(index) instanceof ElementTag element) || !element.isDouble()) {
+                this.numericDerivationFailed = true;
+                return null;
+            }
+            derived[index] = element.asDouble();
+        }
+
+        this.numericEntries = derived;
+        return derived;
+    }
+
     public List<AbstractTag> getList() {
-        return new ArrayList<>(list);
+        return new ArrayList<>(items());
     }
 
     public int size() {
-        return list.size();
+        List<AbstractTag> entries = boxedEntries;
+        if (entries != null) return entries.size();
+        double[] numbers = numericEntries;
+        return numbers != null ? numbers.length : 0;
     }
 
     public String get(int index) {
-        return (index >= 0 && index < list.size()) ? list.get(index).identify() : null;
+        List<AbstractTag> entries = items();
+        return (index >= 0 && index < entries.size()) ? entries.get(index).identify() : null;
     }
 
     public void addString(String value) {
-        if (value != null) this.list.add(new ElementTag(value));
+        if (value != null) appendTag(new ElementTag(value));
     }
 
     public void addObject(AbstractTag tag) {
-        if (tag != null) this.list.add(tag);
+        if (tag != null) appendTag(tag);
     }
 
     public boolean isEmpty() {
-        return list.isEmpty();
+        return size() == 0;
+    }
+
+    /**
+     * Returns one entry without materializing the whole list.
+     * <p>
+     * Reading a single index out of a numeric-backed list must not force it into objects: on a
+     * weight tensor that would turn a few megabytes of primitives into tens of millions of tags.
+     */
+    private AbstractTag entryAt(int index) {
+        if (index < 0) return null;
+
+        List<AbstractTag> current = boxedEntries;
+        if (current != null) {
+            return index < current.size() ? current.get(index) : null;
+        }
+
+        double[] numbers = numericEntries;
+        if (numbers != null && index < numbers.length) {
+            return new ElementTag(numbers[index]);
+        }
+        return null;
+    }
+
+    private List<AbstractTag> items() {
+        List<AbstractTag> current = boxedEntries;
+        if (current != null) return current;
+
+        double[] numbers = numericEntries;
+        int length = numbers != null ? numbers.length : 0;
+        current = new ArrayList<>(length);
+        for (int index = 0; index < length; index++) {
+            current.add(new ElementTag(numbers[index]));
+        }
+        this.boxedEntries = current;
+        return current;
+    }
+
+    private void appendTag(AbstractTag tag) {
+        if (tag == null) return;
+        items().add(tag);
+        this.numericEntries = null;
+        this.numericDerivationFailed = false;
     }
 
     private static int resolveIndex(String param, int size) {
@@ -1530,6 +2213,36 @@ public class ListTag implements AbstractTag {
         catch (NumberFormatException ex) { return -1; }
         int index = parsed < 0 ? size + parsed : parsed - 1;
         return (index >= 0 && index < size) ? index : -1;
+    }
+
+    /**
+     * Picks the largest or smallest entries of a numeric list without boxing or sorting objects.
+     * <p>
+     * Returns {@code null} when the list is not numeric, leaving the caller to fall back to the
+     * general path. Finding one extreme is a single linear pass; asking for several sorts a
+     * primitive copy, which is still far cheaper than sorting materialized tags.
+     */
+    private static AbstractTag extremeOf(ListTag source, int count, boolean highest) {
+        double[] numbers = source.numericView();
+        if (numbers == null || numbers.length == 0 || count < 1) return null;
+
+        if (count == 1) {
+            double best = numbers[0];
+            for (int index = 1; index < numbers.length; index++) {
+                double value = numbers[index];
+                if (highest ? value > best : value < best) best = value;
+            }
+            return new ElementTag(best);
+        }
+
+        double[] sorted = numbers.clone();
+        Arrays.sort(sorted);
+        int limit = Math.min(count, sorted.length);
+        double[] picked = new double[limit];
+        for (int index = 0; index < limit; index++) {
+            picked[index] = highest ? sorted[sorted.length - 1 - index] : sorted[index];
+        }
+        return ofNumbers(picked);
     }
 
     private static double numericValue(AbstractTag tag) {
@@ -1564,9 +2277,25 @@ public class ListTag implements AbstractTag {
 
     @Override
     public @NonNull String identify() {
-        List<String> strings = new ArrayList<>();
-        for (AbstractTag tag : list) strings.add(tag.identify());
-        return prefix + "@" + String.join("|", strings);
+        StringBuilder builder = new StringBuilder(prefix).append('@');
+
+        double[] numbers = numericEntries;
+        if (boxedEntries == null && numbers != null) {
+            for (int index = 0; index < numbers.length; index++) {
+                if (index > 0) builder.append('|');
+                double value = numbers[index];
+                if (value == (long) value) builder.append((long) value);
+                else builder.append(value);
+            }
+            return builder.toString();
+        }
+
+        List<AbstractTag> entries = items();
+        for (int index = 0; index < entries.size(); index++) {
+            if (index > 0) builder.append('|');
+            builder.append(entries.get(index).identify());
+        }
+        return builder.toString();
     }
 
     @Override

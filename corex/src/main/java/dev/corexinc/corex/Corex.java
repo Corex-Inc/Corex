@@ -6,6 +6,8 @@ import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
+import dev.corexinc.corex.engine.utils.CorexComputePool;
+import dev.corexinc.corex.environment.commands.core.FileCommand;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
@@ -83,6 +85,9 @@ public class Corex extends JavaPlugin {
         saveDefaultConfig();
         FlagManager.init();
         Debugger.updateDebugMode(getConfig().getString("logger.debug-mode", "default"));
+        CorexComputePool.configure(
+                getConfig().getInt("compute.threads", 0),
+                getConfig().getLong("compute.split-threshold", CorexComputePool.DEFAULT_THRESHOLD));
 
         int pluginId = 30505;
         new Metrics(this, pluginId);
@@ -129,6 +134,8 @@ public class Corex extends JavaPlugin {
         } catch (Throwable ignored) {}
 
         DatabaseManager.closeAll();
+        CorexComputePool.shutdown();
+        FileCommand.clearCache();
 
         if (PacketEvents.getAPI() != null) {
             PacketEvents.getAPI().terminate();

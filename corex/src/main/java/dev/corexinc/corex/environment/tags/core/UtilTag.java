@@ -98,6 +98,46 @@ public class UtilTag implements AbstractTag {
 
         /* @doc tag
          *
+         * @Name memoryUsed
+         * @RawName <UtilTag.memoryUsed>
+         * @Object UtilTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns how many megabytes of heap are currently in use. This counts garbage that has
+         * not been collected yet, so it jumps around. Compare it against memoryMax to see how
+         * close a script is to filling the heap.
+         *
+         * @Usage
+         * // Report memory while loading something large.
+         * - narrate "занято <util.memoryUsed> из <util.memoryMax> МБ"
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "memoryUsed", (attr, obj) -> {
+            Runtime runtime = Runtime.getRuntime();
+            return new ElementTag((runtime.totalMemory() - runtime.freeMemory()) / 1048576L);
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name memoryMax
+         * @RawName <UtilTag.memoryMax>
+         * @Object UtilTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the heap ceiling in megabytes, which is what -Xmx was set to.
+         *
+         * @Usage
+         * // Narrates the configured heap size.
+         * - narrate <util.memoryMax>
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "memoryMax", (attr, obj) ->
+                new ElementTag(Runtime.getRuntime().maxMemory() / 1048576L)).setAsyncSafe();
+
+        /* @doc tag
+         *
          * @Name debugMode
          * @RawName <UtilTag.debugMode>
          * @Object UtilTag

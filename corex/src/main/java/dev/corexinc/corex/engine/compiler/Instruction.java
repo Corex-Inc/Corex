@@ -4,6 +4,7 @@ import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.flags.AbstractGlobalFlag;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.registry.BoundCommand;
 import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,6 +92,12 @@ public class Instruction {
      * Kept separate from {@link #customData} so both can be cached independently.
      */
     @Nullable public Object slotData;
+
+    /**
+     * Set when {@link #command} declares a {@code run} overload taking resolved arguments.
+     * Null means the classic {@code run(queue, instruction)} is used.
+     */
+    @Nullable public BoundCommand bound;
 
     public Instruction(
             @NotNull AbstractCommand command,

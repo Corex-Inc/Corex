@@ -1,8 +1,8 @@
 package dev.corexinc.corex.environment.commands.entity;
 
 import dev.corexinc.corex.api.commands.AbstractCommand;
-import dev.corexinc.corex.api.commands.ArgumentSchema;
-import dev.corexinc.corex.api.commands.ArgumentSet;
+import dev.corexinc.corex.api.commands.CommandExecutionException;
+
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -75,18 +75,7 @@ public class MountCommand implements AbstractCommand {
         return 2;
     }
 
-    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
-            .requireLinear(0, ListTag.class)
-            .optionalFlag("cancel")
-            .build();
-
-    @Override
-    public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        ArgumentSet args = SCHEMA.bind(instruction, queue);
-        if (args == null) return;
-
-        ListTag list = args.linear(0);
-
+    public void run(ScriptQueue queue, ListTag list, boolean cancel) {
         List<Rider> riders = new ArrayList<>();
         for (AbstractTag item : list.getList()) {
             Rider rider = resolveRider(item);
@@ -98,22 +87,15 @@ public class MountCommand implements AbstractCommand {
             riders.add(rider);
         }
 
-        boolean cancel = args.flag("cancel");
-
         if (cancel) {
             for (Rider rider : riders) rider.dismount();
-            Debugger.report(queue, instruction,
-                    "List", list.identify(),
-                    "Entities", String.valueOf(riders.size()),
-                    "Action", "cancel"
-            );
+            Debugger.detail(queue, "Dismounted", riders.size());
             return;
         }
 
         if (riders.size() < 2) {
-            Debugger.echoError(queue, "Mount: need at least 2 valid entities to chain, only "
+            throw new CommandExecutionException("Mount: need at least 2 valid entities to chain, only "
                     + riders.size() + " resolved from " + list.size() + " list entries.");
-            return;
         }
 
         int mounted = 0;
@@ -142,12 +124,7 @@ public class MountCommand implements AbstractCommand {
             }
         }
 
-        Debugger.report(queue, instruction,
-                "List", list.identify(),
-                "Chain", String.valueOf(riders.size()),
-                "Mounted", mounted + "/" + (riders.size() - 1),
-                "Action", "mount"
-        );
+        Debugger.detail(queue, "Mounted", mounted + "/" + (riders.size() - 1));
     }
 
     /** One link of a mount chain: either a server entity or a packet-only one. */

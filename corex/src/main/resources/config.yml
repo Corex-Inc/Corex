@@ -1,2 +1,13 @@
 logger:
   debug-mode: default
+
+# Worker pool used by heavy numeric tags (matrixMul, activation, ...).
+# It does not change which thread your script runs on - it only splits a single
+# large operation across cores and joins before the tag returns.
+compute:
+  # Worker threads. 0 = half your cores, leaving the rest to the server thread.
+  threads: 0
+  # Multiplications below which an operation stays inline instead of paying for
+  # thread dispatch. Raise it if small lists got slower, lower it if big ones
+  # are not using your cores.
+  split-threshold: 65536

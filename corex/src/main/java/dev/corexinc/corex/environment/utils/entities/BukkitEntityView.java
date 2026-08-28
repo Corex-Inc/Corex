@@ -556,6 +556,7 @@ public record BukkitEntityView(Entity entity) implements LiveEntityView {
         if (entity instanceof AbstractArrow arrow) arrow.setPierceLevel(value);
     }
 
+    @SuppressWarnings("removal")
     @Override public void setKnockback(int value) {
         if (entity instanceof AbstractArrow arrow) arrow.setKnockbackStrength(value);
     }

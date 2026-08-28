@@ -149,6 +149,8 @@ public class ScriptManager {
     }
 
     public static void setDataFolder(Path path) { dataFolder = path; }
+
+    public static Path getDataFolder() { return dataFolder; }
     public static void setRegistry(CorexRegistry r) { registry = r; }
 
     public static CorexRegistry getRegistry() { return registry; }

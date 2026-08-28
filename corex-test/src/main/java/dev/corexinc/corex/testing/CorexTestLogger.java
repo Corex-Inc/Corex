@@ -1,4 +1,4 @@
-package dev.corexinc.corex.utils;
+package dev.corexinc.corex.testing;
 
 public class CorexTestLogger {
     private static final String RESET = "\u001B[0m";

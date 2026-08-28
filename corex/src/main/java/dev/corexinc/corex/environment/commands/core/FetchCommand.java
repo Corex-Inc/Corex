@@ -262,7 +262,12 @@ public class FetchCommand implements AbstractCommand {
                 CommandHelper.saveResult(queue, instruction, result);
 
                 if (instruction.isWaitable) {
-                    queue.resume();
+                    if (queue.isAsync()) {
+                        SchedulerAdapter.get().runAsync(queue::resume);
+                    }
+                    else {
+                        queue.resume();
+                    }
                 }
             }, 1L);
         });

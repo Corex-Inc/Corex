@@ -3,14 +3,13 @@ package dev.corexinc.corex.environment.formatters;
 import dev.corexinc.corex.api.tags.AbstractFormatter;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.utils.CorexSerializer;
 import dev.corexinc.corex.environment.tags.core.ComponentTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
-import dev.corexinc.corex.environment.tags.core.MarkupTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.TranslatableComponent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
@@ -27,11 +26,18 @@ import java.util.Optional;
  * "key" is the translation key (required).
  * "fallback" is displayed when the client cannot find a translation for the key (optional).
  * "with" is a pipe-separated list of arguments that fill in dynamic slots in the translated message (optional).
+ * An argument that already carries formatting keeps it, so each slot can be colored on its own.
+ * Build the piece as a definition first (that produces a ComponentTag) and pass the definition in,
+ * since a formatter written directly inside "with" is read as literal text.
  * Be aware that translation keys can change between Minecraft versions.
  *
  * @Usage
  * // Narrates the display name of a diamond sword.
  * - narrate "Reward: <&translate[key=item.minecraft.diamond_sword]>"
+ *
+ * // Colors one slot independently of the rest of the line.
+ * - def icons "<&color[#0bade3]><&char[9856]><&char[9857]>"
+ * - narrate <&translate[key=my.roll.result;with=<player.name>|<[icons]>]>
  *
  * // Translates a command feedback message with dynamic arguments.
  * - narrate <&translate[key=commands.give.success.single;with=32|<&translate[key=item.minecraft.diamond_sword]>|<player.name>]>
@@ -73,12 +79,14 @@ public class TranslateFormatter implements AbstractFormatter {
             if (withRaw != null && !withRaw.isBlank()) {
                 List<ComponentLike> args = new ArrayList<>();
                 for (String part : withRaw.split("\\|")) {
-                    args.add(Component.text(part));
+                    args.add(part.indexOf('§') < 0
+                            ? Component.text(part)
+                            : CorexSerializer.LEGACY.deserialize(part));
                 }
                 builder.arguments(args);
             }
 
-            return new MarkupTag(MiniMessage.miniMessage().serialize(builder.build()));
+            return new ComponentTag(builder.build());
         } catch (Exception e) {
             return INSTANCE;
         }

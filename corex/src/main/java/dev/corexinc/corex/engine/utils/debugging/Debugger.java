@@ -109,6 +109,17 @@ public class Debugger {
         CorexLogger.info(mirrorOf(queue), sb.toString());
     }
 
+    /**
+     * Prints one extra value under a command's argument report, for values the engine
+     * could not know before the command ran.
+     */
+    public static void detail(ScriptQueue queue, String key, Object value) {
+        if (queue.isSilent() || mode != Mode.ALL) return;
+        String text = String.valueOf(value).replace("<", "\\<").replace("§", "&");
+        CorexLogger.info(mirrorOf(queue), indent(queue.getDepth()) + styleOf(queue).bar
+                + "<yellow>    -> <gray>" + key + "=<aqua>" + text);
+    }
+
     public static void error(ScriptQueue queue, String message, int depth) {
         error(queue, message, null, depth);
     }

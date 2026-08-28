@@ -78,7 +78,7 @@ public class ForeachCommand implements AbstractCommand, SlotAware {
 
     @Override
     public @NonNull String getSyntax() {
-        return "- foreach [<list>|<map>|break|continue] (as:<var>) (key:<var>)";
+        return "[<list>|<map>|break|continue] (as:<var>) (key:<var>)";
     }
 
     @Override

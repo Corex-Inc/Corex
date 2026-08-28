@@ -59,7 +59,6 @@ public class DamageCommand implements AbstractCommand {
         return List.of("hurt");
     }
 
-
     @Override
     @SuppressWarnings("UnstableApiUsage")
     public void run(@NotNull ScriptQueue queue, @NotNull Instruction instruction) {

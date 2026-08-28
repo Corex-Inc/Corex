@@ -2,45 +2,40 @@
     java
 }
 
-group = "dev.corexinc.corex"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://maven.canvasmc.io/releases")
-    maven("https://maven.pulsemc.dev/snapshots")
-    maven("https://repo.codemc.io/repository/maven-releases/")
-    maven("https://repo.codemc.io/repository/maven-snapshots/")
-    maven("https://maven.pvphub.me/tofaa")
+configurations.testRuntimeOnly {
+    extendsFrom(configurations.compileOnlyApi.get())
 }
+
+@Suppress("UNCHECKED_CAST")
+val corexLibraries = rootProject.extra["corexLibraries"] as List<String>
 
 dependencies {
     @SuppressWarnings("deprecation")
     compileOnly("io.canvasmc.canvas:canvas-api:26.2.build.937-stable")
-    compileOnly("org.jetbrains:annotations:24.1.0")
 
-    // Other Libs
-    compileOnly("org.java-websocket:Java-WebSocket:1.5.6")
-    compileOnly("com.zaxxer:HikariCP:5.1.0")
-    compileOnly("org.xerial:sqlite-jdbc:3.45.1.0")
-    compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
-    compileOnly("io.github.tofaa2:spigot:3.3.7-SNAPSHOT")
+    compileOnlyApi("org.jetbrains:annotations:24.1.0")
+    corexLibraries.forEach { compileOnlyApi(it) }
 
 
-    // Tests
-    @SuppressWarnings("deprecation")
-    testImplementation("org.mockbukkit.mockbukkit:mockbukkit-v26.2:4.+")
+    testImplementation(project(":corex-test"))
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("io.papermc.paper:paper-api:26.2.build.119-stable")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-    testRuntimeOnly("org.java-websocket:Java-WebSocket:1.5.6")
-    testRuntimeOnly("com.zaxxer:HikariCP:5.1.0")
-    testRuntimeOnly("org.xerial:sqlite-jdbc:3.45.1.0")
-    testRuntimeOnly("com.github.retrooper:packetevents-spigot:2.13.0")
-    testRuntimeOnly("io.github.tofaa2:spigot:3.3.7-SNAPSHOT")
+
     testRuntimeOnly("io.netty:netty-all:4.1.72.Final")
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgs(
+        "--sun-misc-unsafe-memory-access=allow",
+        "--enable-native-access=ALL-UNNAMED",
+    )
+
+    testLogging {
+        events("passed", "failed", "skipped")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = providers.gradleProperty("corexVerboseTests").isPresent
+    }
 }
 
 tasks.test {

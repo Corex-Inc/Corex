@@ -24,8 +24,8 @@ import java.util.List;
 /* @doc command
  *
  * @Name Title
- * @Syntax title [<text>] (title:<text>) (subtitle:<text>) (fadeIn:<duration>) (stay:<duration>) (fadeOut:<duration>) (targets:<player>|...)
- * @RequiredArgs 1
+ * @Syntax title (<text>) (title:<text>) (subtitle:<text>) (fadeIn:<duration>) (stay:<duration>) (fadeOut:<duration>) (targets:<player>|...)
+ * @RequiredArgs 0
  * @MaxArgs 6
  * @ShortDescription Displays a title message to specified players.
  *

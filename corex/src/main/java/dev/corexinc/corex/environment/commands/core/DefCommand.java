@@ -94,7 +94,54 @@ public class DefCommand implements AbstractCommand, DataBlockCommand, SlotAware 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.", Pattern.LITERAL);
 
     private record ResolvedDefinition(String keyPath, AbstractDataAction action, String param, String[] parts,
-                                      AbstractTag staticValue) {}
+                                      AbstractTag staticValue, CompiledArgument valueArg) {
+
+        ResolvedDefinition(String keyPath, AbstractDataAction action, String param, String[] parts,
+                           AbstractTag staticValue) {
+            this(keyPath, action, param, parts, staticValue, null);
+        }
+    }
+
+    /**
+     * Splits {@code key:value} on the script's own source text instead of on the evaluated argument.
+     * <p>
+     * Reading argument 0 evaluates the whole thing, so a line like {@code - def x:<[weights]>} would
+     * flatten the list into a pipe-joined string before this command ever sees the colon, only for
+     * the action to parse it straight back. Splitting the raw text lets the value stay an object.
+     * <p>
+     * Only taken when the key is literal and the value actually contains a tag: for plain text the
+     * old path costs nothing and stays byte-for-byte identical.
+     *
+     * @return the resolved definition, or {@code null} to fall through to the general path
+     */
+    private static ResolvedDefinition resolveFromSource(Instruction instruction) {
+        CompiledArgument first = instruction.getLinearArgument(0);
+        if (first == null) return null;
+
+        String raw = first.getRaw();
+        if (raw == null) return null;
+
+        int colon = findColonOutsideBrackets(raw);
+        if (colon <= 0) return null;
+
+        String keyPath = raw.substring(0, colon);
+        if (keyPath.indexOf('<') >= 0) return null;
+
+        String actionStr = raw.substring(colon + 1);
+        AbstractDataAction action = ScriptManager.getRegistry().findAction(actionStr);
+        if (action == null) return null;
+
+        String param = action.extractParam(actionStr);
+        if (param == null || param.indexOf('<') < 0) return null;
+
+        CompiledArgument valueArg = ScriptCompiler.parseArg(param);
+        if (valueArg == null) return null;
+
+        String[] parts = keyPath.indexOf('.') < 0
+                ? new String[] { keyPath }
+                : DOT_SPLIT.split(keyPath, -1);
+        return new ResolvedDefinition(keyPath, action, param, parts, null, valueArg);
+    }
 
     private record DefSlot(String name, int slot) {}
 
@@ -164,6 +211,13 @@ public class DefCommand implements AbstractCommand, DataBlockCommand, SlotAware 
 
         if (instruction.customData instanceof List<?> rawList) {
             handleDataBlock(queue, instruction, rawList);
+            return;
+        }
+
+        ResolvedDefinition fromSource = resolveFromSource(instruction);
+        if (fromSource != null) {
+            instruction.customData = fromSource;
+            runResolved(queue, instruction, fromSource);
             return;
         }
 
@@ -238,11 +292,13 @@ public class DefCommand implements AbstractCommand, DataBlockCommand, SlotAware 
             if (valueObj == null) {
                 stored = null;
             }
-            else if (valueObj instanceof ElementTag el && (el.isKnownNumeric() || el.asString().indexOf('@') < 1)) {
-                stored = el;
+            else if (valueObj instanceof ElementTag el) {
+                stored = el.isKnownNumeric() || el.asString().indexOf('@') < 1
+                        ? el
+                        : ObjectFetcher.pickObject(el.asString());
             }
             else {
-                stored = ObjectFetcher.pickObject(valueObj.identify());
+                stored = valueObj;
             }
 
             queue.setDefinition(slot, resolved.keyPath(), stored);
@@ -258,6 +314,9 @@ public class DefCommand implements AbstractCommand, DataBlockCommand, SlotAware 
         }
 
         AbstractTag secondArg = instruction.getLinearObject(1, queue);
+        if (secondArg == null && resolved.valueArg() != null) {
+            secondArg = resolved.valueArg().evaluate(queue);
+        }
 
         try {
             if (resolved.parts().length > 1) {

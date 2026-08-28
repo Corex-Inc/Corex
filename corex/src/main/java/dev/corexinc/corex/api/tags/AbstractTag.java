@@ -44,7 +44,7 @@ public interface AbstractTag {
     /**
      * Processes a sub-tag (attribute) of this object.
      * <p>
-     * When the parser encounters a dot (e.g., <player.name>), it calls this method
+     * When the parser encounters a dot (e.g., {@code <player.name>}), it calls this method
      * on the Player object with an {@link Attribute} containing "name".
      * <p>
      * <b>Crucial:</b> This method is the entry point for the {@link TagProcessor}.

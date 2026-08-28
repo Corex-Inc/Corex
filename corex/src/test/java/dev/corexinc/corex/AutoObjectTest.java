@@ -1,132 +1,43 @@
 package dev.corexinc.corex;
 
-import dev.corexinc.corex.engine.compiler.Instruction;
-import dev.corexinc.corex.engine.compiler.ScriptCompiler;
-import dev.corexinc.corex.engine.compiler.TagNode;
-import dev.corexinc.corex.api.tags.AbstractTag;
-import dev.corexinc.corex.api.tags.Attribute;
-import dev.corexinc.corex.api.processors.TagProcessor;
+import dev.corexinc.corex.api.testing.TagTestSuite;
+import dev.corexinc.corex.api.testing.TestReport;
 import dev.corexinc.corex.engine.CorexRegistry;
-import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.tags.ObjectFetcher;
-import dev.corexinc.corex.environment.tags.core.ElementTag;
-import dev.corexinc.corex.utils.CorexTestLogger;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import dev.corexinc.corex.testing.CorexTestEnvironment;
+import dev.corexinc.corex.testing.CorexTestLogger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.mockbukkit.mockbukkit.MockBukkit;
-import org.mockbukkit.mockbukkit.ServerMock;
-import org.mockbukkit.mockbukkit.entity.ItemDisplayMock;
-import org.mockbukkit.mockbukkit.entity.PlayerMock;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("ObjectTagTest")
 public class AutoObjectTest {
+
     private static CorexRegistry registry;
 
     @BeforeAll
     public static void setup() {
-        ServerMock server = MockBukkit.mock();
-
-        // -------------- SETUP YOUR SERVER ENVIRONMENT HERE --------------
-
-        server.addSimpleWorld("world");
-        Objects.requireNonNull(server.getWorld("world")).getBlockAt(1, 1, 1).setType(Material.STONE);
-        UUID testUUID = UUID.fromString("465876c1-2a15-4fc0-9f0b-97de13aa46f1");
-        PlayerMock mockPlayer = new PlayerMock(server, "TestPlayer", testUUID);
-        server.addPlayer(mockPlayer);
-        mockPlayer.setLocation(new Location(server.getWorld("world"), 10.5, 64.0, 10.5, 90f, 0f));
-
-        UUID entityUUID = UUID.fromString("cf5d1e35-fb92-476e-9c96-bc932ca0b0cb");
-        ItemDisplayMock itemDisplay = new ItemDisplayMock(server, entityUUID);
-        server.registerEntity(itemDisplay);
-
-        ScriptQueue queue = new ScriptQueue("test_queue", new Instruction[0], false, null, null);
-        queue.setKeepAlive(true);
-        queue.define("testDef", new ElementTag("Yeah!"));
-        queue.start();
-
-        // -------------- SETUP YOUR SERVER ENVIRONMENT HERE --------------
-
-        try {
-            Corex plugin = MockBukkit.load(Corex.class);
-            registry = plugin.getRegistry();
-        }
-        catch (Throwable e) {e.printStackTrace();}
+        registry = CorexTestEnvironment.bootstrap();
         CorexTestLogger.info("ObjectTagTest environment has been started!");
     }
 
     @Test
     public void runDeepTagFuzzing() {
-        List<String> allFailures = new ArrayList<>();
+        // No registering() here on purpose: Corex tests everything in the registry.
+        // An addon narrows the run to its own tags by passing its loader instead.
+        TestReport report = TagTestSuite.on(registry)
+                .onProgress(CorexTestLogger::info)
+                .run();
 
-        for (Class<? extends AbstractTag> clazz : registry.getRegisteredTagClasses()) {
-            try {
-                AbstractTag dummy;
-                try {
-                    dummy = clazz.getDeclaredConstructor(String.class).newInstance("test_init");
-                } catch (NoSuchMethodException e) {
-                    dummy = clazz.getDeclaredConstructor().newInstance();
-                }
-
-                String startVal = dummy.getTestValue();
-
-                if (startVal == null) {
-                    CorexTestLogger.info(clazz.getSimpleName() + ": Test disabled. Skipping...");
-                    continue;
-                }
-
-                AbstractTag testObject = ObjectFetcher.pickObject(startVal);
-
-                CorexTestLogger.info("Testing: " + clazz.getSimpleName() + " (Sample: " + startVal + ")");
-                TagProcessor<?> processor = testObject.getProcessor();
-
-                processor.getRegisteredTags().forEach((tagName, data) -> {
-                    if (data.skipTest) {
-                        CorexTestLogger.info("    [Skipped] ." + tagName + " (Manual ignore)");
-                        return;
-                    }
-
-                    String fullTagStr = tagName + (data.testParam != null ? "[" + data.testParam + "]" : "");
-                    if (data.testChain != null) {
-                        for (String c : data.testChain) fullTagStr += "." + c;
-                    }
-
-                    System.out.print("    \u001B[36m-> Subtag: ." + fullTagStr + " ... \u001B[0m");
-
-                    try {
-                        TagNode[] nodes = ScriptCompiler.parseTagNodes(fullTagStr);
-                        Attribute attr = new Attribute(nodes, null);
-                        AbstractTag result = testObject.getAttribute(attr);
-
-                        assertNotNull(result, "Tag returned null!");
-                        assertTrue(data.returnType.isInstance(result), "Wrong type: " + result.getClass().getSimpleName());
-
-                        System.out.println("\u001B[32mOK! (" + result.identify() + ")\u001B[0m");
-                    } catch (Throwable e) {
-                        System.out.println("\u001B[31mERROR!\u001B[0m");
-                        allFailures.add(clazz.getSimpleName() + "." + fullTagStr + " -> " + e.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                allFailures.add("Critical failure in " + clazz.getSimpleName() + ": " + e.getMessage());
-            }
-        }
-
-        if (!allFailures.isEmpty()) {
-            System.out.println("\n--- [ TEST SUMMARY: " + allFailures.size() + " ERRORS FOUND ] ---");
-            allFailures.forEach(CorexTestLogger::error);
-            fail("Deep Tag Fuzzing failed with " + allFailures.size() + " errors.");
+        if (report.isSuccess()) {
+            CorexTestLogger.success("All tags passed fuzzing! ("
+                    + report.getSubjectCount() + " tags, " + report.getCheckCount() + " subtags)");
         } else {
-            CorexTestLogger.success("All tags passed fuzzing successfully!");
+            CorexTestLogger.error("--- [ TEST SUMMARY: " + report.getFailures().size() + " ERRORS FOUND ] ---");
+            report.getFailures().forEach(failure -> CorexTestLogger.error(failure.toString()));
         }
+
+        assertTrue(report.isSuccess(), report::format);
     }
 }
