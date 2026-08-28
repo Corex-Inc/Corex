@@ -142,6 +142,7 @@ public class EnvironmentLoader {
                 GiveCommand.class,
                 WebsocketCommand.class,
                 FetchCommand.class,
+                FileCommand.class,
                 FlagCommand.class,
                 SetBlockCommand.class,
                 StopCommand.class,
