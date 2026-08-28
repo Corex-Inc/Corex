@@ -18,6 +18,7 @@ public class CorexRegistry {
 
     private final ScriptCommandRegistry scriptCommandRegistry;
     private final FormatRegistry formatRegistry;
+    private final List<AbstractCommand> registeredCommands = new ArrayList<>();
     private final List<Class<? extends AbstractTag>> registeredTagClasses = new ArrayList<>();
     private final List<Class<? extends AbstractFormatter>> registeredFormatterClasses = new ArrayList<>();
     private final Map<String, Class<? extends AbstractContainer>> registeredContainerClasses = new HashMap<>();
@@ -38,6 +39,7 @@ public class CorexRegistry {
                 if (AbstractCommand.class.isAssignableFrom(clazz)) {
                     AbstractCommand command = (AbstractCommand) clazz.getDeclaredConstructor().newInstance();
                     scriptCommandRegistry.register(command);
+                    registeredCommands.add(command);
                 }
 
                 else if (AbstractTag.class.isAssignableFrom(clazz)) {
@@ -108,6 +110,16 @@ public class CorexRegistry {
 
     public FormatRegistry getFormats() {
         return formatRegistry;
+    }
+
+    /**
+     * Every command registered through this registry, in registration order.
+     * <p>
+     * Unlike {@code getScriptCommands()}, this lists each command once rather than once per
+     * name and alias, which is what a sweep over all commands wants.
+     */
+    public List<AbstractCommand> getRegisteredCommands() {
+        return registeredCommands;
     }
 
     public List<Class<? extends AbstractTag>> getRegisteredTagClasses() {
