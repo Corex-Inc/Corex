@@ -112,15 +112,6 @@ public class ServerTag implements AbstractTag, Flaggable {
         return null;
     }
 
-    /**
-     * Parses a {@code host:port} string into an unresolved address.
-     *
-     * <p>Unresolved on purpose: nothing here should hit DNS on a script thread, and both the
-     * server registry and the client transfer packet take the host as written.</p>
-     *
-     * @param raw the address text.
-     * @return the address, or {@code null} when the text is not {@code host:port} with a valid port.
-     */
     public static InetSocketAddress parseAddress(String raw) {
         if (raw == null) return null;
 

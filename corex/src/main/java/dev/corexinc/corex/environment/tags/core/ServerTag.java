@@ -12,8 +12,10 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.*;
+import dev.corexinc.corex.environment.utils.ServerLinkHelper;
 import dev.corexinc.corex.environment.utils.adapters.BiomeAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import io.papermc.paper.ban.BanListType;
@@ -1075,6 +1077,55 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
             for (String rule : worlds.getFirst().getGameRules()) list.addString(rule);
             return list;
         }).setAsyncSafe();
+
+        /* @doc mechanism
+         *
+         * @Name serverLinks
+         * @Object ServerTag
+         * @Input MapTag
+         * @Description
+         * Sets the links the server sends to every client, as a map of label to URL. The order of
+         * the map is the order of the pause menu.
+         *
+         * Unlike <@link mechanism PlayerTag.serverLinks> this is the server wide set, so the server
+         * hands it to each player as they join and a script does not have to. It replaces whatever
+         * was there rather than adding to it. The set lives in memory, so it is gone on restart and
+         * belongs in a startup task.
+         *
+         * A key matching one of the ten built in names is sent as that type, which means the client
+         * writes the label itself in the player's own language: 'BUG_REPORT', 'COMMUNITY_GUIDELINES',
+         * 'SUPPORT', 'STATUS', 'FEEDBACK', 'COMMUNITY', 'WEBSITE', 'FORUMS', 'NEWS',
+         * 'ANNOUNCEMENTS'. Prefer 'BUG_REPORT' where it fits, it is the only one Minecraft also shows
+         * on the disconnect screen after a kick. The name is spelled the same on the Velocity port,
+         * where the same map works unchanged.
+         *
+         * Any other key is sent as a custom label and goes through the same component path as
+         * narrate, so colours and gradients work. The match is case sensitive, so 'WEBSITE'
+         * is the built in type while 'Website' is a custom label reading Website.
+         *
+         * URLs must be http or https. One bad entry fails the whole map and nothing is changed,
+         * because half a menu is harder to notice than a menu that never changed.
+         * An empty map clears the server's links.
+         *
+         * Players already online keep what they have until they reconnect, or until a script sends
+         * them a set of their own.
+         *
+         * Behind a proxy these win: links a backend sends replace whatever the proxy set for that
+         * player, so pick one side of the network to own them.
+         *
+         * @Usage
+         * // Set the network's links once, on startup.
+         * - adjust <server> serverLinks:<map[WEBSITE=https://example.com;BUG_REPORT=https://example.com/bugs;<#5865F2>Discord=https://dsc.gg/corexinc]>
+         */
+        MECHANISM_PROCESSOR.registerMechanism("serverLinks", (obj, val) -> {
+            try {
+                ServerLinkHelper.fill(Bukkit.getServer().getServerLinks(), val);
+            }
+            catch (IllegalArgumentException exception) {
+                Debugger.error("serverLinks: " + exception.getMessage());
+            }
+            return obj;
+        });
 
         /* @doc mechanism
          *

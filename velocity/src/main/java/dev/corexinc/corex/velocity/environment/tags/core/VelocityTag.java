@@ -3,6 +3,7 @@ package dev.corexinc.corex.velocity.environment.tags.core;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.util.ServerLink;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
@@ -18,6 +19,7 @@ import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.velocity.environment.utils.ServerLinkHelper;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
@@ -433,6 +435,44 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
 
         /* @doc mechanism
          *
+         * @Name serverLinks
+         * @Object VelocityTag
+         * @Input MapTag
+         * @Description
+         * Sets the pause menu links on every player currently connected, the same map
+         * <@link mechanism PlayerTag.serverLinks> takes on one player.
+         *
+         * Links live on the connection, not on the proxy, so this reaches exactly the players who
+         * are online right now. Anyone joining afterwards has none until a script sets theirs, which
+         * makes this the mechanism for a reload, and the per player one for a join.
+         *
+         * The map is parsed once and a bad entry fails before anybody is touched.
+         * Players on a client older than 1.21 are skipped without an error, since on a network that
+         * lets old clients in that would be an error per player, every time.
+         *
+         * @Usage
+         * // Give the whole network its links back after a reload.
+         * - adjust <velocity> serverLinks:<map[WEBSITE=https://example.com;BUG_REPORT=https://example.com/bugs]>
+         */
+        MECHANISM_PROCESSOR.registerMechanism("serverLinks", (object, value) -> {
+            List<ServerLink> links;
+            try {
+                links = ServerLinkHelper.parse(value);
+            }
+            catch (IllegalArgumentException exception) {
+                Debugger.error("serverLinks: " + exception.getMessage());
+                return object;
+            }
+
+            for (Player player : proxy().getAllPlayers()) {
+                if (ServerLinkHelper.isSupported(player)) player.setServerLinks(links);
+            }
+
+            return object;
+        });
+
+        /* @doc mechanism
+         *
          * @Name registerServer
          * @Object VelocityTag
          * @Input ServerTag
@@ -506,12 +546,6 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         return CorexVelocity.getInstance().getServer();
     }
 
-    /**
-     * The database the proxy keeps its flags in, shared with the backend {@link ServerTag}s, which
-     * live in the same file under their own tracker ids.
-     *
-     * @return the flag database file inside the plugin's data folder.
-     */
     static File flagsFile() {
         return new File(CorexVelocity.getInstance().getDataFolder().toFile(), "proxyFlags.db");
     }

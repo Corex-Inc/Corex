@@ -23,6 +23,7 @@ import dev.corexinc.corex.environment.tags.inventory.InventoryTag;
 import dev.corexinc.corex.environment.tags.world.ItemTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
+import dev.corexinc.corex.environment.utils.ServerLinkHelper;
 import dev.corexinc.corex.environment.utils.adapters.PlayerAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -37,6 +38,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -883,6 +886,58 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
 
 
 
+
+        /* @doc mechanism
+         *
+         * @Name serverLinks
+         * @Object PlayerTag
+         * @Input MapTag
+         * @Description
+         * Sets the links this player's client lists in its pause menu, as a map of label to URL.
+         * The order of the map is the order of the menu. This replaces whatever the player had,
+         * including the server wide set from <@link mechanism ServerTag.serverLinks>.
+         *
+         * A key matching one of the ten built in names is sent as that type, which means the client
+         * writes the label itself in the player's own language: 'BUG_REPORT', 'COMMUNITY_GUIDELINES',
+         * 'SUPPORT', 'STATUS', 'FEEDBACK', 'COMMUNITY', 'WEBSITE', 'FORUMS', 'NEWS',
+         * 'ANNOUNCEMENTS'. Prefer 'BUG_REPORT' where it fits, it is the only one Minecraft also shows
+         * on the disconnect screen after a kick.
+         *
+         * Any other key is sent as a custom label and goes through the same component path as
+         * narrate, so colours and gradients work. The match is case sensitive, so 'WEBSITE'
+         * is the built in type while 'Website' is a custom label reading Website.
+         *
+         * URLs must be http or https. One bad entry fails the whole map and nothing is sent, because
+         * half a menu is harder to notice than a menu that never changed.
+         * An empty map clears this player's links.
+         *
+         * Only 1.21 and newer clients show them. Older ones ignore the packet, no error is raised.
+         *
+         * @Usage
+         * // Two built in entries and one of your own.
+         * - adjust <player> serverLinks:<map[WEBSITE=https://example.com;BUG_REPORT=https://example.com/bugs;<#5865F2>Discord=https://dsc.gg/corexinc]>
+         *
+         * @Usage
+         * // Take them away for this player only.
+         * - adjust <player> serverLinks:<map[]>
+         */
+        MECHANISM_PROCESSOR.registerMechanism("serverLinks", (playerTag, value) -> {
+            Player player = playerTag.getPlayer();
+            if (player == null) return playerTag;
+
+            ServerLinks links = Bukkit.getServer().getServerLinks().copy();
+
+            try {
+                ServerLinkHelper.fill(links, value);
+            }
+            catch (IllegalArgumentException exception) {
+                Debugger.error("serverLinks: " + exception.getMessage());
+                return playerTag;
+            }
+
+            player.sendLinks(links);
+            return playerTag;
+        });
 
         /* @doc mechanism
          *

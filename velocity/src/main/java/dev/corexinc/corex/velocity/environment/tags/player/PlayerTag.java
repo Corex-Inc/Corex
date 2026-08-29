@@ -9,6 +9,7 @@ import com.velocitypowered.api.proxy.player.SkinParts;
 import com.velocitypowered.api.proxy.player.TabListEntry;
 import com.velocitypowered.api.util.GameProfile;
 import com.velocitypowered.api.util.ModInfo;
+import com.velocitypowered.api.util.ServerLink;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
@@ -28,6 +29,7 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.core.QueueTag;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import dev.corexinc.corex.velocity.environment.tags.core.ServerTag;
+import dev.corexinc.corex.velocity.environment.utils.ServerLinkHelper;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
@@ -765,6 +767,67 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             }
 
             object.player.transferToHost(target);
+            return object;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name serverLinks
+         * @Object PlayerTag
+         * @Input MapTag
+         * @Description
+         * Sets the links the client lists in its pause menu, as a map of label to URL. The order of
+         * the map is the order of the menu.
+         *
+         * A key matching one of the ten built in names is sent as that type, which means the client
+         * writes the label itself in the player's own language: 'BUG_REPORT', 'COMMUNITY_GUIDELINES',
+         * 'SUPPORT', 'STATUS', 'FEEDBACK', 'COMMUNITY', 'WEBSITE', 'FORUMS', 'NEWS',
+         * 'ANNOUNCEMENTS'. Prefer 'BUG_REPORT' where it fits, it is the only one Minecraft also shows
+         * on the disconnect screen after a kick.
+         *
+         * Any other key is sent as a custom label and goes through the same component path as
+         * narrate, so colours and gradients work. The match is case sensitive, so 'WEBSITE'
+         * is the built in type while 'Website' is a custom label reading Website.
+         *
+         * URLs must be http or https. One bad entry fails the whole map and nothing is sent, because
+         * half a menu is harder to notice than a menu that never changed.
+         * An empty map clears the links.
+         *
+         * Needs a 1.21 or newer client, the proxy refuses to send them to anything older, and the
+         * script gets an error saying so.
+         * Links do not survive a disconnect, so they have to be set again on every join.
+         *
+         * A backend can send its own links afterwards and they win, so on a network running Corex
+         * on both sides, decide on one place to set them.
+         *
+         * @Usage
+         * // Two built in entries and one of your own.
+         * - adjust <player> serverLinks:<map[WEBSITE=https://example.com;BUG_REPORT=https://example.com/bugs;<#5865F2>Discord=https://dsc.gg/corexinc]>
+         *
+         * @Usage
+         * // Take them away again.
+         * - adjust <player> serverLinks:<map[]>
+         */
+        MECHANISM_PROCESSOR.registerMechanism("serverLinks", (object, value) -> {
+            if (object.player == null) return object;
+
+            List<ServerLink> links;
+            try {
+                links = ServerLinkHelper.parse(value);
+            }
+            catch (IllegalArgumentException exception) {
+                Debugger.error("serverLinks: " + exception.getMessage());
+                return object;
+            }
+
+            if (!ServerLinkHelper.isSupported(object.player)) {
+                Debugger.error("serverLinks: " + object.player.getUsername()
+                        + " is on " + object.player.getProtocolVersion().getVersionIntroducedIn()
+                        + ", server links need a 1.21 or newer client.");
+                return object;
+            }
+
+            object.player.setServerLinks(links);
             return object;
         });
 
