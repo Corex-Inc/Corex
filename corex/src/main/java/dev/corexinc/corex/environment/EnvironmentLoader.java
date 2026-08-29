@@ -205,6 +205,7 @@ public class EnvironmentLoader {
                 EllipsoidTag.class,
                 PolygonTag.class,
                 ServerTag.class,
+                PluginTag.class,
                 QueueTag.class,
                 RegionTag.class,
                 ChunkTag.class,

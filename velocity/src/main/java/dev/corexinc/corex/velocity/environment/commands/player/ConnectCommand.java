@@ -34,7 +34,7 @@ import org.jspecify.annotations.NonNull;
  *
  * The result is a map, saved under 'save:'. 'successful' is the boolean to branch on, 'status' is
  * one of SUCCESS, ALREADY_CONNECTED, CONNECTION_IN_PROGRESS, CONNECTION_CANCELLED or
- * SERVER_DISCONNECTED, 'server' is the name that was attempted, and 'reason' carries the backend's
+ * SERVER_DISCONNECTED, 'server' is the ServerTag that was attempted, and 'reason' carries the backend's
  * message when there is one. A connection that threw outright reports status ERROR.
  *
  * CONNECTION_CANCELLED means another plugin refused the move. SERVER_DISCONNECTED means the
@@ -117,10 +117,8 @@ public class ConnectCommand implements AbstractCommand {
             return;
         }
 
-        String serverName = destination.getServer().getServerInfo().getName();
-
         Debugger.report(queue, instruction,
-                "Server", serverName,
+                "Server", destination.identify(),
                 "Target", target.getName(),
                 "Waitable", instruction.isWaitable
         );
@@ -132,7 +130,7 @@ public class ConnectCommand implements AbstractCommand {
         player.createConnectionRequest(destination.getServer()).connect().whenComplete((result, throwable) -> {
             SchedulerAdapter.get().runLater(() -> {
                 MapTag saved = new MapTag();
-                saved.putObject("server", new ElementTag(serverName));
+                saved.putObject("server", destination);
 
                 if (throwable != null) {
                     saved.putObject("successful", new ElementTag(false));

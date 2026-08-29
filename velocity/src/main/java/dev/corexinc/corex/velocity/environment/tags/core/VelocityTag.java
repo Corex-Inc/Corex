@@ -106,6 +106,29 @@ public class VelocityTag implements AbstractTag {
 
         /* @doc tag
          *
+         * @Name plugins
+         * @RawName <VelocityTag.plugins>
+         * @Object VelocityTag
+         * @ReturnType ListTag(PluginTag)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns every plugin loaded on the proxy, in load order. These are the proxy's own
+         * plugins, the ones on the backend servers are not visible from here.
+         *
+         * @Usage
+         * // List what the proxy is running.
+         * - foreach <velocity.plugins> as:entry:
+         *   - narrate "<[entry].name> v<[entry].version.ifNull[?]>"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "plugins", (attribute, object) -> {
+            ListTag list = new ListTag();
+            proxy().getPluginManager().getPlugins().forEach(container -> list.addObject(new PluginTag(container)));
+            return list;
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
          * @Name address
          * @RawName <VelocityTag.address>
          * @Object VelocityTag
@@ -235,21 +258,25 @@ public class VelocityTag implements AbstractTag {
          * @Name tryOrder
          * @RawName <VelocityTag.tryOrder>
          * @Object VelocityTag
-         * @ReturnType ListTag
+         * @ReturnType ListTag(ServerTag)
          * @NoArg
          * @Async
          * @Description
          * Returns the 'try' list from velocity.toml, the servers a joining player is sent to in
          * order until one accepts them. The first entry is the default lobby on a normal setup.
          *
+         * A name in that list which is not a registered server is left out, so what comes back is
+         * always usable.
+         *
          * @Usage
          * // Send someone to the network's default lobby, whatever it is called.
-         * - adjust <player> server:<server[<velocity.tryOrder.first>]>
+         * - adjust <player> server:<velocity.tryOrder.first>
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "tryOrder", (attribute, object) -> {
             ListTag list = new ListTag();
             for (String name : proxy().getConfiguration().getAttemptConnectionOrder()) {
-                list.addString(name);
+                ServerTag server = new ServerTag(name);
+                if (server.isRegistered()) list.addObject(server);
             }
             return list;
         }).setAsyncSafe();

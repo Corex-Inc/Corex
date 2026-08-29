@@ -31,6 +31,7 @@ import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
 import org.bukkit.loot.LootTable;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
 import org.jspecify.annotations.NonNull;
 
@@ -954,6 +955,30 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "corexVersion", (attr, obj) ->
                 new ElementTag(Corex.getInstance().getPluginMeta().getVersion())).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name plugins
+         * @RawName <server.plugins>
+         * @Object ServerTag
+         * @ReturnType ListTag(PluginTag)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns every plugin the server loaded, enabled or not, in load order. A jar that failed
+         * to load is not in here.
+         *
+         * @Usage
+         * // List what is actually running.
+         * - foreach <server.plugins> as:entry:
+         *   - if <[entry].isEnabled>:
+         *     - narrate "<[entry].name> v<[entry].version>"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "plugins", (attr, obj) -> {
+            ListTag list = new ListTag();
+            for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) list.addObject(new PluginTag(plugin));
+            return list;
+        }).setAsyncSafe();
 
         /* @doc tag
          *

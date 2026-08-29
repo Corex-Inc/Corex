@@ -2,6 +2,7 @@ package dev.corexinc.corex.velocity.environment.utils.commands.impl;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.permission.Tristate;
 import com.velocitypowered.api.proxy.Player;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
@@ -47,7 +48,7 @@ public class VRunCommand implements SimpleCommand {
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("corex.command.vrun");
+        return invocation.source().getPermissionValue("corex.command.vrun").equals(Tristate.TRUE);
     }
 
     @Override

@@ -21,6 +21,7 @@ import dev.corexinc.corex.environment.formatters.*;
 // Tags
 import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.utils.RandomTag;
+import dev.corexinc.corex.velocity.environment.tags.core.PluginTag;
 import dev.corexinc.corex.velocity.environment.tags.core.ServerTag;
 import dev.corexinc.corex.velocity.environment.tags.core.VelocityTag;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
@@ -100,6 +101,7 @@ public class VelocityEnvironmentLoader {
                 ElementTag.class,
                 PlayerTag.class,
                 ServerTag.class,
+                PluginTag.class,
                 VelocityTag.class,
                 ListTag.class,
                 MapTag.class,

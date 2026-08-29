@@ -3,8 +3,7 @@ plugins {
 }
 
 dependencies {
-    // Платформа: её даёт прокси, в POM попадать не должна.
-    compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:4.1.1-SNAPSHOT")
 
     compileOnlyApi("org.java-websocket:Java-WebSocket:1.5.6")
     compileOnlyApi("com.zaxxer:HikariCP:5.1.0")

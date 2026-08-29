@@ -60,7 +60,7 @@ import java.util.UUID;
  *
  * @Usage
  * // Greet a player with where they are.
- * - narrate "Hello <player.name>, you are on <player.server>."
+ * - narrate "Hello <player.name>, you are on <player.server.name>."
  */
 public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIdentity {
 
@@ -160,8 +160,8 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Description
          * Returns the player's latency to the proxy in milliseconds, measured on the keepalive
          * round trip. This is the proxy leg only, the backend measures its own and the two do not
-         * have to agree. Right after login there has been no round trip yet, so treat anything
-         * you read in the first seconds as meaningless rather than fast.
+         * have to agree. Returns -1 while the ping is unknown, which is the case right after login,
+         * before the first round trip has come back.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "ping", (attribute, object) ->
                 new ElementTag(object.player.getPing())).setAsyncSafe();
@@ -171,17 +171,17 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Name server
          * @RawName <PlayerTag.server>
          * @Object PlayerTag
-         * @ReturnType ElementTag
+         * @ReturnType ServerTag
          * @NoArg
          * @Async
          * @Description
-         * Returns the name of the backend the player is on. Returns null while they are between
-         * servers, which includes the moment right after login and every switch.
-         * For the server object itself use '<server[<player.server>]>'.
+         * Returns the backend the player is on. Returns null while they are between servers, which
+         * includes the moment right after login and every switch.
+         * For just the name, use '<player.server.name>'.
          */
-        TAG_PROCESSOR.registerTag(ElementTag.class, "server", (attribute, object) ->
+        TAG_PROCESSOR.registerTag(ServerTag.class, "server", (attribute, object) ->
                 object.player.getCurrentServer()
-                        .map(connection -> new ElementTag(connection.getServerInfo().getName()))
+                        .map(connection -> new ServerTag(connection.getServer()))
                         .orElse(null)).setAsyncSafe();
 
         /* @doc tag
@@ -680,18 +680,22 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Name tabEntries
          * @RawName <PlayerTag.tabEntries>
          * @Object PlayerTag
-         * @ReturnType ListTag
+         * @ReturnType ListTag(PlayerTag)
          * @NoArg
          * @Async
          * @Description
-         * Returns the names currently listed in this player's tab list. The proxy tracks these
+         * Returns the players currently listed in this player's tab list. The proxy tracks these
          * because it has to rewrite them whenever the player moves between backends, so this is
          * what the client is really showing, not what any one backend thinks.
+         *
+         * Entries that are not real connected players are left out: a plugin can push decorative
+         * rows into a tab list, and those have a profile but nobody behind it.
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "tabEntries", (attribute, object) -> {
             ListTag list = new ListTag();
             for (TabListEntry entry : object.player.getTabList().getEntries()) {
-                list.addString(entry.getProfile().getName());
+                PlayerTag listed = new PlayerTag(entry.getProfile().getId());
+                if (listed.isOnline()) list.addObject(listed);
             }
             return list;
         }).setAsyncSafe();
@@ -730,7 +734,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          *
          * @Usage
          * // Put a two line banner on the tab list.
-         * - adjust <player> tabListInfo:<list[<red>Example Network|<gray>You are on <player.server>]>
+         * - adjust <player> tabListInfo:<list[<red>Example Network|<gray>You are on <player.server.name>]>
          *
          * @Usage
          * // Clear it again.
