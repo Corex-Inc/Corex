@@ -734,10 +734,10 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Object PlayerTag
          * @Input ElementTag
          * @Description
-         * Hands the player over to another proxy or server entirely, given as 'host:port'. The
-         * client does the reconnecting itself, so this works across networks, unlike
-         * <@link mechanism PlayerTag.server> which only moves a player between this proxy's own
-         * backends.
+         * Hands the player over to another proxy or server entirely, given as 'host:port', or as just
+         * the host for the default 25565. The client does the reconnecting itself, so this works
+         * across networks, unlike <@link mechanism PlayerTag.server> which only moves a player
+         * between this proxy's own backends.
          *
          * Needs a 1.20.5 or newer client. On anything older nothing happens and the script gets an
          * error, so check <@link tag PlayerTag.protocolVersion> first if your network lets old
@@ -748,14 +748,14 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          *
          * @Usage
          * // Move someone to the event network.
-         * - adjust <player> transferToHost:events.example.com:25565
+         * - adjust <player> transferToHost:events.example.com
          */
         MECHANISM_PROCESSOR.registerMechanism("transferToHost", (object, value) -> {
             if (object.player == null || !(value instanceof ElementTag element)) return object;
 
             InetSocketAddress target = ServerTag.parseAddress(element.asString());
             if (target == null) {
-                Debugger.error("transferToHost: '" + element.asString() + "' is not a host:port address.");
+                Debugger.error("transferToHost: '" + element.asString() + "' is not a usable address, write it as host or host:port.");
                 return object;
             }
 

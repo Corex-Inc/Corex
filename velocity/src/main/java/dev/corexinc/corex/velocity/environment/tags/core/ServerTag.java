@@ -29,7 +29,8 @@ import java.net.InetSocketAddress;
  * velocity.toml, such as 'server@lobby'.
  *
  * A blueprint for a server that does not exist yet is 'server@<name>[address=<host>:<port>]', for
- * example 'server@arena[address=127.0.0.1:25566]'. Nothing is registered by writing one.
+ * example 'server@arena[address=127.0.0.1:25566]'. The port may be left off, which means 25565.
+ * Nothing is registered by writing one.
  *
  * @Description
  * A ServerTag is one backend server behind the proxy, the thing players are actually sent to.
@@ -65,6 +66,7 @@ import java.net.InetSocketAddress;
 public class ServerTag implements AbstractTag, Flaggable {
 
     private static final String PREFIX = "server";
+    private static final int DEFAULT_PORT = 25565;
 
     public static final TagProcessor<ServerTag> TAG_PROCESSOR = new TagProcessor<>();
 
@@ -115,13 +117,21 @@ public class ServerTag implements AbstractTag, Flaggable {
     public static InetSocketAddress parseAddress(String raw) {
         if (raw == null) return null;
 
-        int separator = raw.lastIndexOf(':');
-        if (separator <= 0 || separator == raw.length() - 1) return null;
+        String text = raw.strip();
+        if (text.isEmpty() || text.endsWith(":")) return null;
+
+        int separator = text.lastIndexOf(':');
+        boolean carriesPort = separator > 0
+                && (text.indexOf(':') == separator || text.charAt(separator - 1) == ']');
+
+        if (!carriesPort) {
+            return InetSocketAddress.createUnresolved(text, DEFAULT_PORT);
+        }
 
         try {
-            int port = Integer.parseInt(raw.substring(separator + 1).strip());
+            int port = Integer.parseInt(text.substring(separator + 1).strip());
             if (port < 1 || port > 65535) return null;
-            return InetSocketAddress.createUnresolved(raw.substring(0, separator).strip(), port);
+            return InetSocketAddress.createUnresolved(text.substring(0, separator).strip(), port);
         }
         catch (NumberFormatException exception) {
             return null;
