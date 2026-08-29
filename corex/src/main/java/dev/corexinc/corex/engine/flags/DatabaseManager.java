@@ -23,6 +23,7 @@ public class DatabaseManager {
 
             HikariConfig config = new HikariConfig();
             config.setJdbcUrl("jdbc:sqlite:" + path);
+            config.setDriverClassName("org.sqlite.JDBC");
             config.setPoolName("Corex-SQL-" + dbFile.getName());
 
             config.addDataSourceProperty("journal_mode", "WAL");

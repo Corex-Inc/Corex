@@ -78,14 +78,11 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
 
     private static final ServerTag INSTANCE = new ServerTag();
 
-    private static SqlFlagTracker serverTracker;
+    private static final String FLAG_TRACKER_ID = "serverGlobal";
 
     public static void register() {
         BaseTagProcessor.registerBaseTag("server", attr -> INSTANCE);
         ObjectFetcher.registerFetcher(PREFIX, s -> INSTANCE);
-
-        File dbFile = new File(Corex.getInstance().getDataFolder(), "serverFlags.db");
-        serverTracker = new SqlFlagTracker(dbFile, "serverGlobal");
 
         /* @doc tag
          *
@@ -1185,7 +1182,7 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
 
     @Override
     public AbstractFlagTracker getFlagTracker() {
-        return serverTracker;
+        return new SqlFlagTracker(new File(Corex.getInstance().getDataFolder(), "serverFlags.db"), FLAG_TRACKER_ID);
     }
 
     @Override
