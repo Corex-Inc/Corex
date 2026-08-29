@@ -1,5 +1,6 @@
 package dev.corexinc.corex.velocity.environment.tags.player;
 
+import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.player.PlayerSettings;
@@ -18,6 +19,7 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -31,6 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -720,6 +723,48 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
             if (target.isRegistered()) {
                 object.player.createConnectionRequest(target.getServer()).fireAndForget();
             }
+            return object;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name transferToHost
+         * @Object PlayerTag
+         * @Input ElementTag
+         * @Description
+         * Hands the player over to another proxy or server entirely, given as 'host:port'. The
+         * client does the reconnecting itself, so this works across networks, unlike
+         * <@link mechanism PlayerTag.server> which only moves a player between this proxy's own
+         * backends.
+         *
+         * Needs a 1.20.5 or newer client. On anything older nothing happens and the script gets an
+         * error, so check <@link tag PlayerTag.protocolVersion> first if your network lets old
+         * clients in.
+         *
+         * The player leaves this proxy the moment the packet lands. Anything the script wanted to
+         * tell them has to be said before this, not after.
+         *
+         * @Usage
+         * // Move someone to the event network.
+         * - adjust <player> transferToHost:events.example.com:25565
+         */
+        MECHANISM_PROCESSOR.registerMechanism("transferToHost", (object, value) -> {
+            if (object.player == null || !(value instanceof ElementTag element)) return object;
+
+            InetSocketAddress target = ServerTag.parseAddress(element.asString());
+            if (target == null) {
+                Debugger.error("transferToHost: '" + element.asString() + "' is not a host:port address.");
+                return object;
+            }
+
+            if (object.player.getProtocolVersion().getProtocol() < ProtocolVersion.MINECRAFT_1_20_5.getProtocol()) {
+                Debugger.error("transferToHost: " + object.player.getUsername()
+                        + " is on " + object.player.getProtocolVersion().getVersionIntroducedIn()
+                        + ", transfers need a 1.20.5 or newer client.");
+                return object;
+            }
+
+            object.player.transferToHost(target);
             return object;
         });
 

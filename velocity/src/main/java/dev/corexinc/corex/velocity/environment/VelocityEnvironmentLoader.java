@@ -99,6 +99,8 @@ public class VelocityEnvironmentLoader {
 
                 // Tags
                 ElementTag.class,
+                ComponentTag.class,
+                MarkupTag.class,
                 PlayerTag.class,
                 ServerTag.class,
                 PluginTag.class,

@@ -4,14 +4,18 @@ import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.corexinc.corex.api.processors.BaseTagProcessor;
+import dev.corexinc.corex.api.processors.MechanismProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
+import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
+import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
 import org.jspecify.annotations.NonNull;
@@ -51,11 +55,12 @@ import java.util.List;
  * // Put the whole network into maintenance until someone lifts it.
  * - flag <velocity> maintenance true
  */
-public class VelocityTag implements AbstractTag, Flaggable {
+public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
 
     private static final String PREFIX = "velocity";
 
     public static final TagProcessor<VelocityTag> TAG_PROCESSOR = new TagProcessor<>();
+    public static final MechanismProcessor<VelocityTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
 
     public static void register() {
         BaseTagProcessor.registerBaseTag(PREFIX, (attribute) -> new VelocityTag());
@@ -316,6 +321,185 @@ public class VelocityTag implements AbstractTag, Flaggable {
             }
             return list;
         }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name forcedHosts
+         * @RawName <VelocityTag.forcedHosts>
+         * @Object VelocityTag
+         * @ReturnType MapTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the forced hosts from velocity.toml as a map of hostname to the backends players
+         * joining through that hostname are sent to, in the order the proxy tries them.
+         * Hostnames are matched by the proxy without case, and are listed here as written in the
+         * config. A name in a forced host list that is not a registered server is left out.
+         *
+         * The host a player actually used is <@link tag PlayerTag.virtualHost>, so the two together
+         * are how a script tells 'joined through play.example.com' from 'joined through the IP'.
+         *
+         * @Usage
+         * // Where does this domain send people?
+         * - narrate "<velocity.forcedHosts.get[mc.example.com].parse[name]>"
+         */
+        TAG_PROCESSOR.registerTag(MapTag.class, "forcedHosts", (attribute, object) -> {
+            MapTag map = new MapTag();
+            proxy().getConfiguration().getForcedHosts().forEach((host, names) -> {
+                ListTag servers = new ListTag();
+                for (String name : names) {
+                    ServerTag server = new ServerTag(name);
+                    if (server.isRegistered()) servers.addObject(server);
+                }
+                map.putObject(host, servers);
+            });
+            return map;
+        }).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name favicon
+         * @RawName <VelocityTag.favicon>
+         * @Object VelocityTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the icon the proxy shows in the server list, as the 'data:image/png;base64,...'
+         * URL the protocol sends. Returns null when there is no server-icon.png next to the proxy.
+         * This is a long string, do not narrate it at a player.
+         */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "favicon", (attribute, object) ->
+                proxy().getConfiguration().getFavicon()
+                        .map(favicon -> new ElementTag(favicon.getBase64Url()))
+                        .orElse(null)).setAsyncSafe().ignoreTest();
+
+        /* @doc tag
+         *
+         * @Name matchServer
+         * @RawName <VelocityTag.matchServer[<name>]>
+         * @Object VelocityTag
+         * @ReturnType ListTag(ServerTag)
+         * @ArgRequired
+         * @Async
+         * @Description
+         * Returns every registered backend whose name starts with the input, ignoring case. An exact
+         * name gives a one entry list, an input nothing starts with gives an empty one.
+         * Unlike <@link tag VelocityTag.matchPlayer> this hands back all matches rather than picking
+         * one, because server names are usually prefixed on purpose ('arena1', 'arena2').
+         *
+         * @Usage
+         * // Count how many arenas are up.
+         * - narrate "Arenas: <velocity.matchServer[arena].size>"
+         */
+        TAG_PROCESSOR.registerTag(ListTag.class, "matchServer", (attribute, object) -> {
+            if (!attribute.hasParam()) return null;
+            ListTag list = new ListTag();
+            proxy().matchServer(attribute.getParam()).forEach(server -> list.addObject(new ServerTag(server)));
+            return list;
+        }).setAsyncSafe();
+
+        /* @doc mechanism
+         *
+         * @Name shutdown
+         * @Object VelocityTag
+         * @Input ElementTag
+         * @Description
+         * Shuts the proxy down. Every player is disconnected with the given message, or with the
+         * proxy's configured shutdown message when no input is given.
+         * Backends keep running, this only stops the proxy.
+         *
+         * @Warning
+         * This is not a restart. Nothing brings the proxy back up unless a service manager or a
+         * start script is watching it, so on a bare setup the network stays down until someone
+         * starts it by hand.
+         *
+         * @Usage
+         * // Stop the proxy with a reason players can read.
+         * - adjust <velocity> shutdown:"Network maintenance, back in 20 minutes."
+         */
+        MECHANISM_PROCESSOR.registerMechanism("shutdown", (object, value) -> {
+            String reason = value instanceof ElementTag element ? element.asString() : "";
+
+            if (reason.isBlank() || reason.equalsIgnoreCase("true")) {
+                proxy().shutdown();
+            }
+            else {
+                proxy().shutdown(value.asComponent());
+            }
+
+            return object;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name registerServer
+         * @Object VelocityTag
+         * @Input ServerTag
+         * @Description
+         * Registers a backend on the running proxy, the same thing an entry in the servers block of
+         * velocity.toml does at startup. Takes a blueprint ServerTag, a name with an address behind
+         * it: 'server@arena1[address=127.0.0.1:25801]'.
+         *
+         * The registration lives in memory only. It is gone after a proxy restart, and it is not
+         * written into velocity.toml. Registering does not check that anything answers at that
+         * address, and a name that is already registered is left alone rather than replaced.
+         *
+         * @Usage
+         * // Bring a match server up, then send the party there.
+         * - adjust <velocity> registerServer:<server[arena1[address=127.0.0.1:25801]]>
+         * - adjust <player> server:<server[arena1]>
+         */
+        MECHANISM_PROCESSOR.registerMechanism("registerServer", (object, value) -> {
+            ServerTag target = asServer(value);
+
+            if (target.getInfo() == null) {
+                Debugger.error("registerServer: '" + value.identify()
+                        + "' is not a server. Write it as server@name[address=host:port].");
+                return object;
+            }
+
+            if (target.isRegistered()) {
+                return object;
+            }
+
+            proxy().registerServer(target.getInfo());
+            return object;
+        });
+
+        /* @doc mechanism
+         *
+         * @Name unregisterServer
+         * @Object VelocityTag
+         * @Input ServerTag
+         * @Description
+         * Takes a backend off the running proxy. Players already on it stay there, they are simply
+         * not sent to it again, and a server from velocity.toml comes back on the next restart.
+         *
+         * Pass a registered ServerTag, '<server[arena1]>'. A blueprint works only when its address
+         * matches the registration exactly, since the proxy removes servers by name and address
+         * together.
+         *
+         * @Usage
+         * // Tear the match server down once it is empty.
+         * - if <server[arena1].players.isEmpty>:
+         *   - adjust <velocity> unregisterServer:<server[arena1]>
+         */
+        MECHANISM_PROCESSOR.registerMechanism("unregisterServer", (object, value) -> {
+            ServerTag target = asServer(value);
+
+            if (target.getInfo() == null) {
+                Debugger.error("unregisterServer: '" + value.identify() + "' is not a server.");
+                return object;
+            }
+
+            proxy().unregisterServer(target.getInfo());
+            return object;
+        });
+    }
+
+    private static ServerTag asServer(AbstractTag value) {
+        return value instanceof ServerTag serverTag ? serverTag : new ServerTag(value.identify());
     }
 
     private static ProxyServer proxy() {
@@ -360,5 +544,20 @@ public class VelocityTag implements AbstractTag, Flaggable {
     @Override
     public @NonNull String getTestValue() {
         return "velocity@";
+    }
+
+    @Override
+    public @NonNull Adjustable duplicate() {
+        return new VelocityTag();
+    }
+
+    @Override
+    public @NonNull AbstractTag applyMechanism(@NonNull String mechanism, @NonNull AbstractTag value) {
+        return MECHANISM_PROCESSOR.process(this, mechanism, value);
+    }
+
+    @Override
+    public @NonNull MechanismProcessor<VelocityTag> getMechanismProcessor() {
+        return MECHANISM_PROCESSOR;
     }
 }
