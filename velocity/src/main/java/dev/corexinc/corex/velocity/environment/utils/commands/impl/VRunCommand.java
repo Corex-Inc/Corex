@@ -35,7 +35,8 @@ public class VRunCommand implements SimpleCommand {
             return;
         }
 
-        PlayerTag linkedPlayer = (source instanceof Player p) ? new PlayerTag(p) : null;
+        Player executor = (source instanceof Player player) ? player : null;
+        PlayerTag linkedPlayer = (executor != null) ? new PlayerTag(executor) : null;
 
         ScriptQueue queue = new ScriptQueue(
                 ScriptQueue.uniqueId("VRunQueue"),
@@ -43,6 +44,7 @@ public class VRunCommand implements SimpleCommand {
                 false,
                 linkedPlayer
         );
+        if (executor != null) queue.setDebugObserver(executor);
         queue.start();
     }
 
