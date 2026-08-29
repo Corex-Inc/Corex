@@ -71,6 +71,8 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
 
     private final Player player;
 
+    private AbstractFlagTracker flagTracker;
+
     public PlayerTag(Player player) {
         this.player = player;
     }
@@ -845,8 +847,12 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
 
     @Override
     public AbstractFlagTracker getFlagTracker() {
-        File dbFile = new File(CorexVelocity.getInstance().getDataFolder().toFile(), "playerFlags.db");
-        return new SqlFlagTracker(dbFile, player.getUniqueId().toString());
+        if (player == null) return null;
+        if (flagTracker == null) {
+            File dbFile = new File(CorexVelocity.getInstance().getDataFolder().toFile(), "playerFlags.db");
+            flagTracker = new SqlFlagTracker(dbFile, player.getUniqueId().toString());
+        }
+        return flagTracker;
     }
 
     @Override

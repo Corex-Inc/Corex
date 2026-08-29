@@ -5,6 +5,9 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -33,11 +36,20 @@ import java.net.InetSocketAddress;
  * Fetching a name that is not registered gives null, so a script cannot accidentally hold a
  * ServerTag pointing at nothing.
  *
+ * ServerTag implements Flaggable, so per backend data is stored on the tag itself. The flags live
+ * on the proxy in 'proxyFlags.db', keyed by the server name from velocity.toml, and survive both a
+ * proxy restart and the backend going down. Nothing of this reaches the backend itself, a Paper
+ * server running Corex keeps its own separate '<server>' flags.
+ *
  * @Usage
  * // Announce how busy the lobby is.
  * - narrate "The lobby has <server[lobby].players.size> players."
+ *
+ * @Usage
+ * // Close one backend for an hour, then let it open again on its own.
+ * - flag <server[minigame]> closed true expire:1h
  */
-public class ServerTag implements AbstractTag {
+public class ServerTag implements AbstractTag, Flaggable {
 
     private static final String PREFIX = "server";
 
@@ -167,6 +179,12 @@ public class ServerTag implements AbstractTag {
     @Override
     public @NonNull String identify() {
         return PREFIX + "@" + server.getServerInfo().getName();
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        if (server == null) return null;
+        return new SqlFlagTracker(VelocityTag.flagsFile(), identify());
     }
 
     @Override

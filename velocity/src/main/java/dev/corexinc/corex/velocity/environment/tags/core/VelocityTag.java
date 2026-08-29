@@ -7,12 +7,16 @@ import dev.corexinc.corex.api.processors.BaseTagProcessor;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.api.tags.Flaggable;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.velocity.CorexVelocity;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
 import org.jspecify.annotations.NonNull;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,11 +39,19 @@ import java.util.List;
  * Everything here describes the proxy, never a backend. The proxy runs no world, has no tick
  * loop and holds no blocks, so nothing world shaped lives on this tag.
  *
+ * VelocityTag implements Flaggable, so it is where network wide data lives, the proxy counterpart
+ * of flags on '<server>' in the Paper plugin. They are kept in 'proxyFlags.db' next to the config
+ * and survive a proxy restart. Backends have their own, see <@link tag ServerTag.flag>.
+ *
  * @Usage
  * // Report the network population.
  * - narrate "<velocity.players.size> of <velocity.maxPlayers> players online."
+ *
+ * @Usage
+ * // Put the whole network into maintenance until someone lifts it.
+ * - flag <velocity> maintenance true
  */
-public class VelocityTag implements AbstractTag {
+public class VelocityTag implements AbstractTag, Flaggable {
 
     private static final String PREFIX = "velocity";
 
@@ -308,6 +320,21 @@ public class VelocityTag implements AbstractTag {
 
     private static ProxyServer proxy() {
         return CorexVelocity.getInstance().getServer();
+    }
+
+    /**
+     * The database the proxy keeps its flags in, shared with the backend {@link ServerTag}s, which
+     * live in the same file under their own tracker ids.
+     *
+     * @return the flag database file inside the plugin's data folder.
+     */
+    static File flagsFile() {
+        return new File(CorexVelocity.getInstance().getDataFolder().toFile(), "proxyFlags.db");
+    }
+
+    @Override
+    public AbstractFlagTracker getFlagTracker() {
+        return new SqlFlagTracker(flagsFile(), identify());
     }
 
     @Override

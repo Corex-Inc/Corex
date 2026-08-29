@@ -73,6 +73,7 @@ public class GlobalTagProcessor {
             if (!attr.hasParam()) return null;
 
             AbstractFlagTracker tracker = flaggable.getFlagTracker();
+            if (tracker == null) return null;
 
             return tracker.getFlag(attr.getParam());
         });
@@ -82,6 +83,7 @@ public class GlobalTagProcessor {
             if (!attr.hasParam()) return null;
 
             AbstractFlagTracker tracker = flaggable.getFlagTracker();
+            if (tracker == null) return new ElementTag(false);
 
             return new ElementTag(tracker.getFlag(attr.getParam()) != null);
         });
