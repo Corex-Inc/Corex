@@ -23,6 +23,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.velocity.environment.VelocityEnvironmentLoader;
 import dev.corexinc.corex.velocity.environment.utils.VelocitySchedulerAdapter;
 import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunCommand;
+import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunsCommand;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -103,6 +104,17 @@ public class CorexVelocity {
                         .build(),
                 new VRunCommand()
         );
+
+        VRunsCommand runsCommand = new VRunsCommand();
+
+        server.getCommandManager().register(
+                server.getCommandManager().metaBuilder("vruns")
+                        .plugin(this)
+                        .build(),
+                runsCommand
+        );
+
+        server.getEventManager().register(this, runsCommand);
     }
 
     public static CorexVelocity getInstance() { return instance; }

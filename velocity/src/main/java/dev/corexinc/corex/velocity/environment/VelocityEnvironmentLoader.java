@@ -6,8 +6,14 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
 // Commands
 import dev.corexinc.corex.environment.commands.core.*;
+import dev.corexinc.corex.velocity.environment.commands.core.PingCommand;
 import dev.corexinc.corex.velocity.environment.commands.core.ReloadCommand;
+import dev.corexinc.corex.velocity.environment.commands.player.ActionBarCommand;
+import dev.corexinc.corex.velocity.environment.commands.player.ConnectCommand;
+import dev.corexinc.corex.velocity.environment.commands.player.KickCommand;
 import dev.corexinc.corex.velocity.environment.commands.player.NarrateCommand;
+import dev.corexinc.corex.velocity.environment.commands.player.TitleCommand;
+import dev.corexinc.corex.velocity.environment.commands.player.ResourcePackCommand;
 // Containers
 import dev.corexinc.corex.environment.containers.TaskContainer;
 // Formatters
@@ -60,8 +66,14 @@ public class VelocityEnvironmentLoader {
 
                 // Commands
                 NarrateCommand.class,
+                ResourcePackCommand.class,
+                KickCommand.class,
+                ConnectCommand.class,
+                TitleCommand.class,
+                ActionBarCommand.class,
                 DoCommand.class,
                 ReloadCommand.class,
+                PingCommand.class,
                 DefCommand.class,
                 WaitCommand.class,
                 RepeatCommand.class,

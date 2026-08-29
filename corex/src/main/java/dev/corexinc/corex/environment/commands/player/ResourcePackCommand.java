@@ -204,7 +204,7 @@ public class ResourcePackCommand implements AbstractCommand, Listener {
     private List<Player> getTargets(ScriptQueue queue, ListTag targets) {
         List<Player> targetPlayers = new ArrayList<>();
 
-        if (targets != null && targets.isEmpty()) {
+        if (targets != null && !targets.isEmpty()) {
             targets.filter(PlayerTag.class, queue).forEach(p -> {
                 Player player = p.getPlayer();
                 if (player != null && player.isOnline()) targetPlayers.add(player);

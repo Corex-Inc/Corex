@@ -1,23 +1,19 @@
-package dev.corexinc.corex.environment.commands.player;
+package dev.corexinc.corex.velocity.environment.commands.player;
 
+import com.velocitypowered.api.proxy.Player;
 import dev.corexinc.corex.api.commands.AbstractCommand;
 import dev.corexinc.corex.api.commands.ArgumentSchema;
 import dev.corexinc.corex.api.commands.ArgumentSet;
-import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
-import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
-import dev.corexinc.corex.environment.tags.player.PlayerTag;
-import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
+import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 
-import java.util.*;
+import java.util.List;
 
 /* @doc command
  *
@@ -25,16 +21,20 @@ import java.util.*;
  * @Syntax kick [<player>|...] (reason:<text>)
  * @RequiredArgs 1
  * @MaxArgs 2
- * @ShortDescription Kicks a player from the server.
+ * @Modules VELOCITY
+ * @ShortDescription Kicks a player from the network.
  *
  * @Implements Kick
  *
  * @Description
- * Kick a player or a list of players from the server and optionally specify a reason.
- * If no reason is specified the server's own default disconnect message is shown.
+ * Kick a player or a list of players from the proxy and optionally specify a reason.
+ * If no reason is specified the disconnect screen is left blank.
+ *
+ * Kicking here drops the player out of the network entirely rather than off one backend, and it
+ * works while their backend is down or still loading.
  *
  * @Usage
- * // Use to kick the player with the default reason.
+ * // Use to kick the player with no reason.
  * - kick <player>
  *
  * @Usage
@@ -42,10 +42,15 @@ import java.util.*;
  * - kick <player> "reason:Because I can."
  *
  * @Usage
- * // Use to kick another player with a reason.
- * - kick <server.onlinePlayers.exclude[<player>]> "reason:I.. AM.. GOOOOD!!"
+ * // Use to kick everyone else with a reason.
+ * - kick <velocity.players.exclude[<player>]> "reason:I.. AM.. GOOOOD!!"
  */
 public class KickCommand implements AbstractCommand {
+
+    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
+            .requireLinear(0, ListTag.class)
+            .optionalPrefix("reason", ElementTag.class)
+            .build();
 
     @Override
     public @NonNull String getName() {
@@ -56,11 +61,6 @@ public class KickCommand implements AbstractCommand {
     public @NonNull String getSyntax() {
         return "[<player>|...] (reason:<text>)";
     }
-
-    private static final ArgumentSchema SCHEMA = ArgumentSchema.of()
-            .requireLinear(0, ListTag.class)
-            .optionalPrefix("reason", ElementTag.class)
-            .build();
 
     @Override
     public int getMinArgs() {
@@ -86,7 +86,7 @@ public class KickCommand implements AbstractCommand {
         ElementTag reasonRaw = args.prefix("reason");
         boolean failed = false;
 
-        final Component reason = (reasonRaw == null ? null : reasonRaw.asComponent());
+        final Component reason = (reasonRaw == null ? Component.empty() : reasonRaw.asComponent());
         List<PlayerTag> players = targetList.filter(PlayerTag.class, queue);
 
         if (players.isEmpty()) {
@@ -96,17 +96,17 @@ public class KickCommand implements AbstractCommand {
 
         Debugger.report(queue, instruction,
             "Players", targetList.identify(),
-                "Reason", reason
+                "Reason", reasonRaw
         );
 
         if (failed) return;
 
         for (PlayerTag pTag : players) {
-            Player player = pTag.getPlayer();
-            if (player != null && player.isOnline()) {
-                ((BukkitSchedulerAdapter) SchedulerAdapter.get()).runEntity(player, () -> player.kick(reason));
+            Player player = pTag.getPlayer().orElse(null);
+            if (player != null && player.isActive()) {
+                player.disconnect(reason);
             } else {
-                Debugger.echoError(queue, getName() + ": player '" + pTag.getPlayer().getName() + "' is offline or not found");
+                Debugger.echoError(queue, getName() + ": player '" + targetList.identify() + "' is offline or not found");
             }
         }
     }

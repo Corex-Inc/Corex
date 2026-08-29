@@ -1,5 +1,6 @@
 package dev.corexinc.corex.environment.utils.commands.impl;
 
+import dev.corexinc.corex.Corex;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.Position;
@@ -8,18 +9,38 @@ import dev.corexinc.corex.environment.utils.commands.CommandParser;
 import dev.corexinc.corex.environment.utils.commands.TabCompleter;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.jspecify.annotations.NonNull;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class RunsCommand implements BasicCommand {
+public class RunsCommand implements BasicCommand, Listener {
 
-    private static final Map<String, ScriptQueue> activeQueues = new HashMap<>();
+    private static final Map<String, ScriptQueue> activeQueues = new ConcurrentHashMap<>();
+    private static boolean listenerRegistered = false;
+
+    public RunsCommand() {
+        if (!listenerRegistered) {
+            Bukkit.getPluginManager().registerEvents(this, Corex.getInstance());
+            listenerRegistered = true;
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        ScriptQueue queue = activeQueues.remove(event.getPlayer().getUniqueId().toString());
+        if (queue != null) {
+            queue.stopEntireQueue();
+        }
+    }
 
     @Override
     public @NonNull Collection<String> suggest(@NonNull CommandSourceStack commandSourceStack, String @NonNull[] args) {

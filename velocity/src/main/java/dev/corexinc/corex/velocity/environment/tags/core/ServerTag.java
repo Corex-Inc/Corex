@@ -14,6 +14,29 @@ import org.jspecify.annotations.NonNull;
 
 import java.net.InetSocketAddress;
 
+/* @doc object
+ *
+ * @Name ServerTag
+ * @Prefix server
+ * @Modules VELOCITY
+ *
+ * @Format
+ * The identity format for ServerTags is 'server@<name>', where '<name>' is the name the backend
+ * is registered under in velocity.toml, such as 'server@lobby'.
+ *
+ * @Description
+ * A ServerTag is one backend server behind the proxy, the thing players are actually sent to.
+ * Note the difference from the Paper plugin, where '<server>' means the server the script runs on.
+ * Here there is no such thing, the proxy runs no world, so '<server[lobby]>' addresses a backend
+ * by name and '<velocity>' covers the proxy itself.
+ *
+ * Fetching a name that is not registered gives null, so a script cannot accidentally hold a
+ * ServerTag pointing at nothing.
+ *
+ * @Usage
+ * // Announce how busy the lobby is.
+ * - narrate "The lobby has <server[lobby].players.size> players."
+ */
 public class ServerTag implements AbstractTag {
 
     private static final String PREFIX = "server";
@@ -51,25 +74,89 @@ public class ServerTag implements AbstractTag {
             return tag.isRegistered() ? tag : null;
         });
 
+        /* @doc tag
+         *
+         * @Name name
+         * @RawName <ServerTag.name>
+         * @Object ServerTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the name the backend is registered under, the key from the servers block in
+         * velocity.toml. This is the name every other tag and command takes.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "name", (attribute, object) ->
-                new ElementTag(object.server.getServerInfo().getName()));
+                new ElementTag(object.server.getServerInfo().getName())).setAsyncSafe();
 
+        /* @doc tag
+         *
+         * @Name address
+         * @RawName <ServerTag.address>
+         * @Object ServerTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns the backend address as 'host:port'. This is where the proxy connects, not
+         * anything a player can see or reach.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "address", (attribute, object) -> {
             InetSocketAddress address = object.server.getServerInfo().getAddress();
             return new ElementTag(address.getHostString() + ":" + address.getPort());
-        });
+        }).setAsyncSafe();
 
+        /* @doc tag
+         *
+         * @Name host
+         * @RawName <ServerTag.host>
+         * @Object ServerTag
+         * @ReturnType ElementTag
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns just the host part of the backend address, without the port.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "host", (attribute, object) ->
-                new ElementTag(object.server.getServerInfo().getAddress().getHostString()));
+                new ElementTag(object.server.getServerInfo().getAddress().getHostString())).setAsyncSafe();
 
+        /* @doc tag
+         *
+         * @Name port
+         * @RawName <ServerTag.port>
+         * @Object ServerTag
+         * @ReturnType ElementTag(Number)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns just the port of the backend address.
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "port", (attribute, object) ->
-                new ElementTag(object.server.getServerInfo().getAddress().getPort()));
+                new ElementTag(object.server.getServerInfo().getAddress().getPort())).setAsyncSafe();
 
+        /* @doc tag
+         *
+         * @Name players
+         * @RawName <ServerTag.players>
+         * @Object ServerTag
+         * @ReturnType ListTag(PlayerTag)
+         * @NoArg
+         * @Async
+         * @Description
+         * Returns every player currently connected to this backend. The list is empty for a
+         * server nobody is on, including one that is down, so it says nothing about whether the
+         * backend is actually alive.
+         *
+         * @Usage
+         * // Move everyone off a server before restarting it.
+         * - foreach <server[minigame].players> as:player:
+         *   - adjust <[player]> server:<server[lobby]>
+         */
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attribute, object) -> {
             ListTag list = new ListTag();
             object.server.getPlayersConnected().forEach(player -> list.addObject(new PlayerTag(player)));
             return list;
-        });
+        }).setAsyncSafe();
     }
 
     @Override
