@@ -1,6 +1,9 @@
 package dev.corexinc.corex.engine.tags;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonOwnership;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 
 import java.util.*;
@@ -14,7 +17,15 @@ public class ObjectFetcher {
     private static final StackWalker CALLER_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
     public static void registerFetcher(String prefix, Function<String, AbstractTag> constructor) {
+        AddonOwner owner = AddonManager.requireOwner("the object prefix '" + prefix + "@'");
+        if (owner == null) {
+            return;
+        }
+
         fetchers.put(prefix.toLowerCase(), constructor);
+        AddonManager.noteHandler(constructor, owner);
+        AddonOwnership.claim(AddonOwnership.Kind.FETCHER, prefix.toLowerCase(), owner);
+
         String callerName = CALLER_WALKER.getCallerClass().getSimpleName().toLowerCase();
         if (callerName.endsWith("tag")) {
             typeNamesToPrefixes.put(callerName.substring(0, callerName.length() - 3), prefix.toLowerCase());

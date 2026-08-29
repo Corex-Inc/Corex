@@ -1,5 +1,8 @@
 package dev.corexinc.corex.environment.events;
 
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonOwnership;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.CorexLogger;
@@ -21,12 +24,22 @@ public class EventRegistry {
     private static final Map<AbstractEvent, EventPattern> patternCache = new HashMap<>();
 
     public static void register(Class<?>... classes) {
+        AddonOwner owner = AddonManager.requireOwner(classes.length == 1
+                ? "the event '" + classes[0].getSimpleName() + "'"
+                : classes.length + " events");
+        if (owner == null) {
+            return;
+        }
+
         for (Class<?> clazz : classes) {
             try {
                 if (AbstractEvent.class.isAssignableFrom(clazz)) {
                     AbstractEvent event = (AbstractEvent) clazz.getDeclaredConstructor().newInstance();
                     registeredEvents.add(event);
                     patternCache.put(event, new EventPattern(event.getSyntax()));
+
+                    AddonManager.noteClass(clazz, owner);
+                    AddonOwnership.claim(AddonOwnership.Kind.EVENT, event.getName(), owner);
                 } else {
                     CorexLogger.warn("Class " + clazz.getSimpleName() + " is not AbstractEvent!");
                 }

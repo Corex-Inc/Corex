@@ -61,6 +61,15 @@ public final class BoundCommand {
      * A declared-but-invalid overload logs the reason and also yields null.
      */
     public static BoundCommand bind(AbstractCommand command, List<SyntaxSlot> slots) {
+        return bind(command, slots, problem -> fail(command, problem));
+    }
+
+    /**
+     * Same checks as {@link #bind(AbstractCommand, List)}, but every problem is handed to
+     * {@code onProblem} instead of being logged - so a test can assert on them.
+     */
+    public static BoundCommand bind(AbstractCommand command, List<SyntaxSlot> slots,
+                                    java.util.function.Consumer<String> onProblem) {
         Method candidate = null;
         for (Method method : command.getClass().getMethods()) {
             if (!method.getName().equals("run")) continue;
@@ -68,14 +77,14 @@ public final class BoundCommand {
             if (isClassicForm(method)) continue;
 
             if (candidate != null) {
-                fail(command, "declares more than one run(...) overload - keep exactly one");
+                onProblem.accept("declares more than one run(...) overload - keep exactly one");
                 return null;
             }
             candidate = method;
         }
         if (candidate == null) return null;
 
-        checkLabelKeys(command, slots);
+        checkLabelKeys(command, slots, onProblem);
 
         Class<?>[] params = candidate.getParameterTypes();
         int cursor = 0;
@@ -84,7 +93,7 @@ public final class BoundCommand {
 
         int argCount = params.length - cursor;
         if (argCount != slots.size()) {
-            fail(command, "run(...) takes " + argCount + " argument parameter(s) but its syntax declares "
+            onProblem.accept("run(...) takes " + argCount + " argument parameter(s) but its syntax declares "
                     + slots.size() + ": " + describe(slots)
                     + " - parameters after the optional ScriptQueue must match the syntax one for one");
             return null;
@@ -103,12 +112,12 @@ public final class BoundCommand {
 
             if (slot.isFlag()) {
                 if (target != boolean.class && target != Boolean.class) {
-                    fail(command, "parameter #" + (i + 1) + " maps to flag " + slot.describe()
+                    onProblem.accept("parameter #" + (i + 1) + " maps to flag " + slot.describe()
                             + " so it must be boolean, but is " + target.getSimpleName());
                     return null;
                 }
             } else if (!isSupportedValueType(target)) {
-                fail(command, "parameter #" + (i + 1) + " maps to " + slot.describe()
+                onProblem.accept("parameter #" + (i + 1) + " maps to " + slot.describe()
                         + " but " + target.getSimpleName() + " is not a tag, String, boolean or number");
                 return null;
             }
@@ -122,7 +131,7 @@ public final class BoundCommand {
                     .asType(MethodType.methodType(void.class, Object.class, Object[].class));
             return new BoundCommand(command, handle, slots, targets, labels, reported, wantsQueue);
         } catch (Throwable t) {
-            fail(command, "run(...) could not be bound: " + t);
+            onProblem.accept("run(...) could not be bound: " + t);
             return null;
         }
     }
@@ -148,7 +157,8 @@ public final class BoundCommand {
     }
 
     /** A label pointing at no argument is almost always a typo, so say so at startup. */
-    private static void checkLabelKeys(AbstractCommand command, List<SyntaxSlot> slots) {
+    private static void checkLabelKeys(AbstractCommand command, List<SyntaxSlot> slots,
+                                       java.util.function.Consumer<String> onProblem) {
         if (command.getReportLabels().isEmpty()) return;
         for (String key : command.getReportLabels().keySet()) {
             boolean known = false;
@@ -156,9 +166,8 @@ public final class BoundCommand {
                 if (slot.name().equals(key)) { known = true; break; }
             }
             if (!known) {
-                CorexLogger.warn("Command '<yellow>" + command.getName() + "</yellow>' labels an argument '"
-                        + key + "' that its syntax does not declare - the label is ignored.");
-                CorexLogger.warn("  <gray>Known arguments: <white>" + describe(slots));
+                onProblem.accept("labels an argument '" + key + "' that its syntax does not declare"
+                        + " - known arguments are " + describe(slots));
             }
         }
     }

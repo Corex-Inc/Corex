@@ -2,6 +2,9 @@ package dev.corexinc.corex.api.processors;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonOwnership;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
@@ -46,10 +49,19 @@ import java.util.function.BiFunction;
 @AvailableSince("1.0.0")
 public final class TagProcessor<T extends AbstractTag> {
 
+    private static final StackWalker OWNER_WALKER =
+            StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
     /**
      * Internal registry of sub-tags mapped by their names.
      */
     private final Map<String, TagData<T>> registeredTags = new HashMap<>();
+
+    /**
+     * Name of the tag class this processor belongs to, taken from whoever constructed it.
+     * Used to name a sub-tag in ownership records and error messages as {@code PlayerTag.name}.
+     */
+    private final String objectName = OWNER_WALKER.getCallerClass().getSimpleName();
 
     /**
      * Whether {@link #process} should fall back to {@link GlobalTagProcessor#PROCESSOR}
@@ -74,8 +86,22 @@ public final class TagProcessor<T extends AbstractTag> {
     /**
      * Default constructor for the TagProcessor. Global tag fallthrough is enabled by default;
      * call {@link #disableGlobalTags()} to opt out.
+     *
+     * <p>Declare it as a static field on the tag class it serves, as every Corex tag does. The
+     * processor reads that class off the stack to name its sub-tags, so constructing it anywhere
+     * else leaves them labelled after the wrong object.</p>
      */
     public TagProcessor() {}
+
+    /**
+     * Returns the name of the tag class this processor serves, e.g. {@code "PlayerTag"}.
+     *
+     * @return the object name.
+     */
+    @NotNull
+    public String getObjectName() {
+        return objectName;
+    }
 
     /**
      * Registers a new sub-tag handler with metadata about the return type.
@@ -99,7 +125,13 @@ public final class TagProcessor<T extends AbstractTag> {
     ) {
         @SuppressWarnings("unchecked")
         TagData<T> data = new TagData<>(returnType, (BiFunction<Attribute, T, AbstractTag>) action);
-        return new TagRegistration<>(data, name, registeredTags);
+
+        AddonOwner owner = AddonManager.requireOwner("the tag '" + objectName + "." + name + "'");
+        if (owner == null) {
+            return new TagRegistration<>(data, name, new HashMap<>(), objectName, AddonOwner.CORE);
+        }
+        AddonManager.noteHandler(action, owner);
+        return new TagRegistration<>(data, name, registeredTags, objectName, owner);
     }
 
     /**
@@ -252,12 +284,19 @@ public final class TagProcessor<T extends AbstractTag> {
         private final String name;
         private final Map<String, TagData<T>> registry;
         private final TagData<T> displaced;
+        private final String key;
+        private final AddonOwner owner;
+        private final AddonOwner displacedOwner;
 
-        TagRegistration(TagData<T> data, String name, Map<String, TagData<T>> registry) {
+        TagRegistration(TagData<T> data, String name, Map<String, TagData<T>> registry,
+                        String objectName, AddonOwner owner) {
             this.data = data;
             this.name = name;
             this.registry = registry;
             this.displaced = registry.get(name);
+            this.key = objectName + "." + name;
+            this.owner = owner;
+            this.displacedOwner = AddonOwnership.ownerOf(AddonOwnership.Kind.SUB_TAG, key);
             commit();
         }
 
@@ -271,8 +310,12 @@ public final class TagProcessor<T extends AbstractTag> {
         private void commit() {
             if (isModuleCompatible() && isVersionCompatible()) {
                 registry.put(name, data);
+                AddonOwnership.claim(AddonOwnership.Kind.SUB_TAG, key, owner);
             } else if (registry.remove(name, data) && displaced != null) {
                 registry.put(name, displaced);
+                if (displacedOwner != null) {
+                    AddonOwnership.claim(AddonOwnership.Kind.SUB_TAG, key, displacedOwner);
+                }
             }
         }
 

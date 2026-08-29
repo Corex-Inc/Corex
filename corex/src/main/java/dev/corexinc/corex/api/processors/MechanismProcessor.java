@@ -1,6 +1,9 @@
 package dev.corexinc.corex.api.processors;
 
 import dev.corexinc.corex.api.tags.AbstractTag;
+import dev.corexinc.corex.engine.addons.AddonManager;
+import dev.corexinc.corex.engine.addons.AddonOwner;
+import dev.corexinc.corex.engine.addons.AddonOwnership;
 import dev.corexinc.corex.api.tags.Adjustable;
 import org.jetbrains.annotations.ApiStatus.*;
 import org.jetbrains.annotations.Contract;
@@ -45,10 +48,19 @@ import java.util.function.BiFunction;
 @AvailableSince("1.0.0")
 public final class MechanismProcessor<T extends AbstractTag> {
 
+    private static final StackWalker OWNER_WALKER =
+            StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
     /**
      * Internal registry of mechanisms mapped by their names.
      */
     private final Map<String, BiFunction<T, AbstractTag, AbstractTag>> mechanisms = new HashMap<>();
+
+    /**
+     * Name of the tag class this processor belongs to, taken from whoever constructed it.
+     * Used to name a mechanism in ownership records as {@code EntityTag.health}.
+     */
+    private final String objectName = OWNER_WALKER.getCallerClass().getSimpleName();
 
     /**
      * Registers a new mechanism handler.
@@ -60,7 +72,26 @@ public final class MechanismProcessor<T extends AbstractTag> {
      * @throws NullPointerException if name or action is {@code null}.
      */
     public void registerMechanism(@NotNull String name, @NotNull BiFunction<T, AbstractTag, AbstractTag> action) {
+        String key = objectName + "." + name;
+
+        AddonOwner owner = AddonManager.requireOwner("the mechanism '" + key + "'");
+        if (owner == null) {
+            return;
+        }
+
         mechanisms.put(name, action);
+        AddonManager.noteHandler(action, owner);
+        AddonOwnership.claim(AddonOwnership.Kind.MECHANISM, key, owner);
+    }
+
+    /**
+     * Returns the name of the tag class this processor serves, e.g. {@code "EntityTag"}.
+     *
+     * @return the object name.
+     */
+    @NotNull
+    public String getObjectName() {
+        return objectName;
     }
 
     /**
