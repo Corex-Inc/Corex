@@ -51,7 +51,7 @@ import org.jspecify.annotations.NonNull;
  *
  * @Usage
  * // Move someone else, without waiting.
- * - connect <server[lobby]> target:<velocity.matchPlayer[Steve]>
+ * - connect <server[lobby]> target:<proxy.matchPlayer[Steve]>
  */
 public class ConnectCommand implements AbstractCommand {
 

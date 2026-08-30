@@ -43,11 +43,11 @@ import java.util.List;
  *
  * @Usage
  * // Broadcast an actionbar to multiple specific players.
- * - actionbar "<&l><&c>The boss has spawned!" targets:<velocity.players>
+ * - actionbar "<&l><&c>The boss has spawned!" targets:<proxy.players>
  *
  * @Usage
  * // Send a personalized message to everyone on the network using a loop.
- * - foreach <velocity.players> as:target:
+ * - foreach <proxy.players> as:target:
  *     - actionbar "<&7>Hello, <&b><[target].name><&7>! Your ping is <[target].ping>ms." targets:<[target]>
  */
 public class ActionBarCommand implements AbstractCommand {

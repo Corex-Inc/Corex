@@ -30,54 +30,56 @@ import java.util.List;
 
 /* @doc object
  *
- * @Name VelocityTag
- * @Prefix velocity
+ * @Name ProxyTag
+ * @Prefix proxy
  * @Modules VELOCITY
  *
  * @Format
- * The basic format for a VelocityTag is simply 'velocity@'. There is only ever one, so the base
- * tag takes no input.
+ * The basic format for a ProxyTag is simply 'proxy@'. There is only ever one, so the base
+ * tag takes no input. '<velocity>' is kept as an alias of '<proxy>' for scripts written before
+ * the rename.
  *
  * @Description
- * The VelocityTag is the proxy itself: the players connected to it, the backends registered on
+ * The ProxyTag is the proxy itself: the players connected to it, the backends registered on
  * it, and what its config says. It is the proxy counterpart of ServerTag on the Paper plugin.
  *
  * Everything here describes the proxy, never a backend. The proxy runs no world, has no tick
  * loop and holds no blocks, so nothing world shaped lives on this tag.
  *
- * VelocityTag implements Flaggable, so it is where network wide data lives, the proxy counterpart
+ * ProxyTag implements Flaggable, so it is where network wide data lives, the proxy counterpart
  * of flags on '<server>' in the Paper plugin. They are kept in 'proxyFlags.db' next to the config
  * and survive a proxy restart. Backends have their own, see <@link tag ServerTag.flag>.
  *
  * @Usage
  * // Report the network population.
- * - narrate "<velocity.players.size> of <velocity.maxPlayers> players online."
+ * - narrate "<proxy.players.size> of <proxy.maxPlayers> players online."
  *
  * @Usage
  * // Put the whole network into maintenance until someone lifts it.
- * - flag <velocity> maintenance true
+ * - flag <proxy> maintenance true
  */
-public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
+public class ProxyTag implements AbstractTag, Flaggable, Adjustable {
 
-    private static final String PREFIX = "velocity";
+    private static final String PREFIX = "proxy";
 
-    public static final TagProcessor<VelocityTag> TAG_PROCESSOR = new TagProcessor<>();
-    public static final MechanismProcessor<VelocityTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
+    public static final TagProcessor<ProxyTag> TAG_PROCESSOR = new TagProcessor<>();
+    public static final MechanismProcessor<ProxyTag> MECHANISM_PROCESSOR = new MechanismProcessor<>();
 
     public static void register() {
-        BaseTagProcessor.registerBaseTag(PREFIX, (attribute) -> new VelocityTag());
+        BaseTagProcessor.registerBaseTag(PREFIX, (attribute) -> new ProxyTag());
+        BaseTagProcessor.registerBaseTag("velocity", (attribute) -> new ProxyTag());
 
         /* @doc tag
          *
          * @Name version
-         * @RawName <VelocityTag.version>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.version>
+         * @Object ProxyTag
          * @ReturnType ElementTag
          * @NoArg
          * @Async
          * @Description
          * Returns the version of the proxy software itself, such as '3.5.0'. This is the Velocity
-         * build, not any Minecraft version, for which see <@link tag VelocityTag.supportedVersions>.
+         * build, not any Minecraft version, for which see <@link tag ProxyTag.supportedVersions>.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "version", (attribute, object) ->
                 new ElementTag(proxy().getVersion().getVersion())).setAsyncSafe();
@@ -85,8 +87,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name players
-         * @RawName <VelocityTag.players>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.players>
+         * @Object ProxyTag
          * @ReturnType ListTag(PlayerTag)
          * @NoArg
          * @Async
@@ -96,7 +98,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Announce something to the whole network.
-         * - narrate "Server restarting in 5 minutes." targets:<velocity.players>
+         * - narrate "Server restarting in 5 minutes." targets:<proxy.players>
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "players", (attribute, object) -> {
             ListTag list = new ListTag();
@@ -107,8 +109,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name servers
-         * @RawName <VelocityTag.servers>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.servers>
+         * @Object ProxyTag
          * @ReturnType ListTag(ServerTag)
          * @NoArg
          * @Async
@@ -126,8 +128,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name plugins
-         * @RawName <VelocityTag.plugins>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.plugins>
+         * @Object ProxyTag
          * @ReturnType ListTag(PluginTag)
          * @NoArg
          * @Async
@@ -137,7 +139,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // List what the proxy is running.
-         * - foreach <velocity.plugins> as:entry:
+         * - foreach <proxy.plugins> as:entry:
          *   - narrate "<[entry].name> v<[entry].version.ifNull[?]>"
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "plugins", (attribute, object) -> {
@@ -149,8 +151,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name address
-         * @RawName <VelocityTag.address>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.address>
+         * @Object ProxyTag
          * @ReturnType ElementTag
          * @NoArg
          * @Async
@@ -166,8 +168,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name host
-         * @RawName <VelocityTag.host>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.host>
+         * @Object ProxyTag
          * @ReturnType ElementTag
          * @NoArg
          * @Async
@@ -180,8 +182,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name port
-         * @RawName <VelocityTag.port>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.port>
+         * @Object ProxyTag
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Async
@@ -194,8 +196,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name maxPlayers
-         * @RawName <VelocityTag.maxPlayers>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.maxPlayers>
+         * @Object ProxyTag
          * @ReturnType ElementTag(Number)
          * @NoArg
          * @Async
@@ -209,8 +211,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name matchPlayer
-         * @RawName <VelocityTag.matchPlayer[<name>]>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.matchPlayer[<name>]>
+         * @Object ProxyTag
          * @ReturnType PlayerTag
          * @ArgRequired
          * @Async
@@ -222,7 +224,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Resolve a partial name typed by a moderator.
-         * - narrate "Best match: <velocity.matchPlayer[bob].name>"
+         * - narrate "Best match: <proxy.matchPlayer[bob].name>"
          */
         TAG_PROCESSOR.registerTag(PlayerTag.class, "matchPlayer", (attribute, object) -> {
             if (!attribute.hasParam()) return null;
@@ -244,8 +246,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name motd
-         * @RawName <VelocityTag.motd>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.motd>
+         * @Object ProxyTag
          * @ReturnType ElementTag
          * @NoArg
          * @Async
@@ -259,8 +261,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name isOnlineMode
-         * @RawName <VelocityTag.isOnlineMode>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.isOnlineMode>
+         * @Object ProxyTag
          * @ReturnType ElementTag(Boolean)
          * @NoArg
          * @Async
@@ -275,8 +277,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name tryOrder
-         * @RawName <VelocityTag.tryOrder>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.tryOrder>
+         * @Object ProxyTag
          * @ReturnType ListTag(ServerTag)
          * @NoArg
          * @Async
@@ -289,7 +291,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Send someone to the network's default lobby, whatever it is called.
-         * - adjust <player> server:<velocity.tryOrder.first>
+         * - adjust <player> server:<proxy.tryOrder.first>
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "tryOrder", (attribute, object) -> {
             ListTag list = new ListTag();
@@ -303,8 +305,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name supportedVersions
-         * @RawName <VelocityTag.supportedVersions>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.supportedVersions>
+         * @Object ProxyTag
          * @ReturnType ListTag
          * @NoArg
          * @Async
@@ -327,8 +329,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name forcedHosts
-         * @RawName <VelocityTag.forcedHosts>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.forcedHosts>
+         * @Object ProxyTag
          * @ReturnType MapTag
          * @NoArg
          * @Async
@@ -343,7 +345,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Where does this domain send people?
-         * - narrate "<velocity.forcedHosts.get[mc.example.com].parse[name]>"
+         * - narrate "<proxy.forcedHosts.get[mc.example.com].parse[name]>"
          */
         TAG_PROCESSOR.registerTag(MapTag.class, "forcedHosts", (attribute, object) -> {
             MapTag map = new MapTag();
@@ -361,8 +363,8 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name favicon
-         * @RawName <VelocityTag.favicon>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.favicon>
+         * @Object ProxyTag
          * @ReturnType ElementTag
          * @NoArg
          * @Async
@@ -379,20 +381,20 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc tag
          *
          * @Name matchServer
-         * @RawName <VelocityTag.matchServer[<name>]>
-         * @Object VelocityTag
+         * @RawName <ProxyTag.matchServer[<name>]>
+         * @Object ProxyTag
          * @ReturnType ListTag(ServerTag)
          * @ArgRequired
          * @Async
          * @Description
          * Returns every registered backend whose name starts with the input, ignoring case. An exact
          * name gives a one entry list, an input nothing starts with gives an empty one.
-         * Unlike <@link tag VelocityTag.matchPlayer> this hands back all matches rather than picking
+         * Unlike <@link tag ProxyTag.matchPlayer> this hands back all matches rather than picking
          * one, because server names are usually prefixed on purpose ('arena1', 'arena2').
          *
          * @Usage
          * // Count how many arenas are up.
-         * - narrate "Arenas: <velocity.matchServer[arena].size>"
+         * - narrate "Arenas: <proxy.matchServer[arena].size>"
          */
         TAG_PROCESSOR.registerTag(ListTag.class, "matchServer", (attribute, object) -> {
             if (!attribute.hasParam()) return null;
@@ -404,7 +406,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc mechanism
          *
          * @Name shutdown
-         * @Object VelocityTag
+         * @Object ProxyTag
          * @Input ElementTag
          * @Description
          * Shuts the proxy down. Every player is disconnected with the given message, or with the
@@ -418,7 +420,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Stop the proxy with a reason players can read.
-         * - adjust <velocity> shutdown:"Network maintenance, back in 20 minutes."
+         * - adjust <proxy> shutdown:"Network maintenance, back in 20 minutes."
          */
         MECHANISM_PROCESSOR.registerMechanism("shutdown", (object, value) -> {
             String reason = value instanceof ElementTag element ? element.asString() : "";
@@ -436,7 +438,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc mechanism
          *
          * @Name serverLinks
-         * @Object VelocityTag
+         * @Object ProxyTag
          * @Input MapTag
          * @Description
          * Sets the pause menu links on every player currently connected, the same map
@@ -452,7 +454,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Give the whole network its links back after a reload.
-         * - adjust <velocity> serverLinks:<map[WEBSITE=https://example.com;BUG_REPORT=https://example.com/bugs]>
+         * - adjust <proxy> serverLinks:<map[WEBSITE=https://example.com;BUG_REPORT=https://example.com/bugs]>
          */
         MECHANISM_PROCESSOR.registerMechanism("serverLinks", (object, value) -> {
             List<ServerLink> links;
@@ -474,7 +476,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc mechanism
          *
          * @Name registerServer
-         * @Object VelocityTag
+         * @Object ProxyTag
          * @Input ServerTag
          * @Description
          * Registers a backend on the running proxy, the same thing an entry in the servers block of
@@ -487,7 +489,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          *
          * @Usage
          * // Bring a match server up, then send the party there.
-         * - adjust <velocity> registerServer:<server[arena1[address=127.0.0.1:25801]]>
+         * - adjust <proxy> registerServer:<server[arena1[address=127.0.0.1:25801]]>
          * - adjust <player> server:<server[arena1]>
          */
         MECHANISM_PROCESSOR.registerMechanism("registerServer", (object, value) -> {
@@ -510,7 +512,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
         /* @doc mechanism
          *
          * @Name unregisterServer
-         * @Object VelocityTag
+         * @Object ProxyTag
          * @Input ServerTag
          * @Description
          * Takes a backend off the running proxy. Players already on it stay there, they are simply
@@ -523,7 +525,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
          * @Usage
          * // Tear the match server down once it is empty.
          * - if <server[arena1].players.isEmpty>:
-         *   - adjust <velocity> unregisterServer:<server[arena1]>
+         *   - adjust <proxy> unregisterServer:<server[arena1]>
          */
         MECHANISM_PROCESSOR.registerMechanism("unregisterServer", (object, value) -> {
             ServerTag target = asServer(value);
@@ -571,18 +573,18 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
     }
 
     @Override
-    public @NonNull TagProcessor<VelocityTag> getProcessor() {
+    public @NonNull TagProcessor<ProxyTag> getProcessor() {
         return TAG_PROCESSOR;
     }
 
     @Override
     public @NonNull String getTestValue() {
-        return "velocity@";
+        return "proxy@";
     }
 
     @Override
     public @NonNull Adjustable duplicate() {
-        return new VelocityTag();
+        return new ProxyTag();
     }
 
     @Override
@@ -591,7 +593,7 @@ public class VelocityTag implements AbstractTag, Flaggable, Adjustable {
     }
 
     @Override
-    public @NonNull MechanismProcessor<VelocityTag> getMechanismProcessor() {
+    public @NonNull MechanismProcessor<ProxyTag> getMechanismProcessor() {
         return MECHANISM_PROCESSOR;
     }
 }

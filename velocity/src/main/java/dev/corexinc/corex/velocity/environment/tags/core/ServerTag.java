@@ -36,11 +36,11 @@ import java.net.InetSocketAddress;
  * A ServerTag is one backend server behind the proxy, the thing players are actually sent to.
  * Note the difference from the Paper plugin, where '<server>' means the server the script runs on.
  * Here there is no such thing, the proxy runs no world, so '<server[lobby]>' addresses a backend
- * by name and '<velocity>' covers the proxy itself.
+ * by name and '<proxy>' covers the proxy itself.
  *
  * A name the proxy does not know gives null, unless an address is written with it. That form is a
  * blueprint: a name and an address, nothing running behind them, which is what
- * <@link mechanism VelocityTag.registerServer> takes to bring a backend up while the proxy runs.
+ * <@link mechanism ProxyTag.registerServer> takes to bring a backend up while the proxy runs.
  * It is the same idea as an EntityTag holding a type nobody has spawned yet.
  * Use <@link tag ServerTag.isRegistered> to tell the two apart.
  *
@@ -59,7 +59,7 @@ import java.net.InetSocketAddress;
  *
  * @Usage
  * // Bring a match server up and send the party to it.
- * - adjust <velocity> registerServer:<server[arena1[address=127.0.0.1:25801]]>
+ * - adjust <proxy> registerServer:<server[arena1[address=127.0.0.1:25801]]>
  * - foreach <[party]> as:member:
  *   - adjust <[member]> server:<server[arena1]>
  */
@@ -174,7 +174,7 @@ public class ServerTag implements AbstractTag, Flaggable {
          * Returns 'true' if the proxy knows this backend, 'false' for a blueprint that was written
          * with an address but never registered. Only a registered backend has players on it, and
          * only a blueprint is worth handing to
-         * <@link mechanism VelocityTag.registerServer>.
+         * <@link mechanism ProxyTag.registerServer>.
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "isRegistered", (attribute, object) ->
                 new ElementTag(object.server != null)).setAsyncSafe();
@@ -280,7 +280,7 @@ public class ServerTag implements AbstractTag, Flaggable {
     @Override
     public AbstractFlagTracker getFlagTracker() {
         if (info == null) return null;
-        return new SqlFlagTracker(VelocityTag.flagsFile(), PREFIX + "@" + info.getName());
+        return new SqlFlagTracker(ProxyTag.flagsFile(), PREFIX + "@" + info.getName());
     }
 
     @Override

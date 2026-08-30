@@ -46,7 +46,7 @@ public final class VelocityNetworkExecutor implements NetworkExecutionHandler {
         }
 
         Instruction[] bytecode = ScriptManager.compileBlock(block);
-        if (bytecode == null || bytecode.length == 0) {
+        if (bytecode.length == 0) {
             CorexLogger.warn("Corex script from " + packet.getSource()
                     + " compiled to nothing, check the sending script for commands the proxy does not have.");
             return;

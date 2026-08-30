@@ -23,7 +23,7 @@ import dev.corexinc.corex.environment.tags.core.*;
 import dev.corexinc.corex.environment.tags.utils.RandomTag;
 import dev.corexinc.corex.velocity.environment.tags.core.PluginTag;
 import dev.corexinc.corex.velocity.environment.tags.core.ServerTag;
-import dev.corexinc.corex.velocity.environment.tags.core.VelocityTag;
+import dev.corexinc.corex.velocity.environment.tags.core.ProxyTag;
 import dev.corexinc.corex.velocity.environment.tags.player.PlayerTag;
 // DataActions
 import dev.corexinc.corex.environment.data.actions.*;
@@ -103,7 +103,7 @@ public class VelocityEnvironmentLoader {
                 PlayerTag.class,
                 ServerTag.class,
                 PluginTag.class,
-                VelocityTag.class,
+                ProxyTag.class,
                 ListTag.class,
                 MapTag.class,
                 DurationTag.class,

@@ -49,7 +49,7 @@ import java.util.List;
  *
  * @Usage
  * // Notify players about an upcoming server restart
- * - title "<&c>Server Restarting" subtitle:"<&c>In 1 minute!" stay:1m targets:<velocity.players>
+ * - title "<&c>Server Restarting" subtitle:"<&c>In 1 minute!" stay:1m targets:<proxy.players>
  *
  * @Usage
  * // Inform a player about entering a new area

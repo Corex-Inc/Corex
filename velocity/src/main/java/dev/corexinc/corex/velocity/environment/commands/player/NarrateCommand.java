@@ -39,7 +39,7 @@ import java.util.List;
  *
  * @Usage
  * // Announce to the whole network.
- * - narrate "<gray>Restarting in 5 minutes." targets:<velocity.players>
+ * - narrate "<gray>Restarting in 5 minutes." targets:<proxy.players>
  *
  * @Usage
  * // Message everyone on one backend.

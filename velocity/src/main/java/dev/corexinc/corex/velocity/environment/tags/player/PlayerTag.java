@@ -219,7 +219,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          * @Usage
          * // Gate a network wide announcement.
          * - if <player.hasPermission[network.announce]>:
-         *   - narrate <[message]> targets:<velocity.players>
+         *   - narrate <[message]> targets:<proxy.players>
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "hasPermission", (attribute, object) -> {
             if (!attribute.hasParam()) return null;

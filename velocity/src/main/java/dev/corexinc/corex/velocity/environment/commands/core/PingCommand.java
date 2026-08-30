@@ -64,7 +64,7 @@ import java.time.Duration;
  *
  * @Usage
  * // Report the state of the whole network to an admin.
- * - foreach <velocity.servers> as:backend:
+ * - foreach <proxy.servers> as:backend:
  *   - ~ping <[backend]> timeout:2s save:status
  *   - if <[status].get[reachable]>:
  *     - narrate "<green><[backend].name>: up, <[status].get[latency]>ms, <[status].get[onlinePlayers]> online"

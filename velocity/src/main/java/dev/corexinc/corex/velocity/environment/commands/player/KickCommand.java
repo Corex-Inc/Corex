@@ -43,7 +43,7 @@ import java.util.List;
  *
  * @Usage
  * // Use to kick everyone else with a reason.
- * - kick <velocity.players.exclude[<player>]> "reason:I.. AM.. GOOOOD!!"
+ * - kick <proxy.players.exclude[<player>]> "reason:I.. AM.. GOOOOD!!"
  */
 public class KickCommand implements AbstractCommand {
 

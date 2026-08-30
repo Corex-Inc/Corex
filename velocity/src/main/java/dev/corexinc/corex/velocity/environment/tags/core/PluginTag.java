@@ -153,7 +153,7 @@ public class PluginTag implements AbstractTag {
          *
          * @Usage
          * // Print the version of every plugin on the proxy.
-         * - foreach <velocity.plugins> as:entry:
+         * - foreach <proxy.plugins> as:entry:
          *   - narrate "<[entry].name> v<[entry].version.ifNull[?]>"
          */
         TAG_PROCESSOR.registerTag(ElementTag.class, "version", (attribute, object) ->
