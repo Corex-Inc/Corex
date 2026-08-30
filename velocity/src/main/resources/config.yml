@@ -1,2 +1,24 @@
 logger:
   debug-mode: default
+
+# Cross server messaging between the backends behind this proxy.
+network:
+  # Turn the relay off entirely. When off, no channel is registered and packets from
+  # backends are not forwarded.
+  enabled: true
+  # Whether a script that arrived over the network may run on this proxy, and whether proxy
+  # scripts may send script packets to backends. Needs a shared secret.
+  allow-remote-execution: false
+  # Whether Corex may borrow the proxy's forwarding secret when it has no key of its own.
+  # With this on there is nothing to configure: that value is already identical on the proxy
+  # and every backend. Corex looks in order at CX_NETWORK_SECRET in secrets.env, then
+  # CX_NETWORK_SECRET in the environment, then VELOCITY_FORWARDING_SECRET in the environment,
+  # then the forwarding secret on disk. Turning this off stops it after the two CX_ ones.
+  # The startup log always names which source was used.
+  use-proxy-secret: true
+  # Listen for backend sockets. Bind to a private interface: the port is not the place to
+  # expose to the internet, and Corex refuses to open it at all without a shared secret.
+  websocket:
+    enabled: false
+    bind: 127.0.0.1
+    port: 25599

@@ -183,6 +183,7 @@ public class EnvironmentLoader {
                 DialogCommand.class,
                 TimeCommand.class,
                 FakeSpawnCommand.class,
+                ProxyCommand.class,
 
                 // Tags
                 ElementTag.class,
@@ -263,6 +264,7 @@ public class EnvironmentLoader {
                 DeltaTimeEvent.class,
                 WebsocketScriptEvent.class,
                 FlagExpireEvent.class,
+                ProxyMessageEvent.class,
 
                 // Player
                 PlayerBreakBlockEvent.class,

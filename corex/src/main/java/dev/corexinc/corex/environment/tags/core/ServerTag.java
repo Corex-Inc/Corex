@@ -278,6 +278,27 @@ public class ServerTag implements AbstractTag, Flaggable, Adjustable {
          * // Show disk usage as a percentage
          * - narrate "Disk usage: <server.diskUsage.mul[100].round>%"
          */
+        TAG_PROCESSOR.registerTag(ElementTag.class, "nanoTime", (attr, obj) ->
+                new ElementTag(System.nanoTime())).setAsyncSafe();
+
+        /* @doc tag
+         *
+         * @Name diskUsage
+         * @RawName <server.diskUsage>
+         * @Object ServerTag
+         * @ReturnType ElementTag(Decimal)
+         * @NoArg
+         * @Async
+         * @Implements utils.disk_usage
+         * @Description
+         * Returns the disk usage ratio of the server's partition as a decimal between 0.0 and 1.0.
+         * Calculated as (total - usable) / total. Multiply by 100 for a percentage.
+         * Returns 0.0 if the partition total cannot be determined.
+         *
+         * @Usage
+         * // Show disk usage as a percentage
+         * - narrate "Disk usage: <server.diskUsage.mul[100].round>%"
+         */
         TAG_PROCESSOR.registerTag(ElementTag.class, "diskUsage", (attr, obj) -> {
             File root = new File(".");
             long total = root.getTotalSpace();

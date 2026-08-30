@@ -93,6 +93,7 @@ public class VelocityEnvironmentLoader {
                 FlagCommand.class,
                 FetchCommand.class,
                 WebsocketCommand.class,
+                ProxyCommand.class,
                 InjectCommand.class,
                 ReturnCommand.class,
                 StopCommand.class,

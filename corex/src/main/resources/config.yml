@@ -11,3 +11,30 @@ compute:
   # thread dispatch. Raise it if small lists got slower, lower it if big ones
   # are not using your cores.
   split-threshold: 65536
+
+# Cross server messaging, for a backend sitting behind a Velocity proxy running Corex.
+network:
+  # Turn the packet layer off entirely. When off, the "proxy" command reports an error
+  # instead of sending and no channel is registered.
+  enabled: true
+  # Whether a script that arrived over the network may run here. Leave this off unless you
+  # want other servers driving this one. It also needs a shared secret, since Corex refuses
+  # to run an unsigned packet: a plugin message reaching a backend is indistinguishable from
+  # one a modded client sent.
+  allow-remote-execution: false
+  # Whether Corex may borrow the proxy's forwarding secret when it has no key of its own.
+  # With this on there is nothing to configure: that value is already identical on the proxy
+  # and every backend. Corex looks in order at CX_NETWORK_SECRET in secrets.env, then
+  # CX_NETWORK_SECRET in the environment, then VELOCITY_FORWARDING_SECRET in the environment,
+  # then the forwarding secret on disk. Turning this off stops it after the two CX_ ones.
+  # The startup log always names which source was used.
+  use-proxy-secret: true
+  # Talk to the proxy over a socket instead of riding a player connection. Plugin messaging
+  # cannot deliver anything while this server is empty, which is usually when you most want it
+  # to. Needs a shared secret; a misconfigured socket falls back to plugin messaging.
+  websocket:
+    enabled: false
+    url: ws://127.0.0.1:25599
+    # What this server is called in velocity.toml. The proxy routes by this name.
+    server-name: ""
+    reconnect-seconds: 10

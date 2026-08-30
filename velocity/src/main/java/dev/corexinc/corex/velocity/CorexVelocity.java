@@ -14,6 +14,8 @@ import dev.corexinc.corex.engine.addons.AddonManager;
 import dev.corexinc.corex.engine.addons.AddonOwner;
 import dev.corexinc.corex.engine.addons.AddonResolver;
 import dev.corexinc.corex.velocity.environment.addons.VelocityAddonResolver;
+import dev.corexinc.corex.engine.network.NetworkManager;
+import dev.corexinc.corex.engine.network.NetworkSecret;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
@@ -26,11 +28,15 @@ import dev.corexinc.corex.engine.utils.Modules;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.velocity.environment.VelocityEnvironmentLoader;
+import dev.corexinc.corex.velocity.environment.network.ProxyRelay;
+import dev.corexinc.corex.velocity.environment.network.ProxySecretResolver;
+import dev.corexinc.corex.velocity.environment.network.VelocityNetworkExecutor;
 import dev.corexinc.corex.velocity.environment.utils.VelocitySchedulerAdapter;
 import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunCommand;
 import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunsCommand;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
 
 @Plugin(
@@ -48,6 +54,7 @@ public class CorexVelocity {
     private final CorexVelocityLoader loader;
     private CorexRegistry registry;
     private ConfigManager config;
+    private ProxyRelay proxyRelay;
 
     @Inject
     public CorexVelocity(ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -105,6 +112,7 @@ public class CorexVelocity {
             AddonManager.closeScope(AddonOwner.CORE);
         }
 
+        setupNetwork();
         registerCommands();
     }
 
@@ -127,7 +135,53 @@ public class CorexVelocity {
             WebSocketManager.disconnectAll();
         } catch (Throwable ignored) {}
 
+        if (proxyRelay != null) {
+            proxyRelay.shutdown();
+            proxyRelay = null;
+        }
+        NetworkManager.shutdown();
         DatabaseManager.closeAll();
+    }
+
+    /**
+     * Brings up the relay that forwards Corex packets between backends, and lets scripts running
+     * on the proxy send their own.
+     *
+     * <p>The relay is also the only thing standing between a modded client and a backend's packet
+     * listener, since Velocity forwards a client sent plugin message by default.</p>
+     */
+    private void setupNetwork() {
+        if (!config.getBoolean("network.enabled", true)) {
+            return;
+        }
+
+        NetworkSecret secret = ProxySecretResolver.resolve(dataFolder,
+                config.getBoolean("network.use-proxy-secret", true));
+
+        NetworkManager.configure(secret != null ? secret.value() : null,
+                config.getBoolean("network.allow-remote-execution", false));
+
+        if (secret != null) {
+            CorexLogger.info("Corex network is signing with " + secret.source() + ".");
+        }
+
+        NetworkManager.setExecutionHandler(new VelocityNetworkExecutor(server));
+
+        proxyRelay = new ProxyRelay(server);
+        proxyRelay.init();
+        server.getEventManager().register(this, proxyRelay);
+
+        if (config.getBoolean("network.websocket.enabled", false)) {
+            proxyRelay.startWebSocket(new InetSocketAddress(
+                    config.getString("network.websocket.bind", "127.0.0.1"),
+                    config.getInt("network.websocket.port", 25599)));
+        }
+
+        if (!NetworkManager.hasSecret()) {
+            CorexLogger.warn("Corex found no shared secret. It will relay plain messages, but remote "
+                    + "scripts and the websocket stay refused. Switch on modern forwarding, or set "
+                    + "CX_NETWORK_SECRET in secrets.env on every server.");
+        }
     }
 
     public void registerCommands() {
