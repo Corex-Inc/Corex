@@ -26,7 +26,7 @@ import java.util.List;
 /* @doc command
  *
  * @Name Damage
- * @Syntax damage [<entity>|...] [<#.#>] (source:<entity>) (cause:<causeType>)
+ * @Syntax damage [<entity>|...] (<#.#>) (source:<entity>) (cause:<causeType>)
  * @RequiredArgs 2
  * @MaxArgs 4
  * @ShortDescription Hurts the player or a list of entities.

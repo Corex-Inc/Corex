@@ -113,7 +113,7 @@ public class InventoryCommand implements AbstractCommand {
 
     @Override
     public @NonNull String getSyntax() {
-        return "[open/close/set/add/remove/clear/adjust/flag] (inventory:<inventory>) (slot:<#>) (items:<item>|...) (targets:<player>|...) (def.<key>:<value>) (def:<map>)";
+        return "[open/close/set/add/remove/clear/adjust/flag] (inventory:<inventory>) (slot:<#>) (items:<item>|...) (expire:<duration>) (targets:<player>|...) (def.<key>:<value>) (def:<map>)";
     }
 
     @Override

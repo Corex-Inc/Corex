@@ -35,11 +35,11 @@ import java.util.List;
  *
  * @Usage
  * // Message the linked player.
- * - narrate "<green>Welcome back!"
+ * - narrate "<&a>Welcome back!"
  *
  * @Usage
  * // Announce to the whole network.
- * - narrate "<gray>Restarting in 5 minutes." targets:<proxy.players>
+ * - narrate "<&7>Restarting in 5 minutes." targets:<proxy.players>
  *
  * @Usage
  * // Message everyone on one backend.

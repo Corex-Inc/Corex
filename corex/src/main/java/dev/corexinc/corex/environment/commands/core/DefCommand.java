@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 /* @doc command
  *
  * @Name Def
- * @Syntax def [<key>(:action)] [<value>]
+ * @Syntax def [<key>(:action)] (<value>)
  * @RequiredArgs 1
  * @MaxArgs 2
  * @Aliases define

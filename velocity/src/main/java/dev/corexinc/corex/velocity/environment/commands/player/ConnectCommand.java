@@ -18,7 +18,7 @@ import org.jspecify.annotations.NonNull;
 /* @doc command
  *
  * @Name Connect
- * @Syntax connect [<server>] (target:<player>) (save:<name>)
+ * @Syntax connect [<server>] (target:<player>)
  * @RequiredArgs 1
  * @MaxArgs 2
  * @Waitable
@@ -47,7 +47,7 @@ import org.jspecify.annotations.NonNull;
  * // Move the player and react if the server refused.
  * - ~connect <server[arena]> save:move
  * - if !<[move].get[successful]>:
- *   - narrate "<red>Could not send you: <[move].get[status]>"
+ *   - narrate "<&c>Could not send you: <[move].get[status]>"
  *
  * @Usage
  * // Move someone else, without waiting.

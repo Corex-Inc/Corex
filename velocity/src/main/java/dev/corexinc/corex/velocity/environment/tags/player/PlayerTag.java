@@ -842,7 +842,7 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          *
          * @Usage
          * // Put a two line banner on the tab list.
-         * - adjust <player> tabListInfo:<list[<red>Example Network|<gray>You are on <player.server.name>]>
+         * - adjust <player> tabListInfo:<list[<&c>Example Network|<&7>You are on <player.server.name>]>
          *
          * @Usage
          * // Clear it again.

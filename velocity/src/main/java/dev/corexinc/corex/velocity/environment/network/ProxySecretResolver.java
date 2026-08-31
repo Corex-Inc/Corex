@@ -25,9 +25,17 @@ import java.util.regex.Pattern;
  *
  * <h2>Order</h2>
  * <p>{@link SecretSources} owns the chain, so this side and the backends cannot drift apart on it.
- * The only step that belongs here is the last one: the secret file, {@code forwarding.secret}
- * unless velocity.toml points somewhere else. Finding nothing at all leaves plain messages working
- * and privileged packets refused.</p>
+ * The only step that belongs here is the last one, the secret file. Finding nothing at all leaves
+ * plain messages working and privileged packets refused.</p>
+ *
+ * <h2>The secret file</h2>
+ * <p>Two hops, because the file does not have a fixed name. Corex opens velocity.toml next to the
+ * proxy jar, reads {@code forwarding-secret-file = "..."} out of it, and only then goes to the file
+ * that line names for the key itself. No such line, or no velocity.toml, means
+ * {@code forwarding.secret}, which is what Velocity ships with.</p>
+ *
+ * <p>The name has to be quoted to be seen, the way Velocity writes it. A relative name is resolved
+ * against the proxy root, an absolute one is taken as it stands.</p>
  *
  * <p>velocity.toml is scanned line by line rather than parsed: one string is wanted out of a file
  * Corex has no other reason to understand, and a TOML parser would be a dependency bought for a
@@ -98,7 +106,7 @@ public final class ProxySecretResolver {
     }
 
     private static @Nullable Path proxyRoot(Path dataDirectory) {
-        Path pluginsFolder = dataDirectory.getParent();
+        Path pluginsFolder = dataDirectory.toAbsolutePath().getParent();
         return pluginsFolder != null ? pluginsFolder.getParent() : null;
     }
 }

@@ -80,7 +80,7 @@ public final class BackendSecretResolver {
     }
 
     private static @Nullable File serverRoot(Plugin plugin) {
-        File dataFolder = plugin.getDataFolder();
+        File dataFolder = plugin.getDataFolder().getAbsoluteFile();
         File pluginsFolder = dataFolder.getParentFile();
         return pluginsFolder != null ? pluginsFolder.getParentFile() : null;
     }

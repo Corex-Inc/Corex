@@ -21,7 +21,7 @@ import java.util.List;
 /* @doc command
  *
  * @Name Flag
- * @Syntax flag [<object>] [<name>(:action)] [<value>] (expire:<duration>)
+ * @Syntax flag [<object>] [<name>(:action)] (<value>) (expire:<duration>)
  * @RequiredArgs 2
  * @MaxArgs 4
  * @ShortDescription Sets a persistent flag on an object.

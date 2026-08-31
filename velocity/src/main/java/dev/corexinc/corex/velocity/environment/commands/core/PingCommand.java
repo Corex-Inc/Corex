@@ -22,7 +22,7 @@ import java.time.Duration;
 /* @doc command
  *
  * @Name Ping
- * @Syntax ping [<server>] (timeout:<duration>) (save:<name>)
+ * @Syntax ping [<server>] (timeout:<duration>)
  * @RequiredArgs 1
  * @MaxArgs 2
  * @Waitable
@@ -59,17 +59,17 @@ import java.time.Duration;
  * - ~ping <server[arena]> save:status
  * - if <[status].get[reachable]>:
  *   - adjust <player> server:<server[arena]>
- *   - else:
- *     - narrate "<red>The arena is down, try again in a minute."
+ * - else:
+ *   - narrate "<&c>The arena is down, try again in a minute."
  *
  * @Usage
  * // Report the state of the whole network to an admin.
  * - foreach <proxy.servers> as:backend:
  *   - ~ping <[backend]> timeout:2s save:status
  *   - if <[status].get[reachable]>:
- *     - narrate "<green><[backend].name>: up, <[status].get[latency]>ms, <[status].get[onlinePlayers]> online"
- *     - else:
- *       - narrate "<red><[backend].name>: down (<[status].get[error]>)"
+ *     - narrate "<&a><[backend].name>: up, <[status].get[latency]>ms, <[status].get[onlinePlayers]> online"
+ *   - else:
+ *     - narrate "<&c><[backend].name>: down (<[status].get[error]>)"
  */
 public class PingCommand implements AbstractCommand {
 

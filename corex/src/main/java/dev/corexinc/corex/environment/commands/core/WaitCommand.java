@@ -50,7 +50,7 @@ public class WaitCommand implements AbstractCommand {
 
     @Override
     public @NotNull String getSyntax() {
-        return "wait (<duration>)";
+        return "(<duration>)";
     }
 
     @Override

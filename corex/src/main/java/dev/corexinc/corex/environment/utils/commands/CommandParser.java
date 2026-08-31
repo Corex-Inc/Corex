@@ -1,11 +1,12 @@
 package dev.corexinc.corex.environment.utils.commands;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
-import dev.corexinc.corex.engine.compiler.ScriptCompiler;
-import dev.corexinc.corex.engine.compiler.SlotAllocator;
+import dev.corexinc.corex.engine.scripts.ScriptManager;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CommandParser {
 
@@ -20,26 +21,22 @@ public class CommandParser {
     }
 
     public static Instruction[] compileScript(String script) {
-        Instruction[] bytecode = compileBlock(script);
-        SlotAllocator.allocate(bytecode);
-        return bytecode;
+        return ScriptManager.compileScript(rawBlock(script));
     }
 
-    private static Instruction[] compileBlock(String script) {
-        List<ParsedCommand> parsed = split(script);
-        List<Instruction> instructions = new ArrayList<>();
+    private static List<Object> rawBlock(String script) {
+        List<Object> lines = new ArrayList<>();
 
-        for (ParsedCommand cmd : parsed) {
-            Instruction[] inner = null;
-            if (cmd.innerBlock != null) {
-                inner = compileBlock(cmd.innerBlock);
+        for (ParsedCommand cmd : split(script)) {
+            if (cmd.innerBlock == null) {
+                lines.add(cmd.command);
+                continue;
             }
-            Instruction inst = ScriptCompiler.compile(cmd.command, inner);
-            if (inst != null) {
-                instructions.add(inst);
-            }
+            Map<String, Object> nested = new LinkedHashMap<>(1);
+            nested.put(cmd.command, rawBlock(cmd.innerBlock));
+            lines.add(nested);
         }
-        return instructions.toArray(new Instruction[0]);
+        return lines;
     }
 
     public static List<ParsedCommand> split(String script) {

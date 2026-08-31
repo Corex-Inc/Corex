@@ -17,7 +17,7 @@ import java.util.List;
 
 /* @doc command
  *
- * @Name kick
+ * @Name Kick
  * @Syntax kick [<player>|...] (reason:<text>)
  * @RequiredArgs 1
  * @MaxArgs 2
