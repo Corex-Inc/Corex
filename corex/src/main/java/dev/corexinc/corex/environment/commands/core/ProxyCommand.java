@@ -8,6 +8,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.network.CorexPacket;
 import dev.corexinc.corex.engine.network.NetworkManager;
+import dev.corexinc.corex.engine.network.NetworkTarget;
 import dev.corexinc.corex.engine.network.SendResult;
 import dev.corexinc.corex.engine.network.packets.NetworkMessagePacket;
 import dev.corexinc.corex.engine.network.packets.RoutedPacket;
@@ -48,6 +49,10 @@ import java.util.UUID;
  * which is the point of the whole thing: the proxy has commands no backend does. Use "to:*" for
  * every other backend, or "to:lobby" for one by name. A "send" needs a real destination, since
  * the proxy has no script events to deliver to.
+ *
+ * A ServerTag works in place of the name, "to:<server[lobby]>", and "to:<proxy>" says the proxy
+ * out loud rather than by leaving the argument off. Both are the same destinations written as
+ * objects, so a script that already holds one does not have to dig the name back out of it.
  *
  * The channel decides who hears a "send". A plain word like "bossDown" is a Corex channel and
  * fires the "proxy message" event on the far side. A word with a namespace, like
@@ -93,7 +98,7 @@ public class ProxyCommand implements AbstractCommand, DataBlockCommand {
             .requireLinear(0, ElementTag.class)
             .optionalPrefix("channel", ElementTag.class, "default")
             .optionalPrefix("data", AbstractTag.class)
-            .optionalPrefix("to", ElementTag.class, RoutedPacket.PROXY)
+            .optionalPrefix("to", AbstractTag.class, RoutedPacket.PROXY)
             .build();
 
     @Override
@@ -134,13 +139,13 @@ public class ProxyCommand implements AbstractCommand, DataBlockCommand {
         ElementTag action = args.linear(0);
         ElementTag channel = args.prefix("channel");
         AbstractTag data = args.prefix("data");
-        ElementTag target = args.prefix("to");
+        String target = targetOf(args.prefix("to"));
 
         Debugger.report(queue, instruction,
                 "Action", action.asString(),
                 "Channel", channel.asString(),
                 "Data", data != null ? data.identify() : null,
-                "To", target.asString().isEmpty() ? "proxy" : target.asString()
+                "To", target.isEmpty() ? "proxy" : target
         );
 
         if (!NetworkManager.isAvailable()) {
@@ -150,8 +155,8 @@ public class ProxyCommand implements AbstractCommand, DataBlockCommand {
         }
 
         CorexPacket packet = switch (action.asString().toLowerCase()) {
-            case "send" -> buildMessage(queue, channel.asString(), data, target.asString());
-            case "script" -> buildScript(queue, instruction, target.asString());
+            case "send" -> buildMessage(queue, channel.asString(), data, target);
+            case "script" -> buildScript(queue, instruction, target);
             default -> {
                 Debugger.echoError(queue, "Unknown proxy action: '<red>" + action.asString() + "</red>'.");
                 Debugger.echoError(queue, "Use send or script.");
@@ -198,6 +203,10 @@ public class ProxyCommand implements AbstractCommand, DataBlockCommand {
             return null;
         }
         return new ScriptPacket(target, block, resolvePlayer(queue));
+    }
+
+    private static @NonNull String targetOf(@NonNull AbstractTag target) {
+        return target instanceof NetworkTarget named ? named.networkTarget() : target.identify();
     }
 
     private @Nullable UUID resolvePlayer(@NonNull ScriptQueue queue) {

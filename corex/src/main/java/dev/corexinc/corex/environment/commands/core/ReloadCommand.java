@@ -62,6 +62,7 @@ public class ReloadCommand implements AbstractCommand {
             Debugger.report(queue, instruction);
             Corex.getInstance().reloadConfig();
             Debugger.updateDebugMode(Corex.getInstance().getConfig().getString("logger.debug-mode", "default"));
+            Corex.getInstance().applyNetworkConfig();
             EventRegistry.resetAll();
 
             ScriptManager.reloadScripts();

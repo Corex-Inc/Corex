@@ -12,6 +12,8 @@ import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.network.NetworkTarget;
+import dev.corexinc.corex.engine.network.packets.RoutedPacket;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -58,7 +60,7 @@ import java.util.List;
  * // Put the whole network into maintenance until someone lifts it.
  * - flag <proxy> maintenance true
  */
-public class ProxyTag implements AbstractTag, Flaggable, Adjustable {
+public class ProxyTag implements AbstractTag, Flaggable, Adjustable, NetworkTarget {
 
     private static final String PREFIX = "proxy";
 
@@ -555,6 +557,11 @@ public class ProxyTag implements AbstractTag, Flaggable, Adjustable {
     @Override
     public AbstractFlagTracker getFlagTracker() {
         return new SqlFlagTracker(flagsFile(), identify());
+    }
+
+    @Override
+    public @NonNull String networkTarget() {
+        return RoutedPacket.PROXY;
     }
 
     @Override

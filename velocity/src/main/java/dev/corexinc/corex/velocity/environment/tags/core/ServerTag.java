@@ -8,6 +8,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
+import dev.corexinc.corex.engine.network.NetworkTarget;
 import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -63,7 +64,7 @@ import java.net.InetSocketAddress;
  * - foreach <[party]> as:member:
  *   - adjust <[member]> server:<server[arena1]>
  */
-public class ServerTag implements AbstractTag, Flaggable {
+public class ServerTag implements AbstractTag, Flaggable, NetworkTarget {
 
     private static final String PREFIX = "server";
     private static final int DEFAULT_PORT = 25565;
@@ -268,6 +269,11 @@ public class ServerTag implements AbstractTag, Flaggable {
     @Override
     public @NonNull String getPrefix() {
         return PREFIX;
+    }
+
+    @Override
+    public @NonNull String networkTarget() {
+        return info == null ? "" : info.getName();
     }
 
     @Override

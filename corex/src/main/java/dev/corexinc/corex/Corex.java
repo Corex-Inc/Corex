@@ -207,16 +207,27 @@ public class Corex extends JavaPlugin {
         return registry;
     }
 
+    public @Nullable NetworkSecret applyNetworkConfig() {
+        if (isTest() || !getConfig().getBoolean("network.enabled", true)) {
+            return null;
+        }
+
+        NetworkSecret secret = BackendSecretResolver.resolve(this,
+                getConfig().getBoolean("network.use-proxy-secret", true));
+
+        NetworkManager.configure(secret != null ? secret.value() : null,
+                getConfig().getBoolean("network.allow-remote-execution", false));
+        return secret;
+    }
+
     private void setupNetwork() {
         if (isTest() || !getConfig().getBoolean("network.enabled", true)) {
             return;
         }
 
         boolean allowRemoteExecution = getConfig().getBoolean("network.allow-remote-execution", false);
-        NetworkSecret secret = BackendSecretResolver.resolve(this,
-                getConfig().getBoolean("network.use-proxy-secret", true));
+        NetworkSecret secret = applyNetworkConfig();
 
-        NetworkManager.configure(secret != null ? secret.value() : null, allowRemoteExecution);
         NetworkManager.setExecutionHandler(new BukkitNetworkExecutor());
 
         if (secret != null) {

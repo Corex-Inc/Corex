@@ -30,6 +30,7 @@ import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.velocity.environment.VelocityEnvironmentLoader;
 import dev.corexinc.corex.velocity.environment.network.ProxyRelay;
 import dev.corexinc.corex.velocity.environment.network.ProxySecretResolver;
+import org.jspecify.annotations.Nullable;
 import dev.corexinc.corex.velocity.environment.network.VelocityNetworkExecutor;
 import dev.corexinc.corex.velocity.environment.utils.VelocitySchedulerAdapter;
 import dev.corexinc.corex.velocity.environment.utils.commands.impl.VRunCommand;
@@ -150,9 +151,9 @@ public class CorexVelocity {
      * <p>The relay is also the only thing standing between a modded client and a backend's packet
      * listener, since Velocity forwards a client sent plugin message by default.</p>
      */
-    private void setupNetwork() {
+    public @Nullable NetworkSecret applyNetworkConfig() {
         if (!config.getBoolean("network.enabled", true)) {
-            return;
+            return null;
         }
 
         NetworkSecret secret = ProxySecretResolver.resolve(dataFolder,
@@ -160,6 +161,15 @@ public class CorexVelocity {
 
         NetworkManager.configure(secret != null ? secret.value() : null,
                 config.getBoolean("network.allow-remote-execution", false));
+        return secret;
+    }
+
+    private void setupNetwork() {
+        if (!config.getBoolean("network.enabled", true)) {
+            return;
+        }
+
+        NetworkSecret secret = applyNetworkConfig();
 
         if (secret != null) {
             CorexLogger.info("Corex network is signing with " + secret.source() + ".");

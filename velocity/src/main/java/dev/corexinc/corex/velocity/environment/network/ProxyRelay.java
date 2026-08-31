@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The proxy half of the Corex network layer: it routes packets between backends, runs the ones
@@ -66,6 +67,8 @@ public final class ProxyRelay implements ProxyTransport {
     private static final int MAX_PLUGIN_MESSAGE_BYTES = 30_000;
 
     private final ProxyServer server;
+    private final Set<String> heardFrom = ConcurrentHashMap.newKeySet();
+    private final Set<String> warnedSilent = ConcurrentHashMap.newKeySet();
 
     @Nullable
     private WebSocketRelayServer webSocket;
@@ -146,6 +149,7 @@ public final class ProxyRelay implements ProxyTransport {
         }
 
         routed.setSource(senderName);
+        if (heardFrom.add(senderName)) warnedSilent.remove(senderName);
 
         if (routed.isProxyTarget()) {
             handleHere(routed);
@@ -250,6 +254,12 @@ public final class ProxyRelay implements ProxyTransport {
         if (!destination.get().sendPluginMessage(channel, frame)) {
             return SendResult.failed("nobody is connected to \"" + target
                     + "\" and it has no websocket, so there is no connection to deliver on");
+        }
+
+        if (!foreignChannel && !heardFrom.contains(target) && warnedSilent.add(target)) {
+            CorexLogger.warn("Corex has never heard from \"" + target + "\". The packet went out on a "
+                    + "player connection, but if nothing there listens on " + CHANNEL.getId()
+                    + " it is dropped without a word. Check that Corex is installed on that server.");
         }
         return SendResult.success();
     }

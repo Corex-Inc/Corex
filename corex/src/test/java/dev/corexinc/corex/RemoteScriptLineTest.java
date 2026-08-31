@@ -14,12 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-/**
- * A block written in braces after {@code /run} has to reach the command as raw lines, the same way
- * a block written under it in a file does. The far side is the only place those lines can be
- * compiled: a command from an addon installed elsewhere does not exist in this registry, so
- * anything that compiles the block here loses it.
- */
 public class RemoteScriptLineTest {
 
     @BeforeAll
