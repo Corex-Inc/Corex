@@ -55,6 +55,17 @@ public class WhileCommand implements AbstractCommand, SlotAware {
 
     private record LoopSlots(String asVar, int slot) {}
 
+    public static final int DEFAULT_MAX_ITERATIONS = 100_000;
+
+    private static volatile int maxIterations = DEFAULT_MAX_ITERATIONS;
+
+    /**
+     * Sets the iteration count at which a while loop is force-broken; {@code 0} keeps the default.
+     */
+    public static void setMaxIterations(int iterations) {
+        maxIterations = iterations > 0 ? iterations : DEFAULT_MAX_ITERATIONS;
+    }
+
     @Override
     public @NonNull List<String> writtenDefinitions(@NonNull Instruction instruction) {
         String asVar = RepeatCommand.resolveLoopVar(instruction, "loopIndex");
@@ -163,9 +174,9 @@ public class WhileCommand implements AbstractCommand, SlotAware {
 
                     int nextIndex = index.value + 1;
 
-                    if (nextIndex > 100000) {
-                        Debugger.echoError(queue, "StackOverflow: Too many iterations!");
-                        Debugger.echoError(queue, "While loop exceeded 100,000 iterations! Force-breaking to prevent server crash. Check your condition logic.");
+                    if (nextIndex > maxIterations) {
+                        Debugger.echoError(queue, "While loop exceeded " + maxIterations
+                                + " iterations (scripts.while-max-iterations in config.yml)! Force-breaking, check your condition logic.");
                         return false;
                     }
 

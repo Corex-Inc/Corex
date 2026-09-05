@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class ScriptCompiler {
 
-    private static boolean isTagStart(String str, int index) {
+    public static boolean isTagStart(String str, int index) {
         if (str.charAt(index) != '<') return false;
         if (index + 1 >= str.length()) return false;
         char next = str.charAt(index + 1);
@@ -97,7 +97,7 @@ public class ScriptCompiler {
             CompiledArgument compiled = parseArg(token);
             linearArgs.add(compiled);
 
-            if (compiled instanceof StaticArg && token.matches("^[a-zA-Z_]+$")) {
+            if (compiled instanceof StaticArg && meta.isFlag(token)) {
                 flags.add(token.toLowerCase());
             }
         }

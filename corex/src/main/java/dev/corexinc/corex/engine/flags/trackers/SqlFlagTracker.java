@@ -2,21 +2,32 @@ package dev.corexinc.corex.engine.flags.trackers;
 
 import com.zaxxer.hikari.HikariDataSource;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
+import dev.corexinc.corex.engine.flags.FlagManager;
 import dev.corexinc.corex.engine.utils.CorexLogger;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SqlFlagTracker extends AbstractFlagTracker {
 
     private record CachedFlag(long expireTime, String value) {}
 
+    public static final int DEFAULT_CACHE_SIZE = 10_000;
+
     private static final CachedFlag ABSENT = new CachedFlag(0, null);
-    private static final Map<String, CachedFlag> CACHE = new ConcurrentHashMap<>();
+    private static volatile int cacheSize = DEFAULT_CACHE_SIZE;
+    private static final Map<String, CachedFlag> CACHE = Collections.synchronizedMap(
+            new LinkedHashMap<>(256, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, CachedFlag> eldest) {
+                    return size() > cacheSize;
+                }
+            });
 
     private final String trackerId;
     private final HikariDataSource dbPool;
@@ -30,6 +41,13 @@ public class SqlFlagTracker extends AbstractFlagTracker {
 
     public static void clearCache() {
         CACHE.clear();
+    }
+
+    /**
+     * Sets how many root records stay cached across every SQL tracker; {@code 0} keeps the default.
+     */
+    public static void setCacheSize(int size) {
+        cacheSize = size > 0 ? size : DEFAULT_CACHE_SIZE;
     }
 
     @Override
@@ -71,6 +89,7 @@ public class SqlFlagTracker extends AbstractFlagTracker {
                     deleteRaw(rootKey);
                     return null;
                 }
+                if (expireTime > 0) FlagManager.ensureScheduled(this, rootKey, expireTime);
                 CACHE.put(cacheKey, new CachedFlag(expireTime, value));
                 return value;
             }
@@ -79,6 +98,13 @@ public class SqlFlagTracker extends AbstractFlagTracker {
             CorexLogger.error("SQL Read Error: " + e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    protected long readRawExpire(String rootKey) {
+        CachedFlag cached = CACHE.get(cacheKey(rootKey));
+        if (cached == null && readRaw(rootKey) != null) cached = CACHE.get(cacheKey(rootKey));
+        return cached != null ? cached.expireTime() : 0L;
     }
 
     @Override

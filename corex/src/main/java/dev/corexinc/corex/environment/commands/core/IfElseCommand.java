@@ -58,7 +58,8 @@ public class IfElseCommand implements AbstractCommand {
         return "(if) (<value>)";
     }
 
-    @Override public int getMinArgs() {
+    @Override
+    public int getMinArgs() {
         return 0;
     }
 
@@ -106,7 +107,7 @@ public class IfElseCommand implements AbstractCommand {
                 );
 
                 if (result && instruction.innerBlock != null) {
-                    queue.pushFrame(getName(), instruction.innerBlock, null);
+                    queue.pushFrame(getName(), instruction.innerBlock, () -> queue.setTempData("corex_if_result", true));
                 }
                 return;
             }
@@ -115,7 +116,7 @@ public class IfElseCommand implements AbstractCommand {
         queue.setTempData("corex_if_result", null);
 
         if (instruction.innerBlock != null) {
-            queue.pushFrame(getName(), instruction.innerBlock, null);
+            queue.pushFrame(getName(), instruction.innerBlock, () -> queue.setTempData("corex_if_result", null));
         }
     }
 }

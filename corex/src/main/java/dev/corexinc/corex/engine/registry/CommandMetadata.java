@@ -12,7 +12,8 @@ public class CommandMetadata {
     public final AbstractCommand command;
 
     private final Set<String> requiredPrefixes = new LinkedHashSet<>();
-    private final Set<String> allowedPrefixes  = new LinkedHashSet<>();
+    private final Set<String> allowedPrefixes = new LinkedHashSet<>();
+    private final Set<String> flags = new LinkedHashSet<>();
     private final List<SyntaxSlot> slots;
     public final int syntaxRequiredLinear;
 
@@ -36,7 +37,7 @@ public class CommandMetadata {
                     allowedPrefixes.add(slot.name());
                     if (slot.required()) requiredPrefixes.add(slot.name());
                 }
-                case FLAG -> {}
+                case FLAG -> flags.add(slot.name().toLowerCase());
             }
         }
         this.syntaxRequiredLinear = requiredLinear;
@@ -61,11 +62,19 @@ public class CommandMetadata {
 
     public boolean isArgCountValid(int linearCount, int prefixCount) {
         int total = linearCount + prefixCount;
-        int min   = command.getMinArgs();
-        int max   = command.getMaxArgs();
+        int min = command.getMinArgs();
+        int max = command.getMaxArgs();
         if (total < min) return false;
         if (max != -1 && total > max) return false;
         return true;
+    }
+
+    /**
+     * Whether a bare word in this command's arguments is one of the flags its syntax declares,
+     * such as {@code (silent)}. Anything else stays a plain positional argument.
+     */
+    public boolean isFlag(String word) {
+        return flags.contains(word.toLowerCase());
     }
 
     public boolean isAllowedPrefix(String prefix) {
@@ -90,7 +99,7 @@ public class CommandMetadata {
             if (token.equalsIgnoreCase(commandName)) continue;
 
             boolean isMandatory = token.startsWith("[") && token.endsWith("]");
-            boolean isOptional  = token.startsWith("(") && token.endsWith(")");
+            boolean isOptional = token.startsWith("(") && token.endsWith(")");
 
             if (!isMandatory && !isOptional) continue;
 

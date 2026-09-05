@@ -19,6 +19,38 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.UUID;
 
+/* @doc command
+ *
+ * @Name FakeSpawn
+ * @Syntax fakespawn [<entity>|...] (<location>) (targets:<player>|...) (duration:<duration>)
+ * @RequiredArgs 1
+ * @MaxArgs 4
+ * @Waitable
+ * @ShortDescription Shows packet-only entities to chosen players, without spawning anything in the world.
+ *
+ * @Implements FakeSpawn
+ *
+ * @Description
+ * Spawns entities that exist only on the client: they are sent as packets to the target players,
+ * never enter the world, never tick and cannot be hit or interact with anything. Use them for
+ * decorations, previews and per-player displays.
+ *
+ * The first argument is one or more entity blueprints, an entity type name or an EntityTag with
+ * mechanisms applied. The location defaults to the linked player's position. "targets:" picks who
+ * sees them and defaults to the linked player. "duration:" removes them again after that time,
+ * and defaults to 10 seconds; the waitable form '~fakespawn' pauses the queue until then.
+ *
+ * The spawned entities are saved through save: as a list of EntityTags, so they can be moved,
+ * animated or removed early with adjust and the usual entity commands.
+ *
+ * @Usage
+ * // Show a floating item to the linked player for ten seconds.
+ * - fakespawn item_display <player.location.add[0,2,0]>
+ *
+ * @Usage
+ * // Show a zombie to two players for a minute and keep a handle on it.
+ * - fakespawn zombie <[arenaSpawn]> targets:<[attacker]>|<[defender]> duration:1m save:decoy
+ */
 public class FakeSpawnCommand implements AbstractCommand {
 
     @Override

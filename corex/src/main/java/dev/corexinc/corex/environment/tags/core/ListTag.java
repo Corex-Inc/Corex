@@ -139,7 +139,7 @@ public class ListTag implements AbstractTag {
             if (attr.matchesNext("to") && attr.hasNextParam()) {
                 int size = obj.size();
                 int from = resolveIndex(attr.getParam(), size);
-                int to   = resolveIndex(attr.getNextParam(), size);
+                int to = resolveIndex(attr.getNextParam(), size);
                 attr.fulfill(1);
                 if (from < 0 || to < 0 || from > to) return new ListTag();
 
@@ -691,7 +691,7 @@ public class ListTag implements AbstractTag {
              */
             if (attr.matchesNext("to") && attr.hasNextParam()) {
                 int from = resolveIndex(attr.getParam(), obj.size());
-                int to   = resolveIndex(attr.getNextParam(), obj.size());
+                int to = resolveIndex(attr.getNextParam(), obj.size());
                 attr.fulfill(1);
                 if (from >= 0 && to >= from) for (int index = from; index <= to; index++) toRemove.add(index);
             } else {
@@ -2257,7 +2257,7 @@ public class ListTag implements AbstractTag {
                 int startFirst = posFirst, startSecond = posSecond;
                 while (posFirst  < first.length()  && Character.isDigit(first.charAt(posFirst)))   posFirst++;
                 while (posSecond < second.length() && Character.isDigit(second.charAt(posSecond))) posSecond++;
-                long numFirst  = Long.parseLong(first.substring(startFirst, posFirst));
+                long numFirst = Long.parseLong(first.substring(startFirst, posFirst));
                 long numSecond = Long.parseLong(second.substring(startSecond, posSecond));
                 if (numFirst != numSecond) return Long.compare(numFirst, numSecond);
             } else {

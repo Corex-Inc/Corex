@@ -8,7 +8,7 @@ import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.processors.TagProcessor;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
-import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
+import dev.corexinc.corex.environment.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
@@ -1026,7 +1026,6 @@ public class PlayerTag implements AbstractTag, Adjustable, Flaggable, PlayerIden
          */
         MECHANISM_PROCESSOR.registerMechanism("whitelisted", (playerTag, value) -> {
             if (value instanceof ElementTag el) {
-                // OfflinePlayer operation — safe to call directly on any thread
                 playerTag.offlinePlayer.setWhitelisted(el.asBoolean());
             }
             return playerTag;

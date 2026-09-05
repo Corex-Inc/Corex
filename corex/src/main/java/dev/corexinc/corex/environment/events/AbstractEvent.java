@@ -1,7 +1,5 @@
 package dev.corexinc.corex.environment.events;
 
-import dev.corexinc.corex.api.tags.AbstractTag;
-import dev.corexinc.corex.engine.queue.ScriptQueue;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.jetbrains.annotations.ApiStatus.AvailableSince;
@@ -24,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
  *     <li><b>Lazy Initialization:</b> {@link #initListener()} is called to register the actual
  *     Bukkit {@link Listener} only when needed.</li>
  *     <li><b>Execution:</b> On actual event trigger, implementation calls {@link EventRegistry#fire}.</li>
- *     <li><b>Cleanup:</b> {@link #reset()} is called during {@code /ex reload} to clear mapped scripts.</li>
+ *     <li><b>Cleanup:</b> {@link #reset()} is called during {@code /run reload} to clear mapped scripts.</li>
  * </ol>
  *
  * @since 1.0.0
@@ -86,10 +84,6 @@ public interface AbstractEvent extends Listener {
     @Internal
     @AvailableSince("1.0.0")
     void reset();
-
-    default boolean isCancelled(ScriptQueue queue) {
-        return queue.isCancelled();
-    }
 
     default void unregister() {
         HandlerList.unregisterAll(this);

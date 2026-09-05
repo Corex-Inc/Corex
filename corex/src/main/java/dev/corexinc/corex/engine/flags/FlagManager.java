@@ -24,6 +24,16 @@ public class FlagManager {
         expirationHandler = handler;
     }
 
+    public static void shutdown() {
+        Thread thread = sleeperThread;
+        sleeperThread = null;
+        if (thread != null) thread.interrupt();
+        synchronized (monitor) {
+            queue.clear();
+        }
+        versions.clear();
+    }
+
     public static void init() {
         if (sleeperThread != null) return;
 
@@ -78,6 +88,15 @@ public class FlagManager {
                 monitor.notify();
             }
         }
+    }
+
+    /**
+     * Schedules the expiration of a flag found on disk with a future expiry and no task, which is
+     * what a flag written before the last restart looks like. Does nothing when a task exists.
+     */
+    public static void ensureScheduled(AbstractFlagTracker tracker, String flagPath, long expireTimeMs) {
+        if (versions.containsKey(versionKey(tracker.getTrackerId(), flagPath))) return;
+        scheduleExpiration(tracker, flagPath, Math.max(1L, expireTimeMs - System.currentTimeMillis()));
     }
 
     public static void cancelExpiration(String trackerId, String flagPath) {

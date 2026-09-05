@@ -6,7 +6,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
-import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
+import dev.corexinc.corex.environment.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;

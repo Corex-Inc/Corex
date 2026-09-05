@@ -71,10 +71,14 @@ public class WebsocketScriptEvent implements AbstractEvent {
 
     @Override
     public void addScript(@NonNull EventData data) {
-        String raw = data.rawLine;
-        if (raw.contains("opens")) openScripts.add(data);
-        else if (raw.contains("message")) messageScripts.add(data);
-        else if (raw.contains("closes")) closeScripts.add(data);
+        String[] words = data.rawLine.trim().toLowerCase().split("\\s+");
+        String kind = words.length > 1 ? words[1] : "";
+        switch (kind) {
+            case "opens" -> openScripts.add(data);
+            case "message" -> messageScripts.add(data);
+            case "closes" -> closeScripts.add(data);
+            default -> {}
+        }
     }
 
     @Override

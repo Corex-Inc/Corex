@@ -15,14 +15,14 @@ import java.util.*;
 
 public class GeneratorContainer implements AbstractContainer {
 
-    public static final String SECTION_BASE_HEIGHT    = "baseHeight";
-    public static final String SECTION_NOISE          = "noise";
-    public static final String SECTION_SURFACE        = "surface";
-    public static final String SECTION_BEDROCK        = "bedrock";
-    public static final String SECTION_CAVES          = "caves";
-    public static final String SECTION_BIOME          = "biome";
-    public static final String SECTION_POPULATORS     = "populators";
-    public static final String SECTION_CAN_SPAWN      = "canSpawn";
+    public static final String SECTION_BASE_HEIGHT = "baseHeight";
+    public static final String SECTION_NOISE = "noise";
+    public static final String SECTION_SURFACE = "surface";
+    public static final String SECTION_BEDROCK = "bedrock";
+    public static final String SECTION_CAVES = "caves";
+    public static final String SECTION_BIOME = "biome";
+    public static final String SECTION_POPULATORS = "populators";
+    public static final String SECTION_CAN_SPAWN = "canSpawn";
     public static final String SECTION_SPAWN_LOCATION = "spawnLocation";
 
     static final Set<String> KNOWN_SECTIONS = Set.of(

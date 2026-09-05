@@ -9,6 +9,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.utils.PlayerIdentity;
+import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -17,6 +18,7 @@ import dev.corexinc.corex.environment.tags.core.MapTag;
 import dev.corexinc.corex.environment.tags.entity.EntityTag;
 import dev.corexinc.corex.environment.tags.player.PlayerTag;
 import dev.corexinc.corex.environment.tags.world.LocationTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import dev.corexinc.corex.environment.utils.adapters.CommandAdapter;
 import dev.corexinc.corex.environment.utils.nms.NMSHandler;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -36,14 +38,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class CommandManager {
 
     public static final CommandManager INSTANCE = new CommandManager();
 
-    private static final long ALLOWED_CACHE_TTL_MS = 5_000L;
-    private static final long TAB_CACHE_TTL_MS = 250L;
+    public static final long DEFAULT_ALLOWED_CACHE_TTL_MS = 5_000L;
+    public static final long DEFAULT_TAB_CACHE_TTL_MS = 250L;
+
+    private static volatile long allowedCacheTtlMs = DEFAULT_ALLOWED_CACHE_TTL_MS;
+    private static volatile long tabCacheTtlMs = DEFAULT_TAB_CACHE_TTL_MS;
 
     private volatile Collection<CommandContainer> containers = List.of();
     private volatile Set<String> registeredNames = Set.of();
@@ -51,6 +57,15 @@ public final class CommandManager {
     private final Map<String, CachedTabEntry> tabCache = new ConcurrentHashMap<>();
 
     private CommandManager() {}
+
+    /**
+     * Sets how long a {@code requires} verdict and a {@code suggests} result stay cached;
+     * {@code 0} keeps the default for that cache.
+     */
+    public void setCacheTtls(long allowedMs, long tabMs) {
+        allowedCacheTtlMs = allowedMs > 0 ? allowedMs : DEFAULT_ALLOWED_CACHE_TTL_MS;
+        tabCacheTtlMs = tabMs > 0 ? tabMs : DEFAULT_TAB_CACHE_TTL_MS;
+    }
 
     public void syncAll(@NonNull Commands registrar) {
         CommandAdapter adapter = NMSHandler.get().get(CommandAdapter.class);
@@ -184,15 +199,39 @@ public final class CommandManager {
         if (live == null) return builder.buildFuture();
 
         String remaining = builder.getRemaining();
+        String fullInput = builder.getInput();
+        String prefix = fullInput.substring(0, fullInput.length() - remaining.length());
+        String cacheKey = node.basePath() + '\0' + senderKey(sender) + '\0' + prefix;
+
+        CachedTabEntry cached = tabCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            suggestFrom(builder, cached.items, remaining);
+            return builder.buildFuture();
+        }
+
+        CompletableFuture<Suggestions> future = new CompletableFuture<>();
+        runForSender(sender, () -> runSuggestScript(sender, fullInput, remaining, live, node, resolver, items -> {
+            tabCache.put(cacheKey, new CachedTabEntry(items));
+            suggestFrom(builder, items, remaining);
+            future.complete(builder.build());
+        }));
+        return future;
+    }
+
+    private static void suggestFrom(SuggestionsBuilder builder, List<AbstractTag> items, String remaining) {
         String lower = remaining.toLowerCase();
-
-        List<AbstractTag> suggestions = cachedSuggestions(sender, builder.getInput(), remaining, live, node, resolver);
-
-        for (AbstractTag item : suggestions) {
+        for (AbstractTag item : items) {
             String text = item.identify();
             if (text.toLowerCase().startsWith(lower)) builder.suggest(text);
         }
-        return builder.buildFuture();
+    }
+
+    private static void runForSender(CommandSender sender, Runnable task) {
+        if (sender instanceof Player player) {
+            SchedulerAdapter.get().runAt(BukkitSchedulerAdapter.toPosition(player.getLocation()), task);
+        } else {
+            SchedulerAdapter.get().run(task);
+        }
     }
 
     private @NonNull MapTag buildArgs(@NonNull List<CommandNode> chain, @NonNull CommandArgResolver resolver) {
@@ -207,41 +246,29 @@ public final class CommandManager {
         return args;
     }
 
-    private @NonNull List<AbstractTag> cachedSuggestions(@NonNull CommandSender sender,
-                                                         @NonNull String fullInput,
-                                                         @NonNull String remaining,
-                                                         @NonNull CommandContainer container,
-                                                         @NonNull CommandNode node,
-                                                         @NonNull CommandArgResolver resolver) {
-        String prefix = fullInput.substring(0, fullInput.length() - remaining.length());
-        String cacheKey = node.basePath() + '\0' + senderKey(sender) + '\0' + prefix;
-        CachedTabEntry cached = tabCache.get(cacheKey);
-        if (cached != null && !cached.isExpired()) return cached.items;
-
-        List<AbstractTag> fresh = runSuggestScript(sender, fullInput, remaining, container, node, resolver);
-        tabCache.put(cacheKey, new CachedTabEntry(fresh));
-        return fresh;
-    }
-
-    private @NonNull List<AbstractTag> runSuggestScript(@NonNull CommandSender sender,
-                                                        @NonNull String fullInput,
-                                                        @NonNull String remaining,
-                                                        @NonNull CommandContainer container,
-                                                        @NonNull CommandNode node,
-                                                        @NonNull CommandArgResolver resolver) {
+    private void runSuggestScript(@NonNull CommandSender sender,
+                                  @NonNull String fullInput,
+                                  @NonNull String remaining,
+                                  @NonNull CommandContainer container,
+                                  @NonNull CommandNode node,
+                                  @NonNull CommandArgResolver resolver,
+                                  @NonNull Consumer<List<AbstractTag>> callback) {
         ContextTag context = baseContext(sender, container, fullInput)
                 .put("args", buildArgs(node.ancestorChain(), resolver))
-                .put("arg",  new ElementTag(remaining))
+                .put("arg", new ElementTag(remaining))
                 .put("path", pathList(node));
 
         ScriptQueue queue = container.createQueue(node.suggestsPath(), playerIdentity(sender), context);
-        if (queue == null) return List.of();
+        if (queue == null) {
+            callback.accept(List.of());
+            return;
+        }
+        queue.setOnFinish(() -> {
+            List<AbstractTag> returns = queue.getReturns();
+            AbstractTag first = returns.isEmpty() ? null : returns.getFirst();
+            callback.accept(first instanceof ListTag list ? list.getList() : List.of());
+        });
         queue.start();
-
-        List<AbstractTag> returns = queue.getReturns();
-        if (returns.isEmpty()) return List.of();
-        AbstractTag first = returns.getFirst();
-        return first instanceof ListTag list ? list.getList() : List.of();
     }
 
     private boolean runRequiresScript(@NonNull CommandSender sender, @NonNull CommandContainer container, @NonNull CommandNode node) {
@@ -252,6 +279,13 @@ public final class CommandManager {
         if (queue == null) return true;
         queue.start();
 
+        if (!queue.isStopped()) {
+            Debugger.error("The 'requires' script of command '" + container.getName()
+                    + "' did not finish in one go (a wait inside it?), so the command is denied.");
+            queue.stopEntireQueue();
+            return false;
+        }
+
         List<AbstractTag> returns = queue.getReturns();
         if (returns.isEmpty()) return false;
         return returns.getFirst().identify().equalsIgnoreCase("true");
@@ -259,10 +293,10 @@ public final class CommandManager {
 
     private @NonNull ContextTag baseContext(@NonNull CommandSender sender, @NonNull CommandContainer container, @NonNull String input) {
         return new ContextTag()
-                .put("sender",   resolveSender(sender))
-                .put("label",    new ElementTag(container.getName()))
-                .put("alias",    new ElementTag(resolveAlias(input, container)))
-                .put("aliases",  buildAliasesList(container))
+                .put("sender", resolveSender(sender))
+                .put("label", new ElementTag(container.getName()))
+                .put("alias", new ElementTag(resolveAlias(input, container)))
+                .put("aliases", buildAliasesList(container))
                 .put("raw_args", new ElementTag(extractRawArgs(input)));
     }
 
@@ -278,10 +312,10 @@ public final class CommandManager {
 
     private @NonNull AbstractTag resolveSender(@NonNull CommandSender sender) {
         return switch (sender) {
-            case Player player            -> new PlayerTag(player);
+            case Player player -> new PlayerTag(player);
             case BlockCommandSender block -> new LocationTag(block.getBlock().getLocation());
-            case Entity entity            -> new EntityTag(entity);
-            default                       -> new ElementTag("CONSOLE");
+            case Entity entity -> new EntityTag(entity);
+            default -> new ElementTag("CONSOLE");
         };
     }
 
@@ -352,11 +386,11 @@ public final class CommandManager {
 
     private static final class CachedAllowedEntry {
         final boolean allowed;
-        final long    expiresAt;
+        final long expiresAt;
 
         CachedAllowedEntry(boolean allowed) {
-            this.allowed   = allowed;
-            this.expiresAt = System.currentTimeMillis() + ALLOWED_CACHE_TTL_MS;
+            this.allowed = allowed;
+            this.expiresAt = System.currentTimeMillis() + allowedCacheTtlMs;
         }
 
         boolean isExpired() { return System.currentTimeMillis() >= expiresAt; }
@@ -364,11 +398,11 @@ public final class CommandManager {
 
     private static final class CachedTabEntry {
         final List<AbstractTag> items;
-        final long              expiresAt;
+        final long expiresAt;
 
         CachedTabEntry(@NonNull List<AbstractTag> items) {
-            this.items     = items;
-            this.expiresAt = System.currentTimeMillis() + TAB_CACHE_TTL_MS;
+            this.items = items;
+            this.expiresAt = System.currentTimeMillis() + tabCacheTtlMs;
         }
 
         boolean isExpired() { return System.currentTimeMillis() >= expiresAt; }

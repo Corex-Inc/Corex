@@ -123,7 +123,7 @@ public class IfCommand implements AbstractCommand {
         }
 
         if (result && instruction.innerBlock != null) {
-            queue.pushFrame(getName(), instruction.innerBlock, null);
+            queue.pushFrame(getName(), instruction.innerBlock, () -> queue.setTempData("corex_if_result", true));
         }
     }
 }

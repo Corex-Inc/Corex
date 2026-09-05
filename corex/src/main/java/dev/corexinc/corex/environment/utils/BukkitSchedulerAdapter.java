@@ -42,24 +42,26 @@ public class BukkitSchedulerAdapter extends SchedulerAdapter {
 
     @Override
     public void runAt(Position position, Runnable task) {
-        if (Corex.isFolia()) {
-            Bukkit.getRegionScheduler().execute(Corex.getInstance(), toLocation(position), task);
+        Location location = Corex.isFolia() ? toLocation(position) : null;
+        if (location != null && location.getWorld() != null) {
+            Bukkit.getRegionScheduler().execute(Corex.getInstance(), location, task);
         } else {
-            Bukkit.getScheduler().runTask(Corex.getInstance(), task);
+            run(task);
         }
     }
 
     @Override
     public void runLaterAt(Position position, Runnable task, long delayTicks) {
-        if (Corex.isFolia()) {
+        Location location = Corex.isFolia() ? toLocation(position) : null;
+        if (location != null && location.getWorld() != null) {
             Bukkit.getRegionScheduler().runDelayed(
                     Corex.getInstance(),
-                    toLocation(position),
+                    location,
                     scheduledTask -> task.run(),
                     Math.max(1, delayTicks)
             );
         } else {
-            Bukkit.getScheduler().runTaskLater(Corex.getInstance(), task, delayTicks);
+            runLater(task, delayTicks);
         }
     }
 

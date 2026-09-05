@@ -12,7 +12,7 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
-import dev.corexinc.corex.engine.flags.trackers.PdcFlagTracker;
+import dev.corexinc.corex.environment.flags.trackers.PdcFlagTracker;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.CorexSerializer;

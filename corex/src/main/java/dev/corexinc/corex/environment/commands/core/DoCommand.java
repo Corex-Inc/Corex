@@ -8,6 +8,8 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Position;
+import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
 import dev.corexinc.corex.environment.tags.core.MapTag;
@@ -124,7 +126,12 @@ public class DoCommand implements AbstractCommand {
         }
 
         String queueId = instruction.getPrefix("id", queue);
-        ScriptQueue newQueue = ScriptQueue.spawnChild(queueId != null ? queueId : ScriptQueue.uniqueId(scriptName), bytecode, false, queue);
+        if (queueId != null && ScriptQueue.getQueueById(queueId) != null) {
+            Debugger.echoError(queue, "A queue with id '" + queueId + "' is already running!");
+            return;
+        }
+        boolean childAsync = instruction.isAsync;
+        ScriptQueue newQueue = ScriptQueue.spawnChild(queueId != null ? queueId : ScriptQueue.uniqueId(scriptName), bytecode, childAsync, queue);
 
         MapTag defsMap = new MapTag();
 
@@ -164,15 +171,44 @@ public class DoCommand implements AbstractCommand {
 
         if (instruction.isWaitable) {
             queue.pause();
-            newQueue.setOnFinish(queue::resume);
+            newQueue.setOnFinish(resumeOf(queue, childAsync));
         }
 
         Debugger.report(queue, instruction,
                 "Script", scriptName,
                 "Path", path,
+                "Mode", childAsync ? "async" : "sync",
                 "Definitions", defsMap.identify(),
                 "Queue", newQueue.getId()
         );
-        newQueue.start();
+        startChild(queue, newQueue, childAsync);
+    }
+
+    private static Position regionOf(ScriptQueue queue) {
+        return queue.getTargetRegion() != null ? queue.getTargetRegion() : queue.getAnchorPosition();
+    }
+
+    private static void startChild(ScriptQueue parent, ScriptQueue child, boolean childAsync) {
+        if (childAsync) {
+            SchedulerAdapter.get().runAsync(child::start);
+            return;
+        }
+        if (!parent.isAsync()) {
+            child.start();
+            return;
+        }
+        Position region = regionOf(parent);
+        if (region != null) SchedulerAdapter.get().runAt(region, child::start);
+        else SchedulerAdapter.get().run(child::start);
+    }
+
+    private static Runnable resumeOf(ScriptQueue parent, boolean childAsync) {
+        if (parent.isAsync() == childAsync) return parent::resume;
+        if (parent.isAsync()) return () -> SchedulerAdapter.get().runAsync(parent::resume);
+        Position region = regionOf(parent);
+        return () -> {
+            if (region != null) SchedulerAdapter.get().runAt(region, parent::resume);
+            else SchedulerAdapter.get().run(parent::resume);
+        };
     }
 }

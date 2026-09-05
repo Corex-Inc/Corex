@@ -35,6 +35,42 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/* @doc command
+ *
+ * @Name ResourcePack
+ * @Syntax resourcepack [set/add/remove] (id:<id>) (url:<url>) (hash:<hash>) (prompt:<text>) (targets:<player>|...) (forced)
+ * @RequiredArgs 1
+ * @MaxArgs 7
+ * @Waitable
+ * @ShortDescription Sends, stacks or removes server resource packs on players.
+ *
+ * @Implements ResourcePack
+ *
+ * @Description
+ * Manages the resource packs a player has applied. "set" replaces every pack the server has sent
+ * with this one, "add" pushes another pack on top of the ones already applied, and "remove" takes
+ * away the pack with the given id (or every server pack when no id is given).
+ *
+ * "url:" is required for set and add. "hash:" is the SHA-1 of the pack file; without it the client
+ * downloads the pack every time. "id:" names the pack so it can be removed later and defaults to
+ * a UUID derived from the url. "prompt:" is the text shown in the download dialog, and "forced"
+ * disconnects a player who declines. "targets:" defaults to the linked player.
+ *
+ * The waitable form '~resourcepack' pauses the queue until every target has accepted, declined,
+ * failed the download or left the server, which is the way to run a script only once the pack is
+ * actually loaded.
+ *
+ * @Usage
+ * // Send the arena pack and wait for it to load before starting.
+ * - ~resourcepack set url:https://example.com/arena.zip hash:<[arenaHash]> prompt:"Arena textures"
+ * - narrate "Ready!"
+ *
+ * @Usage
+ * // Stack a seasonal pack on top and drop it again later.
+ * - resourcepack add id:winter url:https://example.com/winter.zip
+ * - wait 10m
+ * - resourcepack remove id:winter
+ */
 public class ResourcePackCommand implements AbstractCommand, Listener {
 
     private static final Map<UUID, List<Runnable>> WAIT_CALLBACKS = new ConcurrentHashMap<>();

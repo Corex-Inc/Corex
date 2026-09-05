@@ -7,6 +7,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
@@ -16,13 +17,21 @@ import java.util.Arrays;
  * <pre>
  * [1]  protocol version
  * [1]  flags            bit 0 = signed
- * [32] HMAC-SHA256      present only when signed, computed over the four fields below
+ * [32] HMAC-SHA256      present only when signed, computed over everything else in the frame
+ * [8]  timestamp        milliseconds since the epoch, when the frame was built
+ * [8]  nonce            random, unique per frame
  * [1]  packet id
  * [N]  packet payload
  * </pre>
  *
  * <p>The signature covers the version and flag bytes as well as the body, so neither the protocol
  * version nor the signed bit can be edited in transit without invalidating it.</p>
+ *
+ * <h2>Replay</h2>
+ * <p>A signature alone proves a frame was built by someone holding the secret, not that it was
+ * built just now. The timestamp and nonce are inside the signed region so a captured frame cannot
+ * be re-sent later: {@link NetworkManager} rejects a frame older than its window and one whose
+ * nonce it has already seen inside that window.</p>
  *
  * <h2>Verify before parse</h2>
  * <p>{@link #decode} checks the signature before it reads a single field of the payload. On a
@@ -38,11 +47,12 @@ public final class PacketCodec {
      * Version byte written into every frame. Bumped whenever the layout of an existing packet
      * changes, so a half updated network refuses to talk rather than misreading fields.
      */
-    public static final byte PROTOCOL_VERSION = 1;
+    public static final byte PROTOCOL_VERSION = 2;
 
     private static final String MAC_ALGORITHM = "HmacSHA256";
     private static final int MAC_LENGTH = 32;
     private static final int FLAG_SIGNED = 0x01;
+    private static final SecureRandom NONCES = new SecureRandom();
 
     /**
      * Domain separation label mixed into every derived key. Changing it invalidates every key on
@@ -56,17 +66,20 @@ public final class PacketCodec {
      * The result of decoding a frame: the packet itself, plus whether its signature was checked
      * and found valid. Policy on what an unverified packet may do lives in {@link NetworkManager}.
      *
-     * @param packet   the decoded packet.
-     * @param verified true when the frame carried a signature that matched the configured key.
+     * @param packet    the decoded packet.
+     * @param verified  true when the frame carried a signature that matched the configured key.
+     * @param timestamp when the sender built the frame, in milliseconds since the epoch.
+     * @param nonce     the sender's random per-frame value.
      */
-    public record Decoded(@NotNull CorexPacket packet, boolean verified) {}
+    public record Decoded(@NotNull CorexPacket packet, boolean verified, long timestamp, long nonce) {}
 
     public static byte @NotNull [] encode(@NotNull CorexPacket packet, byte @Nullable [] key) {
         PacketBuffer payload = PacketBuffer.writer();
         packet.write(payload);
 
         byte flags = (byte) (key != null ? FLAG_SIGNED : 0);
-        byte[] body = buildBody(packet.type().id(), payload.toByteArray());
+        byte[] body = buildBody(System.currentTimeMillis(), NONCES.nextLong(),
+                packet.type().id(), payload.toByteArray());
 
         PacketBuffer frame = PacketBuffer.writer();
         frame.writeByte(PROTOCOL_VERSION);
@@ -112,10 +125,12 @@ public final class PacketCodec {
         }
 
         PacketBuffer bodyBuffer = PacketBuffer.reader(body);
+        long timestamp = bodyBuffer.readLong();
+        long nonce = bodyBuffer.readLong();
         PacketType type = PacketType.byId(bodyBuffer.readUnsignedByte());
         CorexPacket packet = type.create();
         packet.read(bodyBuffer);
-        return new Decoded(packet, verified);
+        return new Decoded(packet, verified, timestamp, nonce);
     }
 
     /**
@@ -145,11 +160,13 @@ public final class PacketCodec {
         }
     }
 
-    private static byte[] buildBody(int packetId, byte[] payload) {
-        byte[] body = new byte[payload.length + 1];
-        body[0] = (byte) packetId;
-        System.arraycopy(payload, 0, body, 1, payload.length);
-        return body;
+    private static byte[] buildBody(long timestamp, long nonce, int packetId, byte[] payload) {
+        PacketBuffer body = PacketBuffer.writer();
+        body.writeLong(timestamp);
+        body.writeLong(nonce);
+        body.writeByte(packetId);
+        body.writeBytes(payload);
+        return body.toByteArray();
     }
 
     private static byte[] sign(byte[] key, byte version, byte flags, byte[] body) {

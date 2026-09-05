@@ -5,6 +5,7 @@ import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
+import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.ListTag;
@@ -97,11 +98,11 @@ public class LookCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String entitiesRaw  = instruction.getLinear(0, queue);
-        String targetRaw    = instruction.getLinear(1, queue);
-        String yawRaw       = instruction.getPrefix("yaw",               queue);
-        String pitchRaw     = instruction.getPrefix("pitch",             queue);
-        String offthreadRaw = instruction.getPrefix("offthreadRepeat",  queue);
+        String entitiesRaw = instruction.getLinear(0, queue);
+        String targetRaw = instruction.getLinear(1, queue);
+        String yawRaw = instruction.getPrefix("yaw", queue);
+        String pitchRaw = instruction.getPrefix("pitch", queue);
+        String offthreadRaw = instruction.getPrefix("offthreadRepeat", queue);
 
         if (entitiesRaw == null) {
             Debugger.echoError(queue, "Entities argument cannot be null!");
@@ -153,23 +154,29 @@ public class LookCommand implements AbstractCommand {
 
         if (targets.isEmpty()) return;
 
-        if (offthreadRepeats > 0 && instruction.isWaitable) queue.pause();
+        if (instruction.isWaitable) queue.pause();
 
-        PlayerAdapter adapter  = NMSHandler.get().get(PlayerAdapter.class);
-        int           repeats  = offthreadRepeats;
-        AtomicInteger pending  = new AtomicInteger(
+        PlayerAdapter adapter = NMSHandler.get().get(PlayerAdapter.class);
+        int repeats = offthreadRepeats;
+        AtomicInteger pending = new AtomicInteger(
                 (int) targets.stream().filter(e -> e instanceof Player).count()
         );
 
         for (Entity entity : targets) {
             applyLook(entity, target, repeats, adapter, () -> {
                 if (pending.decrementAndGet() == 0 && instruction.isWaitable) {
-                    queue.resume();
+                    resumeOnRegion(queue);
                 }
             });
         }
 
-        if (offthreadRepeats == 0 && instruction.isWaitable) queue.resume();
+        if (instruction.isWaitable && pending.get() <= 0) queue.resume();
+    }
+
+    private static void resumeOnRegion(ScriptQueue queue) {
+        Position region = queue.getTargetRegion() != null ? queue.getTargetRegion() : queue.getAnchorPosition();
+        if (region != null) SchedulerAdapter.get().runAt(region, queue::resume);
+        else SchedulerAdapter.get().run(queue::resume);
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -186,7 +193,7 @@ public class LookCommand implements AbstractCommand {
                 }
             }
             case LookTarget.AtRotation(float yaw, float pitch) -> {
-                float resolvedYaw   = Float.isNaN(yaw)   ? entity.getLocation().getYaw()   : yaw;
+                float resolvedYaw = Float.isNaN(yaw) ? entity.getLocation().getYaw() : yaw;
                 float resolvedPitch = Float.isNaN(pitch) ? entity.getLocation().getPitch() : pitch;
                 if (entity instanceof Player player) {
                     applyPlayerRotation(player, resolvedYaw, resolvedPitch, offthreadRepeats, adapter, onComplete);
@@ -213,7 +220,7 @@ public class LookCommand implements AbstractCommand {
     private static void applyPlayerRotation(Player player, float targetYaw, float targetPitch,
                                             int offthreadRepeats, @Nullable PlayerAdapter adapter,
                                             Runnable onComplete) {
-        float relYaw   = normaliseAngle(targetYaw - player.getLocation().getYaw());
+        float relYaw = normaliseAngle(targetYaw - player.getLocation().getYaw());
         float relPitch = targetPitch - player.getLocation().getPitch();
 
         if (offthreadRepeats <= 0 || adapter == null) {
@@ -270,12 +277,12 @@ public class LookCommand implements AbstractCommand {
     }
 
     private static float[] directionAngles(Location from, Location to) {
-        double dx   = to.getX() - from.getX();
-        double dy   = to.getY() - from.getY();
-        double dz   = to.getZ() - from.getZ();
+        double dx = to.getX() - from.getX();
+        double dy = to.getY() - from.getY();
+        double dz = to.getZ() - from.getZ();
         double dist = Math.sqrt(dx * dx + dz * dz);
-        float  yaw   = (float) -Math.toDegrees(Math.atan2(dx, dz));
-        float  pitch = (float) -Math.toDegrees(Math.atan2(dy, dist));
+        float yaw = (float) -Math.toDegrees(Math.atan2(dx, dz));
+        float pitch = (float) -Math.toDegrees(Math.atan2(dy, dist));
         return new float[]{yaw, pitch};
     }
 

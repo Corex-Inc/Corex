@@ -10,6 +10,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -111,7 +112,7 @@ public final class TagTestSuite {
                 continue;
             }
 
-            for (var entry : processor.getRegisteredTags().entrySet()) {
+            for (Map.Entry<String, ? extends TagProcessor.TagData<?>> entry : processor.getRegisteredTags().entrySet()) {
                 TagProcessor.TagData<?> data = entry.getValue();
                 if (data.skipTest) {
                     progress.accept("    [skipped] ." + entry.getKey());

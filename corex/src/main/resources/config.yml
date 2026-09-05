@@ -1,6 +1,28 @@
 logger:
   debug-mode: default
 
+scripts:
+  # Iterations after which a while loop is force-broken with an error, so a condition that never
+  # turns false cannot hang the thread.
+  while-max-iterations: 100000
+
+file:
+  # Folder inside plugins/Corex that the "file" command is confined to. Scripts, config.yml and
+  # secrets.env sit outside it on purpose.
+  folder: files
+
+flags:
+  # Root flag records kept in memory across every SQL backed tracker (server, cuboid, ellipsoid,
+  # polygon flags). Older entries are dropped first.
+  sql-cache-size: 10000
+
+commands:
+  # How long a scripted command's "requires" verdict is remembered per player, in milliseconds.
+  # Lower it if permission changes must show up faster, at the cost of running the script more.
+  requires-cache-ms: 5000
+  # How long a "suggests" result is reused while the player keeps typing the same prefix.
+  suggests-cache-ms: 250
+
 # Worker pool used by heavy numeric tags (matrixMul, activation, ...).
 # It does not change which thread your script runs on - it only splits a single
 # large operation across cores and joins before the tag returns.
@@ -29,6 +51,14 @@ network:
   # then the forwarding secret on disk. Turning this off stops it after the two CX_ ones.
   # The startup log always names which source was used.
   use-proxy-secret: true
+  # How many seconds a signed packet stays valid. Every frame carries the time it was built and a
+  # random nonce inside the signature, so a captured frame cannot be sent again later. Keep the
+  # clocks of the proxy and the backends within this window of each other.
+  replay-window-seconds: 30
+  # Unsigned packets one player connection may deliver per second. Without a shared secret a
+  # plain "proxy send" message is accepted from anyone, including a modded client, and this is
+  # what keeps such a client from flooding script queues. -1 disables the limit.
+  unsigned-rate-limit: 20
   # Talk to the proxy over a socket instead of riding a player connection. Plugin messaging
   # cannot deliver anything while this server is empty, which is usually when you most want it
   # to. Needs a shared secret; a misconfigured socket falls back to plugin messaging.

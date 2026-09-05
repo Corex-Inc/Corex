@@ -1,4 +1,4 @@
-﻿plugins {
+plugins {
     java
 }
 
@@ -10,7 +10,7 @@ configurations.testRuntimeOnly {
 val corexLibraries = rootProject.extra["corexLibraries"] as List<String>
 
 dependencies {
-    @SuppressWarnings("deprecation")
+    @Suppress("DEPRECATION")
     compileOnly("io.canvasmc.canvas:canvas-api:26.2.build.937-stable")
 
     compileOnlyApi("org.jetbrains:annotations:24.1.0")

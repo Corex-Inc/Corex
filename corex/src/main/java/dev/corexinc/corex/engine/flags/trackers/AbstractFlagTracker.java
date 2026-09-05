@@ -13,6 +13,7 @@ public abstract class AbstractFlagTracker {
 
     public abstract String getTrackerId();
     protected abstract String readRaw(String rootKey);
+    protected abstract long readRawExpire(String rootKey);
     protected abstract void writeRaw(String rootKey, String value, long expireTimeMs);
     protected abstract void deleteRaw(String rootKey);
     public abstract boolean isAsyncSafeCleanup();
@@ -20,6 +21,47 @@ public abstract class AbstractFlagTracker {
     private static final Pattern DOT = Pattern.compile("\\.");
 
     public AbstractFlagTracker() {}
+
+    /**
+     * Encodes a value with its expiry the way the PDC backed trackers store it: {@code expire;value}.
+     */
+    protected static String encode(long expireTimeMs, String value) {
+        return expireTimeMs + ";" + value;
+    }
+
+    /**
+     * Reads the expiry out of an {@link #encode} string, {@code 0} when it carries none.
+     */
+    protected static long decodeExpire(String raw) {
+        int separator = raw.indexOf(';');
+        if (separator <= 0) return 0L;
+        try {
+            return Long.parseLong(raw.substring(0, separator));
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
+    /**
+     * Resolves an {@link #encode} string read from storage: drops it when expired, re-arms its
+     * expiration task when it has one that outlived a restart, and returns the bare value.
+     */
+    protected String resolveEncoded(String rootKey, String raw) {
+        int separator = raw.indexOf(';');
+        if (separator <= 0) return raw;
+
+        long expireTime = decodeExpire(raw);
+        String value = raw.substring(separator + 1);
+
+        if (expireTime > 0) {
+            if (System.currentTimeMillis() >= expireTime) {
+                deleteRaw(rootKey);
+                return null;
+            }
+            FlagManager.ensureScheduled(this, rootKey, expireTime);
+        }
+        return value;
+    }
 
     public AbstractTag getFlag(String keyPath) {
         String[] parts = DOT.split(keyPath);
@@ -70,7 +112,7 @@ public abstract class AbstractFlagTracker {
             if (value == null) current.remove(parts[parts.length - 1]);
             else current.putObject(parts[parts.length - 1], value);
 
-            writeRaw(rootKey, rootMap.identify(), expireTimeMs);
+            writeRaw(rootKey, rootMap.identify(), raw != null ? readRawExpire(rootKey) : 0L);
         }
 
         if (durationMs > 0) {
@@ -78,10 +120,6 @@ public abstract class AbstractFlagTracker {
         } else {
             FlagManager.cancelExpiration(getTrackerId(), keyPath);
         }
-    }
-
-    public void cleanUpExpiredFlag(String keyPath) {
-        this.getFlag(keyPath);
     }
 
     public Optional<Position> getSchedulerPosition() {

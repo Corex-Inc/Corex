@@ -449,9 +449,9 @@ public class ColorTag implements AbstractTag {
     }
 
     public ColorTag(int red, int green, int blue, int alpha) {
-        this.red   = clamp(red);
+        this.red = clamp(red);
         this.green = clamp(green);
-        this.blue  = clamp(blue);
+        this.blue = clamp(blue);
         this.alpha = clamp(alpha);
     }
 

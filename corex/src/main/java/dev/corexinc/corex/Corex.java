@@ -14,7 +14,9 @@ import dev.corexinc.corex.engine.network.NetworkManager;
 import dev.corexinc.corex.engine.network.NetworkSecret;
 import dev.corexinc.corex.engine.network.WebSocketTransport;
 import dev.corexinc.corex.engine.utils.CorexComputePool;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
 import dev.corexinc.corex.environment.commands.core.FileCommand;
+import dev.corexinc.corex.environment.commands.core.WhileCommand;
 import dev.corexinc.corex.environment.network.BackendSecretResolver;
 import dev.corexinc.corex.environment.network.BukkitNetworkExecutor;
 import dev.corexinc.corex.environment.network.PluginMessageTransport;
@@ -132,6 +134,12 @@ public class Corex extends JavaPlugin {
         CorexComputePool.configure(
                 getConfig().getInt("compute.threads", 0),
                 getConfig().getLong("compute.split-threshold", CorexComputePool.DEFAULT_THRESHOLD));
+        FileCommand.setRoot(getDataFolder().toPath().resolve(getConfig().getString("file.folder", "files")));
+        SqlFlagTracker.setCacheSize(getConfig().getInt("flags.sql-cache-size", 0));
+        WhileCommand.setMaxIterations(getConfig().getInt("scripts.while-max-iterations", 0));
+        CommandManager.INSTANCE.setCacheTtls(
+                getConfig().getLong("commands.requires-cache-ms", 0L),
+                getConfig().getLong("commands.suggests-cache-ms", 0L));
 
         setupNetwork();
 
@@ -190,6 +198,7 @@ public class Corex extends JavaPlugin {
         }
         NetworkManager.shutdown();
 
+        FlagManager.shutdown();
         DatabaseManager.closeAll();
         CorexComputePool.shutdown();
         FileCommand.clearCache();
@@ -216,7 +225,9 @@ public class Corex extends JavaPlugin {
                 getConfig().getBoolean("network.use-proxy-secret", true));
 
         NetworkManager.configure(secret != null ? secret.value() : null,
-                getConfig().getBoolean("network.allow-remote-execution", false));
+                getConfig().getBoolean("network.allow-remote-execution", false),
+                getConfig().getLong("network.replay-window-seconds", 30L) * 1000L,
+                getConfig().getInt("network.unsigned-rate-limit", NetworkManager.DEFAULT_UNSIGNED_RATE_LIMIT));
         return secret;
     }
 

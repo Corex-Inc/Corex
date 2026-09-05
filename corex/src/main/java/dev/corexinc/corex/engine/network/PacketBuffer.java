@@ -165,13 +165,13 @@ public final class PacketBuffer {
         return readUnsignedByte() != 0 ? new UUID(readLong(), readLong()) : null;
     }
 
-    private void writeLong(long value) {
+    public void writeLong(long value) {
         for (int shift = 56; shift >= 0; shift -= 8) {
             writeByte((int) (value >>> shift));
         }
     }
 
-    private long readLong() {
+    public long readLong() {
         long result = 0L;
         for (int index = 0; index < 8; index++) {
             result = (result << 8) | readUnsignedByte();

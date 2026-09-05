@@ -170,7 +170,7 @@ public final class WebSocketTransport implements ProxyTransport {
             public void onMessage(ByteBuffer message) {
                 byte[] frame = new byte[message.remaining()];
                 message.get(frame);
-                SchedulerAdapter.get().run(() -> NetworkManager.handleFrame(frame));
+                SchedulerAdapter.get().run(() -> NetworkManager.handleFrame(frame, "proxy-websocket"));
             }
 
             @Override

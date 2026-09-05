@@ -206,7 +206,6 @@ public final class BoundCommand {
             }
         }
 
-        // Reported before the body runs, so a crash still shows what the command was given.
         if (reporting) Debugger.report(queue, instruction, report);
 
         try {
@@ -250,8 +249,6 @@ public final class BoundCommand {
 
         boolean[] taken = new boolean[supplied];
 
-        // Strongest matches first, so a precise type claims its argument before a
-        // permissive one (ListTag accepts nearly anything) can swallow it.
         for (int confidence = 2; confidence >= 1; confidence--) {
             for (int slot = 0; slot < slotCount; slot++) {
                 if (chosen[slot] != null) continue;
@@ -269,7 +266,6 @@ public final class BoundCommand {
             }
         }
 
-        // Whatever is left keeps the order it was written in.
         int next = 0;
         for (int slot = 0; slot < slotCount; slot++) {
             if (chosen[slot] != null) continue;
@@ -333,8 +329,6 @@ public final class BoundCommand {
         if (AbstractTag.class.isAssignableFrom(target)) {
             String identified = raw.identify();
 
-            // Prefixed text such as "l@1,2,3" must go through the fetcher, which strips the
-            // prefix. Handing the whole string to the constructor would prefix it twice.
             if (identified.indexOf('@') > 0) {
                 AbstractTag fetched = ObjectFetcher.pickObject(identified);
                 if (target.isInstance(fetched)) return fetched;

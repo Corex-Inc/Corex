@@ -13,6 +13,8 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.engine.utils.PlayerIdentity;
 import dev.corexinc.corex.environment.tags.core.ContextTag;
 import dev.corexinc.corex.environment.tags.core.ListTag;
+import dev.corexinc.corex.environment.tags.player.PlayerTag;
+import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -131,6 +133,9 @@ public class CommandContainer implements AbstractContainer {
         );
 
         if (context != null) queue.setContext(context);
+        if (player instanceof PlayerTag playerTag && playerTag.getPlayer() != null) {
+            queue.setAnchorPosition(BukkitSchedulerAdapter.toPosition(playerTag.getPlayer().getLocation()));
+        }
         return queue;
     }
 
@@ -157,7 +162,7 @@ public class CommandContainer implements AbstractContainer {
             JsonObject obj = el.getAsJsonObject();
 
             String basePath = parentBase + ".then." + key;
-            String argPath  = parentArg.isEmpty() ? key : parentArg + "." + key;
+            String argPath = parentArg.isEmpty() ? key : parentArg + "." + key;
             boolean argument = obj.has("type");
 
             CommandArgumentSpec spec = argument

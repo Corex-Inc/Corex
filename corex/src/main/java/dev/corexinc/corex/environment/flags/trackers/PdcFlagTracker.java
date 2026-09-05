@@ -1,6 +1,7 @@
-package dev.corexinc.corex.engine.flags.trackers;
+package dev.corexinc.corex.environment.flags.trackers;
 
 import dev.corexinc.corex.Corex;
+import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
 import dev.corexinc.corex.engine.utils.Position;
 import dev.corexinc.corex.environment.utils.BukkitSchedulerAdapter;
 import org.bukkit.NamespacedKey;
@@ -43,35 +44,26 @@ public class PdcFlagTracker extends AbstractFlagTracker {
         return new NamespacedKey(Corex.getInstance(), "flag_" + rootKey.toLowerCase());
     }
 
+    private String rawOf(String rootKey) {
+        return holder.getPersistentDataContainer().get(getKey(rootKey), PersistentDataType.STRING);
+    }
+
     @Override
     protected String readRaw(String rootKey) {
-        PersistentDataContainer pdc = holder.getPersistentDataContainer();
-        NamespacedKey key = getKey(rootKey);
+        String raw = rawOf(rootKey);
+        return raw != null ? resolveEncoded(rootKey, raw) : null;
+    }
 
-        if (!pdc.has(key, PersistentDataType.STRING)) return null;
-
-        String raw = pdc.get(key, PersistentDataType.STRING);
-        if (raw == null) return null;
-
-        int sepIndex = raw.indexOf(';');
-        if (sepIndex == -1) return raw;
-
-        long expireTime = Long.parseLong(raw.substring(0, sepIndex));
-        String value = raw.substring(sepIndex + 1);
-
-        if (expireTime > 0 && System.currentTimeMillis() >= expireTime) {
-            deleteRaw(rootKey);
-            return null;
-        }
-
-        return value;
+    @Override
+    protected long readRawExpire(String rootKey) {
+        String raw = rawOf(rootKey);
+        return raw != null ? decodeExpire(raw) : 0L;
     }
 
     @Override
     protected void writeRaw(String rootKey, String value, long expireTimeMs) {
         PersistentDataContainer pdc = holder.getPersistentDataContainer();
-        String data = expireTimeMs + ";" + value;
-        pdc.set(getKey(rootKey), PersistentDataType.STRING, data);
+        pdc.set(getKey(rootKey), PersistentDataType.STRING, encode(expireTimeMs, value));
     }
 
     @Override

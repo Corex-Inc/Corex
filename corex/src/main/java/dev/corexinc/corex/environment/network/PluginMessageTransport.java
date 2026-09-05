@@ -8,6 +8,10 @@ import dev.corexinc.corex.engine.utils.CorexLogger;
 import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -26,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @since 1.0.0
  */
-public final class PluginMessageTransport implements ProxyTransport, PluginMessageListener {
+public final class PluginMessageTransport implements ProxyTransport, PluginMessageListener, Listener {
 
     /**
      * The plugin messaging channel Corex talks on, registered on both the backend and the proxy.
@@ -50,6 +54,7 @@ public final class PluginMessageTransport implements ProxyTransport, PluginMessa
         Messenger messenger = Bukkit.getMessenger();
         messenger.registerOutgoingPluginChannel(plugin, CHANNEL);
         messenger.registerIncomingPluginChannel(plugin, CHANNEL, this);
+        Bukkit.getPluginManager().registerEvents(this, plugin);
         NetworkManager.setTransport(this);
     }
 
@@ -57,6 +62,12 @@ public final class PluginMessageTransport implements ProxyTransport, PluginMessa
         Messenger messenger = Bukkit.getMessenger();
         messenger.unregisterIncomingPluginChannel(plugin, CHANNEL, this);
         messenger.unregisterOutgoingPluginChannel(plugin, CHANNEL);
+        HandlerList.unregisterAll(this);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        NetworkManager.forgetSource(event.getPlayer().getUniqueId().toString());
     }
 
     @Override
@@ -96,7 +107,7 @@ public final class PluginMessageTransport implements ProxyTransport, PluginMessa
                                         @NotNull Player player,
                                         byte @NotNull [] message) {
         if (!CHANNEL.equals(channel)) return;
-        NetworkManager.handleFrame(message);
+        NetworkManager.handleFrame(message, player.getUniqueId().toString());
     }
 
     private void deliver(byte[] frame) {

@@ -19,8 +19,8 @@ import java.util.Map;
  * if (args == null) return;
  *
  * PlayerTag  player = args.prefix("target");
- * ElementTag loop   = args.prefix("loop");   // default "PLAY_ONCE" if not provided
- * ElementTag text   = args.linear(0);
+ * ElementTag loop = args.prefix("loop"); // default "PLAY_ONCE" if not provided
+ * ElementTag text = args.linear(0);
  *
  * if (args.hasPrefix("silent")) { ... }
  * }</pre>

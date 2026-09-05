@@ -29,10 +29,10 @@ import java.util.function.Function;
  * <h3>Quick example</h3>
  * <pre>{@code
  * private static final ArgSchema SCHEMA = ArgSchema.of()
- *     .requirePrefix("target",  PlayerTag.class,  PlayerTag::valueOf)
- *     .requirePrefix("model",   ElementTag.class)
- *     .optionalPrefix("loop",   ElementTag.class, "PLAY_ONCE")
- *     .requireLinear(0,         ElementTag.class)
+ * .requirePrefix("target", PlayerTag.class, PlayerTag::valueOf)
+ * .requirePrefix("model", ElementTag.class)
+ * .optionalPrefix("loop", ElementTag.class, "PLAY_ONCE")
+ * .requireLinear(0, ElementTag.class)
  *     .build();
  *
  * public void run(ScriptQueue queue, Instruction instruction) {
@@ -40,8 +40,8 @@ import java.util.function.Function;
  *     if (args == null) return;
  *
  *     PlayerTag  player = args.prefix("target");
- *     ElementTag loop   = args.prefix("loop");   // never null — has default
- *     ElementTag first  = args.linear(0);
+ * ElementTag loop = args.prefix("loop"); // never null — has default
+ * ElementTag first = args.linear(0);
  * }
  * }</pre>
  *

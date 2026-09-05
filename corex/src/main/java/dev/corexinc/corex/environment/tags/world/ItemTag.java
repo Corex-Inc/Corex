@@ -8,7 +8,7 @@ import dev.corexinc.corex.api.tags.Adjustable;
 import dev.corexinc.corex.api.tags.Attribute;
 import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.engine.flags.trackers.AbstractFlagTracker;
-import dev.corexinc.corex.engine.flags.trackers.ItemFlagTracker;
+import dev.corexinc.corex.environment.flags.trackers.ItemFlagTracker;
 import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.containers.ItemContainer;
 import dev.corexinc.corex.environment.tags.core.ColorTag;
@@ -265,9 +265,9 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
         /* @doc mechanism
          *
          * @Name customModelData
-         * @object ItemTag
-         * @input ElementTag(Number)
-         * @description
+         * @Object ItemTag
+         * @Input ElementTag(Number)
+         * @Description
          * Controls the custom model data ID number of the item.
          * Use with no input to remove the custom model data.
          *
@@ -305,9 +305,9 @@ public class ItemTag implements AbstractTag, Adjustable, Flaggable {
         /* @doc mechanism
          *
          * @Name itemModel
-         * @object ItemTag
-         * @input ElementTag
-         * @description
+         * @Object ItemTag
+         * @Input ElementTag
+         * @Description
          * Sets the custom model for the item using a NamespacedKey.
          * This is an alternative to customModelData, and generally preferred.
          *

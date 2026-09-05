@@ -18,6 +18,8 @@ import dev.corexinc.corex.engine.network.NetworkManager;
 import dev.corexinc.corex.engine.network.NetworkSecret;
 import dev.corexinc.corex.engine.flags.DatabaseManager;
 import dev.corexinc.corex.engine.flags.FlagManager;
+import dev.corexinc.corex.engine.flags.trackers.SqlFlagTracker;
+import dev.corexinc.corex.environment.commands.core.WhileCommand;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 import dev.corexinc.corex.environment.utils.ServerVersion;
 import dev.corexinc.corex.environment.utils.scripts.EnvManager;
@@ -97,6 +99,8 @@ public class CorexVelocity {
         FlagManager.init();
         EnvManager.load(dataFolder.toFile());
         Debugger.updateDebugMode(config.getString("logger.debug-mode", "default"));
+        SqlFlagTracker.setCacheSize(config.getInt("flags.sql-cache-size", 0));
+        WhileCommand.setMaxIterations(config.getInt("scripts.while-max-iterations", 0));
 
         AddonManager.reset();
         AddonResolver.set(new VelocityAddonResolver(server, this));
@@ -141,6 +145,7 @@ public class CorexVelocity {
             proxyRelay = null;
         }
         NetworkManager.shutdown();
+        FlagManager.shutdown();
         DatabaseManager.closeAll();
     }
 
@@ -160,7 +165,9 @@ public class CorexVelocity {
                 config.getBoolean("network.use-proxy-secret", true));
 
         NetworkManager.configure(secret != null ? secret.value() : null,
-                config.getBoolean("network.allow-remote-execution", false));
+                config.getBoolean("network.allow-remote-execution", false),
+                config.getInt("network.replay-window-seconds", 30) * 1000L,
+                config.getInt("network.unsigned-rate-limit", NetworkManager.DEFAULT_UNSIGNED_RATE_LIMIT));
         return secret;
     }
 

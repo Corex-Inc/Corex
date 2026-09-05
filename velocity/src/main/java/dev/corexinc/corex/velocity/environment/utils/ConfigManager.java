@@ -1,8 +1,11 @@
 package dev.corexinc.corex.velocity.environment.utils;
 
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -35,8 +38,8 @@ public class ConfigManager {
             }
         }
 
-        try (var reader = Files.newBufferedReader(file)) {
-            Map<String, Object> loaded = new Yaml().load(reader);
+        try (BufferedReader reader = Files.newBufferedReader(file)) {
+            Map<String, Object> loaded = new Yaml(new SafeConstructor(new LoaderOptions())).load(reader);
             data = loaded != null ? loaded : new HashMap<>();
         } catch (IOException e) {
             CorexLogger.error("Failed to load config " + file.getFileName() + ": " + e.getMessage());
@@ -46,33 +49,6 @@ public class ConfigManager {
     public void reload() {
         load();
     }
-
-    public void save() {
-        try (var writer = Files.newBufferedWriter(file)) {
-            new Yaml().dump(data, writer);
-        } catch (IOException e) {
-            CorexLogger.error("Failed to save config " + file.getFileName() + ": " + e.getMessage());
-        }
-    }
-
-    public void set(String path, Object value) {
-        String[] keys = path.split("\\.");
-        Map<String, Object> current = data;
-
-        for (int i = 0; i < keys.length - 1; i++) {
-            Object next = current.get(keys[i]);
-            if (!(next instanceof Map<?, ?>)) {
-                Map<String, Object> newMap = new HashMap<>();
-                current.put(keys[i], newMap);
-                current = newMap;
-            } else {
-                current = (Map<String, Object>) next;
-            }
-        }
-
-        current.put(keys[keys.length - 1], value);
-    }
-
 
     private Object resolve(String path) {
         String[] keys = path.split("\\.");

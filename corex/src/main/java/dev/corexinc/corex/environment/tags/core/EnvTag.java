@@ -8,7 +8,7 @@ import dev.corexinc.corex.engine.tags.ObjectFetcher;
 import dev.corexinc.corex.environment.utils.scripts.EnvManager;
 import org.jspecify.annotations.NonNull;
 
-/* @object
+/* @doc object
  *
  * @Name EnvTag
  * @Prefix env
@@ -62,7 +62,6 @@ public class EnvTag implements AbstractTag {
          * @Object EnvTag
          * @ReturnType ElementTag
          * @NoArg
-         * @Async
          * @Description
          * Returns the env key for this env object.
          *

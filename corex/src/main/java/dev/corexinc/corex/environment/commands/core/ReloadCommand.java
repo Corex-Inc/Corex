@@ -25,10 +25,12 @@ import java.util.List;
  * @Implements Reload
  *
  * @Description
- * Reloads and recompile all Corex scripts.
- * Primarily for use as an in-game command, like "/run reload".
+ * Reloads config.yml, resets every script event and recompiles the whole scriptpack, then
+ * re-registers scripted commands. Meant for use as an in-game command, like "/run reload".
  *
- * Reloads and recompile scripts in a way that may delay a few ticks to avoid interrupting the server on large reloads.
+ * The reload runs on the thread that called it and blocks until every script is compiled, so a
+ * large scriptpack will hold the server for the duration. Queues already running keep their old
+ * bytecode until they finish.
  *
  * @Usage
  * // Use to reload scripts automatically

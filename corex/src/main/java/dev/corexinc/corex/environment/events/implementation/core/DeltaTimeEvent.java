@@ -52,7 +52,7 @@ public class DeltaTimeEvent implements AbstractEvent {
 
     private final Set<EventData> secondly = new LinkedHashSet<>();
     private final Set<EventData> minutely = new LinkedHashSet<>();
-    private final Set<EventData> hourly   = new LinkedHashSet<>();
+    private final Set<EventData> hourly = new LinkedHashSet<>();
 
     @Override
     public @NonNull String getName() {

@@ -1,6 +1,7 @@
 package dev.corexinc.corex.api.testing;
 
 import dev.corexinc.corex.api.tags.AbstractFormatter;
+import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.CorexRegistry;
 import dev.corexinc.corex.engine.compiler.CompiledArgument;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
@@ -71,7 +72,7 @@ public final class FormatterTestSuite {
                     continue;
                 }
 
-                var evaluated = arg.evaluate(null);
+                AbstractTag evaluated = arg.evaluate(null);
                 if (evaluated == null || evaluated.identify() == null) {
                     failures.add(new TestReport.Failure(clazz.getSimpleName(),
                             expression + " evaluated to null"));

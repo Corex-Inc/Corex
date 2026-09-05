@@ -10,6 +10,7 @@ import dev.corexinc.corex.api.tags.Flaggable;
 import dev.corexinc.corex.api.tags.AbstractTag;
 import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.queue.ScriptQueue;
+import dev.corexinc.corex.engine.utils.SchedulerAdapter;
 import dev.corexinc.corex.engine.utils.debugging.Debugger;
 import dev.corexinc.corex.environment.tags.core.DurationTag;
 import dev.corexinc.corex.environment.tags.core.ElementTag;
@@ -111,16 +112,17 @@ public class FlagCommand implements AbstractCommand {
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
 
         ArgumentSet args = SCHEMA.bind(instruction, queue);
+        if (args == null) return;
 
         AbstractTag targetObj = instruction.getLinearObject(0, queue);
         if (!(targetObj instanceof Flaggable flaggable)) {
-            Debugger.error(queue, "'<yellow>" + (targetObj != null ? targetObj.identify() : "null") + "</yellow>' does not support flags!", queue.getDepth());
+            Debugger.echoError(queue, "'<yellow>" + (targetObj != null ? targetObj.identify() : "null") + "</yellow>' does not support flags!");
             return;
         }
 
         AbstractFlagTracker tracker = flaggable.getFlagTracker();
         if (tracker == null) {
-            Debugger.error(queue, "Flag tracker is not available for this object!", queue.getDepth());
+            Debugger.echoError(queue, "Flag tracker is not available for this object!");
             return;
         }
 
@@ -142,7 +144,7 @@ public class FlagCommand implements AbstractCommand {
             if (action != null) {
                 param = action.extractParam(actionStr);
             } else {
-                Debugger.error(queue, "Unknown DataAction in line: " + actionStr, queue.getDepth());
+                Debugger.echoError(queue, "Unknown DataAction in line: " + actionStr);
                 return;
             }
         }
@@ -155,23 +157,35 @@ public class FlagCommand implements AbstractCommand {
             durationMs = expire.getMilliseconds();
         }
 
-        AbstractTag finalValue;
+        AbstractDataAction resolvedAction = action;
+        String resolvedParam = param;
+        long resolvedDuration = durationMs;
 
-        if (action == null) {
-            finalValue = valueObj != null ? valueObj : new ElementTag(true);
-        } else {
-            AbstractTag currentFlag = tracker.getFlag(keyPath);
-            finalValue = action.apply(currentFlag, param, valueObj, queue);
-        }
-
-        tracker.setFlag(keyPath, finalValue, durationMs);
+        Runnable write = () -> {
+            AbstractTag finalValue;
+            if (resolvedAction == null) {
+                finalValue = valueObj != null ? valueObj : new ElementTag(true);
+            } else {
+                finalValue = resolvedAction.apply(tracker.getFlag(keyPath), resolvedParam, valueObj, queue);
+            }
+            tracker.setFlag(keyPath, finalValue, resolvedDuration);
+        };
 
         Debugger.report(queue, instruction,
                 "Target", targetObj.identify(),
                 "Flag", keyPath,
-                "Value", finalValue != null ? finalValue.identify() : "null",
+                "Action", action != null ? action.getSymbol() : null,
+                "Value", valueObj != null ? valueObj.identify() : null,
                 "Expire", durationMs > 0 ? durationMs + "ms" : "never"
         );
+
+        if (queue.isAsync() && !tracker.isAsyncSafeCleanup()) {
+            tracker.getSchedulerPosition().ifPresentOrElse(
+                    position -> SchedulerAdapter.get().runAt(position, write),
+                    () -> SchedulerAdapter.get().run(write));
+            return;
+        }
+        write.run();
     }
 
     private static int findColonOutsideBrackets(String s) {

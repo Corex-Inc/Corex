@@ -136,6 +136,21 @@ public class ScriptQueue {
     private volatile boolean isPaused = false;
     private boolean isStopped = false;
     private boolean isBroken = false;
+
+    /**
+     * Set by {@link #skipFrame(boolean)} and cleared when control reaches a loop frame, so a
+     * {@code break} or {@code continue} issued inside a nested block (an {@code if} within the
+     * loop body) unwinds every block up to the loop instead of only the innermost one.
+     */
+    private boolean skipPending = false;
+
+    /**
+     * The thread currently inside {@link #executeNext()}, or {@code null}. A nested call from the
+     * same thread (a child queue finishing synchronously and resuming its parent from inside the
+     * parent's own command) returns at once and lets the outer loop carry on, instead of running
+     * the rest of the script recursively.
+     */
+    private Thread executingThread;
     private boolean isCancelled = false;
     private boolean silent = false;
 
@@ -252,16 +267,6 @@ public class ScriptQueue {
      * @param parent may be {@code null} (e.g. a queue triggered by a console command with no
      *               script context); the child then behaves like the no-anchor constructor.
      */
-    /**
-     * Resolves the region this queue should resume on: a pending {@link #targetRegionPosition}
-     * shift takes priority, falling back to the queue's {@link #anchorPosition}. Shared by
-     * {@link #delay(long)} and {@link #runAsyncChild} so the two never drift out of sync.
-     */
-    @Nullable
-    private Position resolveRegion() {
-        return targetRegionPosition != null ? targetRegionPosition : anchorPosition;
-    }
-
     public static ScriptQueue spawnChild(String id, Instruction[] bytecode, boolean isAsync,
                                          @Nullable ScriptQueue parent) {
         ScriptQueue child = new ScriptQueue(
@@ -274,6 +279,16 @@ public class ScriptQueue {
             child.debugObserver = parent.debugObserver;
         }
         return child;
+    }
+
+    /**
+     * Resolves the region this queue should resume on: a pending {@link #targetRegionPosition}
+     * shift takes priority, falling back to the queue's {@link #anchorPosition}. Shared by
+     * {@link #delay(long)} and {@link #runAsyncChild} so the two never drift out of sync.
+     */
+    @Nullable
+    private Position resolveRegion() {
+        return targetRegionPosition != null ? targetRegionPosition : anchorPosition;
     }
 
     /**
@@ -298,6 +313,8 @@ public class ScriptQueue {
      */
     @AvailableSince("1.0.0")
     public void executeNext() {
+        if (executingThread == Thread.currentThread()) return;
+        executingThread = Thread.currentThread();
         try {
             if (bytecode == null) this.bytecode = new Instruction[0];
 
@@ -372,9 +389,12 @@ public class ScriptQueue {
 
                 } else if (!isPaused) {
 
-                    if (loopCondition != null && loopCondition.getAsBoolean()) {
-                        this.pointer = 0;
-                        continue;
+                    if (loopCondition != null) {
+                        skipPending = false;
+                        if (loopCondition.getAsBoolean()) {
+                            this.pointer = 0;
+                            continue;
+                        }
                     }
 
                     Runnable callback = this.onFinish;
@@ -401,7 +421,7 @@ public class ScriptQueue {
                     } else {
                         QueueFrame frame = callStack.pop();
                         this.bytecode = frame.bytecode();
-                        this.pointer = frame.pointer();
+                        this.pointer = skipPending ? frame.bytecode().length : frame.pointer();
                         this.onFinish = frame.onFinish();
                         this.loopCondition = frame.loopCondition();
                     }
@@ -419,6 +439,8 @@ public class ScriptQueue {
         } catch (Throwable t) {
             Debugger.error(this, "Fatal queue execution crash: " + t.getMessage(), t, callStack.size());
             stopEntireQueue();
+        } finally {
+            executingThread = null;
         }
     }
 
@@ -475,6 +497,7 @@ public class ScriptQueue {
     public void skipFrame(boolean breakLoop) {
         this.pointer = this.bytecode != null ? this.bytecode.length : 0;
         this.isBroken = breakLoop;
+        this.skipPending = true;
     }
 
     /**
@@ -898,7 +921,6 @@ public class ScriptQueue {
     public void setKeepAlive(boolean keepAlive) { this.keepAlive = keepAlive; }
     public boolean isKeepAlive() { return keepAlive; }
     public int getDepth() { return callStack.size(); }
-    public Map<String, AbstractTag> getDefinitionsMap() { return allDefinitions(); }
     public static ScriptQueue getQueueById(String id) { return activeQueues.get(id); }
     public static Collection<ScriptQueue> getAllQueues() { return activeQueues.values(); }
 }

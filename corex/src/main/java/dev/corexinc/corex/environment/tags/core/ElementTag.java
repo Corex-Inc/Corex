@@ -218,8 +218,6 @@ public class ElementTag implements AbstractTag {
     public static void register() {
         BaseTagProcessor.registerBaseTag("element", (attribute) -> {
             AbstractTag param = attribute.getParamObject();
-            // A component carries formatting that legacy text cannot express - translatables
-            // collapse to their bare key - so pass it through instead of flattening it.
             if (param instanceof ComponentTag) return param;
             return new ElementTag(param != null ? param.identify() : null);
         });

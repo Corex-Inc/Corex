@@ -1,6 +1,14 @@
 logger:
   debug-mode: default
 
+scripts:
+  # Iterations after which a while loop is force-broken with an error.
+  while-max-iterations: 100000
+
+flags:
+  # Root flag records kept in memory across every SQL backed tracker. Older entries drop first.
+  sql-cache-size: 10000
+
 # Cross server messaging between the backends behind this proxy.
 network:
   # Turn the relay off entirely. When off, no channel is registered and packets from
@@ -16,6 +24,11 @@ network:
   # then the forwarding secret on disk. Turning this off stops it after the two CX_ ones.
   # The startup log always names which source was used.
   use-proxy-secret: true
+  # How many seconds a signed packet stays valid. Keep the clocks of the proxy and the backends
+  # within this window of each other.
+  replay-window-seconds: 30
+  # Unsigned packets one source may deliver per second before the rest are dropped. -1 disables.
+  unsigned-rate-limit: 20
   # Listen for backend sockets. Bind to a private interface: the port is not the place to
   # expose to the internet, and Corex refuses to open it at all without a shared secret.
   websocket:

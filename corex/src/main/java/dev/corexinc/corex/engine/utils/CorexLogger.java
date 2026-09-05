@@ -22,35 +22,35 @@ public class CorexLogger {
     }
 
     public static void info(String message) {
-        send(PREFIX_INFO + message, "Corex");
+        send(PREFIX_INFO, message, "Corex");
     }
 
     public static void success(String message) {
-        send(PREFIX_SUCCESS + message, "Corex");
+        send(PREFIX_SUCCESS, message, "Corex");
     }
 
     public static void warn(String message) {
-        send(PREFIX_WARN + message, "Corex");
+        send(PREFIX_WARN, message, "Corex");
     }
 
     public static void error(String message) {
-        send(PREFIX_ERROR + message, "Corex");
+        send(PREFIX_ERROR, message, "Corex");
     }
 
     public static void info(@NotNull String sender, String message) {
-        send(PREFIX_INFO + message, sender, null);
+        send(PREFIX_INFO, message, sender, null);
     }
 
     public static void success(@NotNull String sender, String message) {
-        send(PREFIX_SUCCESS + message, sender, null);
+        send(PREFIX_SUCCESS, message, sender, null);
     }
 
     public static void warn(@NotNull String sender, String message) {
-        send(PREFIX_WARN + message, sender, null);
+        send(PREFIX_WARN, message, sender, null);
     }
 
     public static void error(@NotNull String sender, String message) {
-        send(PREFIX_ERROR + message, sender, null);
+        send(PREFIX_ERROR, message, sender, null);
     }
 
     /**
@@ -60,31 +60,32 @@ public class CorexLogger {
      * A {@code null} mirror behaves exactly like the console-only variant.
      */
     public static void info(@Nullable Audience mirror, String message) {
-        send(PREFIX_INFO + message, "Corex", mirror);
+        send(PREFIX_INFO, message, "Corex", mirror);
     }
 
     public static void success(@Nullable Audience mirror, String message) {
-        send(PREFIX_SUCCESS + message, "Corex", mirror);
+        send(PREFIX_SUCCESS, message, "Corex", mirror);
     }
 
     public static void warn(@Nullable Audience mirror, String message) {
-        send(PREFIX_WARN + message, "Corex", mirror);
+        send(PREFIX_WARN, message, "Corex", mirror);
     }
 
     public static void error(@Nullable Audience mirror, String message) {
-        send(PREFIX_ERROR + message, "Corex", mirror);
+        send(PREFIX_ERROR, message, "Corex", mirror);
     }
 
-    private static void send(String format, String sender) {
-        send(format, sender, null);
+    private static void send(String prefix, String message, String sender) {
+        send(prefix, message, sender, null);
     }
 
-    private static void send(String format, String sender, @Nullable Audience mirror) {
+    private static void send(String prefix, String message, String sender, @Nullable Audience mirror) {
+        String line = String.format(prefix, sender) + message;
         Component component;
         try {
-            component = MINI_MESSAGE.deserialize(String.format(format, sender).replace("§", "&"));
+            component = MINI_MESSAGE.deserialize(line.replace("§", "&"));
         } catch (Exception e) {
-            component = Component.text("(Raw) " + format);
+            component = Component.text("(Raw) " + line);
         }
         console.sendMessage(component);
         if (mirror != null) mirror.sendMessage(component);

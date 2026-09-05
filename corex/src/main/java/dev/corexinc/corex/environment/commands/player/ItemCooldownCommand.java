@@ -73,8 +73,8 @@ public class ItemCooldownCommand implements AbstractCommand {
 
     private sealed interface CooldownTarget {
         record ByMaterial(Material material) implements CooldownTarget {}
-        record ByItem    (ItemStack item)    implements CooldownTarget {}
-        record ByKey     (NamespacedKey key)  implements CooldownTarget {}
+        record ByItem(ItemStack item) implements CooldownTarget {}
+        record ByKey(NamespacedKey key) implements CooldownTarget {}
     }
 
     @Override
@@ -152,9 +152,9 @@ public class ItemCooldownCommand implements AbstractCommand {
     private static void applyCooldowns(Player player, List<CooldownTarget> targets, int ticks) {
         for (CooldownTarget target : targets) {
             switch (target) {
-                case CooldownTarget.ByMaterial(var mat)  -> player.setCooldown(mat, ticks);
-                case CooldownTarget.ByItem    (var item) -> player.setCooldown(item, ticks);
-                case CooldownTarget.ByKey     (var key)  -> player.setCooldown(key, ticks);
+                case CooldownTarget.ByMaterial(Material material) -> player.setCooldown(material, ticks);
+                case CooldownTarget.ByItem(ItemStack item) -> player.setCooldown(item, ticks);
+                case CooldownTarget.ByKey(NamespacedKey key) -> player.setCooldown(key, ticks);
             }
         }
     }

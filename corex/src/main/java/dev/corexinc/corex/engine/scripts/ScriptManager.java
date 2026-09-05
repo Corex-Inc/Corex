@@ -12,7 +12,9 @@ import dev.corexinc.corex.engine.compiler.Instruction;
 import dev.corexinc.corex.engine.compiler.SlotAllocator;
 import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.utils.CorexLogger;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -23,7 +25,6 @@ public class ScriptManager {
 
     private static volatile Map<String, AbstractContainer> containers = Map.of();
     private static final Gson GSON = new Gson();
-    public static long lastReloadTime = System.currentTimeMillis();
 
     private static Path dataFolder;
     private static CorexRegistry registry;
@@ -110,7 +111,7 @@ public class ScriptManager {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parseYaml(ScriptSource source) {
         try {
-            return (Map<String, Object>) new Yaml().load(source.getYaml());
+            return (Map<String, Object>) new Yaml(new SafeConstructor(new LoaderOptions())).load(source.getYaml());
         } catch (Exception failure) {
             List<String> touched = new ArrayList<>(source.getTouchedBy(PreprocessStage.RAW_SCRIPT));
             touched.addAll(source.getTouchedBy(PreprocessStage.RAW_YAML));
@@ -225,7 +226,6 @@ public class ScriptManager {
     }
 
     public static void reloadScripts() {
-        lastReloadTime = System.currentTimeMillis();
         loadScripts();
     }
 

@@ -51,8 +51,6 @@ public class RunCommand implements BasicCommand {
                 linkedPlayer,
                 anchor
         );
-        // Console already receives every debug line; mirroring for a player sender
-        // is what makes /run usable without reading the server log.
         if (executor != null) queue.setDebugObserver(executor);
         queue.start();
     }

@@ -153,16 +153,16 @@ public class StructureCommand implements AbstractCommand, Listener {
             return;
         }
 
-        String locationRaw  = instruction.getPrefix("location",  queue);
-        String offsetRaw    = instruction.getPrefix("offset",    queue);
-        String rotationRaw  = instruction.getPrefix("rotation",  queue);
-        String mirrorRaw    = instruction.getPrefix("mirror",    queue);
-        String paletteRaw   = instruction.getPrefix("palette",   queue);
+        String locationRaw = instruction.getPrefix("location", queue);
+        String offsetRaw = instruction.getPrefix("offset", queue);
+        String rotationRaw = instruction.getPrefix("rotation", queue);
+        String mirrorRaw = instruction.getPrefix("mirror", queue);
+        String paletteRaw = instruction.getPrefix("palette", queue);
         String integrityRaw = instruction.getPrefix("integrity", queue);
 
         boolean includeEntities = instruction.hasFlag("includeEntities");
-        boolean centered        = instruction.hasFlag("centered");
-        boolean noPhysics       = instruction.hasFlag("noPhysics");
+        boolean centered = instruction.hasFlag("centered");
+        boolean noPhysics = instruction.hasFlag("noPhysics");
 
         if (locationRaw == null) {
             Debugger.echoError(queue, "location: is required for 'place'!");
@@ -280,10 +280,10 @@ public class StructureCommand implements AbstractCommand, Listener {
     }
 
     private void handleCreate(ScriptQueue queue, Instruction instruction, NamespacedKey key) {
-        String areaRaw          = instruction.getPrefix("area",             queue);
-        String locationRaw      = instruction.getPrefix("location",         queue);
+        String areaRaw = instruction.getPrefix("area", queue);
+        String locationRaw = instruction.getPrefix("location", queue);
 
-        boolean saveToDisk      = instruction.hasFlag("saveToDisk");
+        boolean saveToDisk = instruction.hasFlag("saveToDisk");
         boolean includeEntities = instruction.hasFlag("includeEntities");
 
         if (areaRaw == null) {
@@ -436,7 +436,7 @@ public class StructureCommand implements AbstractCommand, Listener {
         List<double[][]> members = cuboid.getMembers();
         if (members.isEmpty()) return null;
 
-        double minX = Double.MAX_VALUE,  minY = Double.MAX_VALUE,  minZ = Double.MAX_VALUE;
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, minZ = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
 
         for (double[][] member : members) {

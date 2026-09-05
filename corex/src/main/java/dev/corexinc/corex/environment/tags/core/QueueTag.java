@@ -130,7 +130,7 @@ public class QueueTag implements AbstractTag {
          */
         TAG_PROCESSOR.registerTag(MapTag.class, "definitions", (attr, obj) -> {
             MapTag map = new MapTag("");
-            for (Map.Entry<String, AbstractTag> def : obj.queue.getDefinitionsMap().entrySet()) {
+            for (Map.Entry<String, AbstractTag> def : obj.queue.allDefinitions().entrySet()) {
                 map.putObject(def.getKey(), def.getValue());
             }
             return map;

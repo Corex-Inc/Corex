@@ -44,8 +44,11 @@ public class ObjectFetcher {
         if (atIndex > 0) {
             Function<String, AbstractTag> constructor = fetchers.get(value.substring(0, atIndex).toLowerCase());
             if (constructor != null) {
-                AbstractTag result = constructor.apply(value.substring(atIndex + 1));
-                if (result != null) return result;
+                try {
+                    AbstractTag result = constructor.apply(value.substring(atIndex + 1));
+                    if (result != null) return result;
+                } catch (RuntimeException ignored) {
+                }
             }
         }
 

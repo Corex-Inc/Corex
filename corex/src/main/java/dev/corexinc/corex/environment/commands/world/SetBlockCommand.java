@@ -126,8 +126,8 @@ public class SetBlockCommand implements AbstractCommand {
 
     @Override
     public void run(@NonNull ScriptQueue queue, @NonNull Instruction instruction) {
-        String locationsRaw  = instruction.getLinear(0, queue);
-        String materialsRaw  = instruction.getLinear(1, queue);
+        String locationsRaw = instruction.getLinear(0, queue);
+        String materialsRaw = instruction.getLinear(1, queue);
 
         if (locationsRaw == null) { Debugger.echoError(queue, "Locations cannot be null!"); return; }
         if (materialsRaw == null) { Debugger.echoError(queue, "Materials cannot be null!"); return; }
@@ -139,11 +139,11 @@ public class SetBlockCommand implements AbstractCommand {
             return;
         }
 
-        String naturallyRaw  = instruction.getPrefix("naturally", queue);
+        String naturallyRaw = instruction.getPrefix("naturally", queue);
         String maxDelayMsRaw = instruction.getPrefix("maxDelayMs", queue);
-        String chanceRaw     = instruction.getPrefix("chance", queue);
-        boolean noPhysics    = instruction.getPrefix("no_physics", queue) != null;
-        boolean delayed      = instruction.getPrefix("delayed", queue) != null;
+        String chanceRaw = instruction.getPrefix("chance", queue);
+        boolean noPhysics = instruction.getPrefix("no_physics", queue) != null;
+        boolean delayed = instruction.getPrefix("delayed", queue) != null;
 
         List<Location> blocks = resolveLocations(locationsRaw);
         if (blocks.isEmpty()) { Debugger.echoError(queue, "No valid locations resolved for setblock!"); return; }

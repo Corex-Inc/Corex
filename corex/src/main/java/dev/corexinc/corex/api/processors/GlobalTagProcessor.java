@@ -19,20 +19,22 @@ public class GlobalTagProcessor {
     public static void register() {
 
         PROCESSOR.registerTag(ElementTag.class, "prefix", (attr, obj) ->
-                new ElementTag(obj.getPrefix()));
+                new ElementTag(obj.getPrefix())).setAsyncSafe();
 
         PROCESSOR.registerTag(ElementTag.class, "exists", (attr, obj) ->
-                new ElementTag(true));
+                new ElementTag(true)).setAsyncSafe();
 
         PROCESSOR.registerTag(ElementTag.class, "equals", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            return new ElementTag(obj.identify().equals(attr.getParamObject().identify()));
-        });
+            AbstractTag other = attr.getParamObject();
+            if (other == null) return null;
+            return new ElementTag(obj.identify().equals(other.identify()));
+        }).setAsyncSafe();
 
         PROCESSOR.registerTag(ElementTag.class, "equalsIgnoreCase", (attr, obj) -> {
-            if (!attr.hasParam()) return null;
-            return new ElementTag(obj.identify().equalsIgnoreCase(attr.getParamObject().identify()));
-        });
+            AbstractTag other = attr.getParamObject();
+            if (other == null) return null;
+            return new ElementTag(obj.identify().equalsIgnoreCase(other.identify()));
+        }).setAsyncSafe();
 
         PROCESSOR.registerTag(AbstractTag.class, "as", (attr, obj) -> {
             if (!attr.hasParam()) return null;
@@ -51,7 +53,7 @@ public class GlobalTagProcessor {
         PROCESSOR.registerTag(ElementTag.class, "not", (attr, obj) -> {
             if (!(obj instanceof ElementTag element)) return null;
             return new ElementTag(!element.asBoolean());
-        });
+        }).setAsyncSafe();
 
         PROCESSOR.registerTag(AbstractTag.class, "with", (attr, obj) -> {
             if (!(obj instanceof Adjustable adj)) return null;

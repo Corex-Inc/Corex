@@ -168,7 +168,6 @@ public class CuboidTag implements AbstractTag, AbstractAreaObject, Flaggable {
                 points.add(new double[]{x, y, z});
             }
 
-            // Pair up consecutive points into cuboid members
             for (int i = 0; i + 1 < points.size(); i += 2) {
                 resolvedMembers.add(new double[][]{points.get(i), points.get(i + 1)});
             }

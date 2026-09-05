@@ -1,6 +1,7 @@
 package dev.corexinc.corex.environment.utils.commands;
 
 import dev.corexinc.corex.engine.compiler.Instruction;
+import dev.corexinc.corex.engine.compiler.ScriptCompiler;
 import dev.corexinc.corex.engine.scripts.ScriptManager;
 
 import java.util.ArrayList;
@@ -67,8 +68,8 @@ public class CommandParser {
                 continue;
             }
 
-            if (c == '<') tagDepth++;
-            if (c == '>') tagDepth--;
+            if (c == '<' && ScriptCompiler.isTagStart(script, i)) tagDepth++;
+            if (c == '>' && tagDepth > 0) tagDepth--;
             if (c == '(' && tagDepth == 0) mathDepth++;
             if (c == ')' && tagDepth == 0) mathDepth--;
 
